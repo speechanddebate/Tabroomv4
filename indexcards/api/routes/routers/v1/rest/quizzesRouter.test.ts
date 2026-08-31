@@ -26,7 +26,7 @@ describe('Quizzes Router', () => {
 	  .get('/v1/rest/quizzes');
 	  expect(response.status).toBe(200);
 	  expect(response.body).toMatchSchema(z.array(Quiz));
-	  const quizIds = response.body.map((quiz: any) => quiz.id);
+	  const quizIds = response.body.map((quiz: { id: string }) => quiz.id);
 	  expect(quizIds).not.toContain(hiddenQuizId);
 	  expect(quizIds).not.toContain(nonSitewideQuizId);
 	  expect(quizIds).not.toContain(adminOnlyQuizId);
@@ -43,7 +43,7 @@ describe('Quizzes Router', () => {
 		.set('Authorization', `Bearer ${userkey}`);
 		expect(response.status).toBe(200);
 		expect(response.body).toMatchSchema(z.array(Quiz));
-		const quiz = response.body.find((q: any) => q.id === quizId);
+		const quiz = response.body.find((q: { id: string }) => q.id === quizId);
 		expect(quiz).toBeDefined();
 		expect(quiz.PersonQuizzes).toBeDefined();
 		expect(quiz.PersonQuizzes.length).toBe(1);

@@ -1,8 +1,6 @@
 <script>
 // @ts-nocheck
 // eslint-disable
-/* eslint-disable @typescript-eslint/no-unused-expressions */
-/* eslint-disable no-shadow */
 /* eslint-disable svelte/sort-attributes */
 
 	import { getContext, untrack } from 'svelte';

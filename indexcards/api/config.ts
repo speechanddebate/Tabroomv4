@@ -192,7 +192,7 @@ export const ConfigSchema = z.object({
 type RuntimeConfig = z.infer<typeof ConfigSchema>;
 
 // Load a config file from path
-function loadConfigFile(filePath: string): Record<string, any> {
+function loadConfigFile(filePath: string): Record<string, object> {
   try {
     if (!fs.existsSync(filePath)) {
 	console.info(`Config not found at ${filePath}`);

@@ -15,8 +15,8 @@
 
 	let webPage = $derived.by( () => {
 		const myPages = pageContent.data?.Webpages?.filter(
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			(webpage:any) => webpage?.id === parseInt(page.params?.slug)
+			// oxlint-disable-next-line @typescript-eslint/no-explicit-any
+			(webpage:any) => webpage?.id === parseInt(page.params?.slug ?? '')
 		);
 		if (myPages?.length > 0) {
 			return myPages[0];

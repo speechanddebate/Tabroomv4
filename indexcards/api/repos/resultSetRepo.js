@@ -395,7 +395,7 @@ const createResultCache = async (resultSet) => {
 	// again. So set it to skip if 1=1 and then wait.
 
 	if (
-		// eslint-disable-next-line no-constant-binary-expression
+		// oxlint-disable-next-line no-constant-binary-expression
 		1 === 1
 		|| resultSet.entity === 'school'
 		|| resultSet.tag == 'sweeps'

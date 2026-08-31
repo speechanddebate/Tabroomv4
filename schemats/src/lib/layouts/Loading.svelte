@@ -30,7 +30,7 @@
 			isPending : false,
 		};
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		[...tanstackJobs, tanstackJob].forEach( (job:any) => {
 
 			if (!job) return;

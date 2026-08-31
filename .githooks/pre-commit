@@ -1,17 +1,12 @@
 #!/bin/sh
-#
-if ! git diff --cached --quiet -- schemats/; then
-    echo "Running schemats checks..."
-	cd schemats
-    npm run lint || exit 1
-fi
+set -e
+echo "Linting..."
+npm run lint
+echo "Typecheck..."
+# schemats super fails typecheck right now
+npm run typecheck --workspace=indexcards
 
-if ! git diff --cached --quiet -- indexcards/; then
-    echo "Running indexcards checks..."
-	cd indexcards
-    npm run lint || exit 1
-    npm run typecheck || exit 1
-	echo "Updating openapi.json..."
-	npm run build:openapi --workspace=indexcards
-	git  add **/openapi.json
-fi
+echo "Updating openapi.json..."
+npm run build:openapi --workspace=indexcards
+git  add indexcards/api/routes/openapi/openapi.json
+

@@ -85,7 +85,7 @@
 	});
 
 	// put in MyTourn support here eventually
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 	const sections:any = $derived.by( () => {
 		return Object.keys(results.Sections)
 			.sort( (a, b) => {

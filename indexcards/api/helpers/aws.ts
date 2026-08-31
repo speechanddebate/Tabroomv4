@@ -102,7 +102,7 @@ const s3Client = {
 		return stream;
 	},
 
-	put : async (filepath: string, data: any) => {
+	put : async (filepath: string, data: PutObjectCommand['input']['Body'] ) => {
 		const putCommand = new PutObjectCommand({
 			Bucket : config.aws.Bucket,
 			Key    : filepath,

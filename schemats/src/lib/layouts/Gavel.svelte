@@ -1,7 +1,6 @@
 <script>
 	// @ts-nocheck
 	/* eslint-disable svelte/sort-attributes */
-	/* eslint-disable max-len */
 	let {
 		size  = '17',
 		color = '#954535',

@@ -12,9 +12,9 @@ export async function getCurrent(req: Request,res: Response) {
 		if(!s.Round.published || !s.Round.settings.judges_ballots_visible) {
 			return;
 		}
-		if(s.Ballots.some((b: any) => b.audit === 1)){
+		if(s.Ballots.some((b: { audit: number }) => b.audit === 1)){
 			if(
-				s.Ballots.every((b: any) => b.chair !== 1) && 
+				s.Ballots.every((b: { chair: number }) => b.chair !== 1) && 
 				s.Judge.Category.Event.type !== 'mock_trial' && 
 				s.Judge.Category.Event.type !== 'congress' &&
 				Date.now() < s.Round.Timeslot.end
@@ -26,6 +26,7 @@ export async function getCurrent(req: Request,res: Response) {
 			return;
 		}
 
+		// oxlint-disable-next-line no-explicit-any
 		function addFlightOffset(iso: string,section: any) {
 			const date = new Date(iso);
 			let add = 0;
@@ -36,10 +37,10 @@ export async function getCurrent(req: Request,res: Response) {
 			return date.toISOString();
 		}
 		
-		function getStatus(s: any) {
+		function getStatus(s: { scored: boolean; Ballots: { judge_started: boolean }[] }) {
 			if (s.scored){
 				return "scored"
-			} else if (s.Ballots.some((b: any) => b.judge_started)){
+			} else if (s.Ballots.some((b: { judge_started: boolean }) => b.judge_started)){
 				return 'started'
 			}
 			return "not_started"
@@ -63,15 +64,15 @@ export async function getCurrent(req: Request,res: Response) {
 			roomName: s.Room.name,
 			roomUrl: s.Room.url,
 			roomNotes: s.Round.settings.judges_ballots_visible ? s.Room.notes : null,
-			chair: s.Ballots.some((b: any) => b.chair),
-			audited: s.Ballots.some((b: any) => b.audit),
+			chair: s.Ballots.some((b: { chair: number }) => b.chair),
+			audited: s.Ballots.some((b: { audit: number }) => b.audit),
 			TournTz: s.Judge.Category.Tourn.tz,
 			eventType: s.Judge.Category.Event.type,
 			onlineMode: s.Judge.Category.Event.settings.online_mode,
 			JudgeId: s.Judge.id,
 			RoundId: s.Round.id,
-			Entries: s.Entries.map((e: any) => {
-				let ballot = s.Ballots.find(b => b.entry === e.id)	
+			Entries: s.Entries.map((e: { id: string; code: string }) => {
+				let ballot = s.Ballots.find((b: { entry: string }) => b.entry === e.id)
 				let side = null;
 				if (s.settings.flip_status === undefined || s.settings.flip_status === 'done'){
 					if (ballot.side) {

@@ -26,7 +26,7 @@
 		});
 	});
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 	const options:any = {
 		onchange: (selection: { value: number | string; label: string }) => {
 			if (selection?.value) goto(`/invite/${tourn.id}/entries/${selection.value}`);

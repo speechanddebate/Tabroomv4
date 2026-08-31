@@ -41,7 +41,7 @@
 			return schematic.Sections[key];
 
 		// Thou may blowest it out thine ass, Typescript
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		}).sort( (a:any,b:any) => {
 			if (a.me !== b.me) return b.me - a.me;
 			if (a.mine !== b.mine) return b.mine - a.mine;

@@ -27,8 +27,8 @@ it('Returns a list of chapters a person has permissions in', async () => {
 		.expect(200);
 
 	expect(res.body).toMatchSchema(z.array(UserChapter));
-	expect(res.body.filter((chapter: any) => chapter.id === chapterId).length).toBe(1);
-	const chapter = res.body.find((chapter: any) => chapter.id === chapterId);
+	expect(res.body.filter((chapter: { id: number }) => chapter.id === chapterId).length).toBe(1);
+	const chapter = res.body.find((chapter: { id: number }) => chapter.id === chapterId);
 	
 	expect(chapter.id).toBe(chapterId);
 	expect(chapter.permission).toBe('chapter');

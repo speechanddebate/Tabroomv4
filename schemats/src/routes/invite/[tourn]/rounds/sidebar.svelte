@@ -1,5 +1,4 @@
 <script lang='ts'>
-	/* eslint-disable @typescript-eslint/no-explicit-any */
 
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -16,6 +15,7 @@
 
 	const eventGroupKeys = ['your', 'school', 'other'] as const;
 	type EventGroupKey = typeof eventGroupKeys[number];
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 	type EventBuckets = Record<EventGroupKey, Record<string, any>>;
 
 	import type { Tourn } from '$indexcards/schemas';
@@ -66,6 +66,7 @@
 		if (!myTourn.isFetched) return;
 		if (!roundList.isFetched) return;
 
+		// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		const eventBins:any = {};
 		roundList.data.forEach( (round:RoundData) => {
 			if (!eventBins[round.eventId]) {
@@ -84,7 +85,7 @@
 	});
 
 	let selectedEventAbbr = $derived(page.params.eventAbbr);
-	let selectedRoundNumber = $derived(parseInt(page.params.roundNumber));
+	let selectedRoundNumber = $derived(parseInt(page.params.roundNumber ?? ''));
 
 </script>
 
@@ -130,7 +131,7 @@
 									flex
 									{selectedEventAbbr === events[key][id]?.abbr ? 'selected bg-secondary-200 font-semibold' : '' }
 								'
-								href = { resolve(`/invite/${tourn.id}/rounds/${events[key][id].abbr}`, {} ) }
+								href = { resolve(`/invite/${tourn.id}/rounds/${events[key][id].abbr}`) }
 							>
 								<span class="grow">
 									{events[key][id].name}
@@ -166,7 +167,7 @@
 												border-y border-y-back-300
 												hover:bg-secondary-200
 												{ (parent !== 'results' && selectedRoundNumber === round.name ? 'selected bg-warning-200 ' : '') }'
-												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`, {} )}
+												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`)}
 											>{ events[key][id].abbr } { round.label || `Round ${round.name}`} Schematic</a>
 											<a class='w-1/4 ml-1 grow
 												bg-back-100 text-xs
@@ -174,7 +175,7 @@
 												border-y border-y-back-300
 												{ (parent === 'results' && selectedRoundNumber === round.name) ? 'selected bg-warning-200 ' : '' }
 												hover:bg-secondary-200'
-												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}/results`, {} )}
+												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}/results`)}
 											>Results</a>
 										</div>
 									{:else}
@@ -187,7 +188,7 @@
 												{myTourn.data?.me?.rounds.includes(round.id) ? 'text-warning-600 font-semibold' : '' }
 												{selectedRoundNumber === round.name ? 'selected bg-secondary-200 ' : '' }
 											'
-											href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`, {} )}
+											href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`)}
 										>{#if myTourn.data?.me?.rounds.includes(round.id) }
 											{@html '&#x21e8;'}
 										{/if}

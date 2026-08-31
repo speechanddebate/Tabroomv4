@@ -1,5 +1,4 @@
 <script lang="ts">
-	/* eslint-disable @typescript-eslint/no-explicit-any */
 
 	let {myTourn, schematic, tourn}  = $props();
 
@@ -20,6 +19,7 @@
 		mine : 'text-warning-600 font-semibold p-0 py-0.5 m-0 w-full',
 	};
 
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 	const cellClass:any = {
 		affCode : {},
 		negCode : {},
@@ -94,6 +94,7 @@
 			return section;
 
 		// Thou may blowest it out thine ass, Typescript. also JS sorting is kinda clunky.
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		}).sort( (a:any,b:any) => {
 
 			// First if I am involved or my school is, pop to the top

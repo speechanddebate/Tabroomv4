@@ -30,4 +30,4 @@ export interface TournData {
 	weekendName?   : string,
 	weekendId?     : number,
 	districts?     : number,
-};
+}

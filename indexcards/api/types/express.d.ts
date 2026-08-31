@@ -9,7 +9,11 @@ declare module 'express-serve-static-core' {
 		openapi?: RouteOpenApiConfig;
 	}
 	interface Request {
-		actor: any; // Replace `any` with the actual type of `actor` if available
+		actor: {
+			Person: {
+				id: number;
+			};
+		}; // Replace `any` with the actual type of `actor` if available
 	}
 }
 

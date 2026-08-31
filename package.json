@@ -28,7 +28,7 @@
 	"type": "module",
 	"scripts": {
 		"prepare": "git config core.hooksPath .githooks && npm run prepare --workspaces --if-present",
-		"lint": "npm run lint --workspace=indexcards --if-present",
+		"lint": "npm run lint --workspaces --if-present",
 		"lint:fix": "npm run lint:fix --workspaces --if-present"
 	},
 	"workspaces": [
@@ -37,6 +37,7 @@
 	],
 	"private": true,
 	"devDependencies": {
+		"eslint-plugin-storybook": "^10.5.10",
 		"oxlint": "^1.80.0"
 	}
 }

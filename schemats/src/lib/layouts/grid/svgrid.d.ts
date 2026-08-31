@@ -15,7 +15,7 @@ export interface GridOptions {
 	filename?     : string,
 	tableOptions? : Grid,
 	rowStyle      : function,
-};
+}
 
 // Adds options that allow the FilterBar to work properly, as well as some
 // formatting --CLP
@@ -41,4 +41,4 @@ export type SchematColumn = IColumn & {
 	linkFunction?  : function,
 	textFunction?  : function,
 	template?      : function,
-};
+}

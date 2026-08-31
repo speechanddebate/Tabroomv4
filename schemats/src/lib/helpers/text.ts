@@ -34,7 +34,7 @@ export const snakeToCamel = (snaked:string) => {
 	);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 export const intersection = (array1: Array<any>, array2: Array<any>) => {
 	return array1.filter(x => array2.includes(x));
 };

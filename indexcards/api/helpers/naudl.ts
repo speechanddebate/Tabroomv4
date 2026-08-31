@@ -58,7 +58,7 @@ export const getAllSalesforceStudents = async () => {
 	return getResponse.data?.records;
 };
 
-export const postSalesforceStudents = async (body: Record<string, any>) => {
+export const postSalesforceStudents = async (body: Record<string, object>) => {
 
 	const authData = await authSalesforce();
 	if (authData) {

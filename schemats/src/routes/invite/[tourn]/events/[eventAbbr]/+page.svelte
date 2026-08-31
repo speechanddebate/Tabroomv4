@@ -16,7 +16,7 @@
 	const pageContent = $derived(indexFetch(`/rest/tourns/${tourn.id}/invite`));
 
 	const eventPage = $derived(pageContent.data?.pages?.filter(
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		(webpage:any) => webpage.slug === 'events'
 	));
 

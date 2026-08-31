@@ -74,7 +74,6 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 
 		if (requestCount >= MAX_REQUESTS_PER_MINUTE) {
 			const waitTime = RATE_LIMIT_WINDOW - (now - windowStart);
-			// notactuallyneeded eslint-disable-next-line no-promise-executor-return
 			await new Promise(resolve => setTimeout(resolve, waitTime));
 			requestCount = 0;
 			windowStart = Date.now();
