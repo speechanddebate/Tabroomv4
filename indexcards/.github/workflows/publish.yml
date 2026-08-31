@@ -1,0 +1,50 @@
+name: Tabroom Indexcards API Publish
+
+on:
+  push:
+    branches:
+      - main
+env:
+    CI: true
+    HUSKY: 0
+    REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+    REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+    SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set Docker Tag by commit
+      id: get_version
+      run: echo COMMIT_VERSION=$(echo $GITHUB_SHA) >> $GITHUB_ENV
+
+    - name: Publish Indexcards image to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v4
+      with:
+        name: nsda/indexcards
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        registry: registry.speechanddebate.org
+        tags: "production,${{ env.COMMIT_VERSION }}"
+
+    - name: Publish cron image to Registry
+      uses: elgohr/Publish-Docker-Github-Action@v4
+      with:
+        name: nsda/indexcards/cron
+        username: ${{ secrets.REGISTRY_USERNAME }}
+        password: ${{ secrets.REGISTRY_PASSWORD }}
+        registry: registry.speechanddebate.org
+        tags: "production,${{ env.COMMIT_VERSION }}"
+        dockerfile: cron.Dockerfile
+
+    - name: If publish succeeded, change icon
+      if: success()
+      run: echo "SLACK_ICON=:white_check_mark:" >> $GITHUB_ENV
+
+    - name: Send slack notification
+      if: always()
+      uses: speechanddebate/action-slack-notify@master
+

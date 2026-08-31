@@ -1,0 +1,307 @@
+
+import config from '../config.js';
+import sessionRepo from '../repos/sessionRepo.js';
+import personRepo from '../repos/personRepo.js';
+import { Authenticate } from './authentication.js';
+import userData from '../../tests/testFixtures';
+import { createContext } from '../../tests/httpMocks.js';
+import authService from '../services/AuthService.js';
+
+describe('Authentication Middleware', () => {
+
+	describe('No Auth', () => {
+		it('calls next() and no req.person when no auth provided', async () => {
+			// Arrange
+			const {req, res, next} = createContext();
+			// Act
+			await Authenticate(req, res, next);
+
+			// Assert
+			expect(next).toHaveBeenCalled();
+			expect(req.person).not.toBeDefined();
+		});
+		it('attaches actor', async () => {
+			// Arrange
+			const {req, res, next} = createContext();
+			// Act
+			await Authenticate(req, res, next);
+
+			// Assert
+			expect(req.actor).toBeDefined();
+			const actor = req.actor;
+			expect(actor.id).not.toBeDefined();
+		});
+
+	});
+
+	describe('Cookie Auth', () => {
+		it('sets req.session and req.person when valid cookie', async () => {
+
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: userData.testUserSession.userkey,
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return {
+					id          : 1,
+					person      : {
+						id          : 69,
+						site_admin   : false,
+						email       : '',
+						first      : 'I',
+						middle     : 'Am',
+						last       : 'Test',
+					},
+				};});
+
+			vi.spyOn(personRepo, 'getPerson').mockImplementationOnce(async () => {
+				return {
+					id: 69,
+					email: '',
+				};
+			});
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(next).toHaveBeenCalled();
+			expect(req.session).toBeDefined();
+			expect(req.person.id).toBe(69);
+			expect(req.person).toBeDefined();
+		});
+		it('does not set req.session or req.person when invalid cookie', async () => {
+
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: 'invalidcookie',
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return null;
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(next).toHaveBeenCalled();
+			expect(req.session).not.toBeDefined();
+			expect(req.person).not.toBeDefined();
+		});
+		it('clears an invalid cookie', async () => {
+			// if the user provides and invalid cookie. we should tell the browser to clear it.
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: 'invalidcookie',
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return null;
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(res.clearCookie).toHaveBeenCalledWith(config.cookie.name, authService.getAuthCookieOptions());
+		});
+		it('calls next(err) on sessionRepo error', async () => {
+
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: 'somecookie',
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				throw new Error('Database error');
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(next).toHaveBeenCalledWith(expect.any(Error));
+		});
+		it('attaches actor with correct info', async () => {
+			// Arrange
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: userData.testUserSession.userkey,
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return {
+					id          : 1,
+					person      : {
+						id          : 69,
+						site_admin   : false,
+						email       : '',
+						first      : 'I',
+						middle     : 'Am',
+						last       : 'Test',
+					},
+				};});
+
+			vi.spyOn(personRepo, 'getPerson').mockImplementationOnce(async () => {
+				return {
+					id: 69,
+					email: '',
+				};
+			});
+			// Act
+			await Authenticate(req, res, next);
+
+			// Assert
+			expect(req.actor).toBeDefined();
+			const actor = req.actor;
+			expect(actor.id).toBe(69);
+		});
+
+	});
+
+	describe('Basic Auth', () => {
+		it('sets req.person with valid token', async () => {
+			// base64("myuserkey:myapikey")
+			const encoded = Buffer.from('123:myapikey').toString('base64');
+
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Basic ${encoded}`,
+				},
+			});
+			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({
+				id: 123,
+				email: 'example@test.com',
+				settings: {
+					api_key: 'myapikey',
+				},
+			});
+
+			await Authenticate(req, res, next);
+
+			// Assertions
+			expect(req.person).toBeDefined();
+			expect(req.person.id).toBe(123);
+			expect(next).toHaveBeenCalledOnce();
+		});
+		it('returns 401 when API key is invalid', async () => {
+			// base64("myuserkey:invalidapikey")
+			const encoded = Buffer.from('username:invalidapikey').toString('base64');
+
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Basic ${encoded}`,
+				},
+			});
+
+			vi.spyOn(personRepo, 'getPersonByUsername').mockResolvedValue(null);
+
+			await Authenticate(req, res, next);
+
+			// Assertions
+			expect(res.status).toHaveBeenCalledWith(401);
+			expect(next).not.toHaveBeenCalled();
+		});
+		it('returns 400 when Authorization header is malformed', async () => {
+			//Arrange
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Basic malformedheader`,
+				},
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			// Assertions
+			expect(res.status).toHaveBeenCalledWith(400);
+			expect(next).not.toHaveBeenCalled();
+		});
+		it('returns 400 when Authorization header uses unsupported scheme', async () => {
+			//Arrange
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `NotBasic sometoken`,
+				},
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			// Assertions
+			expect(res.status).toHaveBeenCalledWith(400);
+			expect(next).not.toHaveBeenCalled();
+		});
+	});
+	describe('Bearer Auth', () => {
+		it('sets and req.person when valid token', async () => {
+
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Bearer ${userData.testUserSession.userkey}`,
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return {
+					id          : 1,
+					person      : {
+						id          : 69,
+						site_admin   : false,
+						email       : '',
+						first      : 'I',
+						middle     : 'Am',
+						last       : 'Test',
+					},
+				};});
+
+			vi.spyOn(personRepo, 'getPerson').mockImplementationOnce(async () => {
+				return {
+					id: 69,
+					email: '',
+				};
+			});
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(next).toHaveBeenCalled();
+			expect(req.person).toBeDefined();
+		});
+		it('returns 401 when invalid token', async () => {
+
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Bearer badtoken`,
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return null;
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(res.status).toHaveBeenCalledWith(401);
+			expect(next).not.toHaveBeenCalled();
+		});
+		it('calls next(err) on sessionRepo error', async () => {
+
+			const { req, res, next } = createContext({
+				headers: {
+					authorization: `Bearer somecookie`,
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				throw new Error('Database error');
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(next).toHaveBeenCalledWith(expect.any(Error));
+		});
+	});
+});

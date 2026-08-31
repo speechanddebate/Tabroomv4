@@ -1,0 +1,29 @@
+{
+	"include": [
+		"app.js",
+		"config",
+		"api",
+		"tests",
+		"api/routes/openapi/openapi.json"
+	],
+	"exclude": [
+		"node_modules",
+		"coverage",
+		"logs",
+		"config/config.js"
+	],
+	"compilerOptions": {
+		"module"          : "nodenext",
+		"moduleResolution": "nodenext",
+		"target"          : "es2022",
+		"types"           : ["node", "vitest/globals"],
+   		"outDir": "./dist",
+		"allowJs"         : true,
+		"checkJs"         : false,
+		"isolatedModules" : true,
+		"esModuleInterop" : true,
+		"resolveJsonModule": true,
+		"skipLibCheck"    : true,
+		"removeComments": true
+	}
+}

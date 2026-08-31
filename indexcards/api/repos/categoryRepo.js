@@ -1,0 +1,96 @@
+
+import db from '../data/db.js';
+import { saveSettings, withSettingsInclude } from './utils/settings.js';
+import { FIELD_MAP,toDomain, toPersistence } from './mappers/categoryMapper.js';
+import { tournInclude } from './tournRepo.js';
+import { judgeInclude } from './judgeRepo.js';
+import { jPoolInclude } from './jpoolRepo.js';
+import { resolveAttributesFromFields } from './utils/repoUtils.js';
+
+function buildCategoryQuery(opts = {}) {
+	const query = {
+		where: {},
+		attributes: resolveAttributesFromFields(opts.fields, FIELD_MAP),
+		include: [],
+	};
+
+	if (opts?.include?.Tourn) {
+		query.include.push({
+			...tournInclude(opts.include.Tourn),
+			as: 'tourn_tourn',
+			required: opts.include.Tourn.required ?? false,
+		});
+	}
+
+	if (opts?.include?.Judges) {
+		const judge = judgeInclude(opts.include.Judges);
+		judge.as = 'judges';
+		judge.required = false;
+		query.include.push(judge);
+	}
+	if (opts?.include?.Jpools) {
+		const jpool = jPoolInclude(opts.include.Jpools);
+		jpool.as = 'jpools';
+		jpool.required = false;
+		query.include.push(jpool);
+	}
+
+	// Category settings
+	query.include.push(
+		...withSettingsInclude({
+			model: db.categorySetting,
+			as: 'category_settings',
+			settings: opts.settings,
+		})
+	);
+
+	return query;
+}
+
+export function categoryInclude(opts = {}) {
+	return {
+		model: db.category,
+		as: 'categories',
+		...buildCategoryQuery(opts),
+	};
+}
+
+async function getCategory(id, opts = {}) {
+	if (!id) throw new Error('getCategory: id is required');
+	const query = buildCategoryQuery(opts);
+	query.where = { id, ...query.where };
+	const dbRow = await db.category.findOne(query);
+	return toDomain(dbRow);
+}
+async function getCategories(scope, opts = {}) {
+	const query = buildCategoryQuery(opts);
+	if (scope?.tournId) {
+		query.where.tourn = scope.tournId;
+	}
+	const dbRows = await db.category.findAll(query);
+	return dbRows.map(toDomain);
+}
+async function createCategory(data, opts = {}) {
+	const dbRow = await db.category.create(toPersistence(data));
+	await saveSettings({
+		model: db.categorySetting,
+		settings: data.settings,
+		ownerKey: 'category',
+		ownerId: dbRow.id,
+	});
+	return dbRow.id;
+}
+async function deleteCategory(id) {
+	if (!id) throw new Error('deleteCategory: id is required');
+	const rows = await db.category.destroy({
+		where: { id },
+	});
+	return rows;
+}
+
+export default {
+	getCategory,
+	getCategories,
+	createCategory,
+	deleteCategory,
+};

@@ -1,0 +1,15 @@
+services:
+  indexcards:
+    container_name: indexcards
+    image: indexcards:latest
+    restart: always
+    ports:
+      - 3000:3000
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - /etc/indexcards/indexcards.config.js:/indexcards/config/config.js:ro
+      - /var/log/indexcards:/var/log/indexcards:rw
+      - /var/lib/GeoIP:/geoip:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

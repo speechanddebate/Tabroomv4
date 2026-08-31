@@ -1,0 +1,79 @@
+import axios from 'axios';
+import config from '../../config.js';
+import logger from '../../helpers/logger.js';
+//import notify from '../../helpers/blast.js';
+
+/*
+ * export const pushMessage = {
+	POST: async (req, res) => {
+		const responseJSON = await notify({
+			...req.body,
+		});
+		res.status(200).json(responseJSON);
+	},
+};
+*/
+
+export async function getSubscription(req, res) {
+
+	let externalId = req.session.person;
+
+	if (externalId === 1) {
+		externalId = 100;
+	}
+
+	if (externalId) {
+
+		try {
+			const oneSignalSubscription = await axios.get(
+				`${config.onesignal.url}/users/by/external_id/${externalId}`,
+				{
+					headers : {
+						Authorization  : `Basic ${config.onesignal.appKey}`,
+						'Content-Type' : 'application/json',
+						Accept         : 'application/json',
+					},
+				},
+			);
+
+			if (oneSignalSubscription?.data) {
+				return res.status(200).json(oneSignalSubscription?.data);
+			}
+
+			return res.status(200).json('No such subscription found.  Record from database deleted');
+
+		} catch (err) {
+
+			logger.error(`Error returned on the axios get for a OneSignal push`);
+			logger.error(err);
+
+			return res.status(400).json(err);
+
+		}
+	}
+
+	return res.status(401).json('No active user found');
+};
+export async function deleteSubscription(req, res) {
+
+	const subscriptionId = req.params.subscriptionId;
+
+	if (subscriptionId) {
+		const deleteReply = await axios.delete(
+			`${config.onesignal.url}/subscriptions/${subscriptionId}`,
+			{
+				headers : {
+					Authorization  : `Basic ${config.onesignal.appKey}`,
+					'Content-Type' : 'application/json',
+					Accept         : 'application/json',
+				},
+			},
+		);
+
+		return res.status(200).json(deleteReply);
+	}
+
+	return res.status(401).json('No active subscription found');
+};
+
+export default getSubscription;

@@ -1,0 +1,206 @@
+import request from 'supertest';
+import { assert } from 'chai';
+import config from '../../../config';
+import db from '../../../data/db';
+import server from '../../../../app';
+import factories from '../../../../tests/factories';
+
+const testTourn = {
+	id     : 27074,
+	name   : 'Cal Berkeley Invitational',
+	round  : 1150315,
+	panel  : 7212079,
+	entry  : 5141238,
+	person : 8157,
+	judge  : 2143673,
+};
+
+describe('Status Board', () => {
+	let personId, userkey;
+	beforeAll(async () => {
+		const session = await factories.session.createTestSession();
+		userkey = session.userkey;
+		personId = session.personId;
+		const permission = {
+			person : personId,
+			tourn  : testTourn.id,
+			tag    : 'tabber',
+		};
+
+		await db.permission.create(permission);
+
+		const campusLogs = [
+			{ 	tag         : 'present',
+				description : 'LASA marked as present by testrunner',
+				entry       : testTourn.entry,
+				marker      : personId,
+				tourn       : testTourn.id,
+				panel       : testTourn.panel,
+			},
+			{ 	tag         : 'present',
+				description : 'Cayman marked as present by testrunner',
+				person      : testTourn.person,
+				marker      : personId,
+				tourn       : testTourn.id,
+				panel       : testTourn.panel,
+			},
+		];
+
+		await db.campusLog.bulkCreate(campusLogs);
+
+	});
+
+	it('Return a correct JSON status object', async () => {
+
+		const res = await request(server)
+			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
+			.set('Accept', 'application/json')
+			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		assert.isObject(res.body, 'Response is an object');
+
+		assert.equal(
+			res.body.person[testTourn.person][testTourn.panel].tag,
+			'present',
+			'Judge Giordano marked present by an admin'
+		);
+
+		assert.equal(
+			res.body.entry[testTourn.entry][testTourn.panel].tag,
+			'present',
+			'LASA marked present by an admin'
+		);
+
+		assert.equal(
+			res.body.entry[testTourn.entry][testTourn.panel].markerId,
+			personId,
+			'LASA marked present by the correct admin'
+		);
+	});
+
+	it('Reflects absence & presence changes in a new status object', async() => {
+
+		// Mark Cayman as absent
+		await request(server)
+			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
+			.set('Accept', 'application/json')
+			.set('Authorization', `Bearer ${userkey}`)
+			.send({
+				targetId : testTourn.person,   	// person who was absent now present
+				panel    : testTourn.panel, 	// panel ID
+				present  : 0,
+			})
+			.expect('Content-Type', /json/)
+			.expect(201);
+
+		// Mark LASA as absent
+		await request(server)
+			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
+			.set('Accept', 'application/json')
+			.set('Authorization', `Bearer ${userkey}`)
+			.send({
+				targetId   : testTourn.entry,
+				panel      : testTourn.panel,
+				targetType : `entry`,
+				present    : 0,
+			})
+			.expect('Content-Type', /json/)
+			.expect(201);
+
+		// Mark Ediger ballot as started
+		await request(server)
+			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
+			.set('Accept', 'application/json')
+			.set('Authorization', `Bearer ${userkey}`)
+			.send({
+				targetId      : testTourn.judge,
+				panel         : 7212078,
+				targetType    : `judge`,
+				setting_name  : `judge_started`,
+				property_name : 0,
+			})
+			.expect('Content-Type', /json/)
+			.expect(201);
+
+		const newResponse = await request(server)
+			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
+			.set('Accept', 'application/json')
+			.set('Authorization', `Bearer ${userkey}`)
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		assert.isObject(newResponse.body, 'Response is indeed an object');
+		const newBody = newResponse.body;
+
+		assert.equal(
+			newBody.person[testTourn.person][testTourn.panel].tag,
+			'present',
+			'After the change posted, Judge Giordano marked absent by an admin'
+		);
+
+		assert.equal(
+			newBody.entry[testTourn.entry][testTourn.panel].tag,
+			'present',
+			'LASA marked present by an admin'
+		);
+
+		assert.equal(
+			newBody.entry[testTourn.entry][testTourn.panel].markerId,
+			personId,
+			'LASA marked present by the correct admin'
+		);
+	});
+
+	afterAll(async () => {
+
+		await db.sequelize.query(`delete from campus_log where marker = :personId`,
+			{
+				replacements: { personId: personId },
+				type: db.sequelize.QueryTypes.DELETE,
+			}
+		);
+	});
+
+});
+
+describe.todo('Event Dashboard', () => {
+	let personId, userkey;
+	beforeAll(async () => {
+		const session = await factories.session.createTestSession();
+		userkey = session.userkey;
+		personId = session.personId;
+		const permission = {
+			person : personId,
+			tourn  : testTourn.id,
+			tag    : 'tabber',
+		};
+
+		await db.permission.create(permission);
+	});
+
+	it('Return a correct JSON status object for the event dashboard', async () => {
+		const res = await request(server)
+			.get(`/v1/tab/tourns/${testTourn.id}/status/dashboard`)
+			.set('Accept', 'application/json')
+			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		assert.isObject(res.body, 'Response is an object');
+
+		assert.equal(
+			res.body[7].abbr,
+			'LD',
+			'Event 7 is LD');
+		assert.equal(
+			res.body[7].rounds[1][1].unstarted,
+			'25',
+			'15 unstarted in Round 1 flight 1');
+
+		assert.isTrue(
+			res.body[7].rounds[1][2].undone,
+			'Flight 2 is not done');
+	});
+});

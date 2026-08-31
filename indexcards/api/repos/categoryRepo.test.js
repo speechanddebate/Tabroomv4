@@ -1,0 +1,89 @@
+
+import factories from '../../tests/factories/index.js';
+import categoryRepo from './categoryRepo.js';
+
+describe('createCategory', () => {
+	it('creates category when provided valid data', async () => {
+		const category = {
+			name: 'Test Category',
+		};
+		const resultId = await categoryRepo.createCategory(category);
+		expect(resultId).toBeDefined();
+		const result = await categoryRepo.getCategory(resultId);
+		expect(result).toBeDefined();
+		expect(result.name).toBe(category.name);
+	});
+});
+describe('getCategory', () => {
+	it('retrieves category by id', async () => {
+		const categoryData = factories.category.createCategoryData();
+		const resultId = await categoryRepo.createCategory(categoryData);
+		expect(resultId).toBeDefined();
+		const result = await categoryRepo.getCategory(resultId);
+		expect(result).toBeDefined();
+		expect(result.name).toBe(categoryData.name);
+	});
+	it('throws an error when id is not provided', async () => {
+		await expect(categoryRepo.getCategory()).rejects.toThrow();
+	});
+	it('attaches Judges when include.Judges is true', async () => {
+		const categoryData = factories.category.createCategoryData();
+		const resultId = await categoryRepo.createCategory(categoryData);
+		expect(resultId).toBeDefined();
+		const result = await categoryRepo.getCategory(resultId, { include: { Judges: true } });
+		expect(result).not.toBeNull();
+		expect(result.Judges).toBeDefined();
+		expect(Array.isArray(result.Judges)).toBe(true);
+	});
+});
+describe('getCategories', () => {
+	it('retrieves all categories for a given tournament', async () => {
+		const { tournId } = await factories.tourn.createTestTourn();
+		const category1Data = factories.category.createCategoryData({ tourn: tournId, name: `Cat1 ${tournId}` });
+		const category2Data = factories.category.createCategoryData({ tourn: tournId, name: `Cat2 ${tournId}` });
+
+		await categoryRepo.createCategory(category1Data);
+		await categoryRepo.createCategory(category2Data);
+		const results = await categoryRepo.getCategories({ tournId });
+		expect(results).toBeDefined();
+		expect(results.length).toBeGreaterThanOrEqual(2);
+		results.forEach(c => {
+			expect(c.tourn, `expected tournId to be ${tournId} but was ${c.tourn}`).toBe(tournId);
+		});
+		expect(results.map(c => c.name)).toEqual(expect.arrayContaining([category1Data.name, category2Data.name]));
+	});
+	it('retrieves all categories when no scope is provided', async () => {
+		const category1Data = factories.category.createCategoryData();
+		const category2Data = factories.category.createCategoryData();
+
+		await categoryRepo.createCategory(category1Data);
+		await categoryRepo.createCategory(category2Data);
+		const results = await categoryRepo.getCategories();
+		expect(results).toBeDefined();
+		expect(results.length).toBeGreaterThanOrEqual(2);
+		expect(results.map(c => c.name)).toEqual(expect.arrayContaining([category1Data.name, category2Data.name]));
+	});
+	it('attaches Judges when include.Judges is true', async () => {
+		const categoryData = factories.category.createCategoryData();
+		const resultId = await categoryRepo.createCategory(categoryData);
+		expect(resultId).toBeDefined();
+		const results = await categoryRepo.getCategories({},{ include: { Judges: true } });
+		expect(results).toBeDefined();
+		expect(results[0].Judges).toBeDefined();
+		expect(Array.isArray(results[0].Judges)).toBe(true);
+	});
+});
+describe('deleteCategory', () => {
+	it('deletes category by id', async () => {
+		const categoryData = factories.category.createCategoryData();
+		const resultId = await categoryRepo.createCategory(categoryData);
+		expect(resultId).toBeDefined();
+		const deleteResult = await categoryRepo.deleteCategory(resultId);
+		expect(deleteResult).toBe(1);
+		const result = await categoryRepo.getCategory(resultId);
+		expect(result).toBeNull();
+	});
+	it('throws an error when id is not provided', async () => {
+		await expect(categoryRepo.deleteCategory()).rejects.toThrow();
+	});
+});

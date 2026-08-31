@@ -1,0 +1,61 @@
+import { BadRequest, Forbidden, Unauthorized } from '../../../helpers/problem.js';
+import personRepo from '../../../repos/personRepo.js';
+
+export const getProfile = {
+	GET: async (req, res) => {
+
+		if (!req.person) {
+			return Unauthorized(req, res, 'You have no active user session.  Zounds!');
+		}
+		let person;
+
+		if (req.params.personId && req.person.site_admin) {
+			person = await personRepo.getPerson(req.params.personId, { settings: true });
+
+		} else if (req.params.personId ) {
+			return Forbidden(req, res,'Only admin staff may access another profile');
+		} else if (req.person) {
+			person = await personRepo.getPerson(req.person.id, { settings: true });
+		}
+
+		if (!person) {
+			return BadRequest(req, res, 'User does not exist');
+		}
+
+		return res.status(200).json(person);
+	},
+};
+
+getProfile.GET.apiDoc = {
+	summary: 'Load the profile data of the logged in user',
+	operationId: 'getProfile',
+	parameters: [
+		{
+			in          : 'path',
+			name        : 'personId',
+			description : 'ID of user whose profile you wish to access.  Defaults to present session.',
+			required    : true,
+			schema      : {
+				type    : 'integer',
+				minimum : 1,
+			},
+		},
+	],
+	responses: {
+		200: {
+			description: 'Person Profile',
+			content: {
+				'*/*': {
+					schema: {
+						type: 'array',
+						items: { $ref: '#/components/schemas/Person' },
+					},
+				},
+			},
+		},
+		default: { $ref: '#/components/responses/ErrorResponse' },
+	},
+	tags: ['accounts'],
+};
+
+export default getProfile;
