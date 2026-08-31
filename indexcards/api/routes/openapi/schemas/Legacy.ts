@@ -2,8 +2,6 @@
 // Accepts both YYYY-MM-DD and YYYY-MM-DD HH:mm:ss
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 
-const mysqlDate = '^([0-9]{2,4})-([0-1][0-9])-([0-3][0-9])(?:( [0-2][0-9]):([0-5][0-9]):([0-5][0-9]))?$';
-
 export const CaselistLink = {
 	type : 'object',
 	properties : {

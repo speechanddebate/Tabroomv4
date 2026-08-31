@@ -80,7 +80,7 @@ export const ConfigSchema = z.object({
 	}).prefault({}),
 	session_header: z.string().min(1).default('tabroom-session'),
 	csrf: z.object({
-		trusted_origins: z.array(z.string()).default(['/tabroom\.com$/']),
+		trusted_origins: z.array(z.string()).default(['/tabroom.com$/']),
 	}).prefault({}),
 	ratelimiter: z.object({
 		enabled: z.boolean().default(true),

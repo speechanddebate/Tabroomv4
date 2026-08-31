@@ -28,10 +28,11 @@ describe('Session Router', () => {
 			expect(res.body.Person).toHaveProperty('id', personId);
 		});
 		it('Returns 401 if not authenticated', async () => {
-			await request(server)
+			const res = await request(server)
 				.get('/v1/user/session')
 				.set('Accept', 'application/json')
 				.expect(401);
+			expect(res.body).toBeProblemResponse();
 		});
 	});
 });

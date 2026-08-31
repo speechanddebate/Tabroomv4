@@ -3,7 +3,6 @@ import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import * as schemas from '../../../openapi/schemas/index.js';
 import z from 'zod';
-import logger from '../../../../helpers/logger.js';
 
 let personId : number;
 let userkey: string;

@@ -761,7 +761,7 @@ const processRounds = async (rawRounds) => {
 			// like this monstrosity. 'Twas foreach (1 ... n) {}. Progress!
 			// Sigh.
 
-			for (const tick of [...Array(round.flights).keys()]) {
+			for (const tick of Array(round.flights).keys()) {
 				const flight = tick + 1;
 				round.start[flight] = '';
 				round.shortstart[flight] = '';

@@ -20,7 +20,7 @@ describe('judgesRouter', () => {
 				chapter: chapterId,
 			});
 			//make the request to claim the chapter judge
-			const res = await request(server)
+			await request(server)
 				.post('/v1/user/judges/claim')
 				.query({ chapterJudgeId })
 				.set('Accept', 'application/json')
@@ -39,7 +39,7 @@ describe('judgesRouter', () => {
 			});
 			await factories.permission.create({ person: personId, chapter: chapterId, tag: 'chapter' }); //give the user admin permissions for the chapter so they can receive the notification email
 			//make the request to claim the chapter judge
-			const res = await request(server)
+			await request(server)
 				.post('/v1/user/judges/claim')
 				.query({ chapterJudgeId })
 				.set('Accept', 'application/json')

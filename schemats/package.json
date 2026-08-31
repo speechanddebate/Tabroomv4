@@ -4,23 +4,6 @@
   "version": "0.5.0",
   "description": "Schemats Frontend Client for Tabroom.com",
   "private": true,
-  "author": "Chris Palmer <palmer@tabroom.com>, Ryan Tullis <ryan.tullis@speechanddebate.org> (https://speechanddebate.org)",
-  "license": "RPL 1.5",
-  "packageManager": "^npm@11.8.0",
-  "keywords": [
-    "speech",
-    "schemats",
-    "debate",
-    "congress",
-    "tabulation",
-    "forensics",
-    "tabroom",
-    "speechanddebate",
-    "NSDA"
-  ],
-  "bugs": {
-    "url": "https://github.com/speechanddebate/tabroom/issues"
-  },
   "engines": {
     "node": ">=24.13.1"
   },
@@ -52,7 +35,6 @@
     "test:e2e": "playwright test -c ./config/testing",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prepare": "husky",
     "orval": "orval --config ./config/orval.config.ts",
     "storybook": "storybook dev -p 6006"
   },

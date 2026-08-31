@@ -10,4 +10,5 @@ coverage/
 # Indexcards config
 **/config/config.json
 
-
+# Schemats config
+.env

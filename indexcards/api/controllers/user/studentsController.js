@@ -60,7 +60,7 @@ async function claimRequest(req, res) {
 	if(admins.some(a => a.email && !a.no_email)) {
 		const emailData = buildChapterStudentClaimEmail(student, req.actor.Person);
 		await notify({
-			ids: [...admins.filter(a => a.email && !a.no_email).map(a => a.id)],
+			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
 			...emailData,
 		});
 	} else {

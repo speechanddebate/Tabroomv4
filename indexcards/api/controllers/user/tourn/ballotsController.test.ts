@@ -1,9 +1,6 @@
 import con from './ballotsController.js';
 import sectionRepo from '../../../repos/sectionRepo.js';
 import { createContext } from '../../../../tests/httpMocks.js';
-import z from 'zod';
-import { CurrentBallot } from '../../../routes/openapi/schemas/Section.js';
-import { offset } from '../../../routes/openapi/schemas/utils.js';
 
 vi.mock('../../../repos/sectionRepo.js');
 

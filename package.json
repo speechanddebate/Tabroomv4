@@ -1,0 +1,42 @@
+{
+	"name": "Tabroom",
+	"version": "1.2.0",
+	"description": "Tabroom.com",
+	"keywords": [
+		"speech",
+		"debate",
+		"congress",
+		"tabulation",
+		"forensics",
+		"utabroom",
+		"speechanddebate",
+		"NSDA"
+	],
+	"homepage": "https://www.tabroom.com/about",
+	"bugs": {
+		"url": "https://github.com/speechanddebate/tabroom/issues"
+	},
+	"license": "RPL-1.5",
+	"contributors": [
+		"Chris Palmer <palmer@tabroom.com>",
+		"Ryan Tullis <ryan.tullis@speechanddebate.org> (https://speechanddebate.org)"
+	],
+	"repository": {
+		"type": "git",
+		"url": "github:speechanddebate/Tabroomv4.git"
+	},
+	"type": "module",
+	"scripts": {
+		"prepare": "git config core.hooksPath .githooks && npm run prepare --workspaces --if-present",
+		"lint": "npm run lint --workspace=indexcards --if-present",
+		"lint:fix": "npm run lint:fix --workspaces --if-present"
+	},
+	"workspaces": [
+		"schemats",
+		"indexcards"
+	],
+	"private": true,
+	"devDependencies": {
+		"oxlint": "^1.80.0"
+	}
+}

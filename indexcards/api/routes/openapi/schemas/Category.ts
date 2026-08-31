@@ -1,5 +1,4 @@
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
-import { Event } from './index.js';
 import z from 'zod';
 import * as utils from './utils.js';
 

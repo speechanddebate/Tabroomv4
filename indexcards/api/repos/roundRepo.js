@@ -110,7 +110,7 @@ export async function getRounds(scope = {}, opts = {}) {
 				...query.include[eventIncIdx],
 				required: true,
 				where: {
-					...(query.include[eventIncIdx].where || {}),
+					...query.include[eventIncIdx].where,
 					tourn: scope.tournId,
 				},
 			};

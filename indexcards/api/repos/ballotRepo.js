@@ -46,7 +46,7 @@ function buildBallotQuery(opts = {}){
 		if (existing) {
 			existing.required = true;
 			existing.where = {
-				...(existing.where || {}),
+				...existing.where,
 				tag: 'winloss',
 				value: 1,
 			};

@@ -16,11 +16,10 @@
 		"test-ci": "NODE_ENV='test' vitest --watch false --run",
 		"cover": "NODE_ENV='test' NODE_OPTIONS='--experimental-vm-modules --no-warnings --experimental-specifier-resolution=node' VITEST_SEGFAULT_RETRY=3 vitest --coverage",
 		"dev-debug": "node --inspect-brk=9229 --experimental-vm-modules --experimental-specifier-resolution=node --enable-source-maps app.js",
-		"lint": "eslint .",
-		"lint-fix": "eslint --fix .",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix .",
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
-		"prepare": "husky",
 		"models": "NODE_ENV='development' node api/data/auto.js",
 		"updateTestFile": "NODE_ENV=test node scripts/updateTestFile.js"
 	},
@@ -31,29 +30,9 @@
 		],
 		"resolveDirs": true
 	},
-	"repository": {
-		"type": "git",
-		"url": "git+https : //github.com/speechanddebate/tabroom.git"
-	},
-	"keywords": [
-		"speech",
-		"debate",
-		"congress",
-		"tabulation",
-		"forensics",
-		"utabroom",
-		"speechanddebate",
-		"NSDA"
-	],
-	"author": "Chris Palmer",
-	"license": "RPL-1.5",
-	"bugs": {
-		"url": "https://github.com/speechanddebate/tabroom/issues"
-	},
 	"engines": {
 		"node": ">= 24.13.0"
 	},
-	"homepage": "https://www.tabroom.com/about",
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.397.0",
 		"@google/genai": "^1.28.0",
@@ -108,13 +87,6 @@
 		"@vitest/eslint-plugin": "^1.1.25",
 		"@vitest/ui": "^4.0.17",
 		"chai": "^6.2.2",
-		"eslint": "^9.18.0",
-		"eslint-config-prettier": "^10.0.1",
-		"eslint-import-resolver-typescript": "^4.4.4",
-		"eslint-plugin-import": "^2.31.0",
-		"eslint-plugin-import-x": "^4.16.1",
-		"eslint-plugin-perfectionist": "^5.7.0",
-		"husky": "^9.0.11",
 		"node-mocks-http": "^1.10.1",
 		"nodemon": "^3.1.10",
 		"sequelize-auto": "^0.8.8",

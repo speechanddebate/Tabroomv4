@@ -18,7 +18,7 @@ export async function login(username, password, context = {}) {
 		throw AUTH_INVALID;
 	}
 
-	const { userkey: userkey } = await sessionRepo.createSession({
+	const { userkey } = await sessionRepo.createSession({
 		person  : person.id,
 		ip        : ip,
 		agent_data : agentData,

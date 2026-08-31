@@ -11,8 +11,7 @@
     "description": "Tabroom.com data & operational API",
     "termsOfService": "https://www.speechanddebate.org/terms-conditions/",
     "license": {
-      "name": "Copyright 2014-2021, National Speech & Debate Association",
-      "identifier": "RPL-1.5"
+      "name": "Copyright 2014-2021, National Speech & Debate Association"
     }
   },
   "security": [],

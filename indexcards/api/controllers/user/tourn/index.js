@@ -48,9 +48,7 @@ export async function getPersonTournPresence(req, res) {
 
 	// Unique lists of stuff that is mine as a coach
 	Object.keys(tournPresence.mine).forEach( (key) => {
-		tournPresence.mine[key] =Array.from(new Set([
-			...sdata[key],
-		])).filter( ( mine ) => {
+		tournPresence.mine[key] =Array.from(new Set(sdata[key])).filter( ( mine ) => {
 			return !tournPresence.me[key].includes( mine );
 		});
 	});
