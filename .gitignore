@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+
+#vitest coverage files
+coverage/
+
+.svelte-kit/
+
+# Indexcards config
+**/config/config.json
+
+

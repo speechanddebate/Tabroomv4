@@ -1,5 +1,5 @@
 
-  Tabroom Indexcards is copyrighted free software by the National Speech &
+  Tabroom is copyrighted free software by the National Speech &
   Debate Association, https://www.speechanddebate.org.
 
   You can redistribute it and/or modify it under either the terms of the RPL
