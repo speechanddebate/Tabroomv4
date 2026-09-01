@@ -13,7 +13,7 @@ runs:
     - name: Login to registry
       run: |
         echo "${{ inputs.registry_password }}" |
-          docker login "$REGISTRY" \
+          docker login registry.speechanddebate.org \
             --username "${{ inputs.registry_username }}" \
             --password-stdin
 
