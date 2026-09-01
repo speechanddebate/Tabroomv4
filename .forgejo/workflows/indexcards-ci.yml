@@ -8,9 +8,6 @@ on:
     branches:
       - main
 
-env:
-  IMAGE: registry.speechanddebate.org/indexcards-ci
-
 jobs:
   ci:
     name: CI
@@ -20,29 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Build CI image
+      - name: Copy Indexcards Config
         run: |
-          docker build \
-            -f Dockerfile \
-            --target dev \
-            -t "${IMAGE}:${FORGEJO_SHA}" \
-            .
-
+          cp .forgejo/config/config.ci.json indexcards/config/config.json
       - name: Lint
         run: |
-          docker run --rm \
-            "${IMAGE}:${FORGEJO_SHA}" \
             npm run lint --workspace=indexcards
 
       - name: Typecheck
         run: |
-          docker run --rm \
-            "${IMAGE}:${FORGEJO_SHA}" \
             npm run typecheck --workspace=indexcards
 
       - name: Test
         run: |
-          docker run --rm \
-            -v "$PWD/.forgejo/config/config.ci.json:/tabroom/indexcards/config/config.json:ro" \
-            "${IMAGE}:${FORGEJO_SHA}" \
             npm run test-ci --workspace=indexcards
