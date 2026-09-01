@@ -8,6 +8,17 @@ on:
     branches:
       - main
 
+  services:
+    mariadb:
+      image: mariadb:11
+      env:
+        MARIADB_ROOT_PASSWORD: root
+        MARIADB_DATABASE: tabroom
+        MARIADB_USER: root
+        MARIADB_PASSWORD: tabroom
+      volumes:
+        - indexcards/tests/test.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+
 jobs:
   ci:
     name: CI
