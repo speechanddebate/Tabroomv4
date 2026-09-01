@@ -22,7 +22,7 @@ jobs:
           docker build \
             -f indexcards/Dockerfile \
             -t "$IMAGE:${FORGEJO_SHA}" \
-            -t "$IMAGE:latest" \
+            -t "$IMAGE:production" \
             .
 
   publish:
