@@ -12,12 +12,6 @@ on:
         required: true
         type: string
 
-    secrets:
-      registry_username:
-        required: true
-      registry_password:
-        required: true
-
 jobs:
   push:
     runs-on: docker

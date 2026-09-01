@@ -29,6 +29,3 @@ jobs:
     uses: ./.forgejo/workflows/publish-image.yml
     with:
       image: indexcards
-    secrets:
-      registry_username: ${{ secrets.REGISTRY_USERNAME }}
-      registry_password: ${{ secrets.REGISTRY_PASSWORD }}
