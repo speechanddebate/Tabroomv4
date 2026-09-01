@@ -23,7 +23,7 @@ jobs:
       - name: Build CI image
         run: |
           docker build \
-            -f indexcards/Dockerfile \
+            -f Dockerfile \
             --target dev \
             -t "${IMAGE}:${FORGEJO_SHA}" \
             .
@@ -32,17 +32,17 @@ jobs:
         run: |
           docker run --rm \
             "${IMAGE}:${FORGEJO_SHA}" \
-            npm run lint
+            npm run lint --workspace=indexcards
 
       - name: Typecheck
         run: |
           docker run --rm \
             "${IMAGE}:${FORGEJO_SHA}" \
-            npm run typecheck
+            npm run typecheck --workspace=indexcards
 
       - name: Test
         run: |
           docker run --rm \
             -v "$PWD/.forgejo/config/config.ci.json:/config/config.json:ro" \
             "${IMAGE}:${FORGEJO_SHA}" \
-            npm run test-ci
+            npm run test-ci --workspace=indexcards
