@@ -1,4 +1,6 @@
 inputs:
+  registry:
+    default: registry.speechanddebate.org
   image:
     description: 'The docker image'
     required: true
@@ -13,10 +15,10 @@ runs:
     - name: Login to registry
       run: |
         echo "${{ inputs.registry_password }}" |
-          docker login registry.speechanddebate.org \
+          docker ${{ inputs.registry }} \
             --username "${{ inputs.registry_username }}" \
             --password-stdin
 
     - name: Push image
       run: |
-        docker push --all-tags "$REGISTRY/${{ inputs.image }}"
+        docker push --all-tags "${{ inputs.registry }}/${{ inputs.image }}"
