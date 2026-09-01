@@ -1,0 +1,97 @@
+name: Indexcards CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  CI: true
+  TZ: America/Chicago
+  NODE_ENV: test
+  CODE_PATH: /home/runner/work/indexcards/indexcards
+  DB_USER: tabroom
+  DB_PASS: tabroom
+  HUSKY: 0
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+jobs:
+  quality-lint:
+    name: Quality - Lint
+    runs-on: linux-amd64
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      - run: npm ci
+      - run: npm run lint
+
+  quality-typecheck:
+    name: Quality - Typecheck
+    runs-on: linux-amd64
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      - run: npm ci
+      - run: npm run typecheck
+
+  test:
+    name: Tests
+    runs-on: linux-amd64
+
+    services:
+      mariadb-test:
+        image: mariadb:10.11.2
+        ports:
+          - 3306:3306
+        env:
+          MARIADB_USER: tabroom
+          MARIADB_PASSWORD: tabroom
+          MARIADB_DATABASE: tabroom
+          MARIADB_ROOT_PASSWORD: tabroom
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=5s
+          --health-timeout=2s
+          --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup test config
+        run: cp ./.forgejo/config/config.ci.json ./config/config.test.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Shutdown Ubuntu MySQL
+        run: sudo service mysql stop
+
+      - name: Load local database
+        run: |
+          mysql \
+            -h 127.0.0.1 \
+            -P 3306 \
+            -u root \
+            -ptabroom \
+            tabroom < ./tests/test.sql
+
+      - name: Run Tests
+        run: npm run test-ci
