@@ -43,6 +43,6 @@ jobs:
       - name: Test
         run: |
           docker run --rm \
-            -v "$PWD/.forgejo/config/config.ci.json:/config/config.json:ro" \
+            -v "$PWD/.forgejo/config/config.ci.json:/tabroom/indexcards/config/config.json:ro" \
             "${IMAGE}:${FORGEJO_SHA}" \
             npm run test-ci --workspace=indexcards
