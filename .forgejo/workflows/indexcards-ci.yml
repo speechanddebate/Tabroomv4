@@ -22,6 +22,12 @@ jobs:
           MARIADB_PASSWORD: tabroom
         volumes:
           - indexcards/tests/test.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+          --health-start-period=10s
 
     steps:
       - name: Checkout
