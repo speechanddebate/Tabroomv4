@@ -15,7 +15,7 @@ runs:
     - name: Login to registry
       run: |
         echo "${{ inputs.registry_password }}" |
-          docker ${{ inputs.registry }} \
+          docker login ${{ inputs.registry }} \
             --username "${{ inputs.registry_username }}" \
             --password-stdin
 
