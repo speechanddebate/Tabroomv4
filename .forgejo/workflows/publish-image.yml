@@ -14,7 +14,7 @@ on:
 
 jobs:
   push:
-    runs-on: docker
+    runs-on: linux-amd64
 
     env:
       REGISTRY: registry.speechanddebate.org
