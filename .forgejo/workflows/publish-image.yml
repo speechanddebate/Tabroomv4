@@ -1,0 +1,38 @@
+name: Push Docker Image
+
+# Pushes a supplied image to the S&D registry.
+# Pushes all tags that exist on the supplied image.
+# Tag the image before calling this workflow.
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Docker image name"
+        required: true
+        type: string
+
+    secrets:
+      registry_username:
+        required: true
+      registry_password:
+        required: true
+
+jobs:
+  push:
+    runs-on: docker
+
+    env:
+      REGISTRY: registry.speechanddebate.org
+
+    steps:
+      - name: Login to registry
+        run: |
+          echo "${{ secrets.registry_password }}" |
+            docker login "$REGISTRY" \
+              --username "${{ secrets.registry_username }}" \
+              --password-stdin
+
+      - name: Push image
+        run: |
+          docker push --all-tags "$REGISTRY/${{ inputs.image }}"

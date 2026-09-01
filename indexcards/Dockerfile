@@ -1,44 +1,53 @@
-FROM node:24.13.1-trixie AS base
-WORKDIR /indexcards
+# Docker build context: tabroom/
+# mount config at config/config.json
 
-COPY package.json ./
-COPY package-lock.json ./
+FROM node:24.13.1-trixie AS base
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY indexcards/package.json ./indexcards/package.json
+
 
 FROM base AS dev
-ENV NODE_ENV=development
-RUN npm ci --include=dev
 
-COPY . .
+ENV NODE_ENV=development
+
+RUN npm ci --include=dev --ignore-scripts
+
+COPY indexcards ./indexcards
 
 ENV TZ="UTC"
 ENV PORT=3000
 
-CMD ["npm" , "run" , "dev"]
+CMD ["npm", "run", "dev", "--workspace=indexcards"]
+
 
 FROM base AS build
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
-COPY . .
+COPY indexcards ./indexcards
 
-RUN npm run build
+RUN npm run build --workspace=indexcards
+
 
 FROM node:24.13.1-trixie-slim AS prod
 
 ENV NODE_ENV=production
+WORKDIR /app
 
-WORKDIR /indexcards
+COPY package.json package-lock.json ./
+COPY indexcards/package.json ./indexcards/package.json
 
-COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts \
+    && npm cache clean --force
 
-# do not install dev and ignore scripts to prevent husky errors
-# run cache clean to avoid adding npm cache to prod image
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=build /app/indexcards/dist ./indexcards/dist
 
-# copy ONLY the built app
-COPY --from=build /indexcards/dist ./dist
+WORKDIR /app/indexcards
 
 EXPOSE 3000
+
 ENV CONFIG_DIR="/config"
 
 CMD ["node", "dist/app.js"]
