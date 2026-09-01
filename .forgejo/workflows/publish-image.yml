@@ -13,7 +13,7 @@ on:
         type: string
 
 jobs:
-  push:
+  publish:
     runs-on: linux-amd64
 
     env:
