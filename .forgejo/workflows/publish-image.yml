@@ -20,6 +20,19 @@ jobs:
       REGISTRY: registry.speechanddebate.org
 
     steps:
+    - name: Login to registry
+      env:
+        REGISTRY_USERNAME: ${{ secrets.registry_username }}
+        REGISTRY_PASSWORD: ${{ secrets.registry_password }}
+      run: |
+        echo "username is ${#REGISTRY_USERNAME} chars"
+        echo "password is ${#REGISTRY_PASSWORD} chars"
+    
+        printf '%s' "$REGISTRY_PASSWORD" |
+          docker login "$REGISTRY" \
+            --username "$REGISTRY_USERNAME" \
+            --password-stdin
+        
       - name: Login to registry
         run: |
           echo "${{ secrets.registry_password }}" |
