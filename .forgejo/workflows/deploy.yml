@@ -26,10 +26,11 @@ jobs:
             .
 
   publish:
-    needs: build
-    uses: ./.forgejo/workflows/publish-image.yml
-    with:
-      image: indexcards
-    secrets:
-      registry_username: ${{ secrets.REGISTRY_USERNAME }}
-      registry_password: ${{ secrets.REGISTRY_PASSWORD }}
+      runs-on: linux-amd64
+      needs: build
+      steps:
+        - uses: ../actions/docker-publish
+          with:
+            image: indexcards
+            registry_username: ${{ secrets.REGISTRY_USERNAME }}
+            registry_password: ${{ secrets.REGISTRY_PASSWORD }}
