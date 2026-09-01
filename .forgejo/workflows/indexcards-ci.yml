@@ -14,7 +14,7 @@ jobs:
     runs-on: linux-amd64
     services:
       mariadb-test:
-        image: mariadb:10.11.2
+        image: mariadb:12
         ports:
           - '3306:3306'
         env:
@@ -22,7 +22,7 @@ jobs:
           MARIADB_PASSWORD: tabroom
           MARIADB_DATABASE: tabroom
           MARIADB_ROOT_PASSWORD: tabroom
-        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=3
+        options: --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=2s --health-retries=20
 
     steps:
       - name: Checkout
