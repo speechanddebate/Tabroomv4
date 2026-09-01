@@ -32,4 +32,4 @@ jobs:
       image: indexcards
     secrets:
       registry_username: ${{ secrets.REGISTRY_USERNAME }}
-      registry_password: ${{ secrets.REGESTRY_PASSOWRD }}
+      registry_password: ${{ secrets.REGISTRY_PASSWORD }}

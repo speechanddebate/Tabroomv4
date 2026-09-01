@@ -1,0 +1,5 @@
+FROM alpine
+
+COPY . /context
+
+RUN du -h -d 2 /context | sort -h | tail -20

@@ -1,0 +1,11 @@
+# general
+**/node_modules
+.git
+.githooks
+.forgejo
+# Schemats specific
+**/build
+**/.svelte-kit
+# Indexcards specific
+**/dist
+**/coverage
