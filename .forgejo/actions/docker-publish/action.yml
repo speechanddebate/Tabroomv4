@@ -2,9 +2,9 @@ inputs:
   image:
     description: 'The docker image'
     required: true
-  repository_username:
+  registry_username:
     required: true
-  repository_password:
+  registry_password:
     required: true
 
 runs:
