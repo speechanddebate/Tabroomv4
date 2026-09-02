@@ -36,6 +36,11 @@ jobs:
         run: |
           cp .forgejo/config/config.ci.json indexcards/config/config.json
 
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ./package.json
+
       - name: Install dependancies
         run: |
             npm ci

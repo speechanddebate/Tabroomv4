@@ -2,7 +2,7 @@
 	"db": {
 		"host": "mariadb",
 		"port": 3306,
-		"user": "root",
+		"user": "tabroom",
 		"pass": "tabroom"
 	}
 }
