@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/rest/adController.js';
 import z from 'zod';
-import { HomepageAd } from '../../../openapi/schemas/index.js';
+import { HomepageAdSchema } from '@tabroom/types';
 import { HomepageAdExample } from '../../../openapi/examples/Ad.js';
 
 const router = Router();
@@ -18,7 +18,7 @@ router.route('/').get(controller.getPublishedAds).openapi = {
 			description: 'An array of Ads to be displayed',
 			content: {
 				'application/json': {
-					schema: z.array(HomepageAd),
+					schema: z.array(HomepageAdSchema),
 					example: HomepageAdExample,
 				},
 			},

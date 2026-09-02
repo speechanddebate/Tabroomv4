@@ -2,7 +2,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import * as schemas from '../../../openapi/schemas/index.js';
+import { SessionSchema } from '@tabroom/types';
 
 describe('Session Router', () => {
 	let personId : number;
@@ -23,7 +23,7 @@ describe('Session Router', () => {
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(schemas.Session);
+			expect(res.body).toMatchSchema(SessionSchema);
 			expect(res.body).toHaveProperty('id');
 			expect(res.body.Person).toHaveProperty('id', personId);
 		});

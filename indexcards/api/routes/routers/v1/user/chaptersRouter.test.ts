@@ -2,7 +2,7 @@ import request from 'supertest';
 import config from '../../../../config.js';
 import server from '../../../../../app.js';
 import z from 'zod';
-import { UserChapter } from '../../../openapi/schemas/index.js';
+import { UserChapterSchema } from '@tabroom/types';
 import factories from '../../../../../tests/factories/index.js';
 
 let userkey: string, personId: number, chapterId: number;
@@ -26,7 +26,7 @@ it('Returns a list of chapters a person has permissions in', async () => {
 		.expect('Content-Type', /json/)
 		.expect(200);
 
-	expect(res.body).toMatchSchema(z.array(UserChapter));
+	expect(res.body).toMatchSchema(z.array(UserChapterSchema));
 	expect(res.body.filter((chapter: { id: number }) => chapter.id === chapterId).length).toBe(1);
 	const chapter = res.body.find((chapter: { id: number }) => chapter.id === chapterId);
 	

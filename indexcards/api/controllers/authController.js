@@ -4,7 +4,7 @@ import config from '../config.js';
 import personRepo from '../repos/personRepo.js';
 import sessionRepo from '../repos/sessionRepo.js';
 import { ValidationError } from '../helpers/errors/errors.js';
-import { LoginResponse } from '../routes/openapi/schemas/index.js';
+import { LoginResponseSchema } from '@tabroom/types';
 
 export async function login(req, res) {
 	const { username, password } = req.valid.body;
@@ -20,7 +20,7 @@ export async function login(req, res) {
 	}
 
 	const { person, token } = result;
-	const validatedResponse = LoginResponse.parse({
+	const validatedResponse = LoginResponseSchema.parse({
 		token: token,
 		Person: { //should conform to personSchema
 			id: person.id,

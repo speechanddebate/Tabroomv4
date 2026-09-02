@@ -2,7 +2,7 @@ import factories from '../../../../../tests/factories/index.js';
 import request from 'supertest';
 import server from '../../../../../app.js';
 import z from 'zod';
-import { JudgeHistory } from '../../../openapi/schemas/index.js';
+import { JudgeHistorySchema } from '@tabroom/types';
 
 describe('judgesRouter', () => {
 	let personId : number;
@@ -72,7 +72,7 @@ describe('judgesRouter', () => {
 				.set('Accept', 'application/json')
 				.set('Authorization', `Bearer ${userkey}`)
 				.expect(200);
-			expect(res.body).toMatchSchema(z.array(JudgeHistory));
+			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
 		});
 	});
 	describe("POST /user/judges/paradigm", () => {

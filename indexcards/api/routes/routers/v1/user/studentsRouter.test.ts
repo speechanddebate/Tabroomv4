@@ -2,7 +2,7 @@ import factories from '../../../../../tests/factories/index.js';
 import request from 'supertest';
 import server from '../../../../../app.js';
 import z from 'zod';
-import { Student } from '../../../openapi/schemas/index.js';
+import { StudentSchema } from '@tabroom/types';
 
 describe('studentsRouter', () => {
 	let personId : number;
@@ -104,7 +104,7 @@ describe('studentsRouter', () => {
 				.set('Authorization', `Bearer ${userkey}`)
 				.expect(200);
 			//assert that the response contains the pending link request
-			expect(res.body).toMatchSchema(z.array(Student));
+			expect(res.body).toMatchSchema(z.array(StudentSchema));
 			expect(res.body).toEqual(
 				expect.arrayContaining([
 					expect.objectContaining({ id: studentId })

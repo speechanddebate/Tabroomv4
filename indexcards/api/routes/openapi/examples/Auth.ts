@@ -1,8 +1,8 @@
 import type { z } from 'zod';
 import {
-	LoginRequest as LoginRequestSchema,
-	LoginResponse as LoginResponseSchema,
-} from '../schemas/Auth.js';
+	LoginRequestSchema,
+	LoginResponseSchema,
+} from '@tabroom/types';
 
 export const LoginRequest = {
 	username: 'johndoe@tabroom.com',

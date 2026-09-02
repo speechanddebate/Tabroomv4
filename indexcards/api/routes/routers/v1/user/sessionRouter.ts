@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as schemas from '../../../openapi/schemas/index.js';
+import { SessionSchema } from '@tabroom/types';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.route('/').get(getSession).openapi = {
 			description: 'User session',
 			content: {
 				'application/json': {
-					schema: schemas.Session,
+					schema: SessionSchema,
 				},
 			},
 		},

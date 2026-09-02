@@ -9,8 +9,7 @@ import resultSetRouter from './resultSetRouter.js';
 import eventRouter from './eventRouter.js';
 import entryRouter from './entryRouter.js';
 
-import { File } from '../../../openapi/schemas/index.js';
-import * as utils from '../../../openapi/schemas/utils.js';
+import { FileSchema } from '@tabroom/types';
 const router = Router({ mergeParams: true });
 
 router.route('/').get(ValidateRequest,controller.getTourns).openapi = {
@@ -115,14 +114,14 @@ router.route('/:tournId/files').get(ValidateRequest, controller.getPublishedFile
 	description: 'Retrieve a list of published files associated with a specific tournament.',
 	tags: ['Tournaments'],
 	requestParams: {
-		path: z.object({tournId: utils.id }),
+		path: z.object({tournId: z.coerce.number().int() }),
 	},
 	responses: {
 		200: {
 			description: 'List of tournament files',
 			content: {
 				'application/json': {
-					schema: z.array(File),
+					schema: z.array(FileSchema),
 				},
 			},
 		},

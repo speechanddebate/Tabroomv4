@@ -1,7 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import z from 'zod';
-import { Quiz } from '../../../openapi/schemas/index.js';
+import { QuizSchema } from '@tabroom/types';
 import factories from '../../../../../tests/factories/index.js';
 
 describe('Quizzes Router', () => {
@@ -10,7 +10,7 @@ describe('Quizzes Router', () => {
 	  const response = await request(server)
 	  .get('/v1/rest/quizzes');
 	  expect(response.status).toBe(200);
-	  expect(response.body).toMatchSchema(z.array(Quiz));
+	  expect(response.body).toMatchSchema(z.array(QuizSchema));
 	});
 	it('should not return hidden, non-sitewide, or admin-only quizzes', async () => {
 		const { quizId: hiddenQuizId } = await factories.quiz.create({
@@ -25,7 +25,7 @@ describe('Quizzes Router', () => {
 	  const response = await request(server)
 	  .get('/v1/rest/quizzes');
 	  expect(response.status).toBe(200);
-	  expect(response.body).toMatchSchema(z.array(Quiz));
+	  expect(response.body).toMatchSchema(z.array(QuizSchema));
 	  const quizIds = response.body.map((quiz: { id: string }) => quiz.id);
 	  expect(quizIds).not.toContain(hiddenQuizId);
 	  expect(quizIds).not.toContain(nonSitewideQuizId);
@@ -42,7 +42,7 @@ describe('Quizzes Router', () => {
 		.get('/v1/rest/quizzes')
 		.set('Authorization', `Bearer ${userkey}`);
 		expect(response.status).toBe(200);
-		expect(response.body).toMatchSchema(z.array(Quiz));
+		expect(response.body).toMatchSchema(z.array(QuizSchema));
 		const quiz = response.body.find((q: { id: string }) => q.id === quizId);
 		expect(quiz).toBeDefined();
 		expect(quiz.PersonQuizzes).toBeDefined();

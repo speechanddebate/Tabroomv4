@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import con from '../../../../controllers/rest/QuizController.js';
 import z from 'zod';
-import { Quiz } from '../../../openapi/schemas/index.js';
+import { QuizSchema } from '@tabroom/types';
 import { optionalAuth } from '../../../openapi/security.js';
 
 const router = Router();
@@ -16,8 +16,8 @@ router.route('/')
 	security: optionalAuth,
 	requestParams: {
 		query: z.object({
-			limit: z.number().optional().describe('Number of quizzes to return'),
-			offset: z.number().optional().describe('Number of quizzes to skip'),
+			limit: z.coerce.number().optional().meta({ description: 'Number of quizzes to return' }),
+			offset: z.coerce.number().optional().meta({ description: 'Number of quizzes to skip' }),
 		}),
 	},
 	responses: {
@@ -25,7 +25,7 @@ router.route('/')
 			description: 'List of quizzes',
 			content: {
 				'application/json': {
-					schema: z.array(Quiz),
+					schema: z.array(QuizSchema),
 				},
 			},
 		},

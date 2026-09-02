@@ -13,7 +13,7 @@
 		"build:openapi": "tsx scripts/build-openapi.ts",
 		"dev": "TZ='UTC' NODE_ENV='development' tsx watch app.js",
 		"test": "NODE_ENV='test' VITEST_SEGFAULT_RETRY=3 vitest watch",
-		"test-ci": "NODE_ENV='test' vitest --watch false --run",
+		"test:ci": "NODE_ENV='test' vitest --watch false --run",
 		"cover": "NODE_ENV='test' NODE_OPTIONS='--experimental-vm-modules --no-warnings --experimental-specifier-resolution=node' VITEST_SEGFAULT_RETRY=3 vitest --coverage",
 		"dev-debug": "node --inspect-brk=9229 --experimental-vm-modules --experimental-specifier-resolution=node --enable-source-maps app.js",
 		"lint": "oxlint .",
@@ -39,6 +39,7 @@
 		"@maxmind/geoip2-node": "^3.2.0",
 		"@scalar/express-api-reference": "^0.10.1",
 		"@speechanddebate/nsda-js-utils": "^1.0.15",
+		"@tabroom/types": "1.0.0",
 		"authorizenet": "^1.0.10",
 		"axios": "^1.5.1",
 		"basic-auth": "^2.0.1",
@@ -71,7 +72,7 @@
 		"uuid": "^13.0.0",
 		"winston": "^3.2.1",
 		"xml2js": "^0.6.2",
-		"zod": "~4.4.3"
+		"zod": "^4.5.4"
 	},
 	"devDependencies": {
 		"@alt3/sequelize-to-json-schemas": "^0.3.55",

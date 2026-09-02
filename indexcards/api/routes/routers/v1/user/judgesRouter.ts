@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import judgesController from '../../../../controllers/user/judgesController.js';
-import { UnlinkedJudge, JudgeHistory } from '../../../openapi/schemas/index.js';
+import { UnlinkedJudgeSchema, JudgeHistorySchema } from '@tabroom/types';
 import z from 'zod';
-import * as utils from '../../../openapi/schemas/utils.js';
 
 const router = Router();
 
@@ -19,7 +18,7 @@ router.route('/linkRequests')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.array(UnlinkedJudge).meta({
+						schema: z.array(UnlinkedJudgeSchema).meta({
 							description: 'List of unlinked judges that have requested to be linked to the user',
 						})
 						},
@@ -37,10 +36,10 @@ router.route('/claim')
 		tags: ['Orval'],
 		requestParams: {
 			query: z.object({
-				judgeId: utils.id.optional().meta({
+				judgeId: z.coerce.number().int().optional().meta({
 					description: 'ID of the judge to claim (if claiming a judge)',
 				}),
-				chapterJudgeId: utils.id.optional().meta({
+				chapterJudgeId: z.coerce.number().int().optional().meta({
 					description: 'ID of the chapter judge to claim (if claiming a chapter judge)',
 				}),
 			}),
@@ -73,8 +72,8 @@ router.route('/history')
 		tags: ['Orval','Judges'],
 		requestParams: {
 			query: z.object({
-				limit: utils.limit.default(100),
-				offset: utils.offset.default(0),
+			limit: z.coerce.number().int().default(100),
+			offset: z.coerce.number().int().default(0),
 			})
 		},
 		responses: {
@@ -82,7 +81,7 @@ router.route('/history')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: JudgeHistory,
+						schema: JudgeHistorySchema,
 					},
 				},
 			},
@@ -149,7 +148,7 @@ router.route('/livedocs')
 				content: {
 					'application/json': {
 						schema: z.array(z.object({
-							judgeId: utils.id,
+							judgeId: z.coerce.number().int(),
 							categoryAbbr: z.string(),
 							tournName: z.string(),
 							tournEnd: z.iso.datetime(),

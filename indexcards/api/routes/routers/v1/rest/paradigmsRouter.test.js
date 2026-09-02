@@ -1,7 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import { JudgeRecord, ParadigmDetails } from '../../../openapi/schemas/index.js';
+import { JudgeRecordSchema, ParadigmDetailsSchema } from '@tabroom/types';
 import { expect } from 'chai';
 import z from 'zod';
 
@@ -63,7 +63,7 @@ describe('GET /rest/paradigms/:personId', () => {
             .expect('Content-Type', /json/)
             .expect(200);
 
-		expect(res.body).toMatchSchema(ParadigmDetails);
+		expect(res.body).toMatchSchema(ParadigmDetailsSchema);
 	});
 });
 describe('GET /rest/paradigms/:personId/record', () => {
@@ -87,7 +87,7 @@ describe('GET /rest/paradigms/:personId/record', () => {
             .expect(200);
 
 		const body = res.body;
-		expect(body).toMatchSchema(z.array(JudgeRecord));
+		expect(body).toMatchSchema(z.array(JudgeRecordSchema));
 	});
 });
 

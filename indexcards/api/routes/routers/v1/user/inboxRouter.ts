@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/user/inbox.js';
 import { requireLogin } from '../../../../middleware/authorization/authorization.js';
-import { InboxMessage } from '../../../openapi/schemas/index.js';
+import { InboxMessageSchema } from '@tabroom/types';
 import z from 'zod';
-import * as utils from '../../../openapi/schemas/utils.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { requireAuth } from '../../../openapi/security.js';
 
@@ -23,7 +22,7 @@ router.route('/').get(controller.inboxList).openapi = {
 			description: 'Inbox list',
 			content: {
 				'application/json': {
-					schema:  z.array(InboxMessage),
+					schema:  z.array(InboxMessageSchema),
 				},
 			},
 		},
@@ -72,7 +71,7 @@ router.route('/:messageId')
 		security    : requireAuth,
 		requestParams: {
 			path: z.object({
-				messageId: utils.id.meta({ description: 'The ID of the message' }),
+				messageId: z.coerce.number().int().meta({ description: 'The ID of the message' }),
 			}),
 		},
 		get: {
@@ -84,7 +83,7 @@ router.route('/:messageId')
 					description: 'Inbox message',
 					content: {
 						'application/json': {
-							schema: InboxMessage,
+							schema: InboxMessageSchema,
 						},
 					},
 				},
@@ -107,7 +106,7 @@ router.route('/:messageId/markRead').post(ValidateRequest, controller.readMessag
 	security    : requireAuth,
 	requestParams: {
 		path: z.object({
-			messageId: utils.id.meta({ description: 'The ID of the message to mark as read' }),
+			messageId: z.coerce.number().int().meta({ description: 'The ID of the message to mark as read' }),
 		}),
 	},
 	responses: { 204: { description: 'Message marked as read' } },
@@ -122,7 +121,7 @@ router.route('/:messageId/markUnread').post(ValidateRequest, controller.unreadMe
 	security    : requireAuth,
 	requestParams: {
 		path: z.object({
-			messageId: utils.id.meta({ description: 'The ID of the message to mark as unread' }),
+			messageId: z.coerce.number().int().meta({ description: 'The ID of the message to mark as unread' }),
 		}),
 	},
 	responses: { 204: { description: 'Message marked as unread' } },

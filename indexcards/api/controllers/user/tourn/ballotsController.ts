@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
-import type { CurrentBallotType } from '../../../routes/openapi/schemas/index.js';
+import type { CurrentBallot } from '@tabroom/types';
 import sectionRepo from '../../../repos/sectionRepo.js';
 
 export async function getCurrent(req: Request,res: Response) {
 	const { tournId } = req.params;
 	const sections = await sectionRepo.getCurrentBallots(req.actor.Person.id,tournId);
 
-	let ballots: CurrentBallotType[] = [];
+	let ballots: CurrentBallot[] = [];
 
 	sections.forEach(s => {
 		if(!s.Round.published || !s.Round.settings.judges_ballots_visible) {

@@ -2,7 +2,7 @@ import z from 'zod';
 import controller from '../../../../controllers/rest/paradigmsController.js';
 import { requireLogin } from '../../../../middleware/authorization/authorization.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { JudgeRecord, ParadigmDetails } from '../../../openapi/schemas/index.js';
+import { JudgeRecordSchema, ParadigmDetailsSchema } from '@tabroom/types';
 import { Router } from 'express';
 
 const router = Router();
@@ -68,7 +68,7 @@ router.route('/:personId').get(ValidateRequest, controller.getParadigmByPersonId
 			description: 'Paradigm details for the specified person ID',
 			content: {
 				'application/json': {
-					schema: ParadigmDetails,
+					schema: ParadigmDetailsSchema,
 				},
 			},
 		},
@@ -93,7 +93,7 @@ router.route('/:personId/record').get(ValidateRequest, controller.getJudgingReco
 			description: 'Judging record for the specified person ID',
 			content: {
 				'application/json': {
-					schema: z.array(JudgeRecord),
+					schema: z.array(JudgeRecordSchema),
 				},
 			},
 		},

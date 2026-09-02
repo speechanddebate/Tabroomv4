@@ -3,7 +3,7 @@ import * as controller from '../../../../controllers/user/tourn/index.js';
 import * as ballots from '../../../../controllers/user/tourn/ballotsController.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import z from 'zod';
-import { Tourn, Fine, CurrentBallot, PersonTournSummary } from '../../../openapi/schemas/index.js';
+import { FineSchema, CurrentBallotSchema, PersonTournSummarySchema, TournSchema } from '@tabroom/types';
 
 const router = Router();
 
@@ -23,7 +23,7 @@ router.route('/').get(ValidateRequest,controller.getPersonTourns).openapi = {
 			description: 'Tourn Summary',
 			content: {
 				'application/json': {
-					schema: z.array(Tourn),
+					schema: z.array(TournSchema),
 				},
 			},
 		},
@@ -60,7 +60,7 @@ router.route('/:tournId/summary').get(ValidateRequest,controller.getTournSummary
 			description: 'Summary',
 			content: {
 				'application/json': {
-					schema: PersonTournSummary,
+					schema: PersonTournSummarySchema,
 				},
 			},
 		},
@@ -81,7 +81,7 @@ router.route('/:tournId/fines').get(ValidateRequest,controller.getTournFines).op
 			description: 'Fines',
 			content: {
 				'application/json': {
-					schema: z.array(Fine),
+					schema: z.array(FineSchema),
 				},
 			},
 		},
@@ -105,7 +105,7 @@ router.route('/:tournId/ballots').get(ValidateRequest,controller.getTournBallots
 			description: 'Ballots',
 			content: {
 				'application/json': {
-					schema: z.array(CurrentBallot),
+					schema: z.array(CurrentBallotSchema),
 				},
 			},
 		},
@@ -126,7 +126,7 @@ router.route('/:tournId/ballots/current')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.array(CurrentBallot),
+						schema: z.array(CurrentBallotSchema),
 					},
 				},
 			},

@@ -2,7 +2,11 @@ import { Router } from 'express';
 import z from 'zod';
 import { ValidateRequest } from '../../../middleware/validation.js';
 import { requireLogin, requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
-import * as schemas from '../../openapi/schemas/index.js';
+import {
+	LoginRequestSchema,
+	LoginResponseSchema,
+	RegisterRequestSchema,
+} from '@tabroom/types';
 import * as examples from '../../openapi/examples/index.js';
 import * as controller from '../../../controllers/authController.js';
 
@@ -19,7 +23,7 @@ router.route('/login').post(ValidateRequest, controller.login).openapi = {
 		required: true,
 		content: {
 			'application/json': {
-				schema: schemas.LoginRequest,
+				schema: LoginRequestSchema,
 				example: examples.LoginRequest,
 			},
 		},
@@ -29,7 +33,7 @@ router.route('/login').post(ValidateRequest, controller.login).openapi = {
 			description: 'Success',
 			content: {
 				'application/json': {
-					schema: schemas.LoginResponse,
+					schema: LoginResponseSchema,
 					example: examples.LoginResponse,
 				},
 			},
@@ -60,7 +64,7 @@ router.route('/su').post(requireSiteAdmin, ValidateRequest, controller.su).opena
 		content: {
 			'application/json': {
 				schema: z.object({
-					suId: z.int().positive(),
+					suId: z.coerce.number().int().positive(),
 				}),
 			},
 		},
@@ -96,7 +100,7 @@ router.route('/register').post(ValidateRequest, controller.register).openapi = {
 		required: true,
 		content: {
 			'application/json': {
-				schema: schemas.RegisterRequest,
+				schema: RegisterRequestSchema,
 			},
 		},
 	},

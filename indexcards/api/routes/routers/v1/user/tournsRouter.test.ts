@@ -1,7 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import * as schemas from '../../../openapi/schemas/index.js';
+import { CurrentBallotSchema } from '@tabroom/types';
 import z from 'zod';
 
 let personId : number;
@@ -22,7 +22,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		expect(res.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 	});
 	it('Does not return ballots for unpublished rounds or rounds with judges_ballots_visible set to false', async () => {
 		const {tournId } = await factories.person.createBallot({personId, Round: { published: false} });
@@ -33,7 +33,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		expect(res.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res.body).toHaveLength(0);
 
 		const { tournId:tournId2 } = await factories.person.createBallot({personId, Round: { settings: { judges_ballots_visible: false } } });
@@ -44,7 +44,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		expect(res2.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res2.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res2.body).toHaveLength(0);
 	});
 	it('Does not return audited ballots', async () => {
@@ -57,7 +57,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		expect(res.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res.body).toHaveLength(0);
 
 	});
@@ -73,7 +73,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 			
-		expect(res.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res.body).toHaveLength(1);
 
 		const { tournId: tournId2 }=await factories.person.createBallot({personId, 
@@ -87,7 +87,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 			
-		expect(res2.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res2.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res2.body).toHaveLength(1);
 	});
 	it('does not return async ballots past the deadline', async () => {
@@ -101,7 +101,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		expect(res.body).toMatchSchema(z.array(schemas.CurrentBallot));
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res.body).toHaveLength(0);
 	});
 	});

@@ -3,7 +3,7 @@ import * as con from '../../../../controllers/rest/studentsController.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { requireLogin } from '../../../../middleware/authorization/authorization.js';
 import z from 'zod';
-import { UnlinkedStudentSearch } from '../../../openapi/schemas/index.js';
+import { UnlinkedStudentSearchSchema } from '@tabroom/types';
 import { requireAuth } from '../../../openapi/security.js';
 
 const router = Router();
@@ -29,7 +29,7 @@ router.route('/unlinked/search')
   			description: 'List of unlinked students matching search criteria',
   			content: {
   				'application/json': {
-  					schema: z.array(UnlinkedStudentSearch),
+  					schema: z.array(UnlinkedStudentSearchSchema),
   				},
   			},
   		},
