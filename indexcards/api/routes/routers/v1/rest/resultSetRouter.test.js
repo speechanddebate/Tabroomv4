@@ -1,6 +1,6 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
-import { ResultSet, EventResultSets } from '../../../openapi/schemas/index.js';
+import { ResultSetSchema, EventResultSetsSchema } from '@tabroom/types';
 import z from 'zod';
 
 describe('GET /results', () => {
@@ -12,7 +12,7 @@ describe('GET /results', () => {
             .expect(200);
 
 		const body = res.body;
-		expect(body).toMatchSchema(z.record(z.int(), EventResultSets));
+		expect(body).toMatchSchema(z.record(z.int(), EventResultSetsSchema));
 	});
 
 	it('Returns a particular result set for a valid tournID and rsID', async () => {
@@ -23,7 +23,7 @@ describe('GET /results', () => {
             .expect(200);
 
 		const body = res.body;
-		expect(body).toMatchSchema(z.array(ResultSet));
+		expect(body).toMatchSchema(z.array(ResultSetSchema));
 
 		// Property test: every result set must be published
 		//expect(body.published).toBe(1); deleted published from the repo result?

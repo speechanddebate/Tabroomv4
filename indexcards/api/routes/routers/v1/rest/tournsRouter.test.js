@@ -2,7 +2,7 @@ import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories';
 import { faker } from '@faker-js/faker';
-import { File } from '../../../openapi/schemas/index.js';
+import { FileSchema } from '@tabroom/types';
 
 let testTourn;
 beforeAll(async () => {
@@ -68,7 +68,7 @@ describe('GET /rest/tourns/:id/files', () => {
 
 		const body = res.body;
 		body.forEach(element => {
-			expect(element).toMatchSchema(File);
+			expect(element).toMatchSchema(FileSchema);
 		});
 	});
 	it('should return 404 if the tourn does not exist', async () => {

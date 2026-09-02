@@ -2,8 +2,7 @@ import con from '../../../../controllers/user/studentsController.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { Router } from 'express';
 import z from 'zod';
-import { Student } from '../../../openapi/schemas/index.js';
-import * as utils from '../../../openapi/schemas/utils.js';
+import { StudentSchema } from '@tabroom/types';
 
 const router = Router();
 
@@ -19,7 +18,7 @@ router.route('/linkRequests')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.array(Student).meta({
+						schema: z.array(StudentSchema).meta({
 							description: 'List of unlinked students that have requested to be linked to the user',
 						})
 						},
@@ -37,7 +36,7 @@ router.route('/claim')
 		tags: ['Orval'],
 		requestParams: {
 			query: z.object({
-				studentId: utils.id.optional().meta({
+				studentId: z.coerce.number().int().optional().meta({
 					description: 'ID of the student to claim',
 				}),
 			}),

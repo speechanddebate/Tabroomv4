@@ -2,7 +2,7 @@ import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import z from 'zod';
-import { UnlinkedStudentSearch } from '../../../openapi/schemas/index.js';
+import { UnlinkedStudentSearchSchema } from '@tabroom/types';
 
 describe('GET /rest/students/unlinked/search', () => {
 	let userkey: string;
@@ -46,7 +46,7 @@ describe('GET /rest/students/unlinked/search', () => {
 		expect(res).not.toBeProblemResponse();
 		expect(Array.isArray(res.body)).toBe(true);
 		expect(res.body.length).toBeGreaterThanOrEqual(1);
-		expect(res.body).toMatchSchema(z.array(UnlinkedStudentSearch));
+		expect(res.body).toMatchSchema(z.array(UnlinkedStudentSearchSchema));
 	});
 
 	it('returns an empty list when no students match', async () => {
@@ -72,7 +72,7 @@ describe('GET /rest/students/unlinked/search', () => {
 		expect(res).not.toBeProblemResponse();
 		expect(Array.isArray(res.body)).toBe(true);
 		expect(res.body.length).toBeGreaterThanOrEqual(1);
-		expect(res.body).toMatchSchema(z.array(UnlinkedStudentSearch));
+		expect(res.body).toMatchSchema(z.array(UnlinkedStudentSearchSchema));
 
 	});
 });

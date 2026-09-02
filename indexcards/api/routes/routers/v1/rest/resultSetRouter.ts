@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/rest/resultSetController.js';
 import z from 'zod';
-import * as utils from '../../../openapi/schemas/utils.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { ResultSet, EventResultSets } from '../../../openapi/schemas/ResultSet.js';
+import { ResultSetSchema, EventResultSetsSchema } from '@tabroom/types';
 
 // Note that this endpoint is for the delivery of result sets, which are
 // collated and calculated sets of results organized by tiebreakers, not for
@@ -20,7 +19,7 @@ router.route('/').get(ValidateRequest, controller.getResultSets).openapi = {
 	operationId : 'getTournResultSets',
 	requestParams: {
 		path: z.object({
-			tournId: utils.id.meta({ description: 'ID of the tournament to get results for' }),
+			tournId: z.coerce.number().int().meta({ description: 'ID of the tournament to get results for' }),
 		}),
 	},
 	responses: {
@@ -28,7 +27,7 @@ router.route('/').get(ValidateRequest, controller.getResultSets).openapi = {
 			description: 'Result Sets connected to a given event, with published aggregated result data attached',
 			content: {
 				'application/json': {
-					schema: z.record(z.int(), EventResultSets),
+					schema: z.record(z.coerce.number().int(), EventResultSetsSchema),
 				},
 			},
 		},
@@ -48,8 +47,8 @@ router.route('/:resultSetId').get(ValidateRequest, controller.getResultSet).open
 			}),
 		}),
 		path: z.object({
-			tournId     : utils.id.meta({ description: 'ID of the tournament to get results for' }),
-			resultSetId : utils.id.meta({ description: 'ID of the result set to get' }),
+		tournId     : z.coerce.number().int().meta({ description: 'ID of the tournament to get results for' }),
+		resultSetId : z.coerce.number().int().meta({ description: 'ID of the result set to get' }),
 		}),
 	},
 	responses: {
@@ -57,7 +56,7 @@ router.route('/:resultSetId').get(ValidateRequest, controller.getResultSet).open
 			description: 'Result Set with published aggregated result data attached',
 			content: {
 				'application/json': {
-					schema: z.array(ResultSet),
+					schema: z.array(ResultSetSchema),
 				},
 			},
 		},
@@ -72,8 +71,8 @@ router.route('/event/:eventId').get(ValidateRequest, controller.getResultSets).o
 	operationId : 'getEventResultSets',
 	requestParams: {
 		path: z.object({
-			tournId: utils.id.meta({ description: 'ID of the tournament to get results for' }),
-			eventId: utils.id.meta({ description: 'ID of the event to get results for' }),
+		tournId: z.coerce.number().int().meta({ description: 'ID of the tournament to get results for' }),
+		eventId: z.coerce.number().int().meta({ description: 'ID of the event to get results for' }),
 		}),
 	},
 	responses: {

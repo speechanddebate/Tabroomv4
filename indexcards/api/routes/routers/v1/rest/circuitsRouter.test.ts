@@ -1,7 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import { activeCircuitsResponse, restCircuit } from '../../../openapi/schemas/index.js';
+import { ActiveCircuitsResponseSchema, RestCircuitSchema } from '@tabroom/types';
 
 describe('GET /rest/circuits/active', () => {
 	it('Returns active circuits for the current school year', async () => {
@@ -15,7 +15,7 @@ describe('GET /rest/circuits/active', () => {
             .expect(200);
 
 		const body = res.body;
-		expect(body).toMatchSchema(activeCircuitsResponse);
+		expect(body).toMatchSchema(ActiveCircuitsResponseSchema);
 	});
 });
 describe('GET /rest/circuits/:circuitId', () => {
@@ -28,7 +28,7 @@ describe('GET /rest/circuits/:circuitId', () => {
             .expect(200);
 
 		const body = res.body;
-		expect(body).toMatchSchema(restCircuit);
+		expect(body).toMatchSchema(RestCircuitSchema);
 	});
 });
 

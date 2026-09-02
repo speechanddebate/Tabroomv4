@@ -2,7 +2,7 @@ import personRepo from '../../repos/personRepo.js';
 import { createContext } from '../../../tests/httpMocks.js';
 import paradigmsController from './paradigmsController';
 import * as judgeRecordsService from '../../services/results/judgeRecords.js';
-import { JudgeRecord, ParadigmDetails } from '../../routes/openapi/schemas/index.js';
+import { JudgeRecordSchema, ParadigmDetailsSchema } from '@tabroom/types';
 afterEach(() => {
 	vi.restoreAllMocks();
 });
@@ -73,7 +73,7 @@ describe('paradigmsController', () => {
 			});
 			await paradigmsController.getParadigmByPersonId(req, res);
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(ParadigmDetails);
+			expect(res.body).toMatchSchema(ParadigmDetailsSchema);
 		});
 		it('should return a 404 if personId does not exist', async () => {
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
@@ -114,7 +114,7 @@ describe('paradigmsController', () => {
 
 			// Validate each element in the response array
 			for (const item of res.body) {
-				expect(item).toMatchSchema(JudgeRecord);
+				expect(item).toMatchSchema(JudgeRecordSchema);
 			}
 		});
 	});

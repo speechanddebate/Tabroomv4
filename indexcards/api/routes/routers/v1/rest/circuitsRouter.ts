@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as c from '../../../../controllers/rest/circuitsController.js';
-import { restCircuit, activeCircuitsResponse } from '../../../openapi/schemas/index.js';
+import { RestCircuitSchema, ActiveCircuitsResponseSchema } from '@tabroom/types';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import z from 'zod';
 
@@ -28,7 +28,7 @@ router.route('/active').get(ValidateRequest,c.activeCircuits).openapi = {
 			description: 'Active circuits',
 			content: {
 				'application/json': {
-					schema: activeCircuitsResponse,
+					schema: ActiveCircuitsResponseSchema,
 				},
 			},
 		},
@@ -48,7 +48,7 @@ router.route('/:circuitId').get(ValidateRequest, c.getCircuit).openapi = {
 			description: 'Circuit details',
 			content: {
 				'application/json': {
-					schema: restCircuit,
+					schema: RestCircuitSchema,
 				},
 			},
 		},

@@ -1,4 +1,4 @@
-import * as schemas from './schemas/index.js';
+import * as schemas from '@tabroom/types';
 import { createDocument } from 'zod-openapi';
 import * as responses from './responses/index.js';
 import { tags as declaredTags, declaredTagGroups } from './tags.js';

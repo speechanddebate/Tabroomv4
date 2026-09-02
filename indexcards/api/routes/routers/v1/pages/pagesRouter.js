@@ -4,7 +4,6 @@ import * as schematController from '../../../../controllers/pages/invite/schemat
 import * as pageResultController from '../../../../controllers/pages/invite/resultsController.js';
 import * as resultSetController from '../../../../controllers/rest/resultSetController.js';
 import z from 'zod';
-import * as utils from '../../../openapi/schemas/utils.js';
 
 import { ValidateRequest } from '../../../../middleware/validation.js';
 const router = Router();
@@ -103,7 +102,7 @@ router.route('/invite/:tournId/:eventAbbr/:roundName/results').get(ValidateReque
 	operationId : 'getRoundPublicResults',
 	requestParams: {
 		path: z.object({
-			tournId   : utils.id.meta({ description: 'ID of the tournament to get results for' }),
+			tournId   : z.coerce.number().int().meta({ description: 'ID of the tournament to get results for' }),
 			eventAbbr : z.string().meta({ description: 'Event Abbreviation of the round' }),
 			roundName : z.coerce.number().meta({ description: 'Number of the round' }),
 		}),

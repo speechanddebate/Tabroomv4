@@ -1,7 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import { HomepageAd } from '../../../openapi/schemas/index.js';
+import { HomepageAdSchema } from '@tabroom/types';
 import * as z from 'zod';
 
 describe('/rest/ads', () => {
@@ -19,6 +19,6 @@ describe('/rest/ads', () => {
 		//Assert
 		expect(Array.isArray(res.body)).toBe(true);
 		expect(res.body.length).toBeGreaterThanOrEqual(1);
-		expect(res.body).toMatchSchema(z.array(HomepageAd));
+		expect(res.body).toMatchSchema(z.array(HomepageAdSchema));
 	});
 });

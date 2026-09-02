@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/rest/entryController.js';
 import z from 'zod';
-import * as utils from '../../../openapi/schemas/utils.js';
 
 import { ValidateRequest } from '../../../../middleware/validation.js';
 
@@ -19,7 +18,7 @@ router.route('/:entryId/records').get(ValidateRequest, controller.getEntryRecord
 	description : 'Shows the published available pairings and results data for a given entry',
 	tags        : ['Tournaments', 'Entries', 'Results', 'Schematics'],
 	requestParams: {
-		path: z.object({entryId: utils.id }),
+		path: z.object({entryId: z.coerce.number().int() }),
 	},
 	responses: {
 		200: {

@@ -459,7 +459,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the tournament to get results for"
             },
@@ -682,7 +682,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/activeCircuitsResponse"
+                  "$ref": "#/components/schemas/ActiveCircuitsResponseSchema"
                 }
               }
             }
@@ -804,7 +804,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnlinkedJudge"
+                    "$ref": "#/components/schemas/UnlinkedJudgeSchema"
                   }
                 }
               }
@@ -867,7 +867,7 @@
               "description": "Return tournaments with start date after this UTC timestamp.",
               "type": "string",
               "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
             },
             "description": "Return tournaments with start date after this UTC timestamp."
           },
@@ -878,7 +878,7 @@
               "description": "Return tournaments with start date before this UTC timestamp.",
               "type": "string",
               "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
             },
             "description": "Return tournaments with start date before this UTC timestamp."
           },
@@ -1172,7 +1172,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the tournament to get results for"
             },
@@ -1191,12 +1191,11 @@
                 "schema": {
                   "type": "object",
                   "propertyNames": {
-                    "type": "integer",
-                    "minimum": -9007199254740991,
-                    "maximum": 9007199254740991
+                    "type": "string",
+                    "pattern": "^-?\\d+$"
                   },
                   "additionalProperties": {
-                    "$ref": "#/components/schemas/EventResultSets"
+                    "$ref": "#/components/schemas/EventResultSetsSchema"
                   }
                 }
               }
@@ -1238,7 +1237,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the tournament to get results for"
             },
@@ -1250,7 +1249,7 @@
             "name": "resultSetId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the result set to get"
             },
@@ -1277,7 +1276,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ResultSet"
+                    "$ref": "#/components/schemas/ResultSetSchema"
                   }
                 }
               }
@@ -1309,7 +1308,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the tournament to get results for"
             },
@@ -1321,7 +1320,7 @@
             "name": "eventId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "ID of the event to get results for"
             },
@@ -1540,7 +1539,7 @@
             "name": "entryId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "required": true
@@ -1626,7 +1625,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "required": true
@@ -1643,7 +1642,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/File"
+                    "$ref": "#/components/schemas/FileSchema"
                   }
                 }
               }
@@ -1851,7 +1850,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ParadigmDetails"
+                  "$ref": "#/components/schemas/ParadigmDetailsSchema"
                 }
               }
             }
@@ -2050,7 +2049,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnlinkedStudentSearch"
+                    "$ref": "#/components/schemas/UnlinkedStudentSearchSchema"
                   }
                 }
               }
@@ -2263,7 +2262,7 @@
             "schema": {
               "type": "string",
               "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
             }
           }
         ],
@@ -2658,7 +2657,7 @@
             "name": "messageId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "The ID of the message"
             },
@@ -2715,7 +2714,7 @@
             "name": "messageId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "The ID of the message"
             },
@@ -2767,7 +2766,7 @@
             "name": "messageId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "The ID of the message to mark as read"
             },
@@ -2819,7 +2818,7 @@
             "name": "messageId",
             "schema": {
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991,
               "description": "The ID of the message to mark as unread"
             },
@@ -2898,7 +2897,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/UnlinkedJudge"
+                    "$ref": "#/components/schemas/UnlinkedJudgeSchema"
                   },
                   "description": "List of unlinked judges that have requested to be linked to the user"
                 }
@@ -2929,7 +2928,7 @@
             "schema": {
               "description": "ID of the judge to claim (if claiming a judge)",
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "description": "ID of the judge to claim (if claiming a judge)"
@@ -2940,7 +2939,7 @@
             "schema": {
               "description": "ID of the chapter judge to claim (if claiming a chapter judge)",
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "description": "ID of the chapter judge to claim (if claiming a chapter judge)"
@@ -2997,9 +2996,8 @@
             "schema": {
               "default": 100,
               "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991,
-              "description": "The number of results to return."
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             }
           },
           {
@@ -3008,9 +3006,8 @@
             "schema": {
               "default": 0,
               "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991,
-              "description": "The number of results to skip when returning."
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
             }
           }
         ],
@@ -3142,7 +3139,7 @@
                     "properties": {
                       "judgeId": {
                         "type": "integer",
-                        "exclusiveMinimum": 0,
+                        "minimum": -9007199254740991,
                         "maximum": 9007199254740991
                       },
                       "categoryAbbr": {
@@ -3154,7 +3151,7 @@
                       "tournEnd": {
                         "type": "string",
                         "format": "date-time",
-                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
                       },
                       "tournTz": {
                         "type": "string"
@@ -3163,13 +3160,9 @@
                         "type": "string"
                       },
                       "caption": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "null"
-                          }
+                        "type": [
+                          "string",
+                          "null"
                         ]
                       }
                     },
@@ -3214,7 +3207,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Student"
+                    "$ref": "#/components/schemas/StudentSchema"
                   },
                   "description": "List of unlinked students that have requested to be linked to the user"
                 }
@@ -3245,7 +3238,7 @@
             "schema": {
               "description": "ID of the student to claim",
               "type": "integer",
-              "exclusiveMinimum": 0,
+              "minimum": -9007199254740991,
               "maximum": 9007199254740991
             },
             "description": "ID of the student to claim"
@@ -3433,7 +3426,7 @@
   },
   "components": {
     "schemas": {
-      "BackupRequest": {
+      "BackupRequestSchema": {
         "type": "object",
         "description": "A request to create a backup for a tournament or part of a tournament",
         "required": [
@@ -3482,7 +3475,7 @@
         },
         "additionalProperties": false
       },
-      "CaselistLink": {
+      "CaselistLinkSchema": {
         "type": "object",
         "properties": {
           "person_id": {
@@ -3508,7 +3501,7 @@
           }
         }
       },
-      "Contact": {
+      "ContactSchema": {
         "type": "object",
         "description": "A tournament contact for a school",
         "required": [
@@ -3600,7 +3593,7 @@
           }
         }
       },
-      "CreateSchool": {
+      "CreateSchoolSchema": {
         "type": "object",
         "required": [
           "chapterId"
@@ -3612,7 +3605,7 @@
           },
           "code": {
             "type": "string",
-            "description": "School code"
+            "description": "SchoolSchema code"
           },
           "onsite": {
             "type": "boolean",
@@ -3632,13 +3625,13 @@
           },
           "settings": {
             "type": "object",
-            "description": "School settings object"
+            "description": "SchoolSchema settings object"
           }
         },
         "additionalProperties": false,
         "examples": [
           {
-            "name": "Shermer High School",
+            "name": "Shermer High SchoolSchema",
             "code": "SHS",
             "onsite": true,
             "chapterId": 456,
@@ -3650,7 +3643,7 @@
           }
         ]
       },
-      "Email": {
+      "EmailSchema": {
         "type": "object",
         "description": "An email sent to a tournament",
         "required": [
@@ -3714,8 +3707,7 @@
           }
         }
       },
-      "EventInvite": {},
-      "Invite": {
+      "InviteSchema": {
         "type": "object",
         "properties": {
           "name": {
@@ -3726,7 +3718,7 @@
           }
         }
       },
-      "NSDACategory": {
+      "NSDACategorySchema": {
         "type": "object",
         "required": [
           "id",
@@ -3760,7 +3752,7 @@
           }
         ]
       },
-      "Problem": {
+      "ProblemSchema": {
         "type": "object",
         "additionalProperties": true,
         "required": [
@@ -3794,7 +3786,7 @@
           }
         }
       },
-      "School": {
+      "SchoolSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -3902,7 +3894,7 @@
           }
         ]
       },
-      "Search": {
+      "SearchSchema": {
         "type": "object",
         "properties": {
           "result": {
@@ -3913,7 +3905,7 @@
           }
         }
       },
-      "Share": {
+      "ShareSchema": {
         "type": "object",
         "properties": {
           "panels": {
@@ -3936,7 +3928,7 @@
           }
         }
       },
-      "SiteResponse": {
+      "SiteResponseSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -3985,7 +3977,7 @@
           }
         }
       },
-      "TimeslotRequest": {
+      "TimeslotRequestSchema": {
         "type": "object",
         "properties": {
           "name": {
@@ -4010,7 +4002,7 @@
           "tournId"
         ]
       },
-      "TimeslotResponse": {
+      "TimeslotResponseSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -4040,7 +4032,7 @@
           }
         }
       },
-      "Topic": {
+      "TopicSchema": {
         "type": "object",
         "required": [
           "id",
@@ -4095,7 +4087,7 @@
           }
         }
       },
-      "TournContact": {
+      "TournContactSchema": {
         "type": "object",
         "description": "A tournament contact person",
         "properties": {
@@ -4131,7 +4123,7 @@
           }
         }
       },
-      "TournInvite": {
+      "TournInviteSchema": {
         "allOf": [
           {
             "$ref": "#/components/schemas/Tourn"
@@ -4154,7 +4146,7 @@
               "Events": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/EventInvite"
+                  "$ref": "#/components/schemas/EventInviteSchema"
                 }
               },
               "Contacts": {
@@ -4167,7 +4159,7 @@
           }
         ]
       },
-      "TournRequest": {
+      "TournRequestSchema": {
         "type": "object",
         "description": "A request to create or update a Tournament",
         "properties": {
@@ -4227,7 +4219,7 @@
           }
         }
       },
-      "UpdateSchool": {
+      "UpdateSchoolSchema": {
         "type": "object",
         "properties": {
           "name": {
@@ -4236,7 +4228,7 @@
           },
           "code": {
             "type": "string",
-            "description": "School code"
+            "description": "SchoolSchema code"
           },
           "onsite": {
             "type": "boolean",
@@ -4252,13 +4244,13 @@
           },
           "settings": {
             "type": "object",
-            "description": "School settings object"
+            "description": "SchoolSchema settings object"
           }
         },
         "additionalProperties": false,
         "examples": [
           {
-            "name": "Shermer High School",
+            "name": "Shermer High SchoolSchema",
             "code": "SHS",
             "onsite": true,
             "state": "IL",
@@ -4269,7 +4261,7 @@
           }
         ]
       },
-      "Webpage": {
+      "WebpageSchema": {
         "type": "object",
         "description": "A webpage",
         "properties": {
@@ -4343,7 +4335,7 @@
           }
         }
       },
-      "Chapter": {
+      "ChapterSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -4357,33 +4349,21 @@
             "description": "Name of the chapter"
           },
           "formal": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "street": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "city": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "state": {
@@ -4398,13 +4378,9 @@
             ]
           },
           "zip": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "postal": {
@@ -4430,113 +4406,69 @@
             ]
           },
           "coaches": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "self_prefs": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           },
           "level": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "nsda": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "district": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "naudl": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           },
           "ipeds": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "nces": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "ceeb": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "timestamp": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           }
         },
@@ -4563,90 +4495,6 @@
           "password"
         ],
         "description": "A request to log in a user"
-      },
-      "Person": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-          },
-          "first": {
-            "type": "string"
-          },
-          "middle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "last": {
-            "type": "string"
-          },
-          "state": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[A-Z]{2}$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "country": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "tz": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "settings": {
-            "type": "object",
-            "properties": {}
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {}
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "first",
-          "middle",
-          "last",
-          "createdAt"
-        ],
-        "description": "A person (user) in tabroom"
       },
       "PersonQuiz": {
         "type": "object",
@@ -4684,7 +4532,7 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -4695,6 +4543,120 @@
           "pending",
           "updatedAt"
         ]
+      },
+      "Person": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "first": {
+            "type": "string"
+          },
+          "middle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {}
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "first",
+          "middle",
+          "last",
+          "createdAt"
+        ],
+        "description": "A person (user) in tabroom"
+      },
+      "QuizBadge": {
+        "type": "object",
+        "properties": {
+          "altText": {
+            "description": "The alt text for the badge image",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The link to the badge"
+          },
+          "imageUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The URL of the badge image"
+          }
+        },
+        "required": [
+          "altText",
+          "link",
+          "imageUrl"
+        ],
+        "description": "The badge associated with the certification"
       },
       "Quiz": {
         "type": "object",
@@ -4788,52 +4750,6 @@
           "Badge"
         ]
       },
-      "QuizBadge": {
-        "type": "object",
-        "properties": {
-          "altText": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The alt text for the badge image"
-          },
-          "link": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The link to the badge"
-          },
-          "imageUrl": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The URL of the badge image"
-          }
-        },
-        "required": [
-          "altText",
-          "link",
-          "imageUrl"
-        ],
-        "description": "The badge associated with the certification"
-      },
       "RegisterRequest": {
         "type": "object",
         "properties": {
@@ -4853,13 +4769,9 @@
           },
           "middleName": {
             "description": "The middle name of the new user",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "last": {
@@ -4868,48 +4780,32 @@
           },
           "phoneNumber": {
             "description": "The phone number of the new user",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "state": {
             "description": "The 2 letter state code of the new user",
             "example": "IA",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "country": {
             "description": "The 2 letter country code of the new user",
             "example": "US",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "tz": {
             "description": "The IANA timezone of the new user",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           }
         },
@@ -4921,7 +4817,7 @@
         ],
         "description": "A request to register a new user"
       },
-      "ResultSetEvent": {
+      "ResultSetEventSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -4941,7 +4837,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -4951,6 +4847,69 @@
           "entity",
           "createdAt"
         ]
+      },
+      "ActiveCircuitsResponseSchema": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "The unique identifier of the circuit"
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 63,
+              "description": "The name of the circuit"
+            },
+            "abbr": {
+              "type": "string",
+              "maxLength": 15,
+              "description": "The abbreviation of the circuit"
+            },
+            "state": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The state of the circuit"
+            },
+            "country": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Z]{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The country of the circuit"
+            },
+            "tournCount": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "The number of tournaments in the circuit"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "abbr",
+            "state",
+            "country",
+            "tournCount"
+          ],
+          "additionalProperties": false
+        }
       },
       "CurrentBallot": {
         "type": "object",
@@ -5025,12 +4984,12 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "deadline": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "roomId": {
             "anyOf": [
@@ -5155,13 +5114,9 @@
             ]
           },
           "onlineMode": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "Entries": {
@@ -5175,23 +5130,15 @@
                   "maximum": 9007199254740991
                 },
                 "code": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
+                  "type": [
+                    "string",
+                    "null"
                   ]
                 },
                 "side": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
+                  "type": [
+                    "string",
+                    "null"
                   ]
                 },
                 "speakerOrder": {
@@ -5246,7 +5193,7 @@
         ],
         "additionalProperties": false
       },
-      "EventResultSets": {
+      "EventResultSetsSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -5274,7 +5221,7 @@
           "ResultSets": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ResultSetEventOutput"
+              "$ref": "#/components/schemas/ResultSetEventSchemaOutput"
             }
           }
         },
@@ -5289,7 +5236,7 @@
         ],
         "additionalProperties": false
       },
-      "File": {
+      "FileSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -5299,33 +5246,21 @@
             "description": "The unique identifier for the file"
           },
           "tag": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "filename": {
@@ -5359,7 +5294,7 @@
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -5369,7 +5304,7 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -5405,13 +5340,9 @@
             ]
           },
           "amount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "school": {
@@ -5422,7 +5353,7 @@
           "leviedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -5506,26 +5437,18 @@
             "description": "The URL associated with the message"
           },
           "visibleAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The timestamp when the message became visible"
+            "description": "The timestamp when the message became visible",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "readAt": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The timestamp when the message was read"
+            "description": "The timestamp when the message was read",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "Tourn": {
             "anyOf": [
@@ -5582,15 +5505,11 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "description": "The name of the sender"
+                    "description": "The name of the sender",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
                   "email": {
                     "anyOf": [
@@ -5623,15 +5542,11 @@
                 "type": "object",
                 "properties": {
                   "content": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "description": "The content of the email"
+                    "description": "The content of the email",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -5678,13 +5593,13 @@
               "start": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                 "description": "start date"
               },
               "end": {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
                 "description": "end date"
               }
             },
@@ -5837,7 +5752,7 @@
         "additionalProperties": false,
         "description": "A response for a login request"
       },
-      "ParadigmDetails": {
+      "ParadigmDetailsSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -5847,22 +5762,18 @@
             "description": "The id of the person associated with the paradigm"
           },
           "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The name of the person associated with the paradigm"
+            "description": "The name of the person associated with the paradigm",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "lastReviewed": {
             "anyOf": [
               {
                 "type": "string",
                 "format": "date-time",
-                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
               },
               {
                 "type": "null"
@@ -5871,15 +5782,11 @@
             "description": "The last reviewed timestamp of the paradigm"
           },
           "paradigm": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The content of the paradigm"
+            "description": "The content of the paradigm",
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "certifications": {
             "description": "The list of certifications associated with the paradigm",
@@ -5915,12 +5822,12 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "end": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "tz": {
             "type": "string",
@@ -5946,13 +5853,9 @@
                   "type": "string"
                 },
                 "caption": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "null"
-                    }
+                  "type": [
+                    "string",
+                    "null"
                   ]
                 }
               },
@@ -5972,13 +5875,9 @@
                     "type": "string"
                   },
                   "schoolName": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   }
                 },
@@ -6008,7 +5907,97 @@
         "additionalProperties": false,
         "description": "A summary of a tourn and a persons role in it for the user homepage"
       },
-      "ResultSet": {
+      "RestCircuit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "readOnly": true,
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "abbr": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 15
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tz": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63,
+                "description": "Time zone of the circuit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "state": {
+            "example": "MN",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "example": "US",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "webname": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "ResultSetSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -6028,7 +6017,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "noPlacement": {
             "type": "boolean"
@@ -6036,7 +6025,8 @@
           "headers": {
             "type": "object",
             "propertyNames": {
-              "type": "number"
+              "type": "string",
+              "pattern": "^-?\\d+(?:\\.\\d+)?$"
             },
             "additionalProperties": {
               "type": "object",
@@ -6187,7 +6177,7 @@
         "additionalProperties": false,
         "description": "A user session"
       },
-      "Student": {
+      "StudentSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -6199,57 +6189,37 @@
           },
           "first": {
             "description": "First name of the student",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "middle": {
             "description": "Middle name of the student",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "last": {
             "description": "Last name of the student",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "phonetic": {
             "description": "Pronunciation guide",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "gradYear": {
             "description": "Full Year of student graduation",
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "novice": {
@@ -6262,24 +6232,16 @@
           },
           "gender": {
             "description": "Student gender",
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "nsda": {
             "description": "NSDA Member ID Number",
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "chapterId": {
@@ -6302,7 +6264,7 @@
             ]
           },
           "Chapter": {
-            "$ref": "#/components/schemas/Chapter"
+            "$ref": "#/components/schemas/ChapterSchema"
           },
           "Person": {
             "$ref": "#/components/schemas/PersonOutput"
@@ -6390,22 +6352,22 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "end": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "regStart": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "regEnd": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -6424,7 +6386,7 @@
         ],
         "additionalProperties": false
       },
-      "UnlinkedJudge": {
+      "UnlinkedJudgeSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -6440,43 +6402,27 @@
             ]
           },
           "first": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "last": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "schoolName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "tournName": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "tournCount": {
@@ -6493,7 +6439,7 @@
         ],
         "additionalProperties": false
       },
-      "UnlinkedStudentSearch": {
+      "UnlinkedStudentSearchSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -6502,43 +6448,27 @@
             "maximum": 9007199254740991
           },
           "first": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "middle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "last": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "gradYear": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "Chapter": {
@@ -6547,23 +6477,15 @@
                 "type": "object",
                 "properties": {
                   "name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   },
                   "state": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
+                    "type": [
+                      "string",
+                      "null"
                     ]
                   }
                 },
@@ -6579,13 +6501,9 @@
             ]
           },
           "tournCount": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           }
         },
@@ -6612,33 +6530,21 @@
             "description": "Name of the chapter"
           },
           "formal": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "street": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "city": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "state": {
@@ -6653,13 +6559,9 @@
             ]
           },
           "zip": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "postal": {
@@ -6685,113 +6587,69 @@
             ]
           },
           "coaches": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "self_prefs": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           },
           "level": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "nsda": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "district": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "number",
+              "null"
             ]
           },
           "naudl": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           },
           "ipeds": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "nces": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "ceeb": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "timestamp": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "created_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "permission": {
@@ -6806,250 +6664,6 @@
         ],
         "additionalProperties": false,
         "description": "A user's relation to a chapter, including their permission level"
-      },
-      "activeCircuitsResponse": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "id": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991,
-              "description": "The unique identifier of the circuit"
-            },
-            "name": {
-              "type": "string",
-              "maxLength": 63,
-              "description": "The name of the circuit"
-            },
-            "abbr": {
-              "type": "string",
-              "maxLength": 15,
-              "description": "The abbreviation of the circuit"
-            },
-            "state": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^[A-Z]{2}$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "The state of the circuit"
-            },
-            "country": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "pattern": "^[A-Z]{2}$"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "The country of the circuit"
-            },
-            "tournCount": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991,
-              "description": "The number of tournaments in the circuit"
-            }
-          },
-          "required": [
-            "id",
-            "name",
-            "abbr",
-            "state",
-            "country",
-            "tournCount"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "RestCircuit": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "readOnly": true,
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "name": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "abbr": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 15
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "tz": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 63,
-                "description": "Time zone of the circuit"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "state": {
-            "example": "MN",
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[A-Z]{2}$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "country": {
-            "example": "US",
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[A-Z]{2}$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "webname": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 31
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
-      "PersonOutput": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-          },
-          "first": {
-            "type": "string"
-          },
-          "middle": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "last": {
-            "type": "string"
-          },
-          "state": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[A-Z]{2}$"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "country": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "tz": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
-          },
-          "settings": {
-            "type": "object",
-            "properties": {},
-            "additionalProperties": false
-          },
-          "metadata": {
-            "type": "object",
-            "properties": {},
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "id",
-          "email",
-          "first",
-          "middle",
-          "last",
-          "createdAt"
-        ],
-        "additionalProperties": false,
-        "description": "A person (user) in tabroom"
       },
       "PersonQuizOutput": {
         "type": "object",
@@ -7087,7 +6701,7 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -7099,6 +6713,124 @@
           "updatedAt"
         ],
         "additionalProperties": false
+      },
+      "PersonOutput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "first": {
+            "type": "string"
+          },
+          "middle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "type": "string"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "first",
+          "middle",
+          "last",
+          "createdAt"
+        ],
+        "additionalProperties": false,
+        "description": "A person (user) in tabroom"
+      },
+      "QuizBadgeOutput": {
+        "type": "object",
+        "properties": {
+          "altText": {
+            "description": "The alt text for the badge image",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The link to the badge"
+          },
+          "imageUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The URL of the badge image"
+          }
+        },
+        "required": [
+          "altText",
+          "link",
+          "imageUrl"
+        ],
+        "additionalProperties": false,
+        "description": "The badge associated with the certification"
       },
       "QuizOutput": {
         "type": "object",
@@ -7198,54 +6930,7 @@
         ],
         "additionalProperties": false
       },
-      "QuizBadgeOutput": {
-        "type": "object",
-        "properties": {
-          "altText": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The alt text for the badge image"
-          },
-          "link": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The link to the badge"
-          },
-          "imageUrl": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uri"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "The URL of the badge image"
-          }
-        },
-        "required": [
-          "altText",
-          "link",
-          "imageUrl"
-        ],
-        "additionalProperties": false,
-        "description": "The badge associated with the certification"
-      },
-      "ResultSetEventOutput": {
+      "ResultSetEventSchemaOutput": {
         "type": "object",
         "properties": {
           "id": {
@@ -7265,7 +6950,7 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -7347,12 +7032,12 @@
           "createdAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -7376,13 +7061,9 @@
             "maximum": 9007199254740991
           },
           "code": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "string",
+              "null"
             ]
           },
           "event": {
@@ -7449,13 +7130,9 @@
                 ]
               },
               "online_mode": {
-                "anyOf": [
-                  {
-                    "type": "string"
-                  },
-                  {
-                    "type": "null"
-                  }
+                "type": [
+                  "string",
+                  "null"
                 ]
               },
               "online_ballots": {
@@ -7575,7 +7252,7 @@
         ],
         "additionalProperties": false
       },
-      "PersonQuizWithQuiz": {
+      "PersonQuizWithQuizSchema": {
         "type": "object",
         "properties": {
           "id": {
@@ -7611,7 +7288,7 @@
           "updatedAt": {
             "type": "string",
             "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z))$"
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "Quiz": {
             "$ref": "#/components/schemas/QuizOutput"
@@ -7714,13 +7391,9 @@
             ]
           },
           "flighted": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
+            "type": [
+              "boolean",
+              "null"
             ]
           }
         },

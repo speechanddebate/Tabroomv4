@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import controller from '../../../../controllers/user/chapter/index.js';
-import { UserChapter } from '../../../openapi/schemas/index.js';
+import { UserChapterSchema } from '@tabroom/types';
 import z from 'zod';
 
 const router = Router();
@@ -17,7 +17,7 @@ router.route('/')
 				description: 'User chapters',
 				content: {
 					'application/json': {
-						schema: z.array(UserChapter),
+						schema: z.array(UserChapterSchema),
 					},
 				},
 			},

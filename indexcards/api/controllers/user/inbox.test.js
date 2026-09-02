@@ -3,7 +3,7 @@ import { createContext } from '../../../tests/httpMocks.js';
 import messageRepo from '../../repos/messageRepo';
 import * as inbox from './inbox.js';
 import { expect } from 'chai';
-import { InboxMessage } from '../../routes/openapi/schemas/index.js';
+import { InboxMessageSchema } from '@tabroom/types';
 
 describe('markDeleted', () => {
 	it('returns 404 if message not found', async () => {
@@ -118,7 +118,7 @@ describe('getMessage', () => {
 		const { req, res } = createContext({ valid: { params: { messageId } }, actor: { Person: { id: personId } } });
 		await inbox.getMessage(req, res);
 		expect(res).not.toBeProblemResponse();
-		expect(res.body).toMatchSchema(InboxMessage);
+		expect(res.body).toMatchSchema(InboxMessageSchema);
 	});
 	it('returns 404 if message not found', async () => {
 		const messageId = 1;

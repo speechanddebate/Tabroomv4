@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { HomepageAd as HomepageAdSchema } from '../schemas/Ad.js';
+import { HomepageAdSchema } from '@tabroom/types';
 
 export const HomepageAdExample = [
 	{

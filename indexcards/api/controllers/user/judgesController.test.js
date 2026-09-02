@@ -5,7 +5,7 @@ import tabroomRepo from '../../repos/tabroomRepo.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import personRepo from '../../repos/personRepo.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
-import { UnlinkedJudge } from '../../routes/openapi/schemas/index.js';
+import { UnlinkedJudgeSchema } from '@tabroom/types';
 import { createContext } from '../../../tests/httpMocks.js';
 import { notify } from '../../helpers/blast.js';
 import logger from '../../helpers/logger.js';
@@ -52,7 +52,7 @@ describe('judgesController', () => {
 			expect(res).not.toBeProblemResponse();
 			expect(judgeRepo.getJudges).toHaveBeenCalledWith({ where: { person_request: 123 } });
 			expect(chapterJudgeRepo.getChapterJudges).toHaveBeenCalledWith({ where: { person_request: 123 } });
-			expect(res.body).toMatchSchema(z.array(UnlinkedJudge));
+			expect(res.body).toMatchSchema(z.array(UnlinkedJudgeSchema));
 		});
 	});
 	describe('claimRequest', () => {

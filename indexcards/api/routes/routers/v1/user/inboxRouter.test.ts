@@ -3,7 +3,7 @@ import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import z from 'zod';
-import { InboxMessage } from '../../../openapi/schemas/index.js';
+import { InboxMessageSchema } from '@tabroom/types';
 import messageRepo from '../../../../repos/messageRepo.js';
 
 describe('Inbox Router', () => {
@@ -26,7 +26,7 @@ describe('Inbox Router', () => {
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(z.array(InboxMessage));
+			expect(res.body).toMatchSchema(z.array(InboxMessageSchema));
 		});
 	});
 	describe('GET /user/inbox/unread', () => {
@@ -106,7 +106,7 @@ describe('Inbox Router', () => {
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(InboxMessage);
+			expect(res.body).toMatchSchema(InboxMessageSchema);
 		});
 	});
 	describe('DELETE /user/inbox/{messageId}', () => {
