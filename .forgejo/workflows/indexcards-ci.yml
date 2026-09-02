@@ -61,7 +61,7 @@ jobs:
       - name: Seed database
         run: |
           mariadb \
-            --host=mariadb-test \
+            --host=mariadb \
             --port=3306 \
             --user=tabroom \
             --password=tabroom \
