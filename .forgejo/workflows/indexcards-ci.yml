@@ -11,7 +11,7 @@ on:
 jobs:
   ci:
     name: CI
-    runs-on: linux-amd64
+    runs-on: ubuntu-latest
     services:
       mariadb:
         image: mariadb:12
