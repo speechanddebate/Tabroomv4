@@ -13,7 +13,7 @@ jobs:
     name: CI
     runs-on: linux-amd64
     services:
-      mariadb-test:
+      mariadb:
         image: mariadb:12
         ports:
           - '3306:3306'
