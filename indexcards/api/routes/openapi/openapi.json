@@ -3800,7 +3800,7 @@
           },
           "code": {
             "type": "string",
-            "description": "SchoolSchema code"
+            "description": "School code"
           },
           "onsite": {
             "type": "boolean",
@@ -3878,7 +3878,7 @@
         "examples": [
           {
             "id": 1985,
-            "name": "Shermer High SchoolSchema",
+            "name": "Shermer High School",
             "code": "SHS",
             "onsite": true,
             "tournId": 123,
@@ -4219,7 +4219,7 @@
           }
         }
       },
-      "UpdateSchool": {
+      "UpdateSchoolSchema": {
         "type": "object",
         "properties": {
           "name": {

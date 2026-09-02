@@ -41,13 +41,17 @@ jobs:
         with:
           node-version-file: ./package.json
 
-      - name: Install dependancies
+      - name: Install dependencies
         run: |
             npm ci
 
+      - name: Build
+        run: |
+            npm run build --workspace=types
+            npm run build --workspace=indexcards
       - name: Lint
         run: |
-            npm run lint --workspace=indexcards
+            npm run lint
 
       - name: Typecheck
         run: |
