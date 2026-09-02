@@ -10,6 +10,7 @@ test-results/
 
 # Indexcards config
 **/config/config.json
+**/config/config.*.json
 
 # Schemats config
 .env
