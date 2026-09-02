@@ -19,7 +19,9 @@ jobs:
           - '3306:3306'
         env:
           MARIADB_DATABASE: tabroom
-          MARIADB_ROOT_PASSWORD: tabroom
+          MARIADB_USER: tabroom
+          MARIADB_PASSWORD: tabroom
+          MARIADB_ROOT_PASSWORD: root
 
     steps:
       - name: Checkout
