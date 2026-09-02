@@ -20,8 +20,8 @@ router.route('/').get(getSession).openapi = {
 				},
 			},
 		},
-		404: {
-			$ref: '#/components/responses/NotFound',
+		401: {
+			$ref: '#/components/responses/Unauthorized',
 		},
 	},
 };

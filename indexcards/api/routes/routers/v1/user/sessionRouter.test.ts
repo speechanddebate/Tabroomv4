@@ -32,7 +32,7 @@ describe('Session Router', () => {
 				.get('/v1/user/session')
 				.set('Accept', 'application/json')
 				.expect(401);
-			expect(res.body).toBeProblemResponse();
+			expect(res).toBeProblemResponse(401);
 		});
 	});
 });

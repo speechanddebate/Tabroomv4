@@ -4,6 +4,7 @@ build/
 
 #vitest coverage files
 coverage/
+test-results/
 
 .svelte-kit/
 
