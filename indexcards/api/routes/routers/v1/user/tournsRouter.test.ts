@@ -8,7 +8,7 @@ let personId : number;
 let userkey: string;
 beforeEach(async () => {
 	({ personId } = await factories.person.create());
-	({ userkey } = await factories.session.createTestSession({ person: personId }));
+	({ userkey } = await factories.session.create({ person: personId }));
 });
 
 describe('GET /user/tourns/{tournId}/ballots/current', () => {

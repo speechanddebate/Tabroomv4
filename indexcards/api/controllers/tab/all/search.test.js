@@ -9,7 +9,7 @@ describe('Attendee Search Function', () => {
 	let userkey;
 
 	beforeAll(async () => {
-		const session = await factories.session.createTestSession({
+		const session = await factories.session.create({
 			Person: {
 				site_admin: true,
 			},

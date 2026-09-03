@@ -9,7 +9,7 @@ describe('studentsRouter', () => {
 	let userkey: string;
 	beforeAll(async () => {
 		({ personId } = await factories.person.create());
-		({ userkey } = await factories.session.createTestSession({ person: personId }));
+		({ userkey } = await factories.session.create({ person: personId }));
 	});
 	describe("POST /user/students/claim", () => {
 		it('should allow a user to claim a student', async () => {

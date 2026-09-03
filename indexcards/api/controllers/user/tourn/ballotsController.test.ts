@@ -78,7 +78,7 @@ describe('getCurrent', () => {
 		// Assertions
 		expect(res).not.toBeProblemResponse();
 		//expect(res.body).toMatchSchema(z.array(CurrentBallot));
-		const returnedBallot = res.body[0];
+		const returnedBallot = (res.body as Array<{ flight: number; start: string; deadline: string; status: string }>)[0];
 		expect(returnedBallot.flight).toBe(2);
 		expect(returnedBallot.start).toBeDefined();
 		expect(returnedBallot.start).toBe(new Date(roundStart.getTime() + offset * 60_000).toISOString());

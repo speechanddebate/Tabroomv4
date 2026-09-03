@@ -11,7 +11,7 @@ describe('Timeslots', () => {
 	beforeAll(async () => {
 		({tournId} = await factories.tourn.createTestTourn());
 		({personId} = await factories.person.create({site_admin: true}));
-		({userkey} = await factories.session.createTestSession({person: personId}));
+		({userkey} = await factories.session.create({person: personId}));
 	});
 
 	describe('POST /tourns/:tournId/timeslots', () => {

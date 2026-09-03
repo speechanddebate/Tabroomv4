@@ -26,8 +26,18 @@ export const SessionSchema = z.object({
 	id: utils.id,
 	person: utils.id,
 	su: utils.id.nullable(),
-	Su: PersonSchema.nullable(),
-	Person: PersonSchema,
+	Su: PersonSchema.pick({
+		id: true,
+		email: true,
+		first: true,
+		last: true,
+	}).nullable(),
+	Person: PersonSchema.pick({
+		id: true,
+		email: true,
+		first: true,
+		last: true,
+	}),
 }).meta({
 	id: 'Session',
 	description: 'A user session',

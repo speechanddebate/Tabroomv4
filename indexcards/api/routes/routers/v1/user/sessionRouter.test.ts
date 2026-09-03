@@ -9,7 +9,7 @@ describe('Session Router', () => {
 	let userkey: string;
 	beforeAll(async () => {
 		({ personId } = await factories.person.create());
-		({ userkey } = await factories.session.createTestSession({ person: personId }));
+		({ userkey } = await factories.session.create({ person: personId }));
 	});
 
 	describe('GET /user/session', () => {

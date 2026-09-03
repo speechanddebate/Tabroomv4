@@ -12,7 +12,7 @@ describe('Inbox Router', () => {
 	beforeAll(async () => {
 		({ personId } = await factories.person.create());
 		await factories.message.createTestMessage({ person: personId });
-		({ userkey } = await factories.session.createTestSession({ person: personId }));
+		({ userkey } = await factories.session.create({ person: personId }));
 	});
 
 	describe('GET /user/inbox', () => {
@@ -33,7 +33,7 @@ describe('Inbox Router', () => {
 		it('Returns the number of unread messages', async () => {
 			const { personId: person1 } = await factories.person.create();
 			await factories.message.createTestMessage({ person: person1 });
-			const { userkey: key1 } = await factories.session.createTestSession({ person: person1 });
+			const { userkey: key1 } = await factories.session.create({ person: person1 });
 
 			const res = await request(server)
 				.get('/v1/user/inbox/unread')

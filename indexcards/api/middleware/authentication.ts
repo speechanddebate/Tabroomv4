@@ -1,12 +1,16 @@
+import type { Request, Response, NextFunction } from 'express';
 import basic from 'basic-auth';
 import config from '../config.js';
 import authService from '../services/AuthService.js';
-import sessionRepo from '../repos/sessionRepo.js';
+//import sessionRepo from '../repos/sessionRepo.js';
 import personRepo from '../repos/personRepo.js';
 import { createActor } from './authorization/authorization.js';
 import { BadRequest, Unauthorized } from '../helpers/problem.js';
 
-export async function Authenticate(req, res, next) {
+import { db } from '../data/database.js';
+import sessionRepo from '../repos/sessionRepo.js';
+
+export async function Authenticate(req: Request, res: Response, next: NextFunction) {
 
 	let session = null;
 
@@ -17,7 +21,7 @@ export async function Authenticate(req, res, next) {
 		const cookie = req.cookies[cookieName] || req.headers[config.session_header];
 
 		if (cookie) {
-			let cookieSession = await sessionRepo.findByUserKey(cookie, {include: {su: true, person: true}});
+			let cookieSession = await sessionRepo.findByUserKey(db,cookie);
 			if (!cookieSession) {
 				//must use the same options as when the cookie is set.
 				res.clearCookie(cookieName, authService.getAuthCookieOptions());  //invalid cookie, clear it
@@ -39,7 +43,7 @@ export async function Authenticate(req, res, next) {
 				}
 
 				//req.person is what should be checked for every authorization decision
-				const person = await personRepo.getPerson(credentials.name, {settings: ['api_key']});
+				const person = await personRepo.getPerson(credentials.name, {settings: ['api_key']}) as {id: number, settings?: {api_key?: string}} | null;
 
 				if (!person || person.settings?.api_key !== credentials.pass) {
 					return Unauthorized(req, res,'Invalid API key');
@@ -55,7 +59,7 @@ export async function Authenticate(req, res, next) {
 				if (!token) {
 					return BadRequest(req, res, 'The Authorization header is malformed. Expected format: Bearer token.');
 				}
-				const bearerSession = await sessionRepo.findByUserKey(token, {include: {su: true, person: true}});
+				const bearerSession = await sessionRepo.findByUserKey(db,token);
 				if (!bearerSession) return Unauthorized(req, res,'Invalid Bearer token');
 				session = bearerSession;
 				req.authType = 'bearer';
@@ -71,8 +75,8 @@ export async function Authenticate(req, res, next) {
 				id       : session.id,
 				person  : session.person,
 				su       : session.su || null,
-				Su       : session.Su || null,
-				Person   : session.Person || null,
+				Su: session.Su,
+				Person   : session.Person
 			};
 
 			//deprecated, use req.actor for auth and req.session.Person for anything that MUST be done by a person

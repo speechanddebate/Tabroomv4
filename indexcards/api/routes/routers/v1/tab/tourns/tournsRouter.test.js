@@ -4,7 +4,7 @@ import factories from '../../../../../../tests/factories/index.js';
 let sessionToken;
 
 beforeAll(async () => {
-	({ userkey: sessionToken } = await factories.session.createTestSession());
+	({ userkey: sessionToken } = await factories.session.create());
 });
 describe('tournsRouter', () => {
 	describe('CRUD lifecycle', () => {

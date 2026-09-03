@@ -7,7 +7,7 @@ import factories from '../../../../../tests/factories/index.js';
 
 let userkey: string, personId: number, chapterId: number;
 beforeAll(async () => {
-	const session = await factories.session.createTestSession();
+	const session = await factories.session.create();
 	({ chapterId } = await factories.chapter.create());
 	userkey = session.userkey;
 	personId = session.personId;

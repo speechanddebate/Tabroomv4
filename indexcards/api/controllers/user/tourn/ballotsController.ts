@@ -4,7 +4,7 @@ import sectionRepo from '../../../repos/sectionRepo.js';
 
 export async function getCurrent(req: Request,res: Response) {
 	const { tournId } = req.params;
-	const sections = await sectionRepo.getCurrentBallots(req.actor.Person.id,tournId);
+	const sections = await sectionRepo.getCurrentBallots(req.actor?.Person?.id,tournId);
 
 	let ballots: CurrentBallot[] = [];
 

@@ -34,21 +34,21 @@ describe('AuthService', () => {
 					password: encrypt(password),
 				})};
 
-			personRepo.getPersonByUsername.mockResolvedValue(person);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(person);
 
-			sessionRepo.createSession.mockResolvedValue({ userkey: 'mocktoken' });
+			vi.mocked(sessionRepo.createSession).mockResolvedValue({ id: 1, userkey: 'mocktoken' });
 
 			//Act
 			const result = await AuthService.login(person.email, password);
 
 			expect(result.token).toBe('mocktoken');
-			expect(result.person.id).toBe(person.id);
+			expect(result.person?.id).toBe(person.id);
 		});
 		it('throws AUTH_INVALID when user is not found', async () => {
 
-			personRepo.getPersonByUsername.mockResolvedValue(null);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(null);
 
-			sessionRepo.createSession.mockResolvedValue({ userkey: 'mocktoken' });
+			vi.mocked(sessionRepo.createSession).mockResolvedValue({ id: 1, userkey: 'mocktoken' });
 
 			//Act
 			await expect(AuthService.login('username', 'password')).rejects.toBe(AUTH_INVALID);
@@ -62,7 +62,7 @@ describe('AuthService', () => {
 					password: encrypt(password),
 				})};
 
-			personRepo.getPersonByUsername.mockResolvedValue(person);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(person);
 
 			await expect(AuthService.login(person.email, 'wrongpassword')).rejects.toBe(AUTH_INVALID);
 		});
@@ -77,16 +77,17 @@ describe('AuthService', () => {
 				last: 'User',
 			};
 
-			personRepo.getPersonByUsername.mockResolvedValue(null);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(null);
 
-			personRepo.createPerson.mockResolvedValue({
+			vi.mocked(personRepo.createPerson).mockResolvedValue({
 				id: 1,
 				email: userData.email,
 				first: userData.first,
 				last: userData.last,
 			});
 
-			sessionRepo.createSession.mockResolvedValue({
+			vi.mocked(sessionRepo.createSession).mockResolvedValue({
+				id: 1,
 				userkey: 'mocktoken',
 			});
 
@@ -98,7 +99,7 @@ describe('AuthService', () => {
 		it('throws ValidationError if email is already in use', async () => {
 			const personData = factories.person.createPersonData();
 
-			personRepo.getPersonByUsername.mockResolvedValue({
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue({
 				id: 1,
 				...personData,
 			});
@@ -115,7 +116,9 @@ describe('AuthService', () => {
 				email: 'test@example.com',
 			};
 
-			await expect(AuthService.register(userData)).rejects.toThrow(ValidationError);
+			await expect(
+				AuthService.register(userData as Parameters<typeof AuthService.register>[0]),
+			).rejects.toThrow(ValidationError);
 		});
 	});
 

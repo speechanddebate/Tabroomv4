@@ -8,7 +8,7 @@ import factories from '../../../../tests/factories';
 describe('User Chapter', () => {
 	let userkey, personId;
 	beforeAll(async () => {
-		const session = await factories.session.createTestSession();
+		const session = await factories.session.create();
 		userkey = session.userkey;
 		personId = session.personId;
 		await factories.permission.create({

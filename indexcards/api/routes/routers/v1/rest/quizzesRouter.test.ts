@@ -32,7 +32,7 @@ describe('Quizzes Router', () => {
 	  expect(quizIds).not.toContain(adminOnlyQuizId);
  	});
 	it('should attach the personQuiz if a person is authenticated', async () => {
-		const { personId, userkey } = await factories.session.createTestSession();
+		const { personId, userkey } = await factories.session.create();
 		const { quizId } = await factories.quiz.create();
 		await factories.personQuiz.create({
 			person: personId,

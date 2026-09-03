@@ -5,6 +5,7 @@ import sessionRepo from '../../../repos/sessionRepo.js';
 import personRepo from '../../../repos/personRepo.js';
 import { hashPassword } from '../../../services/AuthService.js';
 import { expect } from 'chai';
+import { db } from '../../../data/database.js';
 
 let adminId, userId;
 describe('Auth Router', () => {
@@ -33,7 +34,7 @@ describe('Auth Router', () => {
 			assert.isObject(res.body, 'Response is an object');
 			assert.containsAllKeys(res.body, ['Person', 'token'], 'Response has person object and session token');
 
-			const session = await sessionRepo.findByUserKey(res.body.token);
+			const session = await sessionRepo.findByUserKey(db,res.body.token);
 			expect(session).not.toBeNull();
 			expect(session.person).toBe(person.id);
 		});
@@ -86,8 +87,8 @@ describe('Auth Router', () => {
 				.set('Authorization', `Bearer ${token}`)
 				.expect(204);
 
-			const session = await sessionRepo.findByUserKey(token);
-			expect(session).toBeNull();
+			const session = await sessionRepo.findByUserKey(db,token);
+			expect(session).toBeUndefined();
 		});
 
 	});
@@ -176,7 +177,7 @@ describe('Auth Router', () => {
 	describe('/suEnd',async () => {
 		it('ends an su session', async () => {
 
-			const userkey = await(await factories.session.createTestSession({
+			const userkey = await(await factories.session.create({
 				person: userId,
 				su: adminId,
 			})).userkey;
@@ -187,7 +188,7 @@ describe('Auth Router', () => {
 			.expect(204);
 
 			expect(res).not.toBeProblemResponse();
-			const session = await sessionRepo.findByUserKey(userkey);
+			const session = await sessionRepo.findByUserKey(db,userkey);
 			expect(session).toBeDefined();
 			expect(session.su).toBeNull();
 		});

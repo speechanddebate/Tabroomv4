@@ -10,10 +10,18 @@ declare module 'express-serve-static-core' {
 	}
 	interface Request {
 		actor: {
-			Person: {
+			Person?: {
 				id: number;
 			};
 		}; // Replace `any` with the actual type of `actor` if available
+		valid: {
+			// oxlint-disable-next-line typescript/no-explicit-any
+			body:any;
+			// oxlint-disable-next-line typescript/no-explicit-any
+			params:any;
+			// oxlint-disable-next-line typescript/no-explicit-any
+			query:any;
+		};
 	}
 }
 

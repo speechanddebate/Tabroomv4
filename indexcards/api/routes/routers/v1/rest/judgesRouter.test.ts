@@ -24,7 +24,7 @@ describe('GET /rest/judges/unlinked/search', () => {
 		cjFirst = cj.first;
 		cjLast = cj.last;
 
-		({ userkey } = await factories.session.createTestSession({
+		({ userkey } = await factories.session.create({
 			Person: {
 				first,
 				last,

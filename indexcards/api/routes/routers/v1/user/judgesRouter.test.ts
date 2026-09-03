@@ -9,7 +9,7 @@ describe('judgesRouter', () => {
 	let userkey: string;
 	beforeAll(async () => {
 		({ personId } = await factories.person.create());
-		({ userkey } = await factories.session.createTestSession({ person: personId }));
+		({ userkey } = await factories.session.create({ person: personId }));
 	});
 	describe("POST /user/judges/claim", () => {
 		it('should allow a user to claim a chapter judge', async () => {
@@ -78,7 +78,7 @@ describe('judgesRouter', () => {
 	describe("POST /user/judges/paradigm", () => {
 		it('should update the users paradigm', async () => {
 			const { personId, getPerson } = await factories.person.create();
-			const { userkey } = await factories.session.createTestSession({ person: personId });
+			const { userkey } = await factories.session.create({ person: personId });
 			const res = await request(server)
 				.post('/v1/user/judges/paradigm')
 				.set('Accept', 'application/json')

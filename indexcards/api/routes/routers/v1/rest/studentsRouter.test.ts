@@ -16,7 +16,7 @@ describe('GET /rest/students/unlinked/search', () => {
 		first = student.first;
 		last = student.last;
 
-		({ userkey } = await factories.session.createTestSession({
+		({ userkey } = await factories.session.create({
 			Person: {
 				first,
 				last,

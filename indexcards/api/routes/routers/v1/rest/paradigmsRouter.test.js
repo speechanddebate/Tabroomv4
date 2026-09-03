@@ -13,7 +13,7 @@ describe('GET /rest/paradigms', () => {
 				'paradigm': 'test',
 			},
 		})).getPerson();
-		const { userkey: key } = await factories.session.createUser();
+		const { userkey: key } = await factories.session.create();
 		userkey = key;
 	});
 
@@ -51,7 +51,7 @@ describe('GET /rest/paradigms/:personId', () => {
 				'paradigm': 'test',
 			},
 		})).getPerson();
-		const { userkey: key } = await factories.session.createUser();
+		const { userkey: key } = await factories.session.create();
 		userkey = key;
 	});
 
@@ -74,7 +74,7 @@ describe('GET /rest/paradigms/:personId/record', () => {
 				'paradigm': 'test',
 			},
 		})).getPerson();
-		const { userkey: key } = await factories.session.createUser();
+		const { userkey: key } = await factories.session.create();
 		userkey = key;
 	});
 

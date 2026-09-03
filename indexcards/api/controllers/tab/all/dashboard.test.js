@@ -18,7 +18,7 @@ const testTourn = {
 describe('Status Board', () => {
 	let personId, userkey;
 	beforeAll(async () => {
-		const session = await factories.session.createTestSession();
+		const session = await factories.session.create();
 		userkey = session.userkey;
 		personId = session.personId;
 		const permission = {
@@ -168,7 +168,7 @@ describe('Status Board', () => {
 describe.todo('Event Dashboard', () => {
 	let personId, userkey;
 	beforeAll(async () => {
-		const session = await factories.session.createTestSession();
+		const session = await factories.session.create();
 		userkey = session.userkey;
 		personId = session.personId;
 		const permission = {

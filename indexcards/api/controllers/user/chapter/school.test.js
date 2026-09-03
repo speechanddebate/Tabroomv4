@@ -14,7 +14,7 @@ import {
 describe ('getMySchoolsByTourn', () => {
 	let userkey, personId;
 	beforeEach(async () => {
-		const session = await factories.session.createTestSession();
+		const session = await factories.session.create();
 		userkey = session.userkey;
 		personId = session.personId;
 		await factories.permission.create({
