@@ -39,7 +39,7 @@ describe('AuthService', () => {
 			vi.mocked(sessionRepo.createSession).mockResolvedValue({ id: 1, userkey: 'mocktoken' });
 
 			//Act
-			const result = await AuthService.login(person.email, password);
+			const result = await AuthService.login(person.email ?? '', password);
 
 			expect(result.token).toBe('mocktoken');
 			expect(result.person?.id).toBe(person.id);

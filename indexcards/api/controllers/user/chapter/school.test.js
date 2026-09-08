@@ -19,7 +19,6 @@ describe ('getMySchoolsByTourn', () => {
 		personId = session.personId;
 		await factories.permission.create({
 			chapter : 130737,
-			school  : 699354,
 			tourn   : 31059,
 			person  : personId,
 			tag     : 'chapter',

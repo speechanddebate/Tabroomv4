@@ -1,8 +1,12 @@
 import personRepo from '../../api/repos/personRepo.js';
 import { faker } from '@faker-js/faker';
 import factories from './index.js';
+import type { Person } from '../../api/data/schema.js';
+import type { Insertable } from 'kysely';
 
-export function createPersonData(overrides = {}) {
+type Overrides = Partial<Insertable<Person>> & { Judge?: object, Ballot?: object };
+
+export function createPersonData(overrides: Overrides = {}) {
 	// Ensure email is always unique by adding a random string
 	const uniqueEmail = `user_${Math.random().toString(36).substring(2, 10)}_${Date.now()}@example.com`;
 	return {
@@ -17,25 +21,26 @@ export function createPersonData(overrides = {}) {
 	};
 }
 
-export async function create(overrides = {}) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function create(overrides: Overrides & { personId?: number } = {}): Promise<{ personId: number, getPerson: any }> {
 	delete overrides.Judge;
 	const data = createPersonData({
 		...overrides,
 	});
 
-	const personId = await personRepo.createPerson(data);
+	const personId: number = await personRepo.createPerson(data);
 
 	return {
 		personId,
 		getPerson: () => personRepo.getPerson(personId, { settings: true }),
 	};
 }
-export async function createJudge(overrides = {}) {
+export async function createJudge(overrides: Overrides & { personId?: number } = {}) {
 	const data = createPersonData({
 		...overrides,
 	});
-	const personId = overrides.personId ?? await personRepo.createPerson(data);
-	const { judgeId } = await factories.judge.createTestJudge({ person: personId, ...overrides.Judge });
+	const personId: number = overrides.personId ?? await personRepo.createPerson(data);
+	const { judgeId }: { judgeId: number } = await factories.judge.createTestJudge({ person: personId, ...overrides.Judge });
 
 	return {
 		personId,
@@ -45,7 +50,12 @@ export async function createJudge(overrides = {}) {
 }
 
 //create a current ballot for a person
-export async function createBallot(overrides = {}) {
+export async function createBallot(overrides: Overrides & { 
+		personId?: number,
+		Round?: unknown,
+		Event?: unknown,
+		Timeslot?: unknown,
+	} = {}) {
 	let personId, judgeId;
 
 	const tourn = await factories.tourn.createFull(overrides);

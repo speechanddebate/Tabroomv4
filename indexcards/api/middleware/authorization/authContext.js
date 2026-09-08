@@ -1,6 +1,7 @@
 import permissionRepo from '../../repos/permissionRepo.js';
 import eventRepo from '../../repos/eventRepo.js';
-import db from '../../data/db.js';
+import { db } from '../../data/database.js';
+import sequelizeDB from '../../data/db.js';
 
 export async function loadTournAuthContext(req, res, next, tournId){
 
@@ -14,7 +15,7 @@ export async function loadTournAuthContext(req, res, next, tournId){
 
 	if (tournId){
 		//fetch all or a persons perms for a tourn
-		const perms = await permissionRepo.getPermissions({ tourn: tournId, person: personId });
+		const perms = await permissionRepo.getPermissions(db, { tourn: parseInt(tournId), person: personId });
 
 		// Collect unique event IDs for batch enrichment (only need categoryId)
 		const eventIds = new Set();
@@ -76,10 +77,10 @@ export async function loadExtAuthContext(req, res, next) {
 	if (!req.actor?.Person?.id) return next();
 
 	// Fetch permissions where person matches req.actor.Person and tag is like 'api_auth_%'
-	const perms = await db.personSetting.findAll({
+	const perms = await sequelizeDB.personSetting.findAll({
 		where: {
 			person: req.actor.Person.id,
-			tag: { [db.Sequelize.Op.like]: 'api_auth_%' },
+			tag: { [sequelizeDB.Sequelize.Op.like]: 'api_auth_%' },
 		},
 	});
 
@@ -94,7 +95,7 @@ export async function loadExtAuthContext(req, res, next) {
 	return next();
 }
 /** load all the chapter perms for the actor */
-export async function loadChapterAuthContext(req, res, next,chapterId) {
+export async function loadChapterAuthContext(req, res, next, chapterId) {
 	//attach all relevant perms to the req.auth.perms object
 	req.auth = req.auth || {};
 	req.auth.perms = req.auth.perms || [];
@@ -102,7 +103,7 @@ export async function loadChapterAuthContext(req, res, next,chapterId) {
 	//cannot load perms when there is no person
 	if(!req.actor?.Person?.id) return next();
 
-	const perms = await permissionRepo.getPermissions({
+	const perms = await permissionRepo.getPermissions(db, {
 		person: req.actor.Person.id,
 		chapter: chapterId,
 	});

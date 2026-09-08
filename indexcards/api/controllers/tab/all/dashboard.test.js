@@ -27,7 +27,7 @@ describe('Status Board', () => {
 			tag    : 'tabber',
 		};
 
-		await db.permission.create(permission);
+		await factories.permission.create(permission);
 
 		const campusLogs = [
 			{ 	tag         : 'present',
@@ -177,7 +177,7 @@ describe.todo('Event Dashboard', () => {
 			tag    : 'tabber',
 		};
 
-		await db.permission.create(permission);
+		await factories.permission.create(permission);
 	});
 
 	it('Return a correct JSON status object for the event dashboard', async () => {
