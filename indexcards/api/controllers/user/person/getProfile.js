@@ -1,5 +1,6 @@
 import { BadRequest, Forbidden, Unauthorized } from '../../../helpers/problem.js';
 import personRepo from '../../../repos/personRepo.js';
+import { db } from '../../../data/database.js';
 
 export const getProfile = {
 	GET: async (req, res) => {
@@ -10,12 +11,12 @@ export const getProfile = {
 		let person;
 
 		if (req.params.personId && req.person.site_admin) {
-			person = await personRepo.getPerson(req.params.personId, { settings: true });
+			person = await personRepo.getPerson(db, req.params.personId, { settings: true });
 
 		} else if (req.params.personId ) {
 			return Forbidden(req, res,'Only admin staff may access another profile');
 		} else if (req.person) {
-			person = await personRepo.getPerson(req.person.id, { settings: true });
+			person = await personRepo.getPerson(db, req.person.id, { settings: true });
 		}
 
 		if (!person) {

@@ -88,7 +88,7 @@ describe('judgesRouter', () => {
 			expect(res).not.toBeProblemResponse();
 
 			const updatedPerson = await getPerson();
-			expect(updatedPerson.settings.paradigm).toBe('word '.repeat(50));
+			expect(updatedPerson?.settings.paradigm).toBe('word '.repeat(50));
 
 			const newParadigm = await request(server)
 				.get('/v1/user/judges/paradigm')

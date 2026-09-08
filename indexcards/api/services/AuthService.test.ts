@@ -19,6 +19,8 @@ import AuthService,{ AUTH_INVALID }  from './AuthService.js';
 import personRepo from '../repos/personRepo.js';
 import sessionRepo from '../repos/sessionRepo.js';
 
+type MockPerson = Awaited<ReturnType<typeof personRepo.getPersonByUsername>>;
+
 describe('AuthService', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -27,26 +29,28 @@ describe('AuthService', () => {
 	describe('login', () => {
 		it('authenticates a user with valid credentials', async () => {
 			const password = 'mypassword';
-
+			const email = 'login@example.com';
 			const person = {
 				id: 1,
 				...factories.person.createPersonData({
-					password: encrypt(password),
-				})};
+					email,
+				password: encrypt(password),
+				}),
+			} as MockPerson;
 
 			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(person);
 
 			vi.mocked(sessionRepo.createSession).mockResolvedValue({ id: 1, userkey: 'mocktoken' });
 
 			//Act
-			const result = await AuthService.login(person.email ?? '', password);
+			const result = await AuthService.login(email, password);
 
 			expect(result.token).toBe('mocktoken');
-			expect(result.person?.id).toBe(person.id);
+			expect(result.person?.id).toBe(person?.id);
 		});
 		it('throws AUTH_INVALID when user is not found', async () => {
 
-			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(null);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(undefined);
 
 			vi.mocked(sessionRepo.createSession).mockResolvedValue({ id: 1, userkey: 'mocktoken' });
 
@@ -55,36 +59,36 @@ describe('AuthService', () => {
 		});
 		it('throws AUTH_INVALID for invalid credentials', async () => {
 			const password = 'mypassword';
-
+			const email = 'wrongpass@example.com';
 			const person = {
 				id: 1,
 				...factories.person.createPersonData({
-					password: encrypt(password),
-				})};
+					email,
+				password: encrypt(password),
+				}),
+			} as MockPerson;
 
 			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(person);
 
-			await expect(AuthService.login(person.email, 'wrongpassword')).rejects.toBe(AUTH_INVALID);
+			await expect(AuthService.login(email, 'wrongpassword')).rejects.toBe(AUTH_INVALID);
 		});
 	});
 
 	describe('register', () => {
 		it('registers a new user', async () => {
-			const userData = {
+			const personData = factories.person.createPersonData({
 				email: 'test@example.com',
+			});
+			const userData = {
+				email: personData.email ?? 'test@example.com',
 				password: 'securepassword',
-				first: 'Test',
-				last: 'User',
+				first: personData.first ?? 'Test',
+				last: personData.last ?? 'User',
 			};
 
-			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(null);
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(undefined);
 
-			vi.mocked(personRepo.createPerson).mockResolvedValue({
-				id: 1,
-				email: userData.email,
-				first: userData.first,
-				last: userData.last,
-			});
+			vi.mocked(personRepo.createPerson).mockResolvedValue(1);
 
 			vi.mocked(sessionRepo.createSession).mockResolvedValue({
 				id: 1,
@@ -97,15 +101,19 @@ describe('AuthService', () => {
 			expect(result).toHaveProperty('token');
 		});
 		it('throws ValidationError if email is already in use', async () => {
-			const personData = factories.person.createPersonData();
-
-			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue({
+			const email = 'existing@example.com';
+			const existingPerson = {
 				id: 1,
-				...personData,
-			});
+				...factories.person.createPersonData({ email }),
+				email,
+			} as MockPerson;
+
+			vi.mocked(personRepo.getPersonByUsername).mockResolvedValue(
+				existingPerson,
+			);
 
 			await expect(AuthService.register({
-				email: personData.email,
+				email,
 				password: 'anotherpassword',
 				first: 'Test',
 				last: 'User',

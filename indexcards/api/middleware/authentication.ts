@@ -38,12 +38,12 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 				//BASIC AUTHENTICATION
 				const credentials = basic.parse(req.headers.authorization);
 
-				if (!credentials || !credentials.name || !credentials.pass) {
+				if (!credentials || !credentials.name || !credentials.pass || isNaN(parseInt(credentials.name))) {
 					return BadRequest(req, res, 'The Authorization header is malformed. Expected format: Basic base64(user:key).');
 				}
 
 				//req.person is what should be checked for every authorization decision
-				const person = await personRepo.getPerson(credentials.name, {settings: ['api_key']}) as {id: number, settings?: {api_key?: string}} | null;
+				const person = await personRepo.getPerson(db, parseInt(credentials.name), {settings: ['api_key']}) as {id: number, settings?: {api_key?: string}} | null;
 
 				if (!person || person.settings?.api_key !== credentials.pass) {
 					return Unauthorized(req, res,'Invalid API key');
@@ -80,7 +80,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 			};
 
 			//deprecated, use req.actor for auth and req.session.Person for anything that MUST be done by a person
-			req.person = await personRepo.getPerson(req.session.su ?? req.session.person);
+			req.person = await personRepo.getPerson(db,req.session.su ?? req.session.person ?? -1);
 		}
 		//req.actor is what should be checked for every authorization decision
 		req.actor = createActor(req);

@@ -4,6 +4,8 @@ import logger from '../../helpers/logger.js';
 import personRepo from '../../repos/personRepo.js';
 import { RateLimitExceeded } from '../../helpers/problem.js';
 
+import { db } from '../../data/database.js';
+
 const STUDENT_SEARCH_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const STUDENT_SEARCH_LIMIT_MAX = 9;
 
@@ -21,7 +23,7 @@ export async function unlinkedSearch(req, res) {
 
 	// if person is not site admin, apply rate limiting logic via person settings
 	if (!req.actor.Person?.site_admin) {
-		const person = await personRepo.getPerson(req.actor.id, {
+		const person = await personRepo.getPerson(db,req.actor.id, {
 			settings: ['last_student_search', 'student_search_count'],
 		});
 
@@ -46,9 +48,11 @@ export async function unlinkedSearch(req, res) {
       ? 1
       : studentSearchCount + 1;
 
-		await personRepo.savePersonSettings(req.actor.id, {
-			student_search_count: nextStudentSearchCount,
-			last_student_search: now,
+		await personRepo.updatePerson(db, req.actor.id, {
+			settings: {
+				student_search_count: nextStudentSearchCount,
+				last_student_search: now,
+			}
 		});
 	}
 

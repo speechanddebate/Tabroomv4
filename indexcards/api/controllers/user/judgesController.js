@@ -9,6 +9,7 @@ import { BadRequest, Forbidden } from '../../helpers/problem.js';
 import { Op } from 'sequelize';
 import { notify } from '../../helpers/blast.js';
 import logger from '../../helpers/logger.js';
+import { db } from '../../data/database.js';
 
 async function linkRequests(req, res) {
 
@@ -140,7 +141,7 @@ async function getParadigm(req, res) {
 	if(!person) {
 		return BadRequest(req, res, 'Request not made by a person');
 	}
-	const paradigm = await personRepo.getPerson(person, {
+	const paradigm = await personRepo.getPerson(db,person, {
 		settings: ['paradigm'],
 	});
 	return res.status(200).json({ paradigm: paradigm.settings['paradigm'] });
@@ -148,7 +149,7 @@ async function getParadigm(req, res) {
 
 async function updateParadigm(req, res) {
 
-	const Person = await personRepo.getPerson(req.actor.Person.id, {
+	const Person = await personRepo.getPerson(db, req.actor.Person.id, {
 		settings: ['email_unconfirmed'],
 	});
 	//check ability to save. check email confirmation, word count, profanity
@@ -178,8 +179,10 @@ async function updateParadigm(req, res) {
 		logger.debug('Paradigm was modified by sanitization.', { original: req.valid.body.paradigm, clean: cleanParadigm });
 	}
 	//update the paradigm and relevant settings
-	await personRepo.savePersonSettings(Person.id, {
-		paradigm: cleanParadigm,
+	await personRepo.updatePerson(db, Person.id, {
+		settings: {
+			paradigm: cleanParadigm,
+		}
 	});
 
 	try {

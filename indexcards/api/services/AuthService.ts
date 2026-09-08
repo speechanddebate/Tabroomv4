@@ -12,7 +12,7 @@ import type { RegisterRequest } from '@tabroom/types';
 
 export async function login(username: string, password: string, context: { ip?: string; agentData?: string } = {}): Promise<{person: Selectable<Person> | null; token: string}> {
 	const { ip, agentData } = context;
-	const person = await personRepo.getPersonByUsername(username, {includePassword: true}) as Selectable<Person> | null;
+	const person = await personRepo.getPersonByUsername(db, username) as Selectable<Person> | null;
 
 	if (!person || !person?.id || !person?.password) {
 		throw AUTH_INVALID;
@@ -36,7 +36,7 @@ export async function login(username: string, password: string, context: { ip?: 
 export async function register(userData: RegisterRequest, context: { ip?: string; agentData?: string } = {}) {
 	const { ip, agentData } = context;
 	//ensure email is not already in use
-	if(userData.email && await personRepo.getPersonByUsername(userData.email)){
+	if(userData.email && await personRepo.getPersonByUsername(db,userData.email)){
 		throw new ValidationError('Email already in use');
 	}
 	if(!userData.password) throw new ValidationError('Password is required');
@@ -50,7 +50,7 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 		country    : userData.country,
 		tz         : userData.tz,
 	};
-	const personId = await personRepo.createPerson(newPersonData);
+	const personId = await personRepo.createPerson(db,newPersonData);
 
 	if (!personId) {
 		throw new Error('Failed to create user');

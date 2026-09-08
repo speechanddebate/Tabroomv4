@@ -19,7 +19,7 @@ describe('studentsController', () => {
 					student_search_count: 0,
 				},
 			});
-			const savePersonSettingsSpy = vi.spyOn(personRepo, 'savePersonSettings').mockResolvedValue(undefined);
+			const updatePersonSpy = vi.spyOn(personRepo, 'updatePerson').mockResolvedValue(undefined);
 			vi.spyOn(studentRepo, 'unlinkedSearch').mockResolvedValue([
 				{
 					id: 101,
@@ -40,13 +40,13 @@ describe('studentsController', () => {
 
 			await controller.unlinkedSearch(req, res);
 
-			expect(personRepo.getPerson).toHaveBeenCalledWith(10, {
+			expect(personRepo.getPerson).toHaveBeenCalledWith(expect.any(Object), 10, {
 				settings: ['last_student_search', 'student_search_count'],
 			});
-			expect(savePersonSettingsSpy).toHaveBeenCalledWith(10, {
+			expect(updatePersonSpy).toHaveBeenCalledWith(expect.any(Object), 10,{ settings: {
 				student_search_count: 1,
 				last_student_search: expect.any(Date),
-			});
+			}});
 			expect(studentRepo.unlinkedSearch).toHaveBeenCalledWith({ first: 'Te', last: 'St' }, expect.any(Object));
 			expect(res.body).toEqual([
 				{
@@ -73,7 +73,7 @@ describe('studentsController', () => {
 					student_search_count: 10,
 				},
 			});
-			const savePersonSettingsSpy = vi.spyOn(personRepo, 'savePersonSettings').mockResolvedValue(undefined);
+			const updatePersonSpy = vi.spyOn(personRepo, 'updatePerson').mockResolvedValue(undefined);
 			const unlinkedSearchSpy = vi.spyOn(studentRepo, 'unlinkedSearch').mockResolvedValue([]);
 
 			const { req, res } = createContext({
@@ -86,7 +86,7 @@ describe('studentsController', () => {
 
 			expect(res).toBeProblemResponse(429);
 			expect(unlinkedSearchSpy).not.toHaveBeenCalled();
-			expect(savePersonSettingsSpy).not.toHaveBeenCalled();
+			expect(updatePersonSpy).not.toHaveBeenCalled();
 		});
 
 		it('logs rich student-search description with su email and session id', async () => {
@@ -98,7 +98,7 @@ describe('studentsController', () => {
 					student_search_count: 0,
 				},
 			});
-			vi.spyOn(personRepo, 'savePersonSettings').mockResolvedValue(undefined);
+			vi.spyOn(personRepo, 'updatePerson').mockResolvedValue(undefined);
 
 			const { req, res } = createContext({
 				valid: { query: { first: 'Ada', last: 'Lovelace' } },
@@ -150,7 +150,7 @@ describe('studentsController', () => {
 					student_search_count: 0,
 				},
 			});
-			const savePersonSettingsSpy = vi.spyOn(personRepo, 'savePersonSettings').mockResolvedValue(undefined);
+			const updatePersonSpy = vi.spyOn(personRepo, 'updatePerson').mockResolvedValue(undefined);
 			vi.spyOn(studentRepo, 'unlinkedSearch').mockResolvedValue([
 				{
 					id: 101,
@@ -177,13 +177,13 @@ describe('studentsController', () => {
 
 			await controller.unlinkedSearch(req, res);
 
-			expect(personRepo.getPerson).toHaveBeenCalledWith(10, {
+			expect(personRepo.getPerson).toHaveBeenCalledWith(expect.any(Object), 10, {
 				settings: ['last_student_search', 'student_search_count'],
 			});
-			expect(savePersonSettingsSpy).toHaveBeenCalledWith(10, {
+			expect(updatePersonSpy).toHaveBeenCalledWith(expect.any(Object), 10, { settings: {
 				student_search_count: 1,
 				last_student_search: expect.any(Date),
-			});
+			}});
 			expect(studentRepo.unlinkedSearch).toHaveBeenCalledWith({ first: 'Test', last: 'Student' }, expect.any(Object));
 			expect(res.body).toEqual([
 				{

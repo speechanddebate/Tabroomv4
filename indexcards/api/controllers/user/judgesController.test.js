@@ -172,7 +172,7 @@ describe('judgesController', () => {
 			expect(res.status).toHaveBeenCalledWith(204);
 			expect(res).not.toBeProblemResponse();
 			expect(changeLogRepo.createChangeLog).toHaveBeenCalled();
-			expect(personRepo.savePersonSettings).toHaveBeenCalledWith(123, { paradigm: 'word '.repeat(50) });
+			expect(personRepo.updatePerson).toHaveBeenCalledWith(expect.any(Object), 123, { settings: { paradigm: 'word '.repeat(50) } });
 		});
 	});
 });

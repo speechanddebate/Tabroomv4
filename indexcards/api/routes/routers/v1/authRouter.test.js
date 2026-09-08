@@ -111,7 +111,7 @@ describe('Auth Router', () => {
 			expect(res).not.toBeProblemResponse();
 			assert.isObject(res.body, 'Response is an object');
 			assert.containsAllKeys(res.body, ['personId', 'token'], 'Response has personId and session token');
-			const person = await personRepo.getPerson(res.body.personId);
+			const person = await personRepo.getPerson(db, res.body.personId);
 			expect(person).toBeDefined();
 		});
 	});

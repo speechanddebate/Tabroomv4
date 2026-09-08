@@ -1,12 +1,12 @@
 import personRepo from '../../api/repos/personRepo.js';
 import { faker } from '@faker-js/faker';
 import factories from './index.js';
-import type { Person } from '../../api/data/schema.js';
-import type { Insertable } from 'kysely';
 
-type Overrides = Partial<Insertable<Person>> & { Judge?: object, Ballot?: object };
+import { db } from '../../api/data/database.js';
 
-export function createPersonData(overrides: Overrides = {}) {
+type Overrides = Partial<Parameters<typeof personRepo.createPerson>[1]> & { Judge?: object, Ballot?: object };
+
+export function createPersonData(overrides: Parameters<typeof personRepo.createPerson>[1] = {}): Parameters<typeof personRepo.createPerson>[1] {
 	// Ensure email is always unique by adding a random string
 	const uniqueEmail = `user_${Math.random().toString(36).substring(2, 10)}_${Date.now()}@example.com`;
 	return {
@@ -21,30 +21,28 @@ export function createPersonData(overrides: Overrides = {}) {
 	};
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function create(overrides: Overrides & { personId?: number } = {}): Promise<{ personId: number, getPerson: any }> {
+export async function create(overrides: Overrides & { personId?: number } = {}) {
 	delete overrides.Judge;
-	const data = createPersonData({
-		...overrides,
-	});
+	delete overrides.Ballot;
 
-	const personId: number = await personRepo.createPerson(data);
+	const data = createPersonData(overrides);
+
+
+	const personId: number = await personRepo.createPerson(db, data);
 
 	return {
 		personId,
-		getPerson: () => personRepo.getPerson(personId, { settings: true }),
+		getPerson: () => personRepo.getPerson(db, personId, { settings: true }),
 	};
 }
 export async function createJudge(overrides: Overrides & { personId?: number } = {}) {
-	const data = createPersonData({
-		...overrides,
-	});
-	const personId: number = overrides.personId ?? await personRepo.createPerson(data);
-	const { judgeId }: { judgeId: number } = await factories.judge.createTestJudge({ person: personId, ...overrides.Judge });
+	const {Judge, Ballot: _Ballot, ...personOverrides} = overrides;
+	const personId: number = overrides.personId ?? await personRepo.createPerson(db, createPersonData(personOverrides));
+	const { judgeId }: { judgeId: number } = await factories.judge.createTestJudge({ person: personId, ...Judge });
 
 	return {
 		personId,
-		getPerson: () => personRepo.getPerson(personId),
+		getPerson: () => personRepo.getPerson(db, personId),
 		judgeId,
 	};
 }

@@ -50,11 +50,11 @@ export async function su(req: Request, res: Response){
 	if(!req.session?.id) {
 		return BadRequest(req, res, 'You do not have an active session.');
 	}
-	const suTarget: {id: number} | null = await personRepo.getPerson(req.valid.body.suId) as {id: number} | null;
+	const suTarget = (await personRepo.getPerson(db,req.valid.body.suId));
 	if(!suTarget) return BadRequest(req, res, 'no such person found');
 
 	if(req.session.id === suTarget.id) return BadRequest(req, res, 'You cannot su to yourself');
-
+	
 	await sessionRepo.updateSession(db,req.session.id,{
 		person: suTarget.id,
 		su: req.session?.person,

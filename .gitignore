@@ -14,3 +14,5 @@ test-results/
 
 # Schemats config
 .env
+
+.vscode/

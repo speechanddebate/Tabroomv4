@@ -1,9 +1,71 @@
 import logger from '../../helpers/logger.js';
+import { sql } from 'kysely';
+
+
+import type { Database } from '../../data/database.js';
+
+type Settings = Record<string, unknown>;
+
+type SettingRow = {
+	value: string | null;
+	value_text: string | null;
+	value_date: Date | null;
+	tag: string;
+	created_at: Date | null;
+	timestamp: Date | null;
+};
+
+interface SaveSettingsOptions {
+	db: Database;
+	table: 'person_setting'; // expand this later
+	settings: Settings;
+	ownerKey: string;
+	ownerId: number;
+}
+
+export async function saveSettings2({
+	db,
+	table,
+	settings,
+	ownerKey,
+	ownerId,
+}: SaveSettingsOptions) {
+	if (!settings || !Object.keys(settings).length) {
+		return;
+	}
+
+	const rows = buildSettingsRows({
+		settings,
+		ownerKey,
+		ownerId,
+	});
+
+	if (!rows.length) {
+		return;
+	}
+
+	await db
+		.insertInto(table)
+		.values(rows)
+		.onDuplicateKeyUpdate({
+			value: sql`VALUES(value)`,
+			value_text: sql`VALUES(value_text)`,
+			value_date: sql`VALUES(value_date)`,
+		})
+		.execute();
+}
 export async function saveSettings({
 	model,
 	settings,
 	ownerKey,
 	ownerId,
+}: {
+	// sequelize has horrible typing
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	model: any;
+	settings: Settings;
+	ownerKey: string;
+	ownerId: number;
 }) {
 	if (!settings || !Object.keys(settings).length) {
 		return;
@@ -36,6 +98,11 @@ export function withSettingsInclude({
 	model,
 	as,
 	settings,
+}: {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	model: any;
+	as: string;
+	settings: true | string[];
 }) {
 	// no settings requested => no include
 	if (!settings) return [];
@@ -44,6 +111,7 @@ export function withSettingsInclude({
 		model,
 		as,
 		required: false,
+		where: {},
 	};
 
 	// true = include all settings
@@ -66,18 +134,15 @@ export function withSettingsInclude({
 
 /**
  * Build rows for bulk upsert into a *_setting table
- *
- * @param {Object} params.settings - { tag: value }
- * @param {string} params.ownerKey - column name (e.g. 'school')
- * @param {number} params.ownerId
- * @param {number|null} params.chapter
- *
- * @returns {Array<Object>} rows suitable for bulkCreate
  */
 export function buildSettingsRows({
 	settings,
 	ownerKey,
 	ownerId,
+}: {
+	settings: Settings;
+	ownerKey: string;
+	ownerId: number;
 }) {
 	if (!settings || typeof settings !== 'object') return [];
 
@@ -92,18 +157,17 @@ export function buildSettingsRows({
  * @param {Array} settingRows - rows from DB
  * @returns {Object} settings key-value pairs
  */
-export function flattenSettings(settingRows) {
+export function flattenSettings(settingRows: SettingRow[]) {
 	if (!settingRows) return;
 
-	const out = {};
+	const out: Record<string, string | number | Date | null> = {};
 
-	for (const s of settingRows) {
-		const setting = s.dataValues || s;
+	for (const setting of settingRows) {
 
 		if (setting.value === 'text' || setting.value === 'json') {
 			if(setting.value === 'json') {
 				try {
-					out[setting.tag] = JSON.parse(setting.value_text);
+					out[setting.tag] = JSON.parse(setting.value_text ?? 'null');
 				} catch (e) {
 					logger.warn(`Failed to parse JSON setting for tag ${setting.tag} with value ${setting.value_text}:`, e);
 					out[setting.tag] = setting.value_text;
@@ -137,16 +201,15 @@ export function flattenSettings(settingRows) {
  * @param {Array} settingRows - rows from DB
  * @returns {Object} { tag: { createdAt, updatedAt }, ... }
  */
-export function flattenSettingsTimestamps(settingRows) {
+export function flattenSettingsTimestamps(settingRows: SettingRow[]) {
 	if (!settingRows) return;
 
-	const out = {};
+	const out: Record<string, { created_at: Date | null; timestamp: Date | null }> = {};
 
-	for (const s of settingRows) {
-		const setting = s.dataValues || s;
+	for (const setting of settingRows) {
 		out[setting.tag] = {
-			createdAt: setting.created_at,
-			updatedAt: setting.timestamp,
+			created_at: setting.created_at,
+			timestamp: setting.timestamp,
 		};
 	}
 
@@ -158,7 +221,7 @@ export function flattenSettingsTimestamps(settingRows) {
  * @param {*} value  - the setting value
  * @returns an object with keys: value, value_text, value_date
  */
-function encodeSettingValue(value, tag) {
+function encodeSettingValue(value: unknown, tag: string) {
 	const VALUE_TEXT_TAGS = ['livedoc_url'];
 	// null / undefined -> clear all value fields
 	if (value === null || value === undefined) {
@@ -172,7 +235,7 @@ function encodeSettingValue(value, tag) {
 	// Date → value_date
 	if (value instanceof Date) {
 		return {
-			value: null,
+			value: 'date',
 			value_text: null,
 			value_date: value,
 		};

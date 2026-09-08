@@ -108,7 +108,7 @@ export const ConfigSchema = z.object({
 			/** The file path to log to. */
 			path: z.string().min(1),
 		}).optional(),
-	}).prefault({}),
+	}).strict().prefault({}),
 	ERROR_DESTINATION: z.array(z.string().min(1)).optional(), // only used in errorHandler
 	//--------------------------------------------------------------------
 	// EXTERNAL SERVICES

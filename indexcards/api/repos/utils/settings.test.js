@@ -57,7 +57,7 @@ describe('buildSettingsRows', () => {
 			{
 				[ownerKey]: ownerId,
 				tag: 'mydate',
-				value: null,
+				value: 'date',
 				value_text: null,
 				value_date: date,
 			},
@@ -228,7 +228,7 @@ describe('buildSettingsRows', () => {
 			{
 				[ownerKey]: ownerId,
 				tag: 'f',
-				value: null,
+				value: 'date',
 				value_text: null,
 				value_date: date,
 			},
@@ -261,6 +261,7 @@ describe('withSettingsInclude', () => {
 				model: DummyModel,
 				as,
 				required: false,
+				where: {},
 			},
 		]);
 	});
@@ -386,20 +387,6 @@ describe('flattenSettings', () => {
 			d: 42,
 			e: 'notanumber',
 			f: null,
-		});
-	});
-
-	it('handles rows with dataValues property', () => {
-		const date = new Date('2021-01-01T00:00:00Z');
-		const rows = [
-			{ dataValues: { tag: 'foo', value: 'text', value_text: 'bar' } },
-			{ dataValues: { tag: 'date', value: 'date', value_date: date } },
-			{ dataValues: { tag: 'num', value: '100' } },
-		];
-		expect(flattenSettings(rows)).toEqual({
-			foo: 'bar',
-			date: date,
-			num: 100,
 		});
 	});
 });

@@ -24,6 +24,7 @@ export default defineConfig({
 			{
 				args: 'all',
 				argsIgnorePattern: '^(err|req|res|next|opts|_.*)$',
+				varsIgnorePattern: '^_.*$'
 			},
 		],
 	},

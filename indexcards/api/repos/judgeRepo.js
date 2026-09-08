@@ -237,6 +237,31 @@ async function getLiveDocs(personId){
 		caption: row.caption,
 	}));
 }
+
+export async function getJudgesForPersons(db, personIds) {
+	const rows = await db.selectFrom('judge')
+		.where('judge.person', 'in', personIds)
+		.leftJoin('school', 'school.id', 'judge.school')
+		.selectAll('judge')
+		.select(['school.id as schoolId', 'school.name as schoolName'])
+		.execute();
+
+		return rows.reduce((acc, row) => {
+			(acc[row.person] ??= []).push({
+				id: row.id,
+				person: row.person,
+				created_at: row.created_at,
+				School: row.schoolId
+					? {
+							id: row.schoolId,
+							name: row.schoolName,
+						}
+					: null,
+			});
+	
+			return acc;
+		}, {});
+}
 export default {
 	getJudge,
 	getJudges,

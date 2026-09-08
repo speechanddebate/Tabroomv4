@@ -187,7 +187,7 @@ describe('Authentication Middleware', () => {
 		});
 		it('returns 401 when API key is invalid', async () => {
 			// base64("myuserkey:invalidapikey")
-			const encoded = Buffer.from('username:invalidapikey').toString('base64');
+			const encoded = Buffer.from('123:invalidapikey').toString('base64');
 
 			const { req, res, next } = createContext({
 				headers: {
@@ -195,7 +195,7 @@ describe('Authentication Middleware', () => {
 				},
 			});
 
-			vi.spyOn(personRepo, 'getPersonByUsername').mockResolvedValue(null);
+			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
 
 			await Authenticate(req, res, next);
 
