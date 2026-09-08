@@ -119,6 +119,23 @@ describe('authController',() => {
 		});
 	});
 	describe('su', () => {
+		it('returns 200 when successful', async () => {
+			const { req, res } = createContext({
+				session: {
+					id: 1,
+				},
+				valid: {
+					body: { suId: 2 },
+				},
+			});
+			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
+			const spy = vi.spyOn(sessionRepo, 'updateSession');
+			spy.mockResolvedValue();
+			await controller.su(req, res);
+			expect(spy).toHaveBeenCalled();
+			expect(res.status).toHaveBeenCalledWith(204);
+		});
+
 		it('returns 400 when no session', async () => {
 			const { req, res } = createContext({
 				valid: {
@@ -160,26 +177,20 @@ describe('authController',() => {
 			await controller.su(req, res);
 			expect(res.status).toHaveBeenCalledWith(400);
 		});
-		it('returns 204 when successful', async () => {
+
+		it('returns 400 when target is same as current user', async () => {
 			const { req, res } = createContext({
 				session: {
-					id: 1,
-					Person: {
-						id: 2,
-					},
+					id: 2,
 				},
 				valid: {
-					body: { suId: 1 },
+					body: { suId: 2 },
 				},
 			});
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 1 });
-			const spy = vi.spyOn(sessionRepo, 'updateSession');
-			spy.mockResolvedValue();
+			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
 			await controller.su(req, res);
-			expect(spy).toHaveBeenCalled();
-			expect(res.status).toHaveBeenCalledWith(204);
+			expect(res.status).toHaveBeenCalledWith(400);
 		});
-
 	});
 	describe('suEnd', () => {
 		it('returns 204 when successful', async () => {
@@ -196,8 +207,17 @@ describe('authController',() => {
 			expect(spy).toHaveBeenCalled();
 			expect(res.status).toHaveBeenCalledWith(204);
 		});
-		it('returns 400 when no Su session', async () => {
+		it('returns 400 when no session', async () => {
 			const { req, res } = createContext();
+			await controller.suEnd(req, res);
+			expect(res.status).toHaveBeenCalledWith(400);
+		});
+		it('returns 400 when no Su session', async () => {
+			const { req, res } = createContext({
+				session: {
+					id: 1,
+				},
+			});
 			await controller.suEnd(req, res);
 			expect(res.status).toHaveBeenCalledWith(400);
 		});

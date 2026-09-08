@@ -47,18 +47,17 @@ export async function logout(req: Request, res: Response){
 }
 /** start an su session */
 export async function su(req: Request, res: Response){
-	if(!req.session?.Person){
-		return BadRequest(req, res, 'You cannot start an su session without a valid session.');
+	if(!req.session?.id) {
+		return BadRequest(req, res, 'You do not have an active session.');
 	}
 	const suTarget: {id: number} | null = await personRepo.getPerson(req.valid.body.suId) as {id: number} | null;
 	if(!suTarget) return BadRequest(req, res, 'no such person found');
 
-	if(!req.session?.id) {
-		return BadRequest(req, res, 'You do not have an active session.');
-	}
+	if(req.session.id === suTarget.id) return BadRequest(req, res, 'You cannot su to yourself');
+
 	await sessionRepo.updateSession(db,req.session.id,{
 		person: suTarget.id,
-		su: req.session.person,
+		su: req.session?.person,
 	});
 	return res.status(204).send();
 }

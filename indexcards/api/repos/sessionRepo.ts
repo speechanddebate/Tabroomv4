@@ -11,7 +11,8 @@ export const findByUserKey = async (
 ) => {
 	const session = await db
 		.selectFrom('session')
-		.leftJoin('person as p', 'p.id', 'session.person')
+		// session.person is non null so innerJoin
+		.innerJoin('person as p', 'p.id', 'session.person')
 		.leftJoin('person as su', 'su.id', 'session.su')
 		.select([
 			'session.id',
@@ -45,15 +46,12 @@ export const findByUserKey = async (
 		su: session.su,
 		person: session.person,
 		userkey: session.userkey,
-		Person: session.personId
-			? {
+		Person: {
 					id: session.personId,
 					first: session.personFirst,
 					last: session.personLast,
 					email: session.personEmail,
-				}
-			: null,
-
+		},
 		Su: session.suId
 			? {
 					id: session.suId,
@@ -73,7 +71,12 @@ export const getSession = async (db: Database, id: number) => {
 		
 	return await query.executeTakeFirst();
 };
-
+/**
+ *  Creates a new session in the database and generates a userkey for it.
+ * @param db 
+ * @param session 
+ * @returns id: the id of the new session, userkey: the generated userkey for the session
+ */
 export const createSession = async (
 	db: Database,
 	session: Insertable<Session>,

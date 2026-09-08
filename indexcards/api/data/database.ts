@@ -1,5 +1,6 @@
-import type { DB } from './schema.js' // this is the Database interface we defined earlier
-import { createPool } from 'mariadb' // do not use 'mysql2/promises'!
+import type { DB } from './schema.js'
+//community mariadb driver support 'returning'
+import { createPool } from 'mariadb'
 import { Kysely } from 'kysely'
 import { MariadbDialect } from "kysely-mariadb";
 import config from '../config.js'
@@ -15,10 +16,6 @@ const dialect = new MariadbDialect({
   })
 })
 
-// Database interface is passed to Kysely's constructor, and from now on, Kysely 
-// knows your database structure.
-// Dialect is passed to Kysely's constructor, and from now on, Kysely knows how 
-// to communicate with your database.
 export const db = new Kysely<DB>({
   dialect,
 })

@@ -34,6 +34,28 @@ describe('sessionRepo', () => {
 			expect(session?.id).toBe(sessionId);
 			expect(session?.Person?.id).toBe(personId);
 		});
+
+		it('returns the session with Su when it exists', async () => {
+			const { personId: suId } = await factories.person.create();
+			const { sessionId, userkey } = await factories.session.create({person: personId, su: suId});
+			const session = await sessionRepo.findByUserKey(db, userkey as string);
+			expect(session).toBeDefined();
+			expect(session?.id).toBe(sessionId);
+			expect(session?.Person?.id).toBe(personId);
+			expect(session?.Su?.id).toBe(suId);
+		});
+
+	});
+
+	describe('updateSession', () => {
+		it('updates the session when given a valid session id', async () => {
+			const { sessionId } = await factories.session.create({person: personId});
+			const newIp = '8.8.8.8';
+			await sessionRepo.updateSession(db, sessionId, { ip: newIp });
+			
+			const updated = await sessionRepo.getSession(db, sessionId);
+			expect(updated?.ip).toBe(newIp);
+		});
 	});
 
 	describe('deleteSession', () => {
