@@ -19,7 +19,7 @@ WORKDIR /app/schemats
 
 RUN npm run sync
 
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-lc", "npm exec --workspace=schemats svelte-kit sync && npm run dev --workspace=schemats"]
 
 FROM base AS build
 
