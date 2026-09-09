@@ -1,6 +1,7 @@
 import type { ZodOpenApiSecuritySchemeObject, ZodOpenApiObject } from 'zod-openapi';
 
 import config from '../../config.js';
+
 const schemes: Record<string, ZodOpenApiSecuritySchemeObject> = {
 	extApiKey:  { type: 'http', scheme: 'basic' },
 	bearerAuth: { type: 'http', scheme: 'bearer' },
@@ -28,7 +29,14 @@ export const optionalAuth: ZodOpenApiObject['security'] = [{}, ...requireAuth ];
  */
 export const requireExtApiKey: ZodOpenApiObject['security'] = [{ extApiKey: [] }];
 
-export default {
+//this is for some weird TS thing with declarations
+type ApiSecurityConfig = {
+    schemes: Record<string, ZodOpenApiSecuritySchemeObject>;
+    defaultSecurity: ZodOpenApiObject['security'];
+};
+const apiSecurityConfig: ApiSecurityConfig = {
 	schemes,
 	defaultSecurity,
-}
+};
+
+export default apiSecurityConfig;

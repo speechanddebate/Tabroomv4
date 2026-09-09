@@ -25,6 +25,8 @@
 		"resolveJsonModule": true,
 		"skipLibCheck"    : true,
 		"removeComments": true,
-		"verbatimModuleSyntax": true
+		"verbatimModuleSyntax": true,
+		"declaration": true,
+		"declarationMap": true,
 	}
 }

@@ -51,7 +51,7 @@ export const ConfigSchema = z.object({
 		user: z.string().default('root'),
 		pass: z.string().min(1),
 		sequelizeOptions : z.object({
-			dialect : z.string().default('mariadb'),
+			dialect : z.enum(['mariadb', 'mysql', 'postgres', 'sqlite', 'mssql']).default('mariadb'),
 			define  : z.object({
 				freezeTableName : z.boolean().default(true),
 				modelName       : z.string().default('singularName'),

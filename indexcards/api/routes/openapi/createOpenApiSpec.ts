@@ -8,6 +8,7 @@ import { readFile } from 'node:fs/promises';
 import security from './security.js';
 
 import type { ZodOpenApiObject, ZodOpenApiOperationObject } from 'zod-openapi';
+import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import type { RouteOpenApiConfig } from '../../types/express.d.js';
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as const;
@@ -30,7 +31,7 @@ const pkg = JSON.parse(
  * - Collects all tags actually used by operations
  * - Automatically adds missing tags to `spec.tags`
  */
-export function createOpenApiSpec(apiRouter: RouterLike) {
+export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 	// Collect paths + used tags
 	const { paths, usedTags } = collectOpenApi(apiRouter);
 

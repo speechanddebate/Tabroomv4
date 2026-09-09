@@ -91,6 +91,7 @@
 		"kysely-codegen": "^0.20.0",
 		"node-mocks-http": "^1.10.1",
 		"nodemon": "^3.1.10",
+		"openapi3-ts": "^4.6.1",
 		"sequelize-auto": "^0.8.8",
 		"supertest": "^7.1.3",
 		"ts-node": "^10.9.1",
