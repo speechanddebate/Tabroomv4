@@ -1,6 +1,5 @@
 import db from '../data/db.js';
 import { fileInclude }  from './fileRepo.js';
-import { webpageInclude }  from './webpageRepo.js';
 import { FIELD_MAP, toDomain, toPersistence } from './mappers/tournMapper.js';
 import { saveSettings, withSettingsInclude } from './utils/settings.js';
 import { resolveAttributesFromFields } from './utils/repoUtils.js';
@@ -42,13 +41,6 @@ function buildTournQuery(opts = {}) {
 				)`),
 			],
 		};
-	}
-	if(opts.include?.webpages) {
-		query.include.push({
-			...webpageInclude(opts.include.webpages),
-			as: 'webpages',
-			required: false,
-		});
 	}
 	if(opts.include?.files){
 		query.include.push({

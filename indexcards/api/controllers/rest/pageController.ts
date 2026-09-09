@@ -1,18 +1,16 @@
 import webpageRepo from '../../repos/webpageRepo.js';
 import { ToPublicPage } from '../mappers/pageMapper.js';
+import { db } from '../../data/database.js';
+import type { Request, Response } from 'express';
 
 /** Get a list of the public, sitewide pages
  */
-export async function getPublicPages(req,res){
-	const scope = {
-		sitewide  : true,
-	};
+export async function getPublicPages(req: Request, res: Response){
 
-	if (req.params.slug) {
-		scope.slug = req.params.slug;
-	}
-
-	const pages = await webpageRepo.getWebpages(scope);
+	const pages = await webpageRepo.getWebpages(db, {
+		sitewide: true,
+		slug: req.params.slug[0] ?? undefined,
+	});
 
 	if (req.params.slug) {
 		if (!pages.length) {
