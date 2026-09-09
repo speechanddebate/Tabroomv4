@@ -3,26 +3,27 @@ FROM node:24.13.1-bookworm AS base
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY schemats/package.json ./schemats/package.json
 
 FROM base AS dev
 
-RUN npm ci --include=dev
+RUN npm ci --include=dev --ignore-scripts --workspace=schemats
 
 # install playwright browsers
-RUN npx playwright install --with-deps
+RUN npm exec --workspace=schemats -- playwright install --with-deps
 
-COPY . .
+COPY schemats ./schemats
 
-CMD ["npm", "run", "dev"]
+CMD ["sh", "-lc", "npm exec --workspace=schemats svelte-kit sync && npm run dev --workspace=schemats"]
 
 FROM base AS build
 
-RUN npm ci
+RUN npm ci --ignore-scripts
 
-COPY . .
+COPY schemats ./schemats
 
-RUN npm run build
+RUN npm run build --workspace=schemats
 
 FROM node:24.13.1-bookworm-slim AS prod
 
@@ -30,14 +31,16 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
+COPY schemats/package.json ./schemats/package.json
 
-# do not install dev and ignore scripts to prevent husky errors
-# run cache clean to avoid adding npm cache to prod image
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts \
+    && npm cache clean --force
 
 # copy ONLY the built app
-COPY --from=build /app/build ./build
+COPY --from=build /app/schemats/build ./schemats/build
+
+WORKDIR /app/schemats
 
 EXPOSE 3000
 
