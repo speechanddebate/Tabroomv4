@@ -2,6 +2,7 @@
 /** @type {import('vite').UserConfig} */
 import { defineConfig } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 import {svelteTesting} from '@testing-library/svelte/vite';
 import { config } from 'dotenv';
 config({ quiet: true });
@@ -9,7 +10,7 @@ config({ quiet: true });
 export default defineConfig( () => {
 
 	return {
-		plugins: [ sveltekit(), svelteTesting()],
+		plugins: [ tailwindcss(), sveltekit(), svelteTesting()],
 		build	: {
 			target : 'es2022',
 		},
