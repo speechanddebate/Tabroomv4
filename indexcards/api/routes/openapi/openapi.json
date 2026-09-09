@@ -5436,14 +5436,14 @@
             ],
             "description": "The URL associated with the message"
           },
-          "visibleAt": {
+          "visible_at": {
             "description": "The timestamp when the message became visible",
             "type": [
               "string",
               "null"
             ]
           },
-          "readAt": {
+          "read_at": {
             "description": "The timestamp when the message was read",
             "type": [
               "string",
@@ -5566,8 +5566,8 @@
           "subject",
           "body",
           "url",
-          "visibleAt",
-          "readAt",
+          "visible_at",
+          "read_at",
           "Tourn",
           "Sender",
           "Email"

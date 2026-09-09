@@ -1,6 +1,6 @@
 import type { DB } from './schema.js'
 import { createPool } from 'mariadb'
-import { Kysely } from 'kysely'
+import { Kysely, SafeNullComparisonPlugin } from 'kysely'
 import { MariadbDialect } from "kysely-mariadb";
 import config from '../config.js'
 import logger from '../helpers/logger.js'
@@ -27,7 +27,10 @@ const dialect = new MariadbDialect({
 })
 
 export const db = new Kysely<DB>({
-  dialect,
+	dialect,
+	plugins: [
+		new SafeNullComparisonPlugin(),
+	],
 	log(event){
 		if (event.level === 'error'){
 			logger.error('DB Error Event:', event);

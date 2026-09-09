@@ -7,8 +7,8 @@ export const InboxMessageSchema = z.object({
 	subject: z.string().max(255).nullable().meta({ description: 'The subject of the message' }),
 	body: z.string().max(65535).nullable().meta({ description: 'The body of the message' }),
 	url: z.url().max(511).nullable().meta({ description: 'The URL associated with the message' }),
-	visibleAt: z.string().nullable().meta({ description: 'The timestamp when the message became visible' }),
-	readAt: z.string().nullable().meta({ description: 'The timestamp when the message was read' }),
+	visible_at: z.string().nullable().meta({ description: 'The timestamp when the message became visible' }),
+	read_at: z.string().nullable().meta({ description: 'The timestamp when the message was read' }),
 	Tourn: z.object({
 		id: utils.id.meta({ description: 'The unique identifier for the tournament' }),
 		name: z.string().max(63).nullable().meta({ description: 'The name of the tournament' }),

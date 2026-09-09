@@ -42,7 +42,7 @@ type GetPersonOptions = {
 };
 
 async function personQuery(db: Database, opts: GetPersonOptions = {}) {
-	let query = db.selectFrom('person')
+	let query = db.selectFrom('person');
 	if(opts.excludeBanned)
 		query = query.where(isNotBanned);
 	if(opts.excludeUnconfirmedEmail)

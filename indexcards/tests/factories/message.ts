@@ -1,7 +1,6 @@
-import factories from './index.js';
 import messageRepo from '../../api/repos/messageRepo.js';
 import { faker } from '@faker-js/faker';
-
+import { db } from '../../api/data/database.js';
 export function createMessageData(overrides = {}) {
 	return {
 		subject: faker.lorem.sentence(),
@@ -11,24 +10,20 @@ export function createMessageData(overrides = {}) {
 	};
 }
 
-export async function createTestMessage(overrides = {}) {
-	if(overrides.sender === undefined){
-		const { personId: senderId } = await factories.person.create();
-		overrides.sender = senderId;
-	}
+export async function create(overrides = {}) {
 	const data = createMessageData({
 		...overrides,
 	});
 
-	const messageId = await messageRepo.createMessage(data);
+	const messageId = await messageRepo.createMessage(db,data);
 
 	return {
 		messageId,
-		getMessage: () => messageRepo.getMessage(messageId),
+		getMessage: () => messageRepo.getMessage(db, messageId),
 	};
 }
 
 export default {
-	createTestMessage,
+	create,
 	createMessageData,
 };
