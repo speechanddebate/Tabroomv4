@@ -1,5 +1,5 @@
 import type { DBSchema, Database } from '../data/database.js';
-import { flattenSettings, saveSettings2 as saveSettings } from './utils/settings.js';
+import { flattenSettings, saveSettings } from './utils/settings.js';
 import db from '../data/db.js';
 import type { Person } from '../data/schema.js';
 import type { Insertable, Selectable, ExpressionBuilder } from 'kysely';

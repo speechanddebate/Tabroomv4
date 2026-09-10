@@ -58,11 +58,11 @@ describe('judgesRouter', () => {
 	describe("GET /user/judges/history", () => {
 		it('should return the judge history for the logged in user', async () => {
 			const { tournId } = await factories.tourn.createTestTourn(); // start is past by default
-			const { categoryId } = await factories.category.createTestCategory({ tourn: tournId });
-			const { judgeId } = await factories.judge.createTestJudge({ person: personId, category: categoryId });
+			const category = await factories.category.create({ tourn: tournId });
+			const { judgeId } = await factories.judge.createTestJudge({ person: personId, category: category.id });
 
 			// Create event → round → panel → ballot chain
-			const { eventId } = await factories.event.create({ category: categoryId });
+			const { eventId } = await factories.event.create({ category: category.id });
 			const { roundId } = await factories.round.create({ event: eventId, published: true });
 			const { sectionId } = await factories.section.create({ round: roundId });
 			await factories.ballot.create({ sectionId, judgeId });
@@ -101,7 +101,7 @@ describe('judgesRouter', () => {
 	describe("GET /user/judges/livedocs", () => {
 		it('should return the live docs for the logged in user', async () => {
 			const { tournId } = await factories.tourn.createTestTourn();
-			const { categoryId } = await factories.category.createTestCategory({
+			const category = await factories.category.create({
 				tourn: tournId,
 				settings: {
 					livedoc_url: 'example.com',
@@ -109,7 +109,7 @@ describe('judgesRouter', () => {
 				},
 			});
 
-			await factories.person.createJudge({ personId, Judge: { category: categoryId } });
+			await factories.person.createJudge({ personId, Judge: { category: category.id } });
 			const res = await request(server)
 				.get('/v1/user/judges/livedocs')
 				.set('Accept', 'application/json')

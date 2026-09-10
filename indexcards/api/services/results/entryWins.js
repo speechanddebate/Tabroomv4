@@ -1,8 +1,8 @@
 /* Record Service calculates the win/loss record of entries given an eventID and and
  * optional round name delimiter (up to and including Round 4, eg).  It returns
  * an object of entryID keyed entry records. */
-import db from '../../data/db.js';
 import roundRepo from '../../repos/roundRepo.js';
+import { db } from '../../data/database.js';
 
 export const entryWins = async ({eventId, roundId, ...options}) => {
 
@@ -13,13 +13,8 @@ export const entryWins = async ({eventId, roundId, ...options}) => {
 	if (options.isCoach) replacements.postLevel = 1;
 	if (options.isEntry) replacements.postLevel = 2;
 
-	let publicLimiter = 'and round.post_primary = :postLevel';
-	let roundLimiter = '';
-
 	if (roundId) {
-
-		roundLimiter = 'and round.name < :roundName';
-		const round = await roundRepo.getRound(roundId);
+		const round = await roundRepo.getRound(db, roundId);
 
 		if (!round) return {error: 'No such round found'};
 
@@ -33,36 +28,52 @@ export const entryWins = async ({eventId, roundId, ...options}) => {
 		return {error: 'Improper parameters sent so I cannot find results for you.'};
 	}
 
-	const resultsData = await db.sequelize.query(`
-		select
-			entry.id, entry.code,
-			round.id roundId, round.type roundType, round.name roundName,
-			panel.bye panelBye,
-			ballot.bye, ballot.forfeit, ballot.chair,
-			winloss.id winlossExists,
-			winloss.value winloss,
-			( select bb.value
-				from event_setting bb
-				where bb.event = round.event
-				and bb.tag = 'bracket_by_ballots'
-			) as byBallots
-		from (entry, round, panel, ballot)
-			left join score winloss on winloss.ballot = ballot.id and winloss.tag = 'winloss'
-		where 1=1
-			and round.event = :eventId
-			${ roundLimiter }
-			${ publicLimiter }
-			and round.id = panel.round
-			and panel.id = ballot.panel
-			and ballot.entry = entry.id
-			and NOT EXISTS (
-				select rs.id from round_setting rs
-				where rs.tag = 'ignore_results'
-				and rs.round = round.id
-			)
-	`, {
-		type: db.Sequelize.QueryTypes.SELECT,
-		replacements,
+	let resultsQuery = db
+		.selectFrom('entry')
+		.innerJoin('ballot', 'ballot.entry', 'entry.id')
+		.innerJoin('panel', 'panel.id', 'ballot.panel')
+		.innerJoin('round', 'round.id', 'panel.round')
+		.leftJoin('score as winloss', (join) => join
+			.onRef('winloss.ballot', '=', 'ballot.id')
+			.on('winloss.tag', '=', 'winloss')
+		)
+		.select([
+			'entry.id as id',
+			'entry.code as code',
+			'round.id as roundId',
+			'round.type as roundType',
+			'round.name as roundName',
+			'panel.bye as panelBye',
+			'ballot.bye as bye',
+			'ballot.forfeit as forfeit',
+			'ballot.chair as chair',
+			'winloss.id as winlossExists',
+			'winloss.value as winloss',
+		])
+		.select((eb) => eb
+			.selectFrom('event_setting as bb')
+			.select('bb.value')
+			.whereRef('bb.event', '=', 'round.event')
+			.where('bb.tag', '=', 'bracket_by_ballots')
+			.as('byBallots')
+		)
+		.where('round.event', '=', replacements.eventId)
+		.where('round.post_primary', '=', replacements.postLevel)
+		.where(({ not, exists, selectFrom }) => not(exists(
+			selectFrom('round_setting as rs')
+				.select('rs.id')
+				.where('rs.tag', '=', 'ignore_results')
+				.whereRef('rs.round', '=', 'round.id')
+		)));
+
+	if (replacements.roundName !== undefined) {
+		resultsQuery = resultsQuery.where('round.name', '<', replacements.roundName);
+	}
+
+	const resultsData = await resultsQuery.execute();
+	const byBallots = resultsData.some((row) => {
+		const value = row.byBallots;
+		return value === true || value === 'true' || Number(value) > 0;
 	});
 
 	// First aggregate the ballots by round so we can tell who won or lost a
@@ -161,7 +172,7 @@ export const entryWins = async ({eventId, roundId, ...options}) => {
 				};
 			};
 
-			if (resultsData.byBallots) {
+			if (byBallots) {
 
 				entry.wins += round.ballotWins;
 				entry.losses += round.ballotLosses;

@@ -2,47 +2,41 @@ import { NotFound } from '../../helpers/problem.js';
 import roundRepo from '../../repos/roundRepo.js';
 import { entryWins } from '../../services/results/entryWins.js';
 import { getSchematic } from '../pages/invite/schematController.js';
-import db from '../../data/db.js';
+import { db } from '../../data/database.js';
 
 export async function getPublishedRounds(req, res) {
 
-	// Removed from Sequelize because it apparently lacks a (documented) WHERE
-	// EXISTS support, or at least not one I could find in less time it took me
-	// to just write this raw query alas.
-
-	const rounds = await db.sequelize.query(`
-		select
-			round.*,
-			event.id eventId,
-			event.name eventName,
-			event.abbr eventAbbr,
-			event.type eventType,
-			event.level eventLevel,
-			event.nsda_category nsdaCategory,
-			(select jpr.value
-				from event_setting jpr
-				where jpr.tag = 'judge_publish_results'
-				and jpr.event = round.event
-			) publishResults
-		from round, event, tourn
-			where 1=1
-			and round.published = 1
-			and round.event = event.id
-			and event.tourn = tourn.id
-			and tourn.hidden != 1
-			and tourn.id = :tournId
-			and EXISTS (
-				select panel.id
-				from (panel, ballot)
-				where 1=1
-				and panel.round = round.id
-				and panel.id = ballot.panel
-				and ballot.entry IS NOT NULL
-			)
-	`, {
-		replacements: { ...req.params },
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	const rounds = await db
+		.selectFrom('round')
+		.innerJoin('event', 'round.event', 'event.id')
+		.innerJoin('tourn', 'event.tourn', 'tourn.id')
+		.selectAll('round')
+		.select([
+			'event.id as eventId',
+			'event.name as eventName',
+			'event.abbr as eventAbbr',
+			'event.type as eventType',
+			'event.level as eventLevel',
+			'event.nsda_category as nsdaCategory',
+		])
+		.select((eb) => eb
+			.selectFrom('event_setting as jpr')
+			.select('jpr.value')
+			.where('jpr.tag', '=', 'judge_publish_results')
+			.whereRef('jpr.event', '=', 'round.event')
+			.as('publishResults')
+		)
+		.where('round.published', '=', 1)
+		.where('tourn.hidden', '!=', 1)
+		.where('tourn.id', '=', req.params.tournId)
+		.where(({ exists, selectFrom }) => exists(
+			selectFrom('panel')
+				.innerJoin('ballot', 'panel.id', 'ballot.panel')
+				.select('panel.id')
+				.whereRef('panel.round', '=', 'round.id')
+				.where('ballot.entry', 'is not', null)
+		))
+		.execute();
 
 	const mappedRounds = rounds.map( (round) => {
 		return {
@@ -76,7 +70,7 @@ export async function getPublishedRounds(req, res) {
 
 export async function getPublishedRound(req,res) {
 
-	const round = await roundRepo.getRound(req.params.roundId);
+	const round = await roundRepo.getRound(db, req.params.roundId);
 
 	if (!round) {
 		return NotFound(req, res, `No round found with ID ${req.params.roundId}`);

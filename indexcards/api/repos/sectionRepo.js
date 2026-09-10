@@ -2,7 +2,6 @@ import db from '../data/db.js';
 import { FIELD_MAP,toDomain, toPersistence } from './mappers/sectionMapper.js';
 import { resolveAttributesFromFields } from './utils/repoUtils.js';
 import { ballotInclude } from './ballotRepo.js';
-import { roundInclude } from './roundRepo.js';
 import { withSettingsInclude } from './utils/settings.js';
 
 function buildSectionQuery(opts = {}){
@@ -17,13 +16,6 @@ function buildSectionQuery(opts = {}){
 			...ballotInclude(opts.include.Ballots),
 			as: 'ballots',
 			required: false,
-		});
-	}
-	if(opts.include?.Round) {
-		query.include.push({
-			...roundInclude(opts.include.Round),
-			as: 'round_round',
-			required: opts.include.Round.required ?? false,
 		});
 	}
 	query.include.push(

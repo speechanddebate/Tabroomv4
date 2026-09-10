@@ -1,5 +1,6 @@
 import categoryRepo from '../../api/repos/categoryRepo.js';
 import { fakeCategory } from './factoryUtils.js';
+import { db } from '../../api/data/database.js';
 
 export function createCategoryData(overrides = {}) {
 	const category = fakeCategory();
@@ -10,16 +11,14 @@ export function createCategoryData(overrides = {}) {
 	};
 }
 
-export async function createTestCategory(overrides = {}) {
+export async function create(overrides = {}) {
 	const data = createCategoryData(overrides);
-	const categoryId = await categoryRepo.createCategory(data);
+	const category = await categoryRepo.createCategory(db,data);
 
-	return {
-		categoryId,
-		getCategory: () => categoryRepo.getCategory(categoryId, { settings: true }),
-	};
+	const res = await categoryRepo.getCategory(db,category.id, { settings: true });
+	return res ?? (() => { throw new Error('Failed to create category'); })();
 }
 export default {
-	createTestCategory,
+	create,
 	createCategoryData,
 };

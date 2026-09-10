@@ -5,6 +5,8 @@ import sectionRepo from '../../repos/sectionRepo.js';
 import roundRepo from '../../repos/roundRepo.js';
 import timeslotRepo from '../../repos/timeslotRepo.js';
 
+import { db } from '../../data/database.js';
+
 export async function buildTarget(resource, resourceId, targetCache) {
 	const key = `${resource}:${resourceId}`;
 	if (targetCache.has(key)) return targetCache.get(key);
@@ -23,7 +25,7 @@ export async function buildTarget(resource, resourceId, targetCache) {
 	//build tourn target
 	switch (resource) {
 		case 'category': {
-			const category = await categoryRepo.getCategory(resourceId, { fields: ['tourn'] });
+			const category = await categoryRepo.getCategory(db, resourceId);
 			if (category) {
 				target.tournId = category.tourn;
 				target ={
@@ -46,7 +48,7 @@ export async function buildTarget(resource, resourceId, targetCache) {
 			break;
 		}
 		case 'round': {
-			const round = await roundRepo.getRound(resourceId, { fields: ['event'] });
+			const round = await roundRepo.getRound(db, resourceId, { fields: ['event'] });
 			if (round) {
 				target.eventId = round.event;
 				target ={

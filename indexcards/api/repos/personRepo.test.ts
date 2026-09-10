@@ -296,6 +296,16 @@ describe('PersonRepo', () => {
 	});
 
 	describe('updatePerson', () => {
+		it('updates a person row with new data', async () => {
+			const { personId } = await factories.person.create();
+			const updates = { first: 'UpdatedFirstName' };
+
+			const result = await personRepo.updatePerson(db, personId, updates);
+			expect(result).toBe(personId);
+
+			const updated = await personRepo.getPerson(db, personId);
+			expect(updated?.first).toBe(updates.first);
+		});
 		it('saves person settings for an existing person', async () => {
 			const { personId } = await factories.person.create();
 			const now = new Date();

@@ -46,12 +46,12 @@ export async function createTestTourn(overrides = {}) {
 export async function createFull(overrides = {}){
 	const data = createTournData(overrides);
 	const tournId = await tournRepo.createTourn(data);
-	const { categoryId } = await factories.category.createTestCategory({ tourn: tournId });
-	const { eventId } = await factories.event.create({ ...overrides.Event, category: categoryId });
-	const timeslot= await factories.timeslot.create(overrides.Timeslot);
+	const Category = await factories.category.create({ tourn: tournId });
+	const { eventId } = await factories.event.create({ ...overrides.Event, category: Category.id });
+	const Timeslot = await factories.timeslot.create(overrides.Timeslot);
 	const { roundId } = await factories.round.create({
 		event: eventId,
-		timeslot: timeslot.id,
+		timeslot: Timeslot.id,
 		...overrides.Round,
 		settings: {
 			judges_ballots_visible: 1,
@@ -61,7 +61,7 @@ export async function createFull(overrides = {}){
 	return {
 		tournId,
 		getTourn: () => tournRepo.getTourn(tournId, { settings: true }),
-		categoryId,
+		Category,
 		eventId,
 		roundId,
 	};

@@ -5,85 +5,88 @@
 // TODO: this one is going to need some pretty extensive testing because it's a
 // big ol' logic bomb in the middle of tabroom for a bunch of functions.
 
-import db from '../../data/db.js';
+//import db from '../../data/db.js';
+import { db }from '../../data/database.js';
+//import { db as kyselyDb } from '../../data/database.js';
 import { getRound } from '../../repos/roundRepo.js';
-import { getProtocol } from '../../repos/protocolRepo.js';
+import { getProtocol, getProtocols } from '../../repos/protocolRepo.js';
 
-export const tiebreakTypes = async ({roundId, protocolId = false}) => {
+type Counted = {
+	rank?: boolean,
+	entryWinloss?: boolean,
+	entryRank?: boolean,
+	bestPO?: boolean,
+	winloss?: boolean,
+	point?: boolean,
+	refute?: boolean,
+};
 
-	const round = await getRound(
-		roundId, {
-			include: {
-				Event:  {},
-				Protocol:  {},
-			},
-		}
-	);
+export const tiebreakTypes = async ({roundId, protocolId = false}: {
+	roundId: number,
+	protocolId?: number | false,
+}) => {
 
-	if ( ['highlow', 'highhigh', 'snaked_prelim'].includes(round.type)) {
+	const round = await getRound(db, roundId);
+
+	if(!round){
+		throw new Error(`Round with ID ${roundId} not found`);
+	}
+
+	if ( ['highlow', 'highhigh', 'snaked_prelim'].includes(round.type ?? '')) {
 		round.type = 'prelim';
 	}
 
-	const eventDetails = await db.sequelize.query(`
-		select
-			event.id, event.type, event.nsda_category,
-			(
-				select es.value
-				from event_setting es
-				where es.event = event.id
-				and es.tag = 'wsdc_ballot'
-			) wsdc,
-			(
-				select rs.value
-				from round_setting rs
-				where rs.round = round.id
-				and rs.tag = 'leadership_protocol'
-			) as roundLeadership,
-			es.tag protocolType, es.value protocolId
-
-		from (event, round)
-			left join event_setting es
-				on es.event = event.id
-				and es.tag IN (
-					'leadership_protocol',
-					'final_bowl_protocol',
-					'po_protocol',
-					'speaker_protocol',
-					'leadership_protocol'
-				)
-		where 1=1
-			and round.id = :roundId
-			and round.event = event.id
-	`, {
-		replacements: {roundId},
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	const eventDetails = await db
+		.selectFrom('round')
+		.innerJoin('event', 'event.id', 'round.event')
+		.leftJoin('event_setting as es', (join) => join
+			.onRef('es.event', '=', 'event.id')
+			.on('es.tag', 'in', [
+				'leadership_protocol',
+				'final_bowl_protocol',
+				'po_protocol',
+				'speaker_protocol',
+			])
+		)
+		.select([
+			'round.id as roundId',
+			'es.tag as protocolType',
+			'es.value as protocolId',
+		])
+		.select((eb) => [
+			eb
+				.selectFrom('event_setting as wsdc')
+				.select('wsdc.value')
+				.whereRef('wsdc.event', '=', 'event.id')
+				.where('wsdc.tag', '=', 'wsdc_ballot')
+				.as('wsdc'),
+			eb
+				.selectFrom('round_setting as rs')
+				.select('rs.value')
+				.whereRef('rs.round', '=', 'round.id')
+				.where('rs.tag', '=', 'leadership_protocol')
+				.as('roundLeadership'),
+		])
+		.selectAll('event')
+		.where('round.id', '=', roundId)
+		.executeTakeFirstOrThrow();
 
 	let protocols = [];
 
 	if (protocolId) {
-
 		const specifiedProtocol = await getProtocol(protocolId);
 		protocols = [specifiedProtocol];
-
 	} else {
 
-		protocols = [round.Protocol];
+		protocols = await getProtocols({roundId});
 		let roundLeadDone = false;
 
-		for (const event of eventDetails) {
+		for (const event of [eventDetails]) {
 
-			if (!round.Event) {
-				round.Event = {
-					id       : event.id,
-					type     : event.wsdc ? 'wsdc' : event.type,
-					category : event.nsda_category,
-				};
-			};
-
-			if (round.roundLeadership &! roundLeadDone) {
+			if (event.roundLeadership && !roundLeadDone) {
 				const roundProtocol = await getProtocol(event.roundLeadership);
 				protocols.push(roundProtocol);
+				roundLeadDone = true;
 			}
 
 			if (
@@ -96,7 +99,7 @@ export const tiebreakTypes = async ({roundId, protocolId = false}) => {
 		};
 	}
 
-	const counted = {};
+	const counted: Counted = {};
 
 	for (const protocol of protocols) {
 
@@ -106,7 +109,7 @@ export const tiebreakTypes = async ({roundId, protocolId = false}) => {
 				tiebreak.count !== 'all'
 				&& tiebreak.count !== 'previous'
 				&& tiebreak.count !== round.type
-				&! (tiebreak.count === 'specific' && tiebreak.count_round === round.name)
+				&& !(tiebreak.count === 'specific' && tiebreak.count_round === round.name)
 			) {
 				continue;
 			};
@@ -150,7 +153,7 @@ export const tiebreakTypes = async ({roundId, protocolId = false}) => {
 			].includes(tiebreak.name)) {
 				counted.point = true;
 
-				if (round.Event.type === 'wsdc') {
+				if (eventDetails.type === 'wsdc') {
 					counted.refute = true;
 				}
 			}

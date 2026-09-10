@@ -17,14 +17,14 @@ describe('judgeRepo', () => {
 		});
 
 		it('includes Category when requested', async () => {
-			const { categoryId } = await factories.category.createTestCategory();
-			const { judgeId } = await factories.judge.createTestJudge({ category: categoryId });
+			const category = await factories.category.create();
+			const { judgeId } = await factories.judge.createTestJudge({ category: category.id });
 
 			const judge = await judgeRepo.getJudge(judgeId, { include: { Category: true } });
 
 			expect(judge).toBeDefined();
 			expect(judge.Category).toBeDefined();
-			expect(judge.Category.id).toBe(categoryId);
+			expect(judge.Category.id).toBe(category.id);
 		});
 
 		it('includes School when requested', async () => {
@@ -112,11 +112,11 @@ describe('judgeRepo', () => {
 
 		it('returns active unlinked judges with tournament and school names', async () => {
 			const { tournId } = await factories.tourn.createTestTourn({name: 'Test Tournament'});
-			const { categoryId } = await factories.category.createTestCategory({ tourn: tournId });
+			const category = await factories.category.create({ tourn: tournId });
 			const { schoolId } = await factories.school.createTestSchool({ name: 'Central High' });
 
 			const { judgeId, getJudge } = await factories.judge.createTestJudge({
-				category: categoryId,
+				category: category.id,
 				school: schoolId,
 				person_request: null,
 			});
@@ -151,25 +151,25 @@ describe('judgeRepo', () => {
 				end: new Date(now.getTime() - 24 * 60 * 60 * 1000),
 			});
 
-			const { categoryId: activeCategoryId } = await factories.category.createTestCategory({ tourn: activeTournId });
-			const { categoryId: endedCategoryId } = await factories.category.createTestCategory({ tourn: endedTournId });
+			const activeCategory = await factories.category.create({ tourn: activeTournId });
+			const endedCategory = await factories.category.create({ tourn: endedTournId });
 
 			const { judgeId: includedJudgeId } = await factories.judge.createTestJudge({
 				first: 'Alex',
 				last: 'Jordan',
-				category: activeCategoryId,
+				category: activeCategory.id,
 				person_request: otherRequesterId,
 			});
 			const { judgeId: excludedByRequesterJudgeId } = await factories.judge.createTestJudge({
 				first: 'Alex',
 				last: 'Jordan',
-				category: activeCategoryId,
+				category: activeCategory.id,
 				person_request: requesterId,
 			});
 			const { judgeId: excludedByEndedTournJudgeId } = await factories.judge.createTestJudge({
 				first: 'Alex',
 				last: 'Jordan',
-				category: endedCategoryId,
+				category: endedCategory.id,
 			});
 
 			const results = await judgeRepo.unlinkedSearch(
@@ -188,11 +188,11 @@ describe('judgeRepo', () => {
 		it('returns judge history for a person', async () => {
 			const { personId } = await factories.person.create();
 			const { tournId } = await factories.tourn.createTestTourn(); // start is past by default
-			const { categoryId } = await factories.category.createTestCategory({ tourn: tournId });
-			const { judgeId } = await factories.judge.createTestJudge({ person: personId, category: categoryId });
+			const category = await factories.category.create({ tourn: tournId });
+			const { judgeId } = await factories.judge.createTestJudge({ person: personId, category: category.id });
 
 			// Create event → round → panel → ballot chain
-			const { eventId } = await factories.event.create({ category: categoryId });
+			const { eventId } = await factories.event.create({ category: category.id });
 			const { roundId } = await factories.round.create({ event: eventId, published: true });
 			const { sectionId } = await factories.section.create({ round: roundId });
 			await factories.ballot.create({ sectionId, judgeId });
@@ -200,24 +200,24 @@ describe('judgeRepo', () => {
 
 			expect(history.length).toBeGreaterThan(0);
 			expect(history[0].id).toBe(judgeId);
-			expect(history[0].Category.id).toBe(categoryId);
+			expect(history[0].Category.id).toBe(category.id);
 		});
 	});
 	describe('getLiveDocs', async () => {
 		it('returns the correct shape for livedocs', async () => {
 			const { tournId, getTourn } = await factories.tourn.createTestTourn();
-			const { categoryId, getCategory } = await factories.category.createTestCategory({
+			const category = await factories.category.create({
 				tourn: tournId,
 				settings: {
 					livedoc_url: 'example.com',
 					livedoc_caption: 'example',
 				},
 			});
-			const { personId, judgeId } = await factories.person.createJudge({ Judge: { category: categoryId }});
+			const { personId, judgeId } = await factories.person.createJudge({ Judge: { category: category.id }});
 			const res = await judgeRepo.getLiveDocs(personId);
 
 			const tourn = await getTourn();
-			const cat = await getCategory();
+			const cat = category;
 
 			expect(res).toBeInstanceOf(Array);
 			expect(res.length).toBe(1);
@@ -235,28 +235,28 @@ describe('judgeRepo', () => {
 		it('does not return tourns out of range', async () => {
 			//only should return docs from tourns that have not ended and started within 7 days
 			const { tournId } = await factories.tourn.createTestTourn({ end: new Date(Date.now() - 10000) });
-			const { categoryId } = await factories.category.createTestCategory({
+			const category = await factories.category.create({
 				tourn: tournId,
 				settings: {
 					livedoc_url: 'example.com',
 					livedoc_caption: 'example',
 				},
 			});
-			const { personId } = await factories.person.createJudge({ Judge: { category: categoryId }});
+			const { personId } = await factories.person.createJudge({ Judge: { category: category.id }});
 			const res = await judgeRepo.getLiveDocs(personId);
 
 			expect(res).toBeInstanceOf(Array);
 			expect(res.length).toBe(0);
 
 			const { tournId: tourn2Id } = await factories.tourn.createTestTourn({ start: faker.date.past() });
-			const { categoryId: category2Id } = await factories.category.createTestCategory({
+			const category2 = await factories.category.create({
 				tourn: tourn2Id,
 				settings: {
 					livedoc_url: 'example.com',
 					livedoc_caption: 'example',
 				},
 			});
-			const { personId: person2Id } = await factories.person.createJudge({ Judge: { category: category2Id }});
+			const { personId: person2Id } = await factories.person.createJudge({ Judge: { category: category2.id }});
 			const res2 = await judgeRepo.getLiveDocs(person2Id);
 
 			expect(res2).toBeInstanceOf(Array);
@@ -264,14 +264,14 @@ describe('judgeRepo', () => {
 		});
 		it('does not return hidden tourns', async () => {
 			const { tournId } = await factories.tourn.createTestTourn({ hidden: 1 });
-			const { categoryId } = await factories.category.createTestCategory({
+			const category = await factories.category.create({
 				tourn: tournId,
 				settings: {
 					livedoc_url: 'example.com',
 					livedoc_caption: 'example',
 				},
 			});
-			const { personId } = await factories.person.createJudge({ Judge: { category: categoryId }});
+			const { personId } = await factories.person.createJudge({ Judge: { category: category.id }});
 			const res = await judgeRepo.getLiveDocs(personId);
 
 			expect(res).toBeInstanceOf(Array);
@@ -279,13 +279,13 @@ describe('judgeRepo', () => {
 		});
 		it('does not return results without a livedoc url', async () => {
 			const { tournId } = await factories.tourn.createTestTourn({ hidden: 1 });
-			const { categoryId } = await factories.category.createTestCategory({
+			const category = await factories.category.create({
 				tourn: tournId,
 				settings: {
 					livedoc_caption: 'example',
 				},
 			});
-			const { personId } = await factories.person.createJudge({ Judge: { category: categoryId }});
+			const { personId } = await factories.person.createJudge({ Judge: { category: category.id }});
 			const res = await judgeRepo.getLiveDocs(personId);
 
 			expect(res).toBeInstanceOf(Array);

@@ -2,7 +2,6 @@ import db from '../data/db.js';
 import { withSettingsInclude, saveSettings } from './utils/settings.js';
 import { FIELD_MAP, toDomain, toPersistence } from './mappers/eventMapper.js';
 import { resolveAttributesFromFields } from './utils/repoUtils.js';
-import { roundInclude } from './roundRepo.js';
 import snakeToCamel from '../helpers/text.js';
 
 function buildEventQuery(opts = {}) {
@@ -12,13 +11,6 @@ function buildEventQuery(opts = {}) {
 		attributes: resolveAttributesFromFields(opts.fields, FIELD_MAP),
 		include: [],
 	};
-
-	if(opts.include?.rounds){
-		query.include.push({
-			...roundInclude(opts.include.rounds),
-			as: 'rounds',
-		});
-	}
 
 	query.include.push(
 		...withSettingsInclude({
