@@ -15,7 +15,8 @@ const dialect = new MariadbDialect({
     password: config.db.pass,
     port: config.db.port,
 	timezone: 'Z',
-    connectionLimit: 10,
+    connectionLimit: 5,
+	bigIntAsNumber: true,
 	//Convert all TINYINT(1) to boolean, instead of number
 	typeCast(field: FieldInfo, next: Function) {
 		if (field.type === 'TINY' && field.columnLength === 1) {

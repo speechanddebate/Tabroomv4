@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
 import controller from '../../../../../controllers/tab/timeslotsController.js';
+import { TimeslotRequestSchema } from '@tabroom/types';
+import { z } from 'zod';
+import { ValidateRequest } from '../../../../../middleware/validation.js';
 
 const router = Router({ mergeParams: true });
 
@@ -58,7 +61,7 @@ router.route('/').get(requireAccess('tourn', 'read'), controller.getTimeslots).o
 	},
 };
 
-router.route('/').post(requireAccess('tourn', 'write'), controller.createTimeslot).openapi = {
+router.route('/').post(requireAccess('tourn', 'write'),ValidateRequest, controller.createTimeslot).openapi = {
 	path: '/tab/tourns/{tournId}/timeslots',
 	summary: 'Create a new timeslot',
 	description: 'Creates a new timeslot with the provided data and returns the created object.',
@@ -75,9 +78,7 @@ router.route('/').post(requireAccess('tourn', 'write'), controller.createTimeslo
 		required: true,
 		content: {
 			'application/json': {
-				schema: {
-					$ref: '#/components/schemas/TimeslotRequest',
-				},
+				schema: TimeslotRequestSchema,
 				examples: {
 					timeslotRequest: {
 						summary: 'Example request',
@@ -146,32 +147,22 @@ router.route('/:timeslotId').get(requireAccess('timeslot', 'read'), controller.g
 	},
 };
 
-router.route('/:timeslotId').put(requireAccess('timeslot', 'write'), controller.updateTimeslot).openapi = {
+router.route('/:timeslotId').put(requireAccess('timeslot', 'write'),ValidateRequest, controller.updateTimeslot).openapi = {
 	path: '/tab/tourns/{tournId}/timeslots/{timeslotId}',
 	summary: 'Update an existing timeslot',
 	description: 'Updates the timeslot with the given ID using the provided data and returns the updated object.',
 	tags: ['Timeslots'],
-	parameters: [
-		{
-			in: 'path',
-			name: 'tournId',
-			required: true,
-			schema: { type: 'integer' },
-		},
-		{
-			in: 'path',
-			name: 'timeslotId',
-			required: true,
-			schema: { type: 'integer' },
-		},
-	],
+	requestParams:{
+		path: z.object({
+			tournId: z.coerce.number().int(),
+			timeslotId: z.coerce.number().int(),
+		}),
+	},
 	requestBody: {
 		required: true,
 		content: {
 			'application/json': {
-				schema: {
-					$ref: '#/components/schemas/TimeslotRequest',
-				},
+				schema: TimeslotRequestSchema,
 				examples: {
 					timeslotRequest: {
 						summary: 'Example request',

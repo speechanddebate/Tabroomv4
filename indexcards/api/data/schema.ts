@@ -19,7 +19,7 @@ export interface Ad {
   end: Generated<Date | null>;
   filename: Generated<string | null>;
   id: Generated<number>;
-  person: number;
+person: number;
   sort_order: Generated<number | null>;
   start: Generated<Date | null>;
   tag: Generated<string | null>;

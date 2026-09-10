@@ -91,7 +91,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		expect(res2.body).toHaveLength(1);
 	});
 	it('does not return async ballots past the deadline', async () => {
-		const pastDeadline = Date.now() - 1000;
+		const pastDeadline = new Date(Date.now() - 1000);
 		const { tournId } = await factories.person.createBallot({personId, Timeslot: { end: pastDeadline }, Event: { settings: { online_mode: 'async' } } });
 
 		const res = await request(server)

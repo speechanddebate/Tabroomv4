@@ -1,18 +1,34 @@
 import { BadRequest, UnexpectedError } from '../helpers/problem.js';
 import logger from '../helpers/logger.js';
+import type { Request, Response, NextFunction } from 'express';
+import type { RouteOpenApiConfig } from '../types/express.js';
+import type { ZodOpenApiOperationObject } from 'zod-openapi';
+import type { ZodType } from 'zod';
 
-function isHttpMethodKey(key) {
+function isZodType(schema: unknown): schema is ZodType {
+	return (
+		!!schema
+		&& typeof schema === 'object'
+		&& 'safeParse' in schema
+		&& typeof (schema as { safeParse?: unknown }).safeParse === 'function'
+	);
+}
+
+function isHttpMethodKey(key: string) {
 	return ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'].includes(key);
 }
 
-function getOpenApiForMethod(openapi, method) {
+function getOpenApiForMethod(openapi: RouteOpenApiConfig | undefined, method: string): ZodOpenApiOperationObject | undefined {
 	if (!openapi || typeof openapi !== 'object') {
-		return openapi;
+		return undefined;
 	}
 
 	const normalizedMethod = method?.toLowerCase();
-	if (!normalizedMethod || !openapi[normalizedMethod] || typeof openapi[normalizedMethod] !== 'object') {
-		return openapi;
+	const operationByMethod = normalizedMethod
+		? (openapi as unknown as Record<string, unknown>)[normalizedMethod]
+		: undefined;
+	if (!normalizedMethod || !operationByMethod || typeof operationByMethod !== 'object') {
+		return openapi as unknown as ZodOpenApiOperationObject;
 	}
 
 	const shared = Object.fromEntries(
@@ -21,21 +37,25 @@ function getOpenApiForMethod(openapi, method) {
 
 	return {
 		...shared,
-		...openapi[normalizedMethod],
-	};
+		...(operationByMethod as Record<string, unknown>),
+	} as ZodOpenApiOperationObject;
 }
 
-export async function ValidateRequest(req, res, next) {
+export async function ValidateRequest(req: Request, res: Response, next: NextFunction) {
 	const openapi = getOpenApiForMethod(req.route?.openapi, req.method);
 	const bodySchema = openapi?.requestBody?.content?.['application/json']?.schema;
 	const paramsSchema = openapi?.requestParams;
-	req.valid = {};
+	req.valid = {
+		body: undefined,
+		params: undefined,
+		query: undefined
+	};
 	try {
 		if (paramsSchema) {
 			const pathSchema = paramsSchema.path;
 			const querySchema = paramsSchema.query;
 			let result;
-			if (pathSchema && typeof pathSchema.safeParse === 'function') {
+			if (isZodType(pathSchema)) {
 				result = pathSchema.safeParse(req.params);
 				if(!result.success){
 					logger.debug('Validation failed for request parameters:', result.error.issues);
@@ -43,7 +63,7 @@ export async function ValidateRequest(req, res, next) {
 				}
 				req.valid.params = result.data;
 			}
-			if (querySchema && typeof querySchema.safeParse === 'function') {
+			if (isZodType(querySchema)) {
 				result = querySchema.safeParse(req.query);
 				if (!result.success) {
 					logger.debug('Validation failed for request query:', result.error.issues);
@@ -54,7 +74,7 @@ export async function ValidateRequest(req, res, next) {
 		} else {
 			logger.debug('no schema found for RequestParams');
 		}
-		if (bodySchema && typeof bodySchema.safeParse === 'function') {
+		if (isZodType(bodySchema)) {
 			const result = bodySchema.safeParse(req.body);
 			if (!result.success) {
 				logger.debug('Validation failed for request body:', result.error.issues);

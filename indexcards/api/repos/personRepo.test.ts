@@ -136,7 +136,7 @@ describe('PersonRepo', () => {
 				},
 			});
 
-			const freshTimestamp = new Date(reviewStart.getTime() + 60 * 1000);
+			const freshTimestamp = new Date(now.getTime() - 60 * 1000);
 			await db.updateTable('person_setting')
 				.set({ timestamp: freshTimestamp })
 				.where('person', '=', personId)

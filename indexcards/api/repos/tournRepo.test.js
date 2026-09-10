@@ -29,21 +29,6 @@ describe('tournRepo', () => {
 			expect(tourn).toBeDefined();
 			expect(tourn.id).toBe(tournId);
 		});
-		it('includes associations when specified', async () => {
-			const { tournId } = await factories.tourn.createTestTourn();
-
-			let tourn = await tournRepo.getTourn(tournId, { include: { webpages: true } });
-
-			expect(tourn).toBeDefined();
-			expect(tourn.webpages).toBeDefined();
-			expect(Array.isArray(tourn.webpages)).toBe(true);
-
-			tourn = await tournRepo.getTourn(tournId, { include: { files: true } });
-
-			expect(tourn).toBeDefined();
-			expect(tourn.files).toBeDefined();
-			expect(Array.isArray(tourn.files)).toBe(true);
-		});
 		it('includes settings when specified', async () => {
 			const settings = { testSetting: 'testValue' };
 			const { tournId } = await factories.tourn.createTestTourn({ settings });

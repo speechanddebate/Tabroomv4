@@ -48,10 +48,10 @@ export async function createFull(overrides = {}){
 	const tournId = await tournRepo.createTourn(data);
 	const { categoryId } = await factories.category.createTestCategory({ tourn: tournId });
 	const { eventId } = await factories.event.create({ ...overrides.Event, category: categoryId });
-	const { timeslotId } = await factories.timeslot.createTestTimeslot(overrides.Timeslot);
+	const timeslot= await factories.timeslot.create(overrides.Timeslot);
 	const { roundId } = await factories.round.create({
 		event: eventId,
-		timeslot: timeslotId,
+		timeslot: timeslot.id,
 		...overrides.Round,
 		settings: {
 			judges_ballots_visible: 1,

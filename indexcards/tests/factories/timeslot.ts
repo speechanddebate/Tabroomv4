@@ -1,6 +1,7 @@
 import timeslotRepo from '../../api/repos/timeslotRepo.js';
 import { fakeRoundName, noMs} from './factoryUtils.js';
 import { faker } from '@faker-js/faker';
+import { db } from '../../api/data/database.js';
 
 export function createTimeslotData(overrides = {}) {
 	const start = faker.date.future();
@@ -15,17 +16,12 @@ export function createTimeslotData(overrides = {}) {
 	};
 }
 
-export async function createTestTimeslot(overrides = {}) {
+export async function create(overrides = {}) {
 	const data = createTimeslotData(overrides);
 
-	const timeslotId = await timeslotRepo.createTimeslot(data);
-
-	return {
-		timeslotId,
-		getTimeslot: () => timeslotRepo.getTimeslot(timeslotId),
-	};
+	return await timeslotRepo.createTimeslot(db,data);
 }
 export default {
 	createTimeslotData,
-	createTestTimeslot,
+	create
 };
