@@ -73,17 +73,17 @@ describe('unlinkedSearch', () => {
 		const { tournId: tournA } = await factories.tourn.createTestTourn({ name: `Tourn A ${stamp}` });
 		const { tournId: tournB } = await factories.tourn.createTestTourn({ name: `Tourn B ${stamp}` });
 
-		const { eventId: eventA1 } = await factories.event.create({ tournId: tournA, name: `EA1 ${stamp}` });
-		const { eventId: eventA2 } = await factories.event.create({ tournId: tournA, name: `EA2 ${stamp}` });
-		const { eventId: eventB1 } = await factories.event.create({ tournId: tournB, name: `EB1 ${stamp}` });
+		const { eventId: eventA1 } = await factories.event.create({ tourn: tournA, name: `EA1 ${stamp}` });
+		const { eventId: eventA2 } = await factories.event.create({ tourn: tournA, name: `EA2 ${stamp}` });
+		const { eventId: eventB1 } = await factories.event.create({ tourn: tournB, name: `EB1 ${stamp}` });
 
-		const { entryId: entryA1 } = await factories.entry.createTestEntry({ event: eventA1 });
-		const { entryId: entryA2 } = await factories.entry.createTestEntry({ event: eventA2 });
-		const { entryId: entryB1 } = await factories.entry.createTestEntry({ event: eventB1 });
+		const entryA1 = await factories.entry.create({ event: eventA1 });
+		const entryA2 = await factories.entry.create({ event: eventA2 });
+		const entryB1 = await factories.entry.create({ event: eventB1 });
 
-		await db.entryStudent.create({ entry: entryA1, student: studentId });
-		await db.entryStudent.create({ entry: entryA2, student: studentId });
-		await db.entryStudent.create({ entry: entryB1, student: studentId });
+		await db.entryStudent.create({ entry: entryA1.id, student: studentId });
+		await db.entryStudent.create({ entry: entryA2.id, student: studentId });
+		await db.entryStudent.create({ entry: entryB1.id, student: studentId });
 
 		const results = await studentRepo.unlinkedSearch({
 			first: firstPrefix,

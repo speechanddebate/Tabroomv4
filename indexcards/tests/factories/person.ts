@@ -66,8 +66,8 @@ export async function createBallot(overrides: Overrides & {
 		round: tourn.roundId,
 	});
 
-	const { entryId: entry1 } = await factories.entry.createTestEntry();
-	const { entryId: entry2 } = await factories.entry.createTestEntry();
+	const { entryId: entry1 } = await factories.entry.create();
+	const { entryId: entry2 } = await factories.entry.create();
 	await factories.ballot.create({
 		speakerorder: 0,
 		judge: judgeId,

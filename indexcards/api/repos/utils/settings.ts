@@ -6,13 +6,14 @@ import type { Database } from '../../data/database.js';
 
 type Settings = Record<string, unknown>;
 type FlattenedSettings = Record<string, string | number | Date | null>;
-type SettingsTable = 'person_setting' | 'category_setting' | 'round_setting' | 'event_setting';
+type SettingsTable = 'person_setting' | 'category_setting' | 'round_setting' | 'event_setting' | 'entry_setting';
 type SettingsOwnerKey<T extends SettingsTable> =
 	T extends 'person_setting' ? 'person'
 		: T extends 'category_setting' ? 'category'
 			: T extends 'round_setting' ? 'round'
-				: 'event';
-type SettingsOwnerKeyValue = 'person' | 'category' | 'round' | 'event';
+				: T extends 'event_setting' ? 'event'
+				: 'entry';
+type SettingsOwnerKeyValue = 'person' | 'category' | 'round' | 'event' | 'entry';
 
 type SettingRow = {
 	value: string | null;
@@ -25,7 +26,7 @@ type SettingRow = {
 
 interface SaveSettingsOptions {
 	db: Database;
-	table: 'person_setting' | 'category_setting' | 'round_setting' | 'event_setting'; // expand this later
+	table: 'person_setting' | 'category_setting' | 'round_setting' | 'event_setting' | 'entry_setting;'
 	settings: Settings;
 	ownerKey: string;
 	ownerId: number;

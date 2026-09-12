@@ -36,11 +36,11 @@ export async function buildTarget(resource, resourceId, targetCache) {
 			break;
 		}
 		case 'event': {
-			const event = await eventRepo.getEvent(resourceId, { fields: ['tournId', 'categoryId'] });
+			const event = await eventRepo.getEvent(db,resourceId);
 			if (event) {
-				target.tournId = event.tournId;
-				target.categoryId = event.categoryId;
-				target ={
+				target.tournId = event.tourn;
+				target.categoryId = event.category;
+				target = {
 					...await buildTarget('tourn', target.tournId, targetCache),
 					...target,
 				};

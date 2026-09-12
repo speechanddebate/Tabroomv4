@@ -2,7 +2,6 @@ import db from '../data/db.js';
 import { judgeInclude } from './judgeRepo.js';
 import { sectionInclude } from './sectionRepo.js';
 import { scoreInclude } from './scoreRepo.js';
-import { entryInclude } from './entryRepo.js';
 import { FIELD_MAP, toDomain, toPersistence } from './mappers/ballotMapper.js';
 import { resolveAttributesFromFields } from './utils/repoUtils.js';
 
@@ -17,13 +16,6 @@ function buildBallotQuery(opts = {}){
 			...judgeInclude(opts.include.Judge),
 			as: 'judge_judge',
 			required: false,
-		});
-	}
-	if(opts.include?.Entry) {
-		query.include.push({
-			...entryInclude(opts.include.Entry),
-			as: 'entry_entry',
-			required: opts.include.Entry.required ?? false,
 		});
 	}
 	if(opts.include?.Section) {

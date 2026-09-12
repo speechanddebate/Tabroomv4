@@ -1,4 +1,5 @@
 import entryRepo from '../../api/repos/entryRepo.js';
+import { db } from '../../api/data/database.js';
 
 function buildEntryData(overrides = {}) {
 	return {
@@ -7,16 +8,11 @@ function buildEntryData(overrides = {}) {
 	};
 }
 
-export async function createTestEntry(overrides = {}) {
+async function create(overrides = {}) {
 	const data = buildEntryData(overrides);
-	const entryId = await entryRepo.createEntry(data);
-
-	return {
-		entryId,
-		getEntry: () => entryRepo.getEntry(entryId),
-	};
+	return await entryRepo.createEntry(db, data);
 }
 export default {
 	buildEntryData,
-	createTestEntry,
+	create,
 };

@@ -1,34 +1,12 @@
-import db from '../data/db.js';
-import { withSettingsInclude, saveSettings } from './utils/settings.js';
-import { FIELD_MAP, toDomain, toPersistence } from './mappers/eventMapper.js';
-import { resolveAttributesFromFields } from './utils/repoUtils.js';
-import snakeToCamel from '../helpers/text.js';
 
-function buildEventQuery(opts = {}) {
+import type { Insertable } from 'kysely';
+import type { Database } from '../data/database.js';
+import type { Event } from '../data/schema.js';
+import { saveSettings } from './utils/settings.js';
 
-	const query = {
-		where: {},
-		attributes: resolveAttributesFromFields(opts.fields, FIELD_MAP),
-		include: [],
-	};
-
-	query.include.push(
-		...withSettingsInclude({
-			model: db.eventSetting,
-			as: 'event_settings',
-			settings: opts.settings,
-		})
-	);
-
+function buildEventQuery(db:Database, opts = {}) {
+	let query = db.selectFrom('event');
 	return query;
-}
-
-export function eventInclude(opts = {}) {
-	return {
-		model: db.event,
-		as: 'events',
-		...buildEventQuery(opts),
-	};
 }
 
 /**
@@ -156,11 +134,11 @@ export async function getEventsForInvite(tournId) {
 	});
 }
 
-export function getEvent(eventId, opts = {}) {
-	if (!eventId) throw new Error('getEvent: eventId is required');
-	const query = buildEventQuery(opts);
-	query.where = { id: eventId, ...query.where };
-	return db.event.findOne(query).then(toDomain);
+export function getEvent(db:Database, id: number, opts = {}) {
+	const query = buildEventQuery(db, opts)
+		.where('id','=', id)
+	
+	return query.selectAll().executeTakeFirst();
 }
 
 export async function getEvents(scope = {}, opts = {}){
@@ -173,18 +151,32 @@ export async function getEvents(scope = {}, opts = {}){
 	return results.map(toDomain);
 }
 
-async function createEvent(event) {
-	const created = await db.event.create(
-		toPersistence(event)
-	);
+async function createEvent(db: Database, data: Insertable<Event> & { settings?: Record<string, unknown> }) {
+	const { settings, ...categoryData } = data;
 
-	await saveSettings({
-		model    : db.eventSetting,
-		settings : event.settings,
-		ownerKey : 'event',
-		ownerId  : created.id,
+	return await db.transaction().execute(async (trx) => {
+		if (Object.keys(categoryData).length === 0) {
+			throw new Error('createEvent requires event data');
+		}
+
+		const event = await trx
+			.insertInto('event')
+			.values(categoryData)
+			.returningAll()
+			.executeTakeFirstOrThrow();
+
+		if (settings) {
+			await saveSettings({
+				db: trx,
+				table: 'event_setting',
+				settings,
+				ownerKey: 'event',
+				ownerId: event.id,
+			});
+		}
+
+		return event;
 	});
-	return created.id;
 }
 
 export default {
