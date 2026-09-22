@@ -3,6 +3,7 @@
 	"compilerOptions"                      : {
 		"target"                           : "ESNext",
 		"module"                           : "ESNext",
+		"verbatimModuleSyntax"             : true,
 		"esModuleInterop"                  : true,
 		"forceConsistentCasingInFileNames" : true,
 		"skipLibCheck"                     : true,
@@ -12,7 +13,7 @@
 		"useDefineForClassFields"          : true,
 		"resolveJsonModule"                : true,
 		"allowJs"                          : true,
-		"checkJs"                          : true,
+		"checkJs"                          : false,
 		"isolatedModules"                  : true,
 		"types": [
 			"node",

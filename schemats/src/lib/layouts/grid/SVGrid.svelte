@@ -23,10 +23,12 @@
 	} from '@svar-ui/svelte-grid';
 
 	import IconButton from '$lib/components/IconButton.svelte';
-	import CsvIcon from 'flowbite-svelte-icons/FileCsvOutline.svelte';
-	import PrinterOutline from 'flowbite-svelte-icons/PrinterOutline.svelte';
-	import DatabaseOutline from 'flowbite-svelte-icons/DatabaseOutline.svelte';
-	import ArchiveOutline from 'flowbite-svelte-icons/ArchiveOutline.svelte';
+	import {
+		FileCsvOutline as CsvIcon,
+		PrinterOutline,
+		DatabaseOutline,
+		ArchiveOutline,
+	} from 'flowbite-svelte-icons';
 
     import type { IApi, IExportOptions } from '@svar-ui/svelte-grid';
 	import type { GridOptions, SchematColumn } from './svgrid';

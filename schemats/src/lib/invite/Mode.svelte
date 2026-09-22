@@ -2,9 +2,11 @@
 
 	let { row } = $props();
 
-	import LaptopCodeSolid from 'flowbite-svelte-icons/LaptopCodeSolid.svelte';
-	import UsersSolid from 'flowbite-svelte-icons/UsersSolid.svelte';
-	import CodeForkSolid from 'flowbite-svelte-icons/CodeForkSolid.svelte';
+	import {
+		LaptopCodeSolid,
+		UsersSolid,
+		CodeForkSolid
+	} from 'flowbite-svelte-icons';
 
 </script>
 
