@@ -1,18 +1,18 @@
 import { assert } from 'chai';
 import request from 'supertest';
-import server from '../../../../app';
+import server from '../../../../app.js';
 
-import db from '../../../data/db';
-import factories from '../../../../tests/factories';
+import { db } from '../../../data/database.js';
+import factories from '../../../../tests/factories/index.js';
 import config from '../../../config.js';
 
 import {
 	testUserChapterPerm,
 	testUserSchoolContact,
-} from '../../../../tests/testFixtures';
+} from '../../../../tests/testFixtures.js';
 
 describe ('getMySchoolsByTourn', () => {
-	let userkey, personId;
+	let userkey!: string, personId!: number;
 	beforeEach(async () => {
 		const session = await factories.session.create();
 		userkey = session.userkey;
@@ -23,40 +23,36 @@ describe ('getMySchoolsByTourn', () => {
 			person  : personId,
 			tag     : 'chapter',
 		});
-		await db.contact.create({
+		await factories.contact.create({
 			school   : 694009,
-			tourn    : 30661,
-			chapter  : 26719,
+			//tourn    : 30661,
+			//chapter  : 26719,
 			person   : personId,
 			official : 1,
 			onsite   : 1,
 			email    : 1,
 		});
-		await db.permission.upsert(testUserChapterPerm);
-		await db.contact.create(testUserSchoolContact);
+		await factories.permission.create({
+			chapter : testUserChapterPerm.chapter,
+			tourn   : testUserChapterPerm.tourn,
+			person  : personId,
+			tag     : 'chapter',
+		});
+		await factories.contact.create({
+			school   : testUserSchoolContact.school,
+			person   : personId,
+			official : testUserSchoolContact.official,
+			onsite   : testUserSchoolContact.onsite,
+			email    : testUserSchoolContact.email,
+		});
 	});
 	afterEach(async () => {
-		await db.sequelize.query(
-			`delete from permission
-				where person = :personId
-			`,{
-				replacements: {
-					personId: personId,
-				},
-				type: db.sequelize.QueryTypes.DELETE,
-			}
-		);
-		await db.sequelize.query(
-			`delete from contact
-				where person = :personId
-			`,
-			{
-				replacements: {
-					personId: personId,
-				},
-				type: db.sequelize.QueryTypes.DELETE,
-			}
-		);
+		await db.deleteFrom('permission')
+			.where('person', '=', personId)
+			.execute();
+		await db.deleteFrom('contact')
+			.where('person', '=', personId)
+			.execute();
 	});
 
 	it ('User has no school in an unexpected tournament', async () => {

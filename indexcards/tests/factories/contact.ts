@@ -20,9 +20,10 @@ const data = async (props: Partial<Insertable<Contact>> = {}) => {
 	};
 };
 
-export default async function create(overrides: Partial<Insertable<Contact>> = {}) {
+async function create(overrides: Partial<Insertable<Contact>> = {}) {
 	return await db.insertInto('contact')
 	.values(await data(overrides))
 	.returningAll()
 	.execute();
 }
+export default { create };
