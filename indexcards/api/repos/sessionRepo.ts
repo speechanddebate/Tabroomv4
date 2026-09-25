@@ -12,9 +12,11 @@ export const findByUserKey = async (
 	const session = await db
 	.selectFrom('session')
 	.innerJoin('person as p', 'p.id', 'session.person')
-	.leftJoin('person_setting as ps', 'ps.person', 'p.id')
-	.where('ps.tag', '=', 'banned')
-	.where('ps.value', '=', '1')
+	.leftJoin('person_setting as ps', (join) =>
+		join
+			.onRef('ps.person', '=', 'p.id')
+			.on('ps.tag', '=', 'banned')
+	)
 	.leftJoin('person as su', 'su.id', 'session.su')
 	.where('session.userkey', '=', userkey)
 	.select([

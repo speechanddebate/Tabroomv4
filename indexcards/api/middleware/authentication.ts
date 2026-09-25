@@ -71,7 +71,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 		}
 
 		if(session){
-			if(session.Person?.banned === '1') {
+			if(session.Person?.banned == '1') {
 				await sessionRepo.deleteSession(db, session.id);
 				return Forbidden(req, res, 'User is banned');
 			}
