@@ -62,6 +62,25 @@ describe('Auth Router', () => {
 
 			expect(res).toBeProblemResponse(400);
 		});
+		it('does not allow a banned user to log in', async () => {
+			const Person = await factories.person.create({
+				password: hashPassword('securepassword'),
+				settings: {
+					banned: 1,
+				},
+			});
+			
+			const res = await request(server)
+				.post('/v1/auth/login')
+				.send({
+					username: Person.email,
+					password: 'securepassword',
+				})
+				.set('Accept', 'application/json')
+				.expect('Content-Type', /json/);
+
+			expect(res).toBeProblemResponse(403);
+		});
 	});
 	describe('/logout', () => {
 		it('logs out an existing user', async () => {

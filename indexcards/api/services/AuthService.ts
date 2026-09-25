@@ -12,12 +12,15 @@ import type { RegisterRequest } from '@tabroom/types';
 
 export async function login(username: string, password: string, context: { ip?: string; agentData?: string } = {}): Promise<{person: Selectable<Person> | null; token: string}> {
 	const { ip, agentData } = context;
-	const person = await personRepo.getPersonByUsername(db, username) as Selectable<Person> | null;
+	const person = await personRepo.getPersonByUsername(db, username, { settings: ['banned'] });
 
 	if (!person || !person?.id || !person?.password) {
 		throw AUTH_INVALID;
 	}
 
+	if (person.settings?.banned) {
+		throw FORBIDDEN;
+	}
 	const ok = verifyPassword(password, person.password);
 	if (!ok) {
 		throw AUTH_INVALID;
@@ -71,6 +74,7 @@ function generateCSRFToken(userkey: string){
 }
 
 export const AUTH_INVALID = Symbol('AUTH_INVALID');
+export const FORBIDDEN = Symbol('FORBIDDEN');
 
 export function getAuthCookieOptions(): CookieOptions {
 	const secure = process.env.NODE_ENV === 'production';

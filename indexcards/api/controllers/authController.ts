@@ -1,5 +1,5 @@
-import { BadRequest, Unauthorized } from '../helpers/problem.js';
-import authService, { AUTH_INVALID }  from '../services/AuthService.js';
+import { BadRequest, Unauthorized, Forbidden } from '../helpers/problem.js';
+import authService, { AUTH_INVALID, FORBIDDEN }  from '../services/AuthService.js';
 import config from '../config.js';
 import personRepo from '../repos/personRepo.js';
 import sessionRepo from '../repos/sessionRepo.js';
@@ -18,6 +18,7 @@ export async function login(req: Request, res: Response) {
 		});
 	}  catch (err) {
 		if (err === AUTH_INVALID) return Unauthorized(req,res,'Invalid Credentials');
+		if (err === FORBIDDEN) return Forbidden(req, res, 'Access forbidden');
 		throw err;
 	}
 

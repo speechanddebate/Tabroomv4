@@ -10,33 +10,36 @@ export const findByUserKey = async (
 	userkey: string,
 ) => {
 	const session = await db
-		.selectFrom('session')
-		// session.person is non null so innerJoin
-		.innerJoin('person as p', 'p.id', 'session.person')
-		.leftJoin('person as su', 'su.id', 'session.su')
-		.select([
-			'session.id',
-			'session.ip',
-			'session.su',
-			'session.person',
-			'session.userkey',
-		])
-		.select([
-			'p.id as personId',
-			'p.first as personFirst',
-			'p.last as personLast',
-			'p.email as personEmail',
-			'p.site_admin as personSiteAdmin',
-		])
-		.select([
-			'su.id as suId',
-			'su.first as suFirst',
-			'su.last as suLast',
-			'su.email as suEmail',
-			'su.site_admin as suSiteAdmin',
-		])
-		.where('session.userkey', '=', userkey)
-		.executeTakeFirst();
+	.selectFrom('session')
+	.innerJoin('person as p', 'p.id', 'session.person')
+	.leftJoin('person_setting as ps', 'ps.person', 'p.id')
+	.where('ps.tag', '=', 'banned')
+	.where('ps.value', '=', '1')
+	.leftJoin('person as su', 'su.id', 'session.su')
+	.where('session.userkey', '=', userkey)
+	.select([
+		'session.id',
+		'session.ip',
+		'session.su',
+		'session.person',
+		'session.userkey',
+	])
+	.select([
+		'p.id as personId',
+		'p.first as personFirst',
+		'p.last as personLast',
+		'p.email as personEmail',
+		'p.site_admin as personSiteAdmin',
+		'ps.value as personBanned',
+	])
+	.select([
+		'su.id as suId',
+		'su.first as suFirst',
+		'su.last as suLast',
+		'su.email as suEmail',
+		'su.site_admin as suSiteAdmin',
+	])
+	.executeTakeFirst();
 
 	if (!session) {
 		return undefined;
@@ -54,6 +57,7 @@ export const findByUserKey = async (
 					last: session.personLast,
 					email: session.personEmail,
 					site_admin: session.personSiteAdmin ?? 0,
+					banned: session.personBanned ?? '0',
 		},
 		Su: session.suId
 			? {

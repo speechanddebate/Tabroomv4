@@ -42,6 +42,13 @@ describe('findByUserKey', () => {
 		expect(session?.Person?.id).toBe(Session.person);
 		expect(session?.Su?.id).toBe(Su.id);
 	});
+	it('returns the session with banned status when it exists', async () => {
+		const bannedPerson = await factories.person.create({settings: { banned: '1' }});
+		const Session = await factories.session.create({ person: bannedPerson.id });
+		const session = await sessionRepo.findByUserKey(db, Session.userkey);
+		expect(session).toBeDefined();
+		expect(session?.Person?.banned).toBe('1');
+	});
 
 });
 

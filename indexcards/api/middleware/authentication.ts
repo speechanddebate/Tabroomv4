@@ -5,7 +5,7 @@ import authService from '../services/AuthService.js';
 //import sessionRepo from '../repos/sessionRepo.js';
 import personRepo from '../repos/personRepo.js';
 import { createActor } from './authorization/authorization.js';
-import { BadRequest, Unauthorized } from '../helpers/problem.js';
+import { BadRequest, Forbidden, Unauthorized } from '../helpers/problem.js';
 
 import { db } from '../data/database.js';
 import sessionRepo from '../repos/sessionRepo.js';
@@ -71,7 +71,10 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 		}
 
 		if(session){
-
+			if(session.Person?.banned === '1') {
+				await sessionRepo.deleteSession(db, session.id);
+				return Forbidden(req, res, 'User is banned');
+			}
 			req.session = {
 				id       : session.id,
 				person  : session.person,

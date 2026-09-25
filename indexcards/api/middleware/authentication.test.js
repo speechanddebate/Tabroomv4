@@ -53,7 +53,8 @@ describe('Authentication Middleware', () => {
 						middle     : 'Am',
 						last       : 'Test',
 					},
-				};});
+				};
+			});
 
 			vi.spyOn(personRepo, 'getPerson').mockImplementationOnce(async () => {
 				return {
@@ -157,6 +158,35 @@ describe('Authentication Middleware', () => {
 			expect(req.actor).toBeDefined();
 			const actor = req.actor;
 			expect(actor.Person.id).toBe(69);
+		});
+		it('returns 403 when user is banned', async () => {
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: 'somecookie',
+				},
+			});
+			vi.spyOn(sessionRepo, 'findByUserKey').mockImplementationOnce(async () => {
+				return {
+					id          : 1,
+					person: 69,
+					Person      : {
+						id          : 69,
+						site_admin   : false,
+						email       : '',
+						first      : 'I',
+						middle     : 'Am',
+						last       : 'Test',
+						banned: '1',
+					},
+				};
+			});
+
+			//Act
+			await Authenticate(req, res, next);
+
+			//Assert
+			expect(res.status).toHaveBeenCalledWith(403);
+			expect(next).not.toHaveBeenCalled();
 		});
 
 	});
