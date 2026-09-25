@@ -50,9 +50,7 @@ export async function unlinkedSearch(req: Request, res: Response) {
 			);
 		}
 
-		const nextStudentSearchCount = person?.settings?.student_search_count
-      ? 1
-      : studentSearchCount + 1;
+		const nextStudentSearchCount = studentSearchCount + 1
 
 		await personRepo.updatePerson(db, req.actor.Person.id, {
 			settings: {
