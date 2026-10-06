@@ -1,5 +1,18 @@
 import { expect } from 'vitest';
 import z from 'zod';
+import request from 'supertest';
+import config from '../api/config.js';
+
+/**
+ * authenticate a supertest request as the person owning the session userkey, via the session cookie.
+ * also sets a trusted Origin so cookie-authed mutations pass CSRF validation.
+ * typed in tests/vitest.d.ts
+ */
+(request.Test.prototype as request.Test).asPerson = function (this: request.Test, userkey: string) {
+	return this
+		.set('Cookie', [`${config.cookie.name}=${userkey}`])
+		.set('Origin', config.csrf.trusted_origins[0]);
+};
 
 function toMariaDbSecondPrecision(dateValue: string) {
 	const timestamp = new Date(dateValue).getTime();

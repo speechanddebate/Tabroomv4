@@ -22,7 +22,7 @@ describe('GET /rest/paradigms', () => {
 	it('Returns paradigms with no params', async () => {
 		const res = await request(server)
             .get(`/v1/rest/paradigms`)
-			.set('Authorization', `Bearer ${setup.userkey}`)
+			.asPerson(setup.userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);
@@ -34,7 +34,7 @@ describe('GET /rest/paradigms', () => {
 	it('returns paradigms with search params', async () => {
 		const res = await request(server)
             .get(`/v1/rest/paradigms?search="${setup.Person.first} ${setup.Person.last}"`)
-			.set('Authorization', `Bearer ${setup.userkey}`)
+			.asPerson(setup.userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);
@@ -60,7 +60,7 @@ describe('GET /rest/paradigms/:personId', () => {
 	it('Returns paradigm details for a specific person', async () => {
 		const res = await request(server)
             .get(`/v1/rest/paradigms/${setup.Person.id}`)
-			.set('Authorization', `Bearer ${setup.userkey}`)
+			.asPerson(setup.userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);
@@ -77,7 +77,7 @@ describe('GET /rest/paradigms/:personId/record', () => {
 	it('Returns judging record for a specific person', async () => {
 		const res = await request(server)
             .get(`/v1/rest/paradigms/${setup.Person.id}/record`)
-			.set('Authorization', `Bearer ${setup.userkey}`)
+			.asPerson(setup.userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);

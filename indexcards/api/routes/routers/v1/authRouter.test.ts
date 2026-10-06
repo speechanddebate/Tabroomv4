@@ -99,7 +99,7 @@ describe('Auth Router', () => {
 
 			await request(server)
 				.post('/v1/auth/logout')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.expect(204);
 
 			const session = await sessionRepo.findByUserKey(db,token);
@@ -155,7 +155,7 @@ describe('Auth Router', () => {
 
 			const res = await request(server)
 				.post('/v1/auth/su')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.send({ suId: suTarget.id })
 				//.expect(204);
 
@@ -181,7 +181,7 @@ describe('Auth Router', () => {
 
 			const res = await request(server)
 				.post('/v1/auth/su')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.send({ suId: 'string' })
 				.expect(400);
 
@@ -199,7 +199,7 @@ describe('Auth Router', () => {
 
 			const res = await request(server)
 			.post('/v1/auth/suEnd')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect(204);
 
 			expect(res).not.toBeProblemResponse();

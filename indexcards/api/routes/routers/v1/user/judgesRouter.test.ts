@@ -30,7 +30,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/judges/linkRequests')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 
 			expect(res.body).toMatchSchema(z.array(UnlinkedJudgeSchema))
@@ -65,7 +65,7 @@ describe('judgesRouter', () => {
 				.post('/v1/user/judges/claim')
 				.query({ chapterJudgeId: ChapterJudge.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(ClaimResponseSchema);
 			//assert that the chapter judge's person_request is updated and that an email was sent to the chapter email with the correct content
@@ -85,7 +85,7 @@ describe('judgesRouter', () => {
 				.post('/v1/user/judges/claim')
 				.query({ chapterJudgeId: ChapterJudge.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(ClaimResponseSchema);
 			//assert that the chapter judge's person_request is updated and that an email was sent to the chapter email with the correct content
@@ -100,7 +100,7 @@ describe('judgesRouter', () => {
 				.post('/v1/user/judges/claim')
 				.query({ judgeId: Judge.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(ClaimResponseSchema);
 
@@ -126,7 +126,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/judges/history')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
 		});
@@ -138,7 +138,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/judges/paradigm')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(UserParadigmSchema);
 			expect(res.body.paradigm).toBe('Initial paradigm');
@@ -149,7 +149,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/judges/paradigm')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 			expect(res).toBeProblemResponse(404);
 		});
 	});
@@ -161,7 +161,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.post('/v1/user/judges/paradigm')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.send(body)
 				.expect(204);
 			expect(res).not.toBeProblemResponse();
@@ -172,7 +172,7 @@ describe('judgesRouter', () => {
 			const newParadigm = await request(server)
 				.get('/v1/user/judges/paradigm')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(newParadigm.body.paradigm).toBe('word '.repeat(50));
 		});
@@ -192,7 +192,7 @@ describe('judgesRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/judges/livedocs')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			expect(res.body).toMatchSchema(z.array(JudgeLiveDocSchema));
 			expect(res.body[0].url).toBe('example.com');

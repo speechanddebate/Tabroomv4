@@ -1,6 +1,5 @@
 import request from 'supertest';
 import server from '../../../../app';
-import config from '../../../config';
 import factories from '../../../../tests/factories';
 
 describe('Attendee Search Function', () => {
@@ -25,7 +24,7 @@ describe('Attendee Search Function', () => {
 		const manOverboard = await request(server)
 			.get(`/v1/tab/tourns/29774/all/search/${searchNavy}`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -54,7 +53,7 @@ describe('Attendee Search Function', () => {
 		const resDVOG = await request(server)
 			.get(`/v1/tab/tourns/29774/all/search/${searchDaisy}`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 

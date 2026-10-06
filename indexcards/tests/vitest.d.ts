@@ -7,6 +7,13 @@ interface CustomMatchers<R = unknown> {
 	toMatchSchema(schema: ZodType): R;
 }
 
+declare module 'supertest' {
+	interface Test {
+		/** authenticate as the person owning the session userkey. see tests/setup.ts */
+		asPerson(userkey: string): this;
+	}
+}
+
 declare module 'vitest' {
 	interface Assertion<T = unknown> {
 		toEqualDate(expected: Date | string | number): T;

@@ -1,5 +1,4 @@
 import request from 'supertest';
-import config from '../../../config';
 import { db } from '../../../data/database.js';
 import server from '../../../../app';
 import factories from '../../../../tests/factories';
@@ -54,7 +53,7 @@ describe('Status Board', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -82,7 +81,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId : testTourn.person,   	// person who was absent now present
 				panel    : testTourn.panel, 	// panel ID
@@ -95,7 +94,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId   : testTourn.entry,
 				panel      : testTourn.panel,
@@ -109,7 +108,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId      : testTourn.judge,
 				panel         : 7212078,
@@ -123,7 +122,7 @@ describe('Status Board', () => {
 		const newResponse = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -174,7 +173,7 @@ describe.todo('Event Dashboard', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/status/dashboard`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 

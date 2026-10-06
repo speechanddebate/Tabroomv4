@@ -12,7 +12,7 @@ describe('coachRouter', () => {
 			const res = await request(server)
 				.post('/v1/coach/4/school/4/updateContact')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.send({
 					school: 4,
 					person: 4,

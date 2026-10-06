@@ -1,5 +1,4 @@
 import request from 'supertest';
-import config from '../../../../config.js';
 import server from '../../../../../app.js';
 import z from 'zod';
 import { MySchoolSchema, NonTournChapterSchema, UserChapterSchema } from '@tabroom/types';
@@ -25,7 +24,7 @@ it('Returns a list of chapters a person has permissions in', async () => {
 	const res = await request(server)
 		.get(`/v1/user/chapters`)
 		.set('Accept', 'application/json')
-		.set('Cookie', [`${config.cookie.name}=${userkey}`])
+		.asPerson(userkey)
 		.expect('Content-Type', /json/)
 		.expect(200);
 
@@ -67,7 +66,7 @@ describe('byTourn', () => {
 			const res = await request(server)
 				.get(`/v1/user/chapters/byTourn/${testUserSchoolContact.tourn}`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${tournUserkey}`])
+				.asPerson(tournUserkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -83,7 +82,7 @@ describe('byTourn', () => {
 			const res = await request(server)
 				.get(`/v1/user/chapters/byTourn/29807/mySchools`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${tournUserkey}`])
+				.asPerson(tournUserkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -94,7 +93,7 @@ describe('byTourn', () => {
 			const res = await request(server)
 				.get(`/v1/user/chapters/byTourn/${testUserChapterPerm.tourn}/mySchools`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${tournUserkey}`])
+				.asPerson(tournUserkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -107,7 +106,7 @@ describe('byTourn', () => {
 			const res = await request(server)
 				.get(`/v1/user/chapters/byTourn/${testUserSchoolContact.tourn}/mySchools`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${tournUserkey}`])
+				.asPerson(tournUserkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -123,7 +122,7 @@ describe('byTourn', () => {
 			const res = await request(server)
 				.get(`/v1/user/chapters/byTourn/${testUserSchoolContact.tourn}/nonSchools`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${tournUserkey}`])
+				.asPerson(tournUserkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 

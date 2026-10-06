@@ -38,7 +38,7 @@ describe('GET /rest/students/unlinked/search', () => {
       .get('/v1/rest/students/unlinked/search')
       .query({ first: first, last: last })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -53,7 +53,7 @@ describe('GET /rest/students/unlinked/search', () => {
       .get('/v1/rest/students/unlinked/search')
       .query({ first: 'ZZZNoMatch', last: 'ZZZNoMatch' })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -65,7 +65,7 @@ describe('GET /rest/students/unlinked/search', () => {
 		const res = await request(server)
       .get('/v1/rest/students/unlinked/search')
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect(200);
 
 		expect(res).not.toBeProblemResponse();

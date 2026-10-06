@@ -20,7 +20,7 @@ describe('GET /tab/tourns/:tournId/categories', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${tournId}/categories`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -34,7 +34,7 @@ describe('GET /tab/tourns/:tournId/categories/:categoryId', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${tournId}/categories/${categoryId}`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 

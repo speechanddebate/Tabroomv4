@@ -2,7 +2,6 @@ import request from 'supertest';
 import app from '../../../../app.js';
 import { SystemStatusSchema } from '@tabroom/types';
 import factories from '../../../../tests/factories/index.js';
-import config from '../../../config.js';
 
 describe('GET /v1/status', () => {
 	it('should return the system status', async () => {
@@ -33,11 +32,11 @@ describe('GET /v1/status/barf', () => {
 		({ userkey: nonAdminSession } = await factories.session.create({person: NonAdmin.id }));
 	});
 	it('should trigger a barf and return a 500 status', async () => {
-		const response = await request(app).get('/v1/status/barf').set('Cookie', [`${config.cookie.name}=${adminSession}`]);
+		const response = await request(app).get('/v1/status/barf').asPerson(adminSession);
 		expect(response.status).toBe(500);
 	});
 	it('returns 403 for non-admin access', async () => {
-		const response = await request(app).get('/v1/status/barf').set('Cookie', [`${config.cookie.name}=${nonAdminSession}`]);
+		const response = await request(app).get('/v1/status/barf').asPerson(nonAdminSession);
 		expect(response.status).toBe(403);
 	});
 });

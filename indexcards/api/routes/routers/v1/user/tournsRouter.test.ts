@@ -18,7 +18,7 @@ describe('GET /user/tourns', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -34,7 +34,7 @@ describe('GET /user/tourns/{tournId}', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -52,7 +52,7 @@ describe('GET /user/tourns/{tournId}/summary', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/summary`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -70,7 +70,7 @@ describe('GET /user/tourns/{tournId}/fines', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/fines`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -87,7 +87,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -98,7 +98,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -109,7 +109,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res2 = await request(server)
 			.get(`/v1/user/tourns/${Tourn2.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -122,7 +122,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -138,7 +138,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 			
@@ -152,7 +152,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res2 = await request(server)
 			.get(`/v1/user/tourns/${Tourn2.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 			
@@ -166,7 +166,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		const res = await request(server)
 			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 

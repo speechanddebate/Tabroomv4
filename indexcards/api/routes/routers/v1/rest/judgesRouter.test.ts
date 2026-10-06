@@ -45,7 +45,7 @@ describe('GET /rest/judges/unlinked/search', () => {
       .get('/v1/rest/judges/unlinked/search')
       .query({ first: first, last: last })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -60,7 +60,7 @@ describe('GET /rest/judges/unlinked/search', () => {
       .get('/v1/rest/judges/unlinked/search')
       .query({ first: 'ZZZNoMatch', last: 'ZZZNoMatch' })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -72,7 +72,7 @@ describe('GET /rest/judges/unlinked/search', () => {
 		const res = await request(server)
       .get('/v1/rest/judges/unlinked/search')
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect(200);
 
 		expect(res).not.toBeProblemResponse();
@@ -86,7 +86,7 @@ describe('GET /rest/judges/unlinked/search', () => {
       .get('/v1/rest/judges/unlinked/search')
       .query({ first: cjFirst, last: cjLast })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect(200);
 
 		expect(res).not.toBeProblemResponse();
@@ -107,7 +107,7 @@ describe('GET /rest/judges/unlinked/search', () => {
       .get('/v1/rest/judges/unlinked/search')
       .query({ first: ChapterJudge2.first, last: ChapterJudge2.last })
       .set('Accept', 'application/json')
-      .set('Authorization', `Bearer ${userkey}`)
+      .asPerson(userkey)
       .expect(200);
 
 		expect(res).not.toBeProblemResponse();

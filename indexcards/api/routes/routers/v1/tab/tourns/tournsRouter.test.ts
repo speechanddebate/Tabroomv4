@@ -14,7 +14,7 @@ describe('tournsRouter', () => {
 			const { hidden: _hidden, ...tournRequest } = data;
 			var response = await request(server)
 				.post('/v1/tab/tourns')
-				.set('Authorization', `Bearer ${sessionToken}`)
+				.asPerson(sessionToken)
 				.send(tournRequest);
 			expect(response.status).toBe(201);
 			expect(response.body).toMatchSchema(TournSchema);
@@ -22,7 +22,7 @@ describe('tournsRouter', () => {
 
 			response = await request(server)
 				.get(`/v1/tab/tourns/${tournId}`)
-				.set('Authorization', `Bearer ${sessionToken}`);
+				.asPerson(sessionToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toMatchSchema(TournSchema);
 			expect(response.body).toMatchObject({
@@ -38,19 +38,19 @@ describe('tournsRouter', () => {
 			const updates = { name: 'Updated Tournament Name' };
 			response = await request(server)
 				.put(`/v1/tab/tourns/${tournId}`)
-				.set('Authorization', `Bearer ${sessionToken}`)
+				.asPerson(sessionToken)
 				.send(updates);
 			expect(response.status).toBe(200);
 			expect(response.body.name).toBe(updates.name);
 
 			response = await request(server)
 				.delete(`/v1/tab/tourns/${tournId}`)
-				.set('Authorization', `Bearer ${sessionToken}`);
+				.asPerson(sessionToken);
 			expect(response.status).toBe(204);
 
 			response = await request(server)
 				.get(`/v1/tab/tourns/${tournId}`)
-				.set('Authorization', `Bearer ${sessionToken}`);
+				.asPerson(sessionToken);
 			expect(response).toBeProblemResponse();
 		});
 	});

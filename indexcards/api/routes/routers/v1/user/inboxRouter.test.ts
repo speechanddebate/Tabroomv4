@@ -27,7 +27,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -47,7 +47,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -68,7 +68,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox/unread')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${key1}`)
+				.asPerson(key1)
 				.expect('Content-Type', /json/)
 				.expect(200);
 			expect(res.body).toMatchSchema(InboxUnreadCountSchema);
@@ -81,7 +81,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post('/v1/user/inbox/markAllRead')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(204);
 			expect(res).not.toBeProblemResponse();
 			const message = await messageRepo.getMessage(db,Message.id);
@@ -96,7 +96,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markRead`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
@@ -108,7 +108,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post(`/v1/user/inbox/${nonExistentId}/markRead`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 			expect(res).toBeProblemResponse(404);
 		});
 	});
@@ -119,12 +119,12 @@ describe('Inbox Router', () => {
 			await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markRead`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 
 			const res = await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markUnread`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
@@ -135,7 +135,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post(`/v1/user/inbox/${nonExistentId}/markUnread`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 			expect(res).toBeProblemResponse(404);
 		});
 	});
@@ -146,7 +146,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get(`/v1/user/inbox/${Message.id}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
@@ -156,7 +156,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get(`/v1/user/inbox/${nonExistentId}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 			expect(res).toBeProblemResponse(404);
 		});
 	});
@@ -167,7 +167,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.delete(`/v1/user/inbox/${Message.id}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
@@ -179,7 +179,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.delete(`/v1/user/inbox/${nonExistentId}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 
 			expect(res).toBeProblemResponse(404);
 		});

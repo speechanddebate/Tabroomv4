@@ -1,5 +1,4 @@
 import request from 'supertest';
-import config from '../../../config.js';
 import server from '../../../../app';
 import factories from '../../../../tests/factories';
 
@@ -10,7 +9,7 @@ describe('User Profile Loader', () => {
 		const res = await request(server)
 			.get(`/v1/user/profile`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -25,7 +24,7 @@ describe('User Profile Loader', () => {
 		const res = await request(server)
 			.get(`/v1/user/profile/1`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 

@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { db } from '../../../data/database.js';
-import config from '../../../config.js';
 import server from '../../../../app';
 import { testUserSession } from '../../../../tests/testFixtures';
 
@@ -19,7 +18,7 @@ describe.todo('Session Last Access Updated', () => {
 		const update = await request(server)
 			.get(`/v1/user/updateLastAccess?forceUpdate=1`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${testUserSession.userkey}`)
+			.asPerson(testUserSession.userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
@@ -29,7 +28,7 @@ describe.todo('Session Last Access Updated', () => {
 			res = await request(server)
 				.get(`/v1/user/session`)
 				.set('Accept', 'application/json')
-				.set('Cookie', [`${config.cookie.name}=${testUserSession.userkey}`])
+				.asPerson(testUserSession.userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 		}

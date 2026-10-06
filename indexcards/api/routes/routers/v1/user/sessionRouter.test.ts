@@ -18,7 +18,7 @@ describe('Session Router', () => {
 			const res = await request(server)
 				.get('/v1/user/session')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 

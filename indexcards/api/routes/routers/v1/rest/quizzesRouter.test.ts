@@ -40,7 +40,7 @@ describe('Quizzes Router', () => {
 		});
 		const response = await request(server)
 		.get('/v1/rest/quizzes')
-		.set('Authorization', `Bearer ${Session.userkey}`);
+		.asPerson(Session.userkey);
 		expect(response.status).toBe(200);
 		expect(response.body).toMatchSchema(z.array(QuizSchema));
 		const quiz = response.body.find((q: { id: string }) => Number(q.id) === Quiz.id);
