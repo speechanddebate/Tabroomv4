@@ -90,6 +90,7 @@
 {#snippet searchBox()}
 	<Search
 		id="paradigm-search"
+		aria-label="Search paradigms"
 		onkeydown={(e) => e.key === 'Enter' && handleSearch()}
 		placeholder="ex: Winston Smith"
 		type="search"

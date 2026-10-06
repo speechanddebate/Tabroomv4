@@ -52,9 +52,9 @@
 				active:bg-primary-deep
 				whitespace-nowrap
 				cursor-pointer"
+			aria-label="View Paradigm for {item.name}"
 			href={href}
 			onclick={onselect}
-			title="View paradigm"
 		>
 			View Paradigm
 		</a>
