@@ -1,14 +1,11 @@
 import {
 	INDEXCARDS_HOST,
 	INDEXCARDS_BASE_PATH,
-	CSRF_COOKIE_NAME,
-	CSRF_HEADER_NAME,
 } from '$app/env/public';
 import {
 	AUTH_COOKIE,
 } from '$app/env/private';
 import type { Handle, HandleFetch, HandleServerError } from '@sveltejs/kit';
-import { attachCSRFToken } from '$indexcards/utils';
 import logger from '$lib/helpers/logging/logging.server';
 import { userSession } from '$indexcards';
 
@@ -66,13 +63,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 export const handleFetch: HandleFetch = async ({ event, request, fetch }) => {
 	if (request.url.startsWith(`${INDEXCARDS_HOST}${INDEXCARDS_BASE_PATH}`)) {
-		// forward the auth cookie as a header for API requests.
+		// forward the browser's cookies (auth, browser id) as a header for API requests.
 		// This is kind of a hack as svelte wont forward the cookie for sister-origin requests, but our API is on a different
 		// subdomain so it is technically a cross-origin request. RCT
 		request.headers.set('cookie', event.request.headers.get('cookie') || '');
-		// attach CSRF token for mutating requests
-		const csrfCookie = event.cookies.get(CSRF_COOKIE_NAME);
-		attachCSRFToken(request.headers, request.method, () => csrfCookie, CSRF_HEADER_NAME);
 	}
 	return fetch(request);
 };

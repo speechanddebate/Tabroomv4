@@ -3,17 +3,9 @@
 vi.mock('$app/env/public', () => ({
 	INDEXCARDS_HOST: 'https://api.example.com',
 	CLASSIC_URL: 'https://classic.example.com',
-	CSRF_HEADER_NAME: 'x-csrf-token',
-	CSRF_COOKIE_NAME: 'csrf_token',
+	COOKIE_DOMAIN: 'example.com',
+	BROWSER_ID_COOKIE_NAME: 'browser_id',
 }));
-
-// vi.hoisted runs before any import is evaluated, so window.fetch is already
-// the mock when hooks.client.ts executes `const nativeFetch = window.fetch`
-const mockFetch = vi.hoisted(() => {
-	const fn = vi.fn();
-	vi.stubGlobal('fetch', fn);
-	return fn;
-});
 
 const {
 	mockClientLoggerError,
@@ -47,10 +39,26 @@ import * as hooksClient from './hooks.client';
 
 const { init } = hooksClient;
 
-const CSRF_COOKIE_VALUE = 'test-csrf-token-abc123';
-const OTHER_HOST = 'https://other.example.com';
-const API_HOST = 'https://api.example.com';
-const MUTATING_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'] as const;
+// document.cookie only keeps the last write here, which is all these tests need
+let cookieJar: string;
+let store: Map<string, string>;
+
+beforeEach(() => {
+	cookieJar = '';
+	store = new Map<string, string>();
+	// node's own localStorage global shadows jsdom's and is undefined without --localstorage-file
+	vi.stubGlobal('localStorage', {
+		getItem: (key: string) => store.get(key) ?? null,
+		setItem: (key: string, value: string) => store.set(key, value),
+	});
+	Object.defineProperty(document, 'cookie', {
+		configurable: true,
+		get: () => cookieJar,
+		set: (value: string) => {
+			cookieJar = value;
+		},
+	});
+});
 
 describe('handleClientError', () => {
 	it('posts SvelteKit client hook errors caught by handleError to the server log endpoint', async () => {
@@ -88,175 +96,12 @@ describe('handleClientError', () => {
 });
 
 describe('Client Init', () => {
-	describe('CSRF token injection', () => {
-		beforeEach(async () => {
-			mockFetch.mockResolvedValue(new Response('ok'));
-			mockClientLoggerError.mockReset();
-			mockClientLoggerWarn.mockReset();
-			mockClientLoggerInfo.mockReset();
-			mockClientLoggerDebug.mockReset();
+	it('sets the browser id cookie', async () => {
+		await init();
 
-			Object.defineProperty(document, 'cookie', {
-				configurable: true,
-				get: () => `csrf_token=${CSRF_COOKIE_VALUE}; other_cookie=foo`,
-			});
-
-			await init();
-		});
-
-		afterEach(() => {
-			mockFetch.mockReset();
-		});
-
-		describe('string URL input', () => {
-			it.each(MUTATING_METHODS)(
-				'attaches the CSRF token header for %s requests to the API host',
-				async (method) => {
-					await window.fetch(`${API_HOST}/resource`, { method });
-
-					const [, options] = mockFetch.mock.calls[0];
-					const headers = new Headers(options.headers);
-					expect(headers.get('x-csrf-token')).toBe(CSRF_COOKIE_VALUE);
-				}
-			);
-
-			it('does NOT attach the CSRF token for GET requests', async () => {
-				await window.fetch(`${API_HOST}/resource`, { method: 'GET' });
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options?.headers ?? {});
-				expect(headers.get('x-csrf-token')).toBeNull();
-			});
-
-			it('does NOT attach the CSRF token for requests to a different host', async () => {
-				await window.fetch(`${OTHER_HOST}/resource`, { method: 'POST' });
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options?.headers ?? {});
-				expect(headers.get('x-csrf-token')).toBeNull();
-			});
-
-			it('does NOT overwrite an existing CSRF token header', async () => {
-				await window.fetch(`${API_HOST}/resource`, {
-					method: 'POST',
-					headers: { 'x-csrf-token': 'already-set' },
-				});
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options.headers);
-				expect(headers.get('x-csrf-token')).toBe('already-set');
-			});
-
-			it('logs a warning for a malformed cookie value', async () => {
-				Object.defineProperty(document, 'cookie', {
-					configurable: true,
-					get: () => `csrf_token=; other_cookie=foo`,
-				});
-
-				mockFetch.mockClear();
-
-				await window.fetch(`${API_HOST}/resource`, { method: 'POST' });
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options?.headers ?? {});
-				expect(headers.get('x-csrf-token')).toBeNull();
-				expect(mockClientLoggerWarn).toHaveBeenCalledWith(
-					expect.stringContaining('cookie "csrf_token" was malformed'),
-				);
-			});
-
-			it('logs a warning when document is undefined', async () => {
-				const originalDocument = global.document;
-				try {
-					Object.defineProperty(global, 'document', {
-						configurable: true,
-						value: undefined,
-					});
-
-					mockFetch.mockClear();
-
-					await window.fetch(`${API_HOST}/resource`, { method: 'POST' });
-
-					const [, options] = mockFetch.mock.calls[0];
-					const headers = new Headers(options?.headers ?? {});
-					expect(headers.get('x-csrf-token')).toBeNull();
-					expect(mockClientLoggerWarn).toHaveBeenCalledWith(
-						expect.stringContaining('document is undefined'),
-					);
-				} finally {
-					Object.defineProperty(global, 'document', {
-						configurable: true,
-						value: originalDocument,
-					});
-				}
-			});
-		});
-
-		describe('Request object input', () => {
-			it('attaches the CSRF token when given a POST Request object', async () => {
-				const request = new Request(`${API_HOST}/resource`, { method: 'POST' });
-				await window.fetch(request);
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options.headers);
-				expect(headers.get('x-csrf-token')).toBe(CSRF_COOKIE_VALUE);
-			});
-
-			it('respects the method override in options when given a Request object', async () => {
-				const request = new Request(`${API_HOST}/resource`);
-				await window.fetch(request, { method: 'POST' });
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options.headers);
-				expect(headers.get('x-csrf-token')).toBe(CSRF_COOKIE_VALUE);
-			});
-
-			it('does NOT overwrite an existing CSRF token on a Request object', async () => {
-				const request = new Request(`${API_HOST}/resource`, {
-					method: 'DELETE',
-					headers: { 'x-csrf-token': 'already-set' },
-				});
-				await window.fetch(request);
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options.headers);
-				expect(headers.get('x-csrf-token')).toBe('already-set');
-			});
-		});
-
-		describe('missing CSRF cookie', () => {
-			beforeEach(() => {
-				Object.defineProperty(document, 'cookie', {
-					configurable: true,
-					get: () => '',
-				});
-			});
-
-			it('does not set the header when the CSRF cookie is absent', async () => {
-				await window.fetch(`${API_HOST}/resource`, { method: 'POST' });
-
-				const [, options] = mockFetch.mock.calls[0];
-				const headers = new Headers(options?.headers ?? {});
-				expect(headers.get('x-csrf-token')).toBeNull();
-			});
-		});
-
-		describe('passthrough behaviour', () => {
-			it('forwards the original input and options to native fetch', async () => {
-				const body = JSON.stringify({ foo: 'bar' });
-				await window.fetch(`${API_HOST}/resource`, {
-					method: 'POST',
-					body,
-					headers: { 'content-type': 'application/json' },
-				});
-
-				const [calledInput, calledOptions] = mockFetch.mock.calls[0];
-				expect(calledInput).toBe(`${API_HOST}/resource`);
-				expect(new Headers(calledOptions.headers).get('content-type')).toBe('application/json');
-				expect(calledOptions.body).toBe(body);
-			});
-		});
+		expect(cookieJar).toMatch(/^browser_id=[0-9a-f-]{36};/);
 	});
+
 	describe('global error handling', () => {
 		beforeEach(() => {
 			mockClientLoggerError.mockReset();
@@ -353,5 +198,42 @@ describe('getCookieValue', () => {
 				value: originalDocument,
 			});
 		}
+	});
+});
+
+describe('ensureBrowserId', () => {
+	it('creates a new id in a persistent cookie on the shared domain and in localStorage', () => {
+		const id = hooksClient.ensureBrowserId();
+
+		expect(id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(cookieJar).toBe(`browser_id=${id}; Path=/; Max-Age=34560000; SameSite=Lax; Domain=example.com`);
+		expect(store.get('browser_id')).toBe(id);
+	});
+
+	it('reuses the id from the cookie and mirrors it into localStorage', () => {
+		cookieJar = 'browser_id=cookie-id';
+
+		expect(hooksClient.ensureBrowserId()).toBe('cookie-id');
+		expect(cookieJar).toMatch(/^browser_id=cookie-id; .*Max-Age=/);
+		expect(store.get('browser_id')).toBe('cookie-id');
+	});
+
+	it('restores the cookie from localStorage when the cookie was cleared', () => {
+		store.set('browser_id', 'stored-id');
+
+		expect(hooksClient.ensureBrowserId()).toBe('stored-id');
+		expect(cookieJar).toMatch(/^browser_id=stored-id;/);
+	});
+
+	it('still sets the cookie when localStorage is unavailable', () => {
+		vi.stubGlobal('localStorage', undefined);
+
+		const id = hooksClient.ensureBrowserId();
+
+		expect(cookieJar).toMatch(new RegExp(`^browser_id=${id};`));
+		expect(mockClientLoggerWarn).toHaveBeenCalledWith(
+			'could not read browser id from localStorage',
+			expect.anything(),
+		);
 	});
 });

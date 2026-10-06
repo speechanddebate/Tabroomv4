@@ -29,7 +29,6 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 			} else {
 				session = cookieSession;
 				req.authType = 'cookie';
-				req.csrfToken = authService.generateCSRFToken(cookie);
 			}
 		}
 

@@ -4,8 +4,6 @@ import type { MockedFunction } from 'vitest';
 vi.mock('$app/env/public', () => ({
 	INDEXCARDS_HOST: 'https://api.example.com',
 	INDEXCARDS_BASE_PATH: '/v1',
-	CSRF_COOKIE_NAME: 'CSRF_Token',
-	CSRF_HEADER_NAME: 'x-csrf-token',
 }));
 vi.mock('$app/env/private', () => ({
 	AUTH_COOKIE: 'Tabroom_Cookie',
@@ -174,36 +172,18 @@ describe('HandleFetch Hook', () => {
 		mockFetch = vi.fn().mockResolvedValue(new Response('ok')) as MockedFunction<typeof fetch>;
 	});
 
-	it('forwards cookies and attaches CSRF token for indexcards API requests', async () => {
+	it('forwards cookies for indexcards API requests', async () => {
 		const event = createRequestEvent({
-			cookies: {
-				get: vi.fn((name: string) => (name === 'CSRF_Token' ? 'csrf-token-123' : undefined)),
-			},
 			request: new Request('https://example.com/some-page', {
-				headers: { cookie: 'session=abc123; other=value' },
+				headers: { cookie: 'session=abc123; Browser_Id=browser-id-123' },
 			}),
 		});
 		const request = new Request('https://api.example.com/v1/user', { method: 'POST' });
 
 		await handleFetch({ event, request, fetch: mockFetch });
 
-		expect(request.headers.get('cookie')).toBe('session=abc123; other=value');
-		expect(request.headers.get('x-csrf-token')).toBe('csrf-token-123');
+		expect(request.headers.get('cookie')).toBe('session=abc123; Browser_Id=browser-id-123');
 		expect(mockFetch).toHaveBeenCalledWith(request);
-	});
-
-	it('attaches CSRF token from cookie for mutating methods', async () => {
-		const event = createRequestEvent({
-			cookies: {
-				get: vi.fn((name: string) => (name === 'CSRF_Token' ? 'csrf-token-123' : undefined)),
-			},
-			request: new Request('https://example.com', { headers: {} }),
-		});
-		const request = new Request('https://api.example.com/v1/data', { method: 'PUT' });
-
-		await handleFetch({ event, request, fetch: mockFetch });
-
-		expect(request.headers.get('x-csrf-token')).toBe('csrf-token-123');
 	});
 
 	it('does not forward cookies for non-indexcards requests', async () => {
@@ -217,7 +197,6 @@ describe('HandleFetch Hook', () => {
 		await handleFetch({ event, request, fetch: mockFetch });
 
 		expect(request.headers.get('cookie')).toBeNull();
-		expect(request.headers.get('x-csrf-token')).toBeNull();
 		expect(mockFetch).toHaveBeenCalledWith(request);
 	});
 
@@ -230,35 +209,6 @@ describe('HandleFetch Hook', () => {
 		await handleFetch({ event, request, fetch: mockFetch });
 
 		expect(request.headers.get('cookie')).toBe('');
-		expect(request.headers.get('x-csrf-token')).toBeNull();
-	});
-
-	it('handles missing CSRF cookie gracefully', async () => {
-		const event = createRequestEvent({
-			cookies: {
-				get: vi.fn().mockReturnValue(undefined),
-			},
-			request: new Request('https://example.com/page', { headers: {} }),
-		});
-		const request = new Request('https://api.example.com/v1/user', { method: 'POST' });
-
-		await handleFetch({ event, request, fetch: mockFetch });
-
-		expect(request.headers.get('x-csrf-token')).toBeNull();
-	});
-
-	it('does not attach CSRF token for non-mutating methods', async () => {
-		const event = createRequestEvent({
-			cookies: {
-				get: vi.fn((name: string) => (name === 'CSRF_Token' ? 'csrf-token-123' : undefined)),
-			},
-			request: new Request('https://example.com', { headers: {} }),
-		});
-		const request = new Request('https://api.example.com/v1/data', { method: 'GET' });
-
-		await handleFetch({ event, request, fetch: mockFetch });
-
-		expect(request.headers.get('x-csrf-token')).toBeNull();
 	});
 
 	it('passes through fetch response unchanged', async () => {

@@ -1,6 +1,5 @@
 import personRepo from '../repos/personRepo.js';
 import { verify, encrypt } from 'unixcrypt';
-import crypto from 'crypto';
 import config from '../config.js';
 import sessionRepo from '../repos/sessionRepo.js';
 import { ValidationError } from '../helpers/errors/errors.js';
@@ -67,12 +66,6 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 	return {personId: Person.id, token: userkey};
 }
 
-function generateCSRFToken(userkey: string){
-	return crypto
-        .createHmac('sha256',userkey)
-        .digest('hex');
-}
-
 export const AUTH_INVALID = Symbol('AUTH_INVALID');
 export const FORBIDDEN = Symbol('FORBIDDEN');
 
@@ -86,17 +79,6 @@ export function getAuthCookieOptions(): CookieOptions {
 		path     : '/',
 	};
 };
-export function getCSRFCookieOptions(): CookieOptions {
-	const secure = process.env.NODE_ENV === 'production';
-	return {
-		httpOnly : false,
-		secure,
-		sameSite : 'lax',
-		domain   : config.cookie.domain,
-		path     : '/',
-	};
-}
-
 export function hashPassword(password: string) {
 	return encrypt(password);
 }
@@ -108,6 +90,4 @@ export default {
 	login,
 	register,
 	getAuthCookieOptions,
-	getCSRFCookieOptions,
-	generateCSRFToken,
 };

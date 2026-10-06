@@ -2,7 +2,6 @@ declare global {
 	namespace Express {
 		interface Request {
 			authType?: 'basic' | 'bearer' | 'cookie';
-			csrfToken?: string;
 			session?: {
 				id?: number;
 				person?: number;

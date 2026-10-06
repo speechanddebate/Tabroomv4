@@ -208,7 +208,6 @@ describe('authController',() => {
 				personId: 55,
 			};
 			vi.spyOn(authService, 'register').mockResolvedValue(fakeResult);
-			vi.spyOn(authService, 'generateCSRFToken').mockReturnValue('csrf456');
 
 			const { req, res } = createContext({
 				body: { username: 'newuser', password: 'pw' },

@@ -69,22 +69,9 @@ describe('AuthService', () => {
 		});
 	});
 
-	describe('generateCSRFToken', () => {
-		it('generates a valid CSRF token as a hex string', () => {
-			const userkey = 'testkey';
-			const token = AuthService.generateCSRFToken(userkey);
-			expect(typeof token).toBe('string');
-			expect(token.length).toBe(64); // sha256 hex digest length
-		});
-	});
-
 	describe('getCookieOptions', () => {
 		it('returns Auth Cookie Options', () => {
 			const opts = AuthService.getAuthCookieOptions();
-			expect(opts).toBeDefined();
-		});
-		it('returns CSRF Cookie Options', () => {
-			const opts = AuthService.getCSRFCookieOptions();
 			expect(opts).toBeDefined();
 		});
 	});

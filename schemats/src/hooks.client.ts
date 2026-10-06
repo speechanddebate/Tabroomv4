@@ -2,11 +2,9 @@
 
 import type { ClientInit, HandleClientError } from '@sveltejs/kit';
 import  {
-	INDEXCARDS_HOST,
-	CSRF_COOKIE_NAME,
-	CSRF_HEADER_NAME,
+	BROWSER_ID_COOKIE_NAME,
+	COOKIE_DOMAIN,
 } from '$app/env/public';
-import { attachCSRFToken } from '$indexcards/utils';
 import { clientLogger } from '$lib/helpers/logging/logging';
 
 export const handleError: HandleClientError = ({ error, event, status, message }): App.Error => {
@@ -46,29 +44,10 @@ export const init: ClientInit = async () => {
 			source: 'window.unhandledrejection',
 		});
 	});
-	/**
-	 *  patch the global fetch function to automatically attach the CSRF token for mutating requests to indexcards RCT
-	 */
-	const nativeFetch = window.fetch;
-	window.fetch = (input, options = {}) => {
-		let url = '';
-		let method = 'GET';
-		if (typeof input === 'string') {
-			url = input;
-			method = (options.method || 'GET').toUpperCase();
-		} else if (input instanceof Request) {
-			url = input.url;
-			method = (options.method || input.method || 'GET').toUpperCase();
-		}
 
-		if (url.startsWith(INDEXCARDS_HOST ?? 'https://api.tabroom.com')) {
-			const headers = new Headers((options && options.headers) || (input instanceof Request ? input.headers : {}));
-			attachCSRFToken(headers, method, () => getCookieValue(CSRF_COOKIE_NAME), CSRF_HEADER_NAME);
-			options.headers = headers;
-		}
-		return nativeFetch(input, options);
-	};
+	ensureBrowserId();
 };
+
 /**
  *  Extract a cookie value by name from document.cookie.
  * @param name the name of the cookie to extract
@@ -93,3 +72,37 @@ export const getCookieValue = (name: string): string | undefined => {
 	return undefined;
 };
 
+// browsers cap cookie lifetimes at 400 days
+const BROWSER_ID_MAX_AGE = 60 * 60 * 24 * 400;
+
+/**
+ * Identify this browser across visits, even when nobody is logged in.
+ * The id lives in a cookie on COOKIE_DOMAIN so the browser sends it to indexcards on every request (and SSR forwards it),
+ * and is mirrored into localStorage so the same id comes back if the cookie is cleared. RCT
+ * @returns the browser id
+ */
+export const ensureBrowserId = (): string => {
+	let stored: string | null = null;
+	try {
+		stored = localStorage.getItem(BROWSER_ID_COOKIE_NAME);
+	} catch (error) {
+		clientLogger.warn('could not read browser id from localStorage', { error });
+	}
+
+	const browserId = getCookieValue(BROWSER_ID_COOKIE_NAME) ?? stored ?? crypto.randomUUID();
+
+	// always rewrite the cookie to push its expiry forward
+	const domain = COOKIE_DOMAIN ? `; Domain=${COOKIE_DOMAIN}` : '';
+	const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+	document.cookie = `${BROWSER_ID_COOKIE_NAME}=${encodeURIComponent(browserId)}; Path=/; Max-Age=${BROWSER_ID_MAX_AGE}; SameSite=Lax${domain}${secure}`;
+
+	if (stored !== browserId) {
+		try {
+			localStorage.setItem(BROWSER_ID_COOKIE_NAME, browserId);
+		} catch (error) {
+			clientLogger.warn('could not write browser id to localStorage', { error });
+		}
+	}
+
+	return browserId;
+};
