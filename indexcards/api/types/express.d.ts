@@ -1,19 +1,10 @@
 import type { ZodOpenApiOperationObject, ZodOpenApiPathItemObject } from 'zod-openapi';
-import type { Person, Tourn } from '../data/schema.js';
+import type { Tourn } from '../data/schema.js';
 import type { Selectable } from 'kysely';
-import type { Perm } from '../../middleware/authorization/authContext.js';
+import type { Actor, Perm, SessionPerson } from '../middleware/auth/types.js';
 
 export type RouteOpenApiConfig = (ZodOpenApiPathItemObject | ZodOpenApiOperationObject) & {
 	path: string;
-};
-
-type SessionPerson = { 
-	id: number,
-	first: string | null,
-	last: string | null,
-	email: string,
-	site_admin: number | null,
-	tz?: string | null,
 };
 
 declare module 'express-serve-static-core' {
@@ -21,24 +12,20 @@ declare module 'express-serve-static-core' {
 		openapi?: RouteOpenApiConfig;
 	}
 	interface Request {
-		actor: {
-			type: 'person' | 'anonymous';
-			Person?: SessionPerson;
-			can: (resource: string, action: string, resourceId: number) => Promise<boolean>;
-			assert: (resource: string, action: string, resourceId: number) => Promise<void>;
-			allowedIds: (resource: string, action: string, opts?: Record<string, unknown>) => { all: boolean; ids: number[] };
-		}; 
+		actor: Actor;
+		authType?: 'cookie';
 		session?: {
 			id: number | null;
 			person: number;
 			su: number | null;
 			Person?: SessionPerson;
 			Su: SessionPerson | null;
-		}
+		};
+		//deprecated, use req.actor
+		person?: unknown;
 		auth?: {
 			perms: Perm[];
 		};
 		tourn?: Selectable<Tourn>;
 	}
 }
-

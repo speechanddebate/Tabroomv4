@@ -1,7 +1,7 @@
 import { buildTarget, type Target } from './buildTarget.js';
 import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
-import type { AuthError, Perm } from './types.js';
+import type { AuthError, Perm } from '../auth/types.js';
 //requires login - use before any route that needs authentication
 export function requireLogin(req: Request, res: Response, next: NextFunction) {
 	if (!req.actor || req.actor.type === 'anonymous') {

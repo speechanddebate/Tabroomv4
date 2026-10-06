@@ -11,9 +11,9 @@ describe('csrfMiddleware', () => {
 	});
 	
 
-	it('skips when authType is not cookie', async () => {
+	it('skips when the request is not cookie authenticated', async () => {
 		const { req, res, next } = createContext({
-			authType: 'bearer',
+			method: 'POST',
 		});
 
 		await csrfMiddleware(req, res, next);

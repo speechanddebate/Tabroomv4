@@ -60,7 +60,7 @@ export async function loadTournAuthContext(req: Request, res: Response, next: Ne
 				permTournId = perm.tourn	;
 			}
 
-			if (scope && id) {
+			if (scope && id && perm.tag) {
 				req.auth.perms.push({
 					scope,
 					id,
@@ -91,6 +91,7 @@ export async function loadChapterAuthContext(req: Request, res: Response, next: 
 	});
 
 	for (const perm of perms) {
+		if (!perm.chapter) continue;
 		req.auth.perms.push({
 			scope: 'chapter',
 			id: perm.chapter,
