@@ -13,9 +13,7 @@ import v1Router from './api/routes/routers/v1/indexRouter.js';
 import { rateLimiterMiddleware } from './api/middleware/rateLimiter.js';
 import { db } from './api/data/database.js';
 import { sql } from 'kysely';
-import { localAuth } from './api/helpers/auth.js';
 import logger, { setupRequest } from './api/helpers/logger.js';
-import { Forbidden, Unauthorized } from './api/helpers/problem.js';
 
 const app = express();
 
@@ -91,26 +89,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/v1',v1Router);
-
-app.use('/v1/local', async (req, res, next) => {
-
-	// APIs related to administrators of districts (the committee), or a
-	// region, or an NCFL diocese, or a circuit.
-
-	if (!req.actor || req.actor.type === 'anonymous') {
-		return Unauthorized(req, res, 'Admin: You are not logged in.');
-	}
-
-	const response = await localAuth(req, res);
-
-	if (typeof response === 'object') {
-		req[req.params.localType] = response.local;
-		req.session.perms = { ...req.session.perms, ...response.perms };
-		next();
-	} else {
-		return Forbidden(req, res, `Admin : You do not have the access required.`);
-	}
-});
 
 // Final fallback error handling
 app.use(errorHandler);

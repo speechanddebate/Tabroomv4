@@ -1,6 +1,9 @@
-import { roundCheck } from '../../../helpers/auth.js';
 import { sql } from 'kysely';
 import { db } from '../../../data/database.js';
+
+// TODO: stand-in for roundCheck from the removed helpers/auth.js, which read req.session.perms.
+// Port this to req.actor.can('round', 'write', roundId) before these routes are enabled.
+const roundCheck = async (req, res, _roundId) => false;
 
 // This function needs to be adapted to the new permissions model to enable it
 // to ONLY merge and unmerge the rounds that a given user has access to under

@@ -1,8 +1,28 @@
-import { checkJudgePerson } from '../../../helpers/auth.js';
+import { summon } from '../../../repos/utils/summon.js';
 import logger from '../../../helpers/logger.js';
 import { db } from '../../../data/database.js';
 import { ballotRepo } from '../../../repos/ballotRepo.js';
 import scoreRepo from '../../../repos/scoreRepo.js';
+
+// moved here from the removed helpers/auth.js, with req.session swapped for req.person
+const checkJudgePerson = async (req, judgeId) => {
+
+	if (!req.person) {
+		return false;
+	}
+
+	if (req.person.site_admin) {
+		return true;
+	}
+
+	const judge = await summon(db, 'judge',judgeId);
+
+	if (judge.person === req.person.id) {
+		return true;
+	}
+
+	return false;
+};
 
 export async function checkActive(req, res) {
 	const judgeId = parseInt(req.params.judgeId);
