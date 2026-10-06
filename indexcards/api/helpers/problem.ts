@@ -1,13 +1,15 @@
-export function sendProblem(req, res, {
+import type { Problem } from '@tabroom/types';
+import type { Request, Response } from 'express';
+export function sendProblem(req: Request, res: Response, {
 	type = 'about:blank',
 	title,
 	status,
 	detail,
 	instance = req.originalUrl ?? '',
 	...extras
-}) {
+}: Partial<Problem>) {
 	return res
-	.status(status)
+	.status(status ?? 500)
 	.type('application/problem+json')
 	.json({
 		type,
@@ -19,24 +21,7 @@ export function sendProblem(req, res, {
 	});
 }
 
-export function handleDomainError(err, req, res, next) {
-	switch (err.code) {
-		case 'BAD_REQUEST':
-			return BadRequest(req, res, err.detail);
-		case 'UNAUTHORIZED':
-			return Unauthorized(req, res, err.detail);
-		case 'FORBIDDEN':
-			return Forbidden(req, res, err.detail);
-		case 'NOT_FOUND':
-			return NotFound(req, res, err.detail);
-		case 'NOT_IMPLEMENTED':
-			return NotImplemented(req, res, err.detail);
-		default:
-			return next(err);
-	}
-}
-
-export function BadRequest(req, res, detail, issues = {}){
+export function BadRequest(req: Request, res: Response, detail?: string, issues = {}){
 	return sendProblem(req, res, {
 		title: 'Request Validation Failed',
 		status: 400,
@@ -45,7 +30,7 @@ export function BadRequest(req, res, detail, issues = {}){
 	});
 }
 //I hate that the 401 Unauthorized is technically for unauthenticated issues but we live in a society after all
-export function Unauthorized(req, res, detail, extras = {}) {
+export function Unauthorized(req: Request, res: Response, detail?: string, extras = {}) {
 	return sendProblem(req, res, {
 		title: 'Invalid or Missing Credentials',
 		status: 401,
@@ -53,7 +38,7 @@ export function Unauthorized(req, res, detail, extras = {}) {
 		...extras,
 	});
 }
-export function Forbidden(req, res, detail, extras = {}){
+export function Forbidden(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'You Do Not Have Access to This Resource',
 		status: 403,
@@ -61,7 +46,7 @@ export function Forbidden(req, res, detail, extras = {}){
 		...extras,
 	});
 }
-export function NotFound(req, res, detail, extras = {}){
+export function NotFound(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'The specified resource was not found.',
 		status: 404,
@@ -69,7 +54,7 @@ export function NotFound(req, res, detail, extras = {}){
 		...extras,
 	});
 }
-export function UnexpectedError(req, res, detail, extras = {}){
+export function UnexpectedError(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'The Server has encountered an unexpected error.',
 		status: 500,
@@ -77,7 +62,7 @@ export function UnexpectedError(req, res, detail, extras = {}){
 		...extras,
 	});
 }
-export function NotImplemented(req, res, detail, extras = {}){
+export function NotImplemented(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'This function is not yet implemented.',
 		status: 501,
@@ -85,7 +70,7 @@ export function NotImplemented(req, res, detail, extras = {}){
 		...extras,
 	});
 }
-export function ServiceUnavailable(req, res, detail, extras = {}){
+export function ServiceUnavailable(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'The Server is temporarily unable to handle the request.',
 		status: 503,
@@ -93,7 +78,7 @@ export function ServiceUnavailable(req, res, detail, extras = {}){
 		...extras,
 	});
 }
-export function RateLimitExceeded(req, res, detail, extras = {}){
+export function RateLimitExceeded(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'Rate limit exceeded',
 		status: 429,

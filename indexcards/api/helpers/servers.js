@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { sql } from 'kysely';
-import { db as kdb } from '../data/database.js';
+import { db } from '../data/database.js';
 import { summon } from '../repos/utils/summon.js';
 import changeLogRepo from '../repos/changeLogRepo.js';
 import config from '../config.js';
@@ -31,7 +31,7 @@ export const showTabroomUsage = async () => {
 					and timeslot.start < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 4 HOUR)
 					and timeslot.end > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR)
 			)
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	const onlineStudents = (await sql`
 		select
@@ -63,7 +63,7 @@ export const showTabroomUsage = async () => {
 					and timeslot.start < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 4 HOUR)
 					and timeslot.end > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR)
 			)
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	const allJudges = (await sql`
 		select
@@ -83,7 +83,7 @@ export const showTabroomUsage = async () => {
 					and timeslot.start < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 4 HOUR)
 					and timeslot.end > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR)
 			)
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	const tournamentCount = (await sql`
 		select
@@ -101,14 +101,14 @@ export const showTabroomUsage = async () => {
 					and timeslot.start < DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 4 HOUR)
 					and timeslot.end > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 1 HOUR)
 			)
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	const currentActiveUsers = (await sql`
 		select
 			count(distinct session.id) count
 		from session
 			where session.last_access > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 6 HOUR)
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	const totalUsers = (allJudges[0]?.count || 0)
 		+ (allStudents[0]?.count || 0)
@@ -123,7 +123,7 @@ export const showTabroomUsage = async () => {
 		where 1=1
 			and setting.tag IN ('min_servers', 'max_servers')
 			and value_date > CURRENT_TIMESTAMP
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	for (const override of overrides) {
 
@@ -176,7 +176,7 @@ export const getLinodeInstances = async ( limit ) => {
 		return {};
 	}
 
-	const { rows: dbServers } = await sql`select * from server`.execute(kdb);
+	const { rows: dbServers } = await sql`select * from server`.execute(db);
 
 	const serverByLinodeId = {};
 
@@ -228,7 +228,7 @@ export const getLinodeInstances = async ( limit ) => {
 		const deletionPromises = [];
 
 		databaseSyncs.forEach( (machine) => {
-			const promise = kdb.deleteFrom('server')
+			const promise = db.deleteFrom('server')
 				.where('hostname', '=', machine.label)
 				.execute();
 			deletionPromises.push(promise);
@@ -239,7 +239,7 @@ export const getLinodeInstances = async ( limit ) => {
 		const creationPromises = [];
 
 		databaseSyncs.forEach( (machine) => {
-			const promise = kdb.insertInto('server').values({
+			const promise = db.insertInto('server').values({
 				hostname   : machine.label,
 				status     : machine.status,
 				created_at : new Date(),
@@ -393,7 +393,7 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 
 			const data = creationReply.data;
 
-			await kdb.insertInto('server').values({
+			await db.insertInto('server').values({
 				hostname   : data.label,
 				status     : 'provisioning',
 				created_at : new Date(),
@@ -408,7 +408,7 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 		}
 	}
 
-	await changeLogRepo.createChangeLog(kdb, {
+	await changeLogRepo.createChangeLog(db, {
 		person     : whodunnit.id || 1,
 		tag        : 'sitewide',
 		created_at : new Date(),
@@ -489,7 +489,7 @@ export const decreaseLinodeCount = async (whodunnit, countNumber, silent) => {
 
 					destroyMe.push(hostname);
 
-					await kdb.deleteFrom('server')
+					await db.deleteFrom('server')
 						.where('linode_id', '=', machine.linode_id)
 						.execute();
 				}
@@ -504,7 +504,7 @@ export const decreaseLinodeCount = async (whodunnit, countNumber, silent) => {
 		serialNumber++;
 	}
 
-	await changeLogRepo.createChangeLog(kdb, {
+	await changeLogRepo.createChangeLog(db, {
 		person     : whodunnit.id || 1,
 		tag        : 'sitewide',
 		created_at : new Date(),
@@ -531,20 +531,20 @@ export const notifyCloudAdmins = async (whodunnit, log, subject) => {
 			from person, person_setting ps
 		where person.id = ps.person
 			and ps.tag = ${'system_administrator'}
-	`.execute(kdb)).rows;
+	`.execute(db)).rows;
 
 	let sender = {};
 
 	if (whodunnit.su) {
-		sender = await summon(kdb, 'person',whodunnit.su);
+		sender = await summon(db, 'person',whodunnit.su);
 	} else if (whodunnit.id) {
-		sender = await summon(kdb, 'person',whodunnit.id);
+		sender = await summon(db, 'person',whodunnit.id);
 	} else if (whodunnit.username === 'palmer') {
-		sender = await summon(kdb, 'person',1);
+		sender = await summon(db, 'person',1);
 	} else if (whodunnit.username === 'hardy') {
-		sender = await summon(kdb, 'person',3);
+		sender = await summon(db, 'person',3);
 	} else {
-		sender = await summon(kdb, 'person',2);
+		sender = await summon(db, 'person',2);
 	}
 
 	const adminIds = cloudAdmins.map( item => item.id );

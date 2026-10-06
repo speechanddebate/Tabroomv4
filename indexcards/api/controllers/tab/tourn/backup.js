@@ -3,7 +3,6 @@ import { objectify, arrayify, objectStrip, objectifySettings, objectifyGroupSett
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
 import BackupService from '../../../services/BackupService.js';
-import { handleDomainError } from '../../../helpers/problem.js';
 
 const allByTourn = (table, tournId) => kdb.selectFrom(table)
 	.selectAll()
@@ -301,21 +300,16 @@ export async function restoreTourn(req,res) {
 	return res.status(501).json({ message: 'This feature is a stub and not yet implemented' });
 };
 
-export async function Backup(req, res, next) {
+export async function Backup(req, res) {
 	// TODO permission check
-	try {
-		const scope = req.body.scope || {};
+	const scope = req.body.scope || {};
 
-		const backupData = await BackupService.generateBackup(
-			Number(req.params.tournId),
-			scope.type,
+	const backupData = await BackupService.generateBackup(
+		Number(req.params.tournId),
+		scope.type,
 		scope.id !== undefined ? Number(scope.id) : null,
 		{}
-		);
+	);
 
-		return res.status(200).json(backupData);
-
-	} catch (err) {
-		return handleDomainError(err, req, res, next);
-	}
+	return res.status(200).json(backupData);
 };
