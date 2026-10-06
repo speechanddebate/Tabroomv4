@@ -48,7 +48,7 @@ Stack
 ${err.stack}
 
 Login Session
-${JSON.stringify(req.session, null, 4)}
+${JSON.stringify({ auth: req.auth, person: req.person }, null, 4)}
 
 Request Parameters
 ${JSON.stringify(req.params, null, 4)}

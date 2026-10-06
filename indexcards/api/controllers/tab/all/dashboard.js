@@ -438,7 +438,7 @@ export async function postTournAttendance(req, res) {
 
 			await kdb.updateTable('ballot')
 				.set({
-					started_by    : req.session.person,
+					started_by    : req.person.id,
 					judge_started : now,
 				})
 				.where('panel', '=', panel.id)
@@ -487,7 +487,7 @@ export async function postTournAttendance(req, res) {
 			}
 
 			const log = {
-				marker 		: req.session.person,
+				marker 		: req.person.id,
 				tag         : 'absent',
 				description : logMessage,
 				tourn       : tournId,
@@ -513,7 +513,7 @@ export async function postTournAttendance(req, res) {
 
 				error   : false,
 				message : logMessage,
-				marker  : req.session.person,
+				marker  : req.person.id,
 
 				reclass : [
 					{	id          : targetType && targetType !== 'person' ? `${panel.id}_${targetType}_${targetId}` : `${panel.id}_${targetId}`,
@@ -549,7 +549,7 @@ export async function postTournAttendance(req, res) {
 			description : logMessage,
 			tourn       : tournId,
 			panel       : panel.id,
-			marker 		: req.session.person,
+			marker 		: req.person.id,
 		};
 
 		if (targetType === 'student') {
@@ -567,7 +567,7 @@ export async function postTournAttendance(req, res) {
 		return res.status(201).json({
 			error   : false,
 			message : logMessage,
-			markerId: req.session.person,
+			markerId: req.person.id,
 			reclass : [
 				{	id          : targetType && targetType !== 'person' ? `${panel.id}_${targetType}_${targetId}` : `${panel.id}_${targetId}`,
 					addClass	: 'greentext',
@@ -595,7 +595,7 @@ export async function postTournAttendance(req, res) {
 export async function getTournDashboard(req, res) {
 	const tournId = req.params.tournId;
 
-	if (!req.session) {
+	if (!req.person) {
 		return Unauthorized(req, res, 'You are not logged in to view the dashboard');
 	}
 

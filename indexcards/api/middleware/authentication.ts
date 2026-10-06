@@ -39,17 +39,6 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 		req.auth = auth;
 		req.person = person;
 
-		if (person) {
-			//deprecated, use req.auth and req.person
-			req.session = {
-				id     : auth.sessionId,
-				person : person.id,
-				su     : auth.su?.id ?? null,
-				Su     : auth.su,
-				Person : person,
-			};
-		}
-
 		//req.actor is what should be checked for every authorization decision
 		req.actor = createActor(req.db, person);
 		next();

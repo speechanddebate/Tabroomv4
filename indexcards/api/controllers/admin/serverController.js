@@ -102,8 +102,8 @@ const whoDunnit = (req) => {
 export async function changeInstanceCount(req, res) {
 	const who = whoDunnit(req);
 	const user = {
-		su    : req.session.su,
-		id    : req.session.person,
+		su    : req.auth.su?.id ?? null,
+		id    : req.person.id,
 		name  : who.name,
 		email : who.email,
 	};
@@ -167,7 +167,7 @@ export async function rebootInstance(req, res) {
 	}
 
 	await changeLogRepo.createChangeLog(kdb, {
-		person     : req.session.su || req.session.person,
+		person     : req.auth.su?.id ?? req.person.id,
 		tag        : 'sitewide',
 		created_at : new Date(),
 		description: resultMessages.join('\n'),
@@ -191,10 +191,10 @@ const notifyCloudAdmins = async (req, log, subject) => {
 
 	let sender = '';
 
-	if (req.session.su) {
-		sender = await summon(kdb, 'person',req.session.su);
+	if (req.auth.su) {
+		sender = await summon(kdb, 'person',req.auth.su.id);
 	} else {
-		sender = await summon(kdb, 'person',req.session.person);
+		sender = await summon(kdb, 'person',req.person.id);
 	}
 
 	const adminIds = cloudAdmins.map( item => item.id );

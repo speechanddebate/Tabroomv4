@@ -196,7 +196,7 @@ export const checkContactStatus = async (req) => {
 };
 
 export async function userProfile(req, res) {
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(201).json({ message: 'You have no active user session' });
 	}
 	let personId;
@@ -204,8 +204,8 @@ export async function userProfile(req, res) {
 		personId = req.params.personId;
 	} else if (req.params.personId) {
 		return res.status(201).json({ message: 'Only admin staff may access another profile' });
-	} else if (req.session.person) {
-		personId = req.session.person;
+	} else if (req.person.id) {
+		personId = req.person.id;
 	}
 	const result = personId
 		? await db.selectFrom('person').selectAll().where('id', '=', personId).executeTakeFirst()

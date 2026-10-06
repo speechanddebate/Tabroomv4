@@ -4,8 +4,9 @@ import logger from '../../helpers/logger.js';
 import personRepo from '../../repos/personRepo.js';
 import { RateLimitExceeded } from '../../helpers/problem.js';
 
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
+import type { AuthInfo, SessionPerson } from '../../middleware/auth/types.js';
 import { getPerson } from '../../middleware/authorization/authorization.js';
 
 import { db } from '../../data/database.js';
@@ -17,16 +18,12 @@ export async function unlinkedSearch(req: ValidatedRequest, res: Response) {
 	const person = getPerson(req);
 	let { first, last, limit, offset } = req.query;
 
-	if(!req.session){
-		throw new Error('Unauthorized: Missing session');
-	}
-
 	if (!first || !last) {
 		first = person.first;
 		last = person.last;
 	}
 	// log access to student search to the change log
-	logStudentSearch(req.session, first, last).catch(err => {
+	logStudentSearch(req.auth, person, first, last).catch(err => {
 		logger.error('Failed to log student search usage to changeLog:', err);
 	});
 
@@ -79,18 +76,18 @@ export async function unlinkedSearch(req: ValidatedRequest, res: Response) {
 	})));
 }
 
-async function logStudentSearch(session: NonNullable<Request['session']>, first: string, last: string) {
+async function logStudentSearch(auth: AuthInfo, person: SessionPerson, first: string, last: string) {
 	let description = `Searched for student records ${first} ${last}`;
 
-	if (session.su && session.su > 0 && session.Su?.email) {
-		description += ` while logged in as ${session.Su.email}`;
+	if (auth.su) {
+		description += ` by ${auth.su.email} while su'd as ${person.email}`;
 	}
 
-	description += ` from session ID ${session.id}`;
+	description += ` from session ID ${auth.sessionId}`;
 
 	await changeLogRepo.createChangeLog(db,{
 		tag: 'student_search',
-		person: session.su ?? session.person,
+		person: person.id,
 		description,
 	});
 }

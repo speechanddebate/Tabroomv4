@@ -28,7 +28,7 @@ async function userChaptersByTourn(req, res)  {
 					on school.chapter = chapter.id
 					and school.tourn = ${req.params.tournId}
 			where 1=1
-				and permission.person = ${req.session.person}
+				and permission.person = ${req.person.id}
 				and permission.chapter = chapter.id
 			group by chapter.id
 		`.execute(kdb);
@@ -48,7 +48,7 @@ async function userChaptersByTourn(req, res)  {
 				'dashboard' as permission
 			from (contact, school, chapter)
 				where 1 = 1
-				and contact.person   = ${req.session.person}
+				and contact.person   = ${req.person.id}
 				and contact.school   = school.id
 				and school.tourn     = ${req.params.tournId}
 				and contact.official = 1

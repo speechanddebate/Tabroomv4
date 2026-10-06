@@ -192,7 +192,7 @@ async function updateParadigm(req: ValidatedRequest, res: Response) {
 		await changeLogRepo.createChangeLog(db,{
 			tag: 'paradigm',
 			person: Person.id,
-			description: `Saved new paradigm from session ${req.session!.id} logged in from ${req.ip}${req.session?.Su ? ` while SU'd from account ${req.session.Su.email}` : ''}`,
+			description: `Saved new paradigm${req.auth.su ? ` by ${req.auth.su.email} while su'd as ${person.email}` : ''} from session ${req.auth.sessionId} logged in from ${req.ip}`,
 		});
 	} catch (err) {
 		logger.error('Failed to log paradigm change in change log', { error: err });

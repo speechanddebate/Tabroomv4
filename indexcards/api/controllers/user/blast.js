@@ -16,7 +16,7 @@ import logger from '../../helpers/logger.js';
 
 export async function getSubscription(req, res) {
 
-	let externalId = req.session.person;
+	let externalId = req.person?.id;
 
 	if (externalId === 1) {
 		externalId = 100;

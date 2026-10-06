@@ -12,7 +12,7 @@ export async function checkActive(req, res) {
 		.select(['judge.active', 'judge.id', 'judge.person as personId'])
 		.execute();
 
-	if (judges && judges[0].person === req.session.person) {
+	if (judges && judges[0].person === req.person?.id) {
 		return (judges[0].active);
 	}
 };
@@ -35,8 +35,8 @@ export async function checkBallotAccess (req, res) {
 
 		for (const ballot of access) {
 			if (stop < 1) {
-				if (!req.session?.person
-					|| (ballot.personId !== req.session.person && !req.person.site_admin)
+				if (!req.person
+					|| (ballot.personId !== req.person.id && !req.person.site_admin)
 				) {
 					stop++;
 					return res.status(200).json({
@@ -108,7 +108,7 @@ export async function saveRubric(req, res) {
 	// putting the judgeId into parameters and not the body because
 	// eventually I'll want to put these access checks up the chain
 
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(200).json({
 			error   : true,
 			message : 'You do not appear to be logged in with a current active session',

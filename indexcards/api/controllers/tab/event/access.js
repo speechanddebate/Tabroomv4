@@ -48,7 +48,7 @@ export async function updateAccess(req, res) {
 			},
 		];
 		await changeLogRepo.createChangeLog(kdb, {
-			person: req.session.person,
+			person: req.person.id,
 			tourn: req.params.tournId,
 			event: targetEvent.id,
 			tag: 'access',
@@ -90,7 +90,7 @@ export async function deleteAccess(req, res) {
 			.execute();
 
 		const log = await changeLogRepo.createChangeLog(kdb, {
-			person: req.session.person,
+			person: req.person.id,
 			tourn: req.params.tournId,
 			event: targetEvent.id,
 			tag: 'access',

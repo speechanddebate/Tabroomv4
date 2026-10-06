@@ -36,13 +36,9 @@ describe('Authorization Middleware', () => {
 		});
 		it('deny when not site_admin', () => {
 			const {req, res, next} = createContext({
-				session: {
-					Person: {
-						site_admin: false,
-					},
-				},
+				person: { id: 1, site_admin: false },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 
 			requireSiteAdmin(req,res,next);
 
@@ -51,13 +47,9 @@ describe('Authorization Middleware', () => {
 		});
 		it('allow when site_admin', () => {
 			const {req, res, next} = createContext({
-				session: {
-					Person: {
-						site_admin: true,
-					},
-				},
+				person: { id: 1, site_admin: true },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			requireSiteAdmin(req,res,next);
 
 			expect(next).toHaveBeenCalled();
@@ -93,10 +85,10 @@ describe('Authorization Middleware', () => {
 		it.each(cases)('allows site_admin to bypass checks for %s:%s',async (resource, capability) => {
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 42, resource, circuitIds: []});
 			const {req,res,next} = createContext({
-				session: { Person: { id: 1, site_admin: true } },
+				person: { id: 1, site_admin: true },
 				params: { tournId: 1 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			await requireAccess(resource, capability)(req, res, next);
 			expect(next).toHaveBeenCalled();
 		});
@@ -104,10 +96,10 @@ describe('Authorization Middleware', () => {
 		it.each(cases)('Allows owner all capabilities for %s',async (resource) => {
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 42, resource, circuitIds: []});
 			const {req,res,next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { [`${resource}Id`]: 42 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: resource, id: 42, role: 'owner' }]);
 
 			for (const capability of capabilities) {
@@ -119,10 +111,10 @@ describe('Authorization Middleware', () => {
 
 		it('allows access with correct permission and capability', async () => {
 			const {req,res,next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).toHaveBeenCalled();
@@ -130,10 +122,10 @@ describe('Authorization Middleware', () => {
 
 		it('denies access if permission does not match resource id', async () => {
 			let {req, res, next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'tourn', id: 99, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).not.toHaveBeenCalled();
@@ -143,10 +135,10 @@ describe('Authorization Middleware', () => {
 		it('allows access if parent scope grants capability', async () => {
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 7, resource: 'category', tournId: 42, circuitIds: []});
 			const {req, res, next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42, categoryId: 7 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			await requireAccess('category', 'read')(req, res, next);
 			expect(next).toHaveBeenCalled();
@@ -154,10 +146,10 @@ describe('Authorization Middleware', () => {
 
 		it('denies access if role does not grant capability', async () => {
 			let {req, res, next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'tourn', id: 42, role: 'tabber' }]);
 			await requireAccess('tourn', 'owner')(req, res, next);
 			expect(next).not.toHaveBeenCalled();
@@ -166,10 +158,10 @@ describe('Authorization Middleware', () => {
 
 		it('allows access for child resource with parent permission', async () => {
 			let {req, res, next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42, categoryId: 7 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 42, resource: 'category', tournId: 42});
 
@@ -179,10 +171,10 @@ describe('Authorization Middleware', () => {
 
 		it('denies access if no matching permission', async () => {
 			const {req, res, next} = createContext({
-				session: { Person: { id: 1, site_admin: false } },
+				person: { id: 1, site_admin: false },
 				params: { tournId: 42 },
 			});
-			req.actor = createActor(req.db, req.session.Person);
+			req.actor = createActor(req.db, req.person);
 			req.actor.grant([{ scope: 'event', id: 99, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).not.toHaveBeenCalled();

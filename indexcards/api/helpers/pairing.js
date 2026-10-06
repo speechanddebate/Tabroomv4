@@ -623,7 +623,7 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 				const promise = changeLogRepo.createChangeLog(kdb, {
 					tag         : 'blast',
 					description : `Pairing sent to section. Message: ${req.body.message}`,
-					person      : blastData.sender || req.session?.person?.id,
+					person      : blastData.sender || req.person?.id,
 					count       : (blastResponse.web + blastResponse.email) || 0,
 					panel       : req.params.sectionId,
 				});
@@ -636,7 +636,7 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 					const promise = changeLogRepo.createChangeLog(kdb, {
 						tag         : 'blast',
 						description : `Round pairings blasted. Message: ${req.body.message}`,
-						person      : blastData.sender || req.session?.person?.id,
+						person      : blastData.sender || req.person?.id,
 						count       : (blastResponse.web + blastResponse.email) || 0,
 						round       : round.id,
 					});

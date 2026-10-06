@@ -13,7 +13,7 @@ import { sql } from 'kysely';
 
 export async function getPersonTournPresence(req, res) {
 
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(200).json({ message: 'You are not logged in'});
 	};
 
@@ -33,9 +33,9 @@ export async function getPersonTournPresence(req, res) {
 		},
 	};
 
-	const edata = await getPersonTournEntries(req.session.person, req.params.tournId);
-	const jdata = await getPersonTournJudges(req.session.person, req.params.tournId);
-	const sdata = await getPersonTournSchools(req.session.person, req.params.tournId);
+	const edata = await getPersonTournEntries(req.person.id, req.params.tournId);
+	const jdata = await getPersonTournJudges(req.person.id, req.params.tournId);
+	const sdata = await getPersonTournSchools(req.person.id, req.params.tournId);
 
 	// Unique lists of stuff that is me as an individual
 	Object.keys(tournPresence.me).forEach( (key) => {

@@ -33,8 +33,8 @@ export async function blastRoundMessage(req, res) {
 		round: req.body.roundId,
 	};
 
-	if (req.session?.person) {
-		logMessage.person = req.session.person;
+	if (req.person) {
+		logMessage.person = req.person.id;
 	} else if (req.body.sender) {
 		logMessage.person = req.body.sender;
 	}
@@ -195,10 +195,8 @@ export async function blastRoundPairing(req, res) {
 	let sender = '';
 	if (req.body?.sender) {
 		sender = req.body?.sender;
-	} else if (req.session?.person?.id) {
-		sender = req.session?.person?.id;
-	} else {
-		sender = req.session.person;
+	} else if (req.person) {
+		sender = req.person.id;
 	}
 
 	const roundId = req.params.roundId;
@@ -279,8 +277,8 @@ export async function blastRoundPairing(req, res) {
 		Promise.resolve(blast).then((blastResponse) => {
 			const replacements = {
 				tournId: req.params.tournId,
-				personId: req.session.person || '',
-				description: `Pairing blast sent. ${blastResponse?.message} ${req.session?.person ? '' : 'by autoblast'} `,
+				personId: req.person?.id || '',
+				description: `Pairing blast sent. ${blastResponse?.message} ${req.person ? '' : 'by autoblast'} `,
 				roundId,
 			};
 

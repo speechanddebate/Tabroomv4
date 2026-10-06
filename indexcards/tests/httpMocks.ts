@@ -18,13 +18,6 @@ export function createPersonContext(
 	reqOverrides = {
 		auth: { method: 'cookie', sessionId: 1, su: null },
 		person: Person,
-		session: {
-			id: 1,
-			person: person.id,
-			su: null,
-			Person,
-			Su: null,
-		},
 		...reqOverrides,
 	};
 	const con = createContext(reqOverrides);
@@ -53,7 +46,6 @@ export function createReq(overrides: Partial<ValidatedRequest> & Record<string, 
 		db,
 		auth: { method: 'none', sessionId: null, su: null },
 		person: null,
-		session: undefined,
 		params: {},
 		query: {},
 		get: () => {},

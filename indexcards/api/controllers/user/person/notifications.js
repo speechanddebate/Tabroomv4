@@ -77,7 +77,7 @@ export async function pushSubscribe(req,res) {
 	return res.status(200).json('Session subscription disabled');
 }
 export async function pushSync(req, res) {
-	const sessionId = req.body.sessionid || req.session.id;
+	const sessionId = req.body.sessionid || req.auth.sessionId;
 	const push_notify = req.body.subscriptionId || null;
 	const promises = [];
 

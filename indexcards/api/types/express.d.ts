@@ -16,13 +16,6 @@ declare module 'express-serve-static-core' {
 		db: Database;
 		actor: Actor;
 		auth: AuthInfo;
-		session?: {
-			id: number | null;
-			person: number;
-			su: number | null;
-			Person?: SessionPerson;
-			Su: SessionPerson | null;
-		};
 		/** the person acting, the su target when su'd (see auth.su). null for anonymous requests */
 		person: SessionPerson | null;
 		tourn?: Selectable<Tourn>;

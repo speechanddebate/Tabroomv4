@@ -98,7 +98,7 @@ export async function blastJudges(req, res) {
 		promises.push(changeLogRepo.createChangeLog(kdb, {
 			tag         : 'blast',
 			description : `${req.body.message} sent to ${jpoolJudgeIds.length} judges in ${jpool.name}`,
-			person      : req.session.person,
+			person      : req.person?.id,
 			round       : round.id,
 		}));
 	});

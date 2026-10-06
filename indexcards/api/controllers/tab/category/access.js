@@ -57,7 +57,7 @@ export async function updateAccess(req, res) {
 		},
 	];
 	await changeLogRepo.createChangeLog(db, {
-		person   : req.session.person,
+		person   : req.person.id,
 		tourn    : req.params.tournId,
 		category : targetCategory.id,
 		tag      : 'access',
@@ -94,7 +94,7 @@ export async function deleteAccess(req, res) {
 		.execute();
 
 	const log = await changeLogRepo.createChangeLog(db, {
-		person: req.session.person,
+		person: req.person.id,
 		tourn: req.params.tournId,
 		category: targetCategory.id,
 		tag: 'access',

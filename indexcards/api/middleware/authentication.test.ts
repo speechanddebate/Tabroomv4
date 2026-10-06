@@ -57,7 +57,7 @@ describe('Authentication Middleware', () => {
 	});
 
 	describe('Cookie Auth', () => {
-		it('sets req.session and req.person when valid cookie', async () => {
+		it('sets req.auth and req.person when valid cookie', async () => {
 
 			const { req, res, next } = createContext({
 				cookies: {
@@ -71,7 +71,6 @@ describe('Authentication Middleware', () => {
 
 			//Assert
 			expect(next).toHaveBeenCalled();
-			expect(req.session).toBeDefined();
 			expect(req.person).toMatchObject({ id: 69 });
 			expect(req.auth).toEqual({ method: 'cookie', sessionId: 1, su: null });
 		});
@@ -91,7 +90,7 @@ describe('Authentication Middleware', () => {
 			expect(req.person?.id).toBe(69);
 			expect(req.actor.Person?.id).toBe(69);
 		});
-		it('does not set req.session or req.person when invalid cookie', async () => {
+		it('does not set req.person when invalid cookie', async () => {
 
 			const { req, res, next } = createContext({
 				cookies: {
@@ -105,7 +104,6 @@ describe('Authentication Middleware', () => {
 
 			//Assert
 			expect(next).toHaveBeenCalled();
-			expect(req.session).not.toBeDefined();
 			expect(req.person).toBeNull();
 			expect(req.auth.method).toBe('none');
 			expect(req.actor.type).toBe('anonymous');
@@ -191,7 +189,6 @@ describe('Authentication Middleware', () => {
 			//Assert
 			expect(findByUserKey).not.toHaveBeenCalled();
 			expect(next).toHaveBeenCalledWith();
-			expect(req.session).not.toBeDefined();
 			expect(req.person).toBeNull();
 		});
 	});

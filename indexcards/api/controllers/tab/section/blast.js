@@ -44,7 +44,7 @@ export async function blastSectionMessage(req, res) {
 	await changeLogRepo.createChangeLog(kdb, {
 		tag         : 'blast',
 		description : `${req.body.message} sent to ${notifyResponse.push?.count || 0} web and ${notifyResponse.email?.count || 0} email recipients `,
-		person      : req.session.person,
+		person      : req.person?.id,
 		count       : notifyResponse.push?.count || 0,
 		panel       : req.params.sectionId,
 	});
@@ -86,7 +86,7 @@ export async function blastSectionPairing(req, res) {
 	await changeLogRepo.createChangeLog(kdb, {
 		tag         : 'blast',
 		description : `Pairing individually sent to section : ${response.message} `,
-		person      : req.session.person,
+		person      : req.person?.id,
 		tourn       : req.params.tournId,
 		panel       : req.params.sectionId,
 	});

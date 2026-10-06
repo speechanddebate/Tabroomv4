@@ -165,7 +165,7 @@ export const setupRequest = (req, res, next) => {
 			url: req.originalUrl ?? '',
 			path: normalizePath(req.originalUrl ?? ''),
 			ip: req.ip,
-			session: req.session?.id ?? null,
+			session: req.auth?.sessionId ?? null,
 			statusCode: `${res.statusCode ?? ''}`,
 			responseTimeMs: `${duration}`,
 		});

@@ -65,7 +65,7 @@ export async function cleanRoundEmpties(req, res) {
 
 	if (description) {
 		await changeLogRepo.createChangeLog(kdb, {
-			person      : req.session.person,
+			person      : req.person.id,
 			round       : req.params.roundId,
 			description,
 		});

@@ -69,7 +69,7 @@ describe('authController',() => {
               .spyOn(sessionRepo, 'deleteSession');
 
 			const { req, res, next } = createContext({
-				session: { id: 1 },
+				auth: { method: 'cookie', sessionId: 1, su: null },
 			});
 
 			// Act
@@ -109,9 +109,8 @@ describe('authController',() => {
 	describe('su', () => {
 		it('returns 200 when successful', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 1 },
 				body: { suId: 2 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
@@ -131,12 +130,8 @@ describe('authController',() => {
 		});
 		it('returns 400 when malformed suId', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					Person: {
-						id: 2,
-					},
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 2 },
 				body: { suId: 'not an id' },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
@@ -145,12 +140,8 @@ describe('authController',() => {
 		});
 		it('returns 400 when target not found', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					Person: {
-						id: 2,
-					},
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 2 },
 				body: { suId: 1 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(undefined);
@@ -159,10 +150,10 @@ describe('authController',() => {
 		});
 
 		it('returns 400 when target is same as current user', async () => {
+			// session id differs from the person id so this checks the person, not the session
 			const { req, res } = createContext({
-				session: {
-					id: 2,
-				},
+				auth: { method: 'cookie', sessionId: 99, su: null },
+				person: { id: 2 },
 				body: { suId: 2 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
@@ -173,16 +164,13 @@ describe('authController',() => {
 	describe('suEnd', () => {
 		it('returns 204 when successful', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					su: 2,
-				},
+				auth: { method: 'cookie', sessionId: 1, su: { id: 2 } },
+				person: { id: 1 },
 			});
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 1 });
 			const spy = vi.spyOn(sessionRepo, 'updateSession');
 			spy.mockResolvedValue();
 			await controller.suEnd(req, res);
-			expect(spy).toHaveBeenCalled();
+			expect(spy).toHaveBeenCalledWith(expect.anything(), 1, { person: 2, su: null });
 			expect(res.status).toHaveBeenCalledWith(204);
 		});
 		it('returns 400 when no session', async () => {
@@ -192,9 +180,8 @@ describe('authController',() => {
 		});
 		it('returns 400 when no Su session', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 1 },
 			});
 			await controller.suEnd(req, res);
 			expect(res.status).toHaveBeenCalledWith(400);
