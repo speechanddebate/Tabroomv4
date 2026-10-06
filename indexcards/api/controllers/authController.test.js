@@ -7,34 +7,26 @@ import sessionRepo from '../repos/sessionRepo.js';
 import { ValidationError } from '../helpers/errors/errors.js';
 import personRepo from '../repos/personRepo.js';
 
-afterEach(() => {
-	vi.restoreAllMocks();
-});
-
 describe('authController',() => {
 	describe('login', () => {
 		it('returns 401 when credentials are invalid', async () => {
 			vi.spyOn(authService, 'login').mockRejectedValue(AUTH_INVALID);
 
 			const { req, res } = createContext({
-				valid: {
-					body: { username: 'bob', password: 'wrong' },
-					ip: '127.0.0.1',
-				},
+				body: { username: 'bob', password: 'wrong' },
+				ip: '127.0.0.1',
 			});
 
 			await controller.login(req, res);
 
-			assert.equal(res.status.mock.calls[0][0], 401);
-			assert.ok(res.json.mock.calls.length === 1);
+			expect(res.status).toHaveBeenCalledWith(401);
+			expect(res.json).toHaveBeenCalledTimes(1);
 		});
 		it('throws on error other than AUTH_INVALID', async () => {
 			vi.spyOn(authService, 'login').mockRejectedValue(new Error('Some other error'));
 			const { req, res } = createContext({
-				valid: {
-					body: { username: 'alice', password: 'badpassword' },
-					ip: '127.0.0.1',
-				},
+				body: { username: 'alice', password: 'badpassword' },
+				ip: '127.0.0.1',
 			});
 			await expect(controller.login(req, res)).rejects.toThrow('Some other error');
 		});
@@ -49,28 +41,24 @@ describe('authController',() => {
 			vi.spyOn(authService, 'login').mockResolvedValue(fakeResult);
 
 			const { req, res } = createContext({
-				valid: {
-					body: { username: 'bob', password: 'pw' },
-					ip: '127.0.0.1',
-				},
+				body: { username: 'bob', password: 'pw' },
+				ip: '127.0.0.1',
 			});
 
 			await controller.login(req, res);
 
 			// Auth service called correctly
-			assert.deepEqual(authService.login.mock.calls[0][0], 'bob');
-			assert.deepEqual(authService.login.mock.calls[0][1], 'pw');
+			expect(authService.login.mock.calls[0][0]).toBe('bob');
+			expect(authService.login.mock.calls[0][1]).toBe('pw');
 
 			// Auth cookie
-			assert.ok(
-				res.cookie.mock.calls.some(call => call[0] === config.cookie.name && call[1] === 'jwt123')
-			);
+			expect(res.cookie).toHaveBeenCalledWith(config.cookie.name, 'jwt123', expect.anything());
 
 			// Response body
 			const json = res.json.mock.calls[0][0];
-			assert.equal(json.token, 'jwt123');
-			assert.equal(json.Person.id, 42);
-			assert.equal(json.Person.email, 'test@test.com');
+			expect(json.token).toBe('jwt123');
+			expect(json.Person.id).toBe(42);
+			expect(json.Person.email).toBe('test@test.com');
 		});
 
 	});
@@ -81,7 +69,7 @@ describe('authController',() => {
               .spyOn(sessionRepo, 'deleteSession');
 
 			const { req, res, next } = createContext({
-				session: { id: 1 },
+				auth: { method: 'cookie', sessionId: 1, su: null },
 			});
 
 			// Act
@@ -121,12 +109,9 @@ describe('authController',() => {
 	describe('su', () => {
 		it('returns 200 when successful', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-				},
-				valid: {
-					body: { suId: 2 },
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 1 },
+				body: { suId: 2 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
 			const spy = vi.spyOn(sessionRepo, 'updateSession');
@@ -138,24 +123,16 @@ describe('authController',() => {
 
 		it('returns 400 when no session', async () => {
 			const { req, res } = createContext({
-				valid: {
-					body: { suId: '1' },
-				},
+				body: { suId: '1' },
 			});
 			await controller.su(req, res);
 			expect(res.status).toHaveBeenCalledWith(400);
 		});
 		it('returns 400 when malformed suId', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					Person: {
-						id: 2,
-					},
-				},
-				valid: {
-					body: { suId: 'not an id' },
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 2 },
+				body: { suId: 'not an id' },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
 			await controller.su(req, res);
@@ -163,15 +140,9 @@ describe('authController',() => {
 		});
 		it('returns 400 when target not found', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					Person: {
-						id: 2,
-					},
-				},
-				valid: {
-					body: { suId: 1 },
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 2 },
+				body: { suId: 1 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(undefined);
 			await controller.su(req, res);
@@ -179,13 +150,11 @@ describe('authController',() => {
 		});
 
 		it('returns 400 when target is same as current user', async () => {
+			// session id differs from the person id so this checks the person, not the session
 			const { req, res } = createContext({
-				session: {
-					id: 2,
-				},
-				valid: {
-					body: { suId: 2 },
-				},
+				auth: { method: 'cookie', sessionId: 99, su: null },
+				person: { id: 2 },
+				body: { suId: 2 },
 			});
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 2 });
 			await controller.su(req, res);
@@ -195,16 +164,13 @@ describe('authController',() => {
 	describe('suEnd', () => {
 		it('returns 204 when successful', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-					su: 2,
-				},
+				auth: { method: 'cookie', sessionId: 1, su: { id: 2 } },
+				person: { id: 1 },
 			});
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({ id: 1 });
 			const spy = vi.spyOn(sessionRepo, 'updateSession');
 			spy.mockResolvedValue();
 			await controller.suEnd(req, res);
-			expect(spy).toHaveBeenCalled();
+			expect(spy).toHaveBeenCalledWith(expect.anything(), 1, { person: 2, su: null });
 			expect(res.status).toHaveBeenCalledWith(204);
 		});
 		it('returns 400 when no session', async () => {
@@ -214,9 +180,8 @@ describe('authController',() => {
 		});
 		it('returns 400 when no Su session', async () => {
 			const { req, res } = createContext({
-				session: {
-					id: 1,
-				},
+				auth: { method: 'cookie', sessionId: 1, su: null },
+				person: { id: 1 },
 			});
 			await controller.suEnd(req, res);
 			expect(res.status).toHaveBeenCalledWith(400);
@@ -230,12 +195,9 @@ describe('authController',() => {
 				personId: 55,
 			};
 			vi.spyOn(authService, 'register').mockResolvedValue(fakeResult);
-			vi.spyOn(authService, 'generateCSRFToken').mockReturnValue('csrf456');
 
 			const { req, res } = createContext({
-				valid: {
-					body: { username: 'newuser', password: 'pw' },
-				},
+				body: { username: 'newuser', password: 'pw' },
 				ip: '127.0.0.1',
 				get: () => 'Mozilla',
 			});
@@ -243,7 +205,7 @@ describe('authController',() => {
 			await controller.register(req, res);
 
 			expect(authService.register).toHaveBeenCalledWith(
-				req.valid.body,
+				req.body,
 				{ ip: req.ip, agentData: 'Mozilla' }
 			);
 			expect(res.json).toHaveBeenCalledWith(fakeResult);
@@ -254,10 +216,8 @@ describe('authController',() => {
 			vi.spyOn(authService, 'register').mockRejectedValue(new ValidationError('Invalid data'));
 
 			const { req, res } = createContext({
-				valid: {
-					body: { username: '', password: '' },
-					ip: '127.0.0.1',
-				},
+				body: { username: '', password: '' },
+				ip: '127.0.0.1',
 			});
 
 			await controller.register(req, res);
@@ -269,10 +229,8 @@ describe('authController',() => {
 			vi.spyOn(authService, 'register').mockRejectedValue(new Error('Unexpected error'));
 
 			const { req, res } = createContext({
-				valid: {
-					body: { username: 'fail', password: 'fail' },
-					ip: '127.0.0.1',
-				},
+				body: { username: 'fail', password: 'fail' },
+				ip: '127.0.0.1',
 			});
 
 			await expect(controller.register(req, res)).rejects.toThrow('Unexpected error');

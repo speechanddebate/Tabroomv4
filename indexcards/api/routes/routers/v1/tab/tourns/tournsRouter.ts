@@ -6,12 +6,14 @@ import categoriesRouter from './categoriesRouter.js';
 import schoolsRouter from './schoolsRouter.js';
 import sitesRouter from './sitesRouter.js';
 import timeslotsRouter from './timeslotsRouter.js';
-import { loadTournAuthContext } from '../../../../../middleware/authorization/authContext.js';
-import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
+import { loadTournAuthContext } from '../../../../../middleware/auth/authContext.js';
+import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 
 import legacyAllRouter from './legacy/allRouter.js';
 import legacyRoundRouter from './legacy/roundRouter.js';
-import { TournRequestSchema } from '@tabroom/types';
+import { BackupRequestSchema, TournRequestSchema, TournSchema } from '@tabroom/types';
+import config from '../../../../../config.js';
+import z from 'zod';
 
 const router = Router({mergeParams: true });
 
@@ -34,27 +36,26 @@ router.route('/').post(ValidateRequest,tournController.createTourn).openapi = {
 			description: 'Tournament created',
 			content: {
 				'application/json': {
-					schema: {
-						$ref: '#/components/schemas/Tourn',
-					},
+					schema: TournSchema,
 				},
 			},
 		},
 	},
 };
 
-router.route('/:tournId').get(requireAccess('tourn', 'read'), tournController.getTourn).openapi = {
+router.route('/:tournId').get(requireAccess('tourn', 'read'), ValidateRequest, tournController.getTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Get tournament',
 	tags: ['Tournament'],
+	requestParams: {
+		path: z.object({ tournId: z.coerce.number().int().positive() }),
+	},
 	responses: {
 		200: {
 			description: 'Tournament information',
 			content: {
 				'application/json': {
-					schema: {
-						$ref: '#/components/schemas/Tourn',
-					},
+					schema: TournSchema,
 				},
 			},
 		},
@@ -62,39 +63,46 @@ router.route('/:tournId').get(requireAccess('tourn', 'read'), tournController.ge
 	},
 };
 
-router.route('/:tournId').put(requireAccess('tourn', 'update'), tournController.updateTourn).openapi = {
+router.route('/:tournId').put(requireAccess('tourn', 'update'), ValidateRequest, tournController.updateTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Update tournament',
 	tags: ['Tournament'],
+	requestParams: {
+		path: z.object({ tournId: z.coerce.number().int().positive() }),
+	},
+	requestBody: {
+		content: {
+			'application/json': {
+				schema: TournRequestSchema.partial(),
+			},
+		},
+		required: true,
+	},
 };
 
-router.route('/:tournId').delete(requireAccess('tourn', 'owner'), tournController.deleteTourn).openapi = {
+router.route('/:tournId').delete(requireAccess('tourn', 'owner'), ValidateRequest, tournController.deleteTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Delete tournament',
 	tags: ['Tournament'],
+	requestParams: {
+		path: z.object({ tournId: z.coerce.number().int().positive() }),
+	},
 };
-
-router.route('/:tournId/backup').post(requireAccess('tourn', 'read'), Backup).openapi = {
+if (!config.features.HIDE_DEV_ENDPOINTS)
+	router.route('/:tournId/backup').post(requireAccess('tourn', 'read'), ValidateRequest, Backup).openapi = {
 	path: '/tab/tourns/{tournId}/backup',
 	summary: 'Tournament Backup',
 	description: 'Creates a backup dump of the tournament data in JSON format',
 	tags: ['Backup and Restore'],
-	parameters: [
-		{
-			in: 'path',
-			name: 'tournId',
-			required: true,
-			schema: { type: 'integer' },
-		},
-	],
+	requestParams: {
+		path: z.object({ tournId: z.coerce.number().int().positive() }),
+	},
 	requestBody: {
 		description: 'Parameters for the backup request',
 		required: true,
 		content: {
 			'application/json': {
-				schema: {
-					$ref: '#/components/schemas/BackupRequest',
-				},
+				schema: BackupRequestSchema,
 			},
 		},
 	},

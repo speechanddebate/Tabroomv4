@@ -16,9 +16,10 @@ export type ResultSetSchemaEvent = {
 	level: string;
 	name: string;
 	/**
+	 * Absent when the event has no NSDA category
 	 * @maximum 9007199254740991
 	 * @exclusiveMinimum 0
 	 */
-	nsdacategory: number;
+	nsdacategory?: number;
 	type: string;
 };

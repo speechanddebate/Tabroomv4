@@ -29,18 +29,18 @@
 
 <style>
 .sidebar-btn.primary {
-	background: var(--color-primary-50);
+	background: var(--color-primary-soft);
 }
 .sidebar-btn.secondary {
-	background: var(--color-secondary-200);
+	background: var(--color-accent-soft);
 }
 .sidebar-btn.secondary:hover,
 .sidebar-btn.selected.secondary {
-	background: var(--color-secondary-400);
+	background: var(--color-accent);
 }
 .sidebar-btn.primary:hover,
 .sidebar-btn.selected.primary {
-	background: var(--color-primary-700);
+	background: var(--color-primary-strong);
 	color: #ffffff;
 }
 

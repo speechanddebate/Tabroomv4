@@ -27,7 +27,9 @@ RUN npm ci --ignore-scripts
 
 COPY schemats ./schemats
 
-RUN npm run build --workspace=schemats
+# short commit hash, passed by CI. Baked into the bundle as kit.version.name
+ARG GIT_COMMIT
+RUN GIT_COMMIT=$GIT_COMMIT npm run build --workspace=schemats
 
 FROM node:24.13.1-bookworm-slim AS prod
 

@@ -3,7 +3,10 @@ import logger from '../../../helpers/logger.js';
 import { notify } from '../../../helpers/blast.js';
 import { blastRoundPairing } from '../round/blast.js';
 import { BadRequest, Forbidden } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
+import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Refactor this so that it will allow an event/category only user to blast only those
 // events which they personally have access to.  Also remove all the deps and instead
@@ -36,7 +39,7 @@ export async function blastTimeslotMessage(req, res) {
 	}
 
 	const personIds = await getFollowers(req.body, options);
-	const tourn = await db.summon(db.tourn, req.params.tournId);
+	const tourn = await summon(kdb, 'tourn',req.params.tournId);
 
 	const notifyResponse = await notify({
 		from        : `${tourn.name} <${tourn.webname}@www.tabroom.com>` ,
@@ -50,23 +53,23 @@ export async function blastTimeslotMessage(req, res) {
 		return res.status(200).json(notifyResponse);
 	}
 
-	const whereTimeslot = { timeslot: req.params.timeslotId };
+	let roundQuery = kdb.selectFrom('round')
+		.select('id')
+		.where('timeslot', '=', req.params.timeslotId);
 
-	if (req.events) {
-		whereTimeslot.events = req.events;
+	if (req.events?.length) {
+		roundQuery = roundQuery.where('event', 'in', req.events);
 	}
 
-	const rounds = await db.round.findAll({
-		where: whereTimeslot,
-	});
+	const rounds = await roundQuery.execute();
 
 	const promises = [];
 
 	rounds.forEach( (round) => {
 
-		const pushPromise = db.changeLog.create({
+		const pushPromise = changeLogRepo.createChangeLog(kdb, {
 			tag    : 'blast',
-			person : req.session.person,
+			person : req.person?.id,
 			count  : notifyResponse.push?.count || 0,
 			round  : round.id,
 			description : `${req.body.message} sent to whole timeslot. ${notifyResponse.inbox || 0} recipients`,
@@ -92,10 +95,10 @@ export async function blastTimeslotPairings(req, res) {
 		timeslotId : req.params.timeslotId,
 	};
 
-	let queryLimit = '';
+	let queryLimit = sql``;
 
 	if (req.events?.length > 0) {
-		queryLimit = ` and round.event IN (:eventIds) `;
+		queryLimit = sql` and round.event IN (${sql.join(replacements.eventIds)}) `;
 	}
 
 	if (
@@ -104,22 +107,22 @@ export async function blastTimeslotPairings(req, res) {
 	) {
 
 		if (req.session.perms.event) {
-			queryLimit += ` and round.event IN (:permEvents) `;
 			replacements.permEvents = Object.keys(req.session.perms.event);
+			const permEvents = replacements.permEvents.length > 0
+				? sql.join(replacements.permEvents)
+				: sql`NULL`;
+			queryLimit = sql`${queryLimit} and round.event IN (${permEvents}) `;
 		} else {
 			return Forbidden(req, res, 'You do not have access to any rounds to blast');
 		}
 	}
 
-	const rounds = await db.sequelize.query(`
+	const { rows: rounds } = await sql`
 		select distinct round.id
 			from round
-		where round.timeslot = :timeslotId
+		where round.timeslot = ${replacements.timeslotId}
 			${queryLimit}
-	`, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb);
 
 	const totals = {
 		web   : 0,
@@ -169,14 +172,14 @@ export async function messageFreeJudges(req, res) {
 		return BadRequest(req, res, `No timeslot to blast was sent`);
 	}
 
-	const freeJudgesQuery = `
+	const freeJudgesQuery = sql`
 		select
 			judge.id, judge.first, judge.last, judge.person,
 			GROUP_CONCAT(follower.person SEPARATOR ',') as followers
 		from judge, jpool_judge jpj, jpool_round jpr, round, person
 			left join follower on follower.judge = judge.id
-		where round.timeslot = :timeslotId
-			and round.site   = :siteId
+		where round.timeslot = ${req.body.timeslotId}
+			and round.site   = ${req.body.siteId}
 			and round.id     = jpr.round
 			and jpr.jpool    = jpj.jpool
 			and jpj.judge    = judge.id
@@ -201,10 +204,7 @@ export async function messageFreeJudges(req, res) {
 			)
 	`;
 
-	const freeJudges = await db.sequelize.query(freeJudgesQuery, {
-		replacements: { ...req.body },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: freeJudges } = await freeJudgesQuery.execute(kdb);
 
 	const totals = {
 		judges : 0 ,
@@ -212,7 +212,7 @@ export async function messageFreeJudges(req, res) {
 		emails : 0 ,
 	};
 
-	const tourn = await db.summon(db.tourn, req.params.tournId);
+	const tourn = await summon(kdb, 'tourn',req.params.tournId);
 	const promises = [];
 
 	for (const judge of freeJudges) {
@@ -245,17 +245,18 @@ export async function messageFreeJudges(req, res) {
 		totals.email += promise.email;
 	}
 
-	const rounds = await db.round.findAll(
-		{ where: { timeslot: req.body.timeslotId } }
-	);
+	const rounds = await kdb.selectFrom('round')
+		.select('id')
+		.where('timeslot', '=', req.body.timeslotId)
+		.execute();
 
 	const logs = [];
 
 	rounds.forEach( (round) => {
-		const promise = db.changeLog.create({
+		const promise = changeLogRepo.createChangeLog(kdb, {
 			tag         : 'blast',
 			description : `${req.body.message} sent to ${totals.judges} people: ${totals.web} push and ${totals.email} emails`,
-			person      : req.session.person,
+			person      : req.person?.id,
 			round       : round.id,
 		});
 
@@ -282,14 +283,14 @@ export async function messageReleasedJudges(req, res) {
 		return BadRequest(req, res, `No timeslot to blast was sent`);
 	}
 
-	const releasedJudgesQuery = `
+	const releasedJudgesQuery = sql`
 		select
 			judge.id, judge.first, judge.last, judge.person,
 			GROUP_CONCAT(follower.person SEPARATOR ',') as followers
 		from judge, jpool_judge jpj, jpool_round jpr, round, person
 			left join follower on follower.judge = judge.id
-		where round.timeslot = :timeslotId
-			and round.site   = :siteId
+		where round.timeslot = ${req.body.timeslotId}
+			and round.site   = ${req.body.siteId}
 			and round.id     = jpr.round
 			and jpr.jpool    = jpj.jpool
 			and jpj.judge    = judge.id
@@ -314,10 +315,7 @@ export async function messageReleasedJudges(req, res) {
 			)
 	`;
 
-	const releasedJudges = await db.sequelize.query(releasedJudgesQuery, {
-		replacements: { ...req.body },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: releasedJudges } = await releasedJudgesQuery.execute(kdb);
 
 	const totals = {
 		judges : 0 ,
@@ -356,18 +354,19 @@ export async function messageReleasedJudges(req, res) {
 		totals.email += promise.email;
 	}
 
-	const rounds = await db.round.findAll(
-		{ where: { timeslot:  req.body.timeslotId } }
-	);
+	const rounds = await kdb.selectFrom('round')
+		.select('id')
+		.where('timeslot', '=', req.body.timeslotId)
+		.execute();
 
 	const logs = [];
 
 	for (const round of rounds) {
-		const log = db.changeLog.create({
+		const log = changeLogRepo.createChangeLog(kdb, {
 			tag         : 'blast',
 			description : `${req.body.message} sent to ${totals.web + totals.email}
 					judges ${totals.web} push and ${totals.email} emails`,
-			person      : req.session.person,
+			person      : req.person?.id,
 			count       : totals.web + totals.emails,
 			round       : round.id,
 		});

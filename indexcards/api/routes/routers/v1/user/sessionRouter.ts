@@ -10,7 +10,7 @@ router.route('/').get(getSession).openapi = {
 	summary: 'Get Session',
 	description: 'Get the current user session',
 	operationId: 'UserSession',
-	tags: ['Session', 'Orval'],
+	tags: ['User: Session', 'Orval'],
 	responses: {
 		200: {
 			description: 'User session',

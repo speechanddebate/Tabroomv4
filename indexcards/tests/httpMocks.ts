@@ -1,34 +1,32 @@
 import type { NextFunction, Request, Response } from 'express';
-import { createActor } from '../api/middleware/authorization/authorization.js';
+import type { ValidatedRequest } from '../api/middleware/validation.js';
+import { createActor } from '../api/middleware/auth/authorization.js';
+import { db } from '../api/data/database.js';
 import { vi } from 'vitest';
 
 export function createPersonContext(
 	person: { id: number; first: string | null; last: string | null; email: string; site_admin: number | null },
-	reqOverrides: Partial<Request> = {}
+	reqOverrides: Partial<ValidatedRequest> = {}
 ) {
+	const Person = {
+		id: person.id,
+		first: person.first,
+		last: person.last,
+		email: person.email,
+		site_admin: person.site_admin
+	};
 	reqOverrides = {
-		session: {
-			id: 1,
-			person: person.id,
-			su: null,
-			Person: {
-				id: person.id,
-				first: person.first,
-				last: person.last,
-				email: person.email,
-				site_admin: person.site_admin
-			},
-			Su: null,
-		},
+		auth: { method: 'cookie', sessionId: 1, su: null },
+		person: Person,
 		...reqOverrides,
 	};
-	let con = createContext(reqOverrides);
-	con.req.actor = createActor(con.req);
+	const con = createContext(reqOverrides);
+	con.req.actor = createActor(con.req.db, con.req.person);
 	return con;
 }
 
 //Mocks for unit testing middleware and controllers
-export function createContext(reqOverrides: Partial<Request> = {}) {
+export function createContext(reqOverrides: Partial<ValidatedRequest> = {}) {
 	const req = createReq(reqOverrides);
 	const res = createRes();
 
@@ -39,21 +37,17 @@ export function createContext(reqOverrides: Partial<Request> = {}) {
 	};
 }
 
-export function createReq(overrides: Partial<Request> & Record<string, unknown> = {}): Request {
+export function createReq(overrides: Partial<ValidatedRequest> & Record<string, unknown> = {}): Request {
 	return {
 		method: 'GET',
 		headers: {},
 		body: {},
 		cookies: {},
-		person: undefined,
-		session: undefined,
+		db,
+		auth: { method: 'none', sessionId: null, su: null },
+		person: null,
 		params: {},
 		query: {},
-		valid: {
-			body: {},
-			params: {},
-			query: {},
-		},
 		get: () => {},
 		...overrides,
 	} as unknown as Request;

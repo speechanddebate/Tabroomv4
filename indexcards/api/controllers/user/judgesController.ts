@@ -9,13 +9,17 @@ import { BadRequest, Forbidden, NotFound } from '../../helpers/problem.js';
 import { notify } from '../../helpers/blast.js';
 import logger from '../../helpers/logger.js';
 import { db } from '../../data/database.js';
+import { getPerson } from '../../middleware/auth/authorization.js';
 import type { Request, Response } from 'express';
+import type { ValidatedRequest } from '../../middleware/validation.js';
+import type { SessionPerson } from '../../middleware/auth/types.js';
 
 async function linkRequests(req: Request, res: Response) {
+	const person = getPerson(req);
 	const [judges, chapterJudges] = await Promise.all([
-		judgeRepo.getJudges(db, { person_request: req.actor.Person!.id }),
+		judgeRepo.getJudges(db, { person_request: person.id }),
 		chapterJudgeRepo.getChapterJudges(db, {
-			person_request: req.actor.Person!.id,
+			person_request: person.id,
 		}),
 	]);
 
@@ -37,8 +41,9 @@ async function linkRequests(req: Request, res: Response) {
 	return res.status(200).json(results);
 }
 // handle a request to claim an unlinked judge or chapter judge.
-async function claimRequest(req: Request, res: Response) {
-	const { judgeId, chapterJudgeId } = req.valid.query;
+async function claimRequest(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
+	const { judgeId, chapterJudgeId } = req.query;
 	// XOR validation: exactly one must be present
 	if ((!!judgeId && !!chapterJudgeId) || (!judgeId && !chapterJudgeId))
 		return BadRequest(req, res, 'Must provide exactly one of judgeId or chapterJudgeId');
@@ -54,15 +59,15 @@ async function claimRequest(req: Request, res: Response) {
 		.select('id')
 		.where('category', '=', judge.category)
 		.where((eb) => eb.or([
-			eb('person', '=', req.actor.Person!.id),
-			eb('person_request', '=', req.actor.Person!.id),
+			eb('person', '=', person.id),
+			eb('person_request', '=', person.id),
 		]))
 		.executeTakeFirst();
 
 		if (already) {
 			return BadRequest(req, res, `You are already linked to another ${judge.category} judge.  You may only link to one judge in a given tournament.  If you are trying to link yourself to all your school's judges, please DO NOT.  Every judge must be linked to their OWN Tabroom account.`);
 		}
-		await judgeRepo.updateJudge(db, judgeId, { person_request: req.actor.Person!.id });
+		await judgeRepo.updateJudge(db, judgeId, { person_request: person.id });
 		return res.status(200).json({
 			message: 'Judge claim request submitted',
 			detail: 'A message has been sent to your chapter admins to approve this request.',
@@ -78,8 +83,8 @@ async function claimRequest(req: Request, res: Response) {
 		.select('id')
 		.where('chapter', '=', chapterJudge.chapter)
 		.where((eb) => eb.or([
-			eb('person', '=', req.actor.Person!.id),
-			eb('person_request', '=', req.actor.Person!.id),
+			eb('person', '=', person.id),
+			eb('person_request', '=', person.id),
 		]))
 		.executeTakeFirst();
 	if (already) {
@@ -89,15 +94,15 @@ async function claimRequest(req: Request, res: Response) {
 	// get the chapter admins
 	const admins = await chapterRepo.getAdmins(db,chapterJudge.chapter);
 
-	if(admins.some(a => a.id === req.actor.Person!.id)) {
-		await chapterJudgeRepo.updateChapterJudge(db, chapterJudgeId, { person: req.actor.Person!.id, person_request: null });
+	if(admins.some(a => a.id === person.id)) {
+		await chapterJudgeRepo.updateChapterJudge(db, chapterJudgeId, { person: person.id, person_request: null });
 		return res.status(200).json({
 			message: 'Judge linked successfully.',
 			detail: 'Because you are a chapter admin, your request to link to this judge has been automatically approved.',
 		});
 	}
 	if(admins.some(a => a.email && !a.no_email)) {
-		const emailData = buildChapterJudgeClaimEmail(chapterJudge, req.actor.Person!);
+		const emailData = buildChapterJudgeClaimEmail(chapterJudge, person);
 		await notify({
 			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
 			...emailData,
@@ -105,7 +110,7 @@ async function claimRequest(req: Request, res: Response) {
 	} else {
 		logger.warn('Chapter with id ' + chapterJudge.chapter + ' has no admins setup to receive emails. Cannot send judge claim notification email.');
 	}
-	await chapterJudgeRepo.updateChapterJudge(db, chapterJudgeId, { person_request: req.actor.Person!.id });
+	await chapterJudgeRepo.updateChapterJudge(db, chapterJudgeId, { person_request: person.id });
 	return res.status(200).json({
 		message: 'Judge claim request submitted',
 		detail: 'A message has been sent to your chapter admins to approve this request.',
@@ -114,14 +119,11 @@ async function claimRequest(req: Request, res: Response) {
 };
 
 //get the judge history for /user/judge/history page.
-async function history(req: Request, res: Response) {
-	const { limit, offset } = req.valid.query;
+async function history(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
+	const { limit, offset } = req.query;
 
-	if(!req.actor.Person!.id) {
-		return BadRequest(req, res, 'Request not made by a person');
-	}
-
-	const judgeHistory = await judgeRepo.getJudgeHistory(db, req.actor.Person!.id, {limit, offset});
+	const judgeHistory = await judgeRepo.getJudgeHistory(db, person.id, {limit, offset});
 	return res.status(200).json(judgeHistory.map(j => ({
 		Tourn: {
 			id: j.Tourn.id,
@@ -136,11 +138,8 @@ async function history(req: Request, res: Response) {
 };
 
 async function getParadigm(req: Request, res: Response) {
-	const person = req.actor.Person?.id;
-	if(!person) {
-		return BadRequest(req, res, 'Request not made by a person');
-	}
-	const paradigm = await personRepo.getPerson(db,person, {
+	const person = getPerson(req);
+	const paradigm = await personRepo.getPerson(db,person.id, {
 		settings: ['paradigm'],
 	});
 	if(!paradigm?.settings?.paradigm) {
@@ -149,9 +148,10 @@ async function getParadigm(req: Request, res: Response) {
 	return res.status(200).json({ paradigm: paradigm.settings.paradigm });
 }
 
-async function updateParadigm(req: Request, res: Response) {
+async function updateParadigm(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
 
-	const Person = await personRepo.getPerson(db, req.actor.Person!.id, {
+	const Person = await personRepo.getPerson(db, person.id, {
 		settings: ['email_unconfirmed'],
 	});
 	if(!Person) throw new Error('Couldn\'t find person');
@@ -165,7 +165,7 @@ async function updateParadigm(req: Request, res: Response) {
 	]);
 	if(tabSettings.filter(s => s.tag === 'paradigm_word_limit')[0]?.value){
 		const wordLimit = parseInt(tabSettings.filter(s => s.tag === 'paradigm_word_limit')[0].value);
-		const wordCount = req.valid.body.paradigm.split(/\s+/).length;
+		const wordCount = req.body.paradigm.split(/\s+/).length;
 		if(wordCount > wordLimit){
 			return BadRequest(req, res, `Paradigm exceeds the word limit of ${wordLimit}. Your paradigm has ${wordCount} words.`);
 		}
@@ -173,13 +173,13 @@ async function updateParadigm(req: Request, res: Response) {
 		logger.debug('no paradigm word limit set, skipping word count check');
 	}
 
-	const naughtywords = profanityCheck(req.valid.body.paradigm);
+	const naughtywords = profanityCheck(req.body.paradigm);
 	if(naughtywords.length > 0){
 		return BadRequest(req, res, 'paradigm contains prohibited words', { words: naughtywords });
 	}
-	const cleanParadigm = sanitizeHTML(req.valid.body.paradigm);
-	if(cleanParadigm !== req.valid.body.paradigm){
-		logger.debug('Paradigm was modified by sanitization.', { original: req.valid.body.paradigm, clean: cleanParadigm });
+	const cleanParadigm = sanitizeHTML(req.body.paradigm);
+	if(cleanParadigm !== req.body.paradigm){
+		logger.debug('Paradigm was modified by sanitization.', { original: req.body.paradigm, clean: cleanParadigm });
 	}
 	//update the paradigm and relevant settings
 	await personRepo.updatePerson(db, Person.id, {
@@ -192,7 +192,7 @@ async function updateParadigm(req: Request, res: Response) {
 		await changeLogRepo.createChangeLog(db,{
 			tag: 'paradigm',
 			person: Person.id,
-			description: `Saved new paradigm from session ${req.session!.id} logged in from ${req.ip}${req.session?.Su ? ` while SU'd from account ${req.session.Su.email}` : ''}`,
+			description: `Saved new paradigm${req.auth.su ? ` by ${req.auth.su.email} while su'd as ${person.email}` : ''} from session ${req.auth.sessionId} logged in from ${req.ip}`,
 		});
 	} catch (err) {
 		logger.error('Failed to log paradigm change in change log', { error: err });
@@ -202,8 +202,8 @@ async function updateParadigm(req: Request, res: Response) {
 }
 
 async function getLiveDocs(req: Request, res: Response){
-	const personId = req.actor.Person!.id;
-	const liveDocs = await judgeRepo.getLiveDocs(db, personId);
+	const person = getPerson(req);
+	const liveDocs = await judgeRepo.getLiveDocs(db, person.id);
 	return res.status(200).json(liveDocs);
 }
 export default {
@@ -217,7 +217,7 @@ export default {
 
 function buildChapterJudgeClaimEmail(
 	chapterJudge: NonNullable<Awaited<ReturnType<typeof chapterJudgeRepo.getChapterJudge>>>, 
-	person: NonNullable<Request['actor']['Person']>) {
+	person: SessionPerson) {
 	let text = `The Tabroom user \n\n${person.first} ${person.last} (${person.email}) \n\n
 	has requested online access to updates, ballots and texts for judge ${chapterJudge.first} ${chapterJudge.last} in your team roster.\n\n
 	If these are the same people, approve this request by logging into Tabroom and visiting\n\n

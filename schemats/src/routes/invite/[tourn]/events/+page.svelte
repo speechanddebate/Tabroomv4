@@ -3,21 +3,22 @@
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky.
 	import { indexFetch } from '$lib/indexfetch';
+	import type { TournInvite } from '@tabroom/types';
 	import { getContext } from 'svelte';
 
 	import {eventType} from '$lib/helpers/text';
 
-	import Sidebar from '$lib/layouts/Sidebar.svelte';
+	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
 	import Loading from '$lib/layouts/Loading.svelte';
 	import { resolve } from '$app/paths';
 
-	import type { Webpage, Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '$indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
-	const pageContent = $derived(indexFetch(`/rest/tourns/${tourn.id}/invite`));
+	const pageContent = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));
 
 	const eventPage = $derived.by( () => {
-		const pages = pageContent.data?.webpages?.filter(
-			(webpage:Webpage) => webpage.slug === 'events'
+		const pages = pageContent.data?.Webpages?.filter(
+			(webpage) => webpage.slug === 'events'
 		);
 
 		if (pages && pages.length > 0) {
@@ -27,26 +28,26 @@
 
 </script>
 
-	<Loading tanstackJob={pageContent} />
+	<WithSidebar>
+		<Loading tanstackJob={pageContent} />
 
-	<div class="main">
 		{#if eventPage}
 			<h5
-				class='border-b border-primary-500 mb-4'
+				class='border-b border-primary mb-4'
 			>{eventPage.title || 'Main' }</h5>
 
 			{@html eventPage.content}
 		{:else }
 			<h4
-				class='border-b border-primary-500 mb-1'
+				class='border-b border-primary mb-1'
 			>Events Offered</h4>
 		{/if}
 
 		{#each pageContent.data?.Events as event (event.id) }
 
-			<div class='border-b border-b-primary-600'>
+			<div class='border-b border-b-primary-strong'>
 
-				<div class='w-full flex py-1 ps-1 border-b border-b-back-200'>
+				<div class='w-full flex py-1 ps-1 border-b border-b-page'>
 
 					<span class="w-1/2 flex grow">
 						<span>
@@ -61,13 +62,16 @@
 						<span class="w-1/4 text-right content-center">
 							<a
 								class ='
-									bg-back
+									bg-surface
 									font-semibold
 									px-2
-									text-primary-800
-									hover:text-primary-500
+									text-primary-deep
+									hover:text-primary-strong
 								'
-								href  = {resolve(`/invite/${tourn.webname}/events/${event.abbr}/field`, {})}
+								href  = {resolve('/invite/[tourn]/events/[eventAbbr]/field', {
+									tourn     : tourn.webname,
+									eventAbbr : event.abbr ?? '',
+								})}
 							>
 								{event.metadata.entryCount || 0 } Registered Entries
 							</a>
@@ -93,7 +97,7 @@
 									Entry Fee
 								</span>
 								<span class="w-2/3 ps-2 pe-4">
-									{pageContent.data.currency || '$'}{event.fee}
+									{event.settings.currency || '$'}{event.fee}
 								</span>
 							</div>
 						{/if}
@@ -165,9 +169,8 @@
 			</div>
 		{/each}
 
-	</div>
-
-	<Sidebar>
-		<div class="sidenote min-h-[50dvh]">
-		</div>
-	</Sidebar>
+		{#snippet sidebar()}
+			<div class="sidenote min-h-[50dvh]">
+			</div>
+		{/snippet}
+	</WithSidebar>

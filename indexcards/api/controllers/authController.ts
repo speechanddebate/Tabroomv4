@@ -1,5 +1,5 @@
-import { BadRequest, Unauthorized } from '../helpers/problem.js';
-import authService, { AUTH_INVALID }  from '../services/AuthService.js';
+import { BadRequest, Unauthorized, Forbidden } from '../helpers/problem.js';
+import authService, { AUTH_INVALID, FORBIDDEN }  from '../services/AuthService.js';
 import config from '../config.js';
 import personRepo from '../repos/personRepo.js';
 import sessionRepo from '../repos/sessionRepo.js';
@@ -9,7 +9,7 @@ import type { Request, Response } from 'express';
 import { db } from '../data/database.js';
 
 export async function login(req: Request, res: Response) {
-	const { username, password } = req.valid.body;
+	const { username, password } = req.body;
 	let result;
 	try {
 		result = await authService.login(username, password, {
@@ -18,6 +18,7 @@ export async function login(req: Request, res: Response) {
 		});
 	}  catch (err) {
 		if (err === AUTH_INVALID) return Unauthorized(req,res,'Invalid Credentials');
+		if (err === FORBIDDEN) return Forbidden(req, res, 'Access forbidden');
 		throw err;
 	}
 
@@ -35,8 +36,8 @@ export async function login(req: Request, res: Response) {
 
 export async function logout(req: Request, res: Response){
 
-	if (req.session?.id) {
-		await sessionRepo.deleteSession(db,req.session?.id);
+	if (req.auth.sessionId) {
+		await sessionRepo.deleteSession(db,req.auth.sessionId);
 	}
 
 	// Clear cookie if present
@@ -47,30 +48,32 @@ export async function logout(req: Request, res: Response){
 }
 /** start an su session */
 export async function su(req: Request, res: Response){
-	if(!req.session?.id) {
+	const sessionId = req.auth.sessionId;
+	if(!sessionId || !req.person) {
 		return BadRequest(req, res, 'You do not have an active session.');
 	}
-	const suTarget = (await personRepo.getPerson(db,req.valid.body.suId));
+	const suTarget = (await personRepo.getPerson(db,req.body.suId));
 	if(!suTarget) return BadRequest(req, res, 'no such person found');
 
-	if(req.session.id === suTarget.id) return BadRequest(req, res, 'You cannot su to yourself');
-	
-	await sessionRepo.updateSession(db,req.session.id,{
+	if(req.person.id === suTarget.id) return BadRequest(req, res, 'You cannot su to yourself');
+
+	await sessionRepo.updateSession(db,sessionId,{
 		person: suTarget.id,
-		su: req.session?.person,
+		su: req.person.id,
 	});
 	return res.status(204).send();
 }
 /** end an su session */
 export async function suEnd(req: Request, res: Response){
-	if(!req.session?.id) {
+	const sessionId = req.auth.sessionId;
+	if(!sessionId) {
 		return BadRequest(req, res, 'You do not have an active session.');
 	}
-	else if(!req.session?.su){
+	else if(!req.auth.su){
 		return BadRequest(req, res, 'You do not have an active su session.');
 	}
-	await sessionRepo.updateSession(db,req.session.id,{
-		person: req.session.su,
+	await sessionRepo.updateSession(db,sessionId,{
+		person: req.auth.su.id,
 		su: null,
 	});
 	return res.status(204).send();
@@ -80,7 +83,7 @@ export async function suEnd(req: Request, res: Response){
 export async function register(req: Request, res: Response){
 	let result = null;
 	try {
-		result = await authService.register(req.valid.body,{
+		result = await authService.register(req.body,{
 			ip: req.ip,
 			agentData: req.get('User-Agent'),
 		});

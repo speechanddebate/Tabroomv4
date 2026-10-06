@@ -2,6 +2,7 @@
 import { selectSettings, saveSettings } from './settings.js';
 import { db } from '../../data/database.js';
 import factories from '../../../tests/factories/index.js';
+import { faker } from '@faker-js/faker';
 
 describe('selectSettings', () => {
 	let schoolId: number = 0;
@@ -84,7 +85,35 @@ describe('saveSettings', () => {
 		expect(res?.settings?.foo).toBe('bar');
 		expect(res?.settings?.bar).toBe('baz');
 	});
-	it('can save a Date value correctly', async () => {
+	it('can save the various value types correctly', async () => {
+		// Save a boolean
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: true, bar: false },
+			ownerId: catId,
+		});
+		const resBool = await db.selectFrom('category')
+			.where('id', '=', catId)
+			.select(selectSettings({ table: 'category', settings: true }))
+			.executeTakeFirst();
+		expect(resBool?.settings).toBeDefined();
+		expect(resBool?.settings?.foo).toBe('1');
+		expect(resBool?.settings?.bar).toBe('0');
+		// Save a number
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: 42 },
+			ownerId: catId,
+		});
+		const resNum = await db.selectFrom('category')
+			.where('id', '=', catId)
+			.select(selectSettings({ table: 'category', settings: true }))
+			.executeTakeFirst();
+		expect(resNum?.settings).toBeDefined();
+		expect(resNum?.settings?.foo).toBe('42');
+		// Save a Date value
 		await saveSettings({
 			db,
 			table: 'category',
@@ -97,5 +126,58 @@ describe('saveSettings', () => {
 			.executeTakeFirst();
 		expect(res?.settings).toBeDefined();
 		expect(new Date(res!.settings!.foo)).toEqual(new Date('2023-01-01T00:00:00Z'));
+		// Save an object
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: { bar: 'baz' } },
+			ownerId: catId,
+		});
+		const resObj = await db.selectFrom('category')
+			.where('id', '=', catId)
+			.select(selectSettings({ table: 'category', settings: true }))
+			.executeTakeFirst();
+		expect(resObj?.settings).toBeDefined();
+		expect(resObj?.settings?.foo).toBe('{"bar": "baz"}');
+		// save a long string
+		const longString = faker.lorem.paragraphs(5);
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: longString },
+			ownerId: catId,
+		});
+		const resLong = await db.selectFrom('category')
+			.where('id', '=', catId)
+			.select(selectSettings({ table: 'category', settings: true }))
+			.executeTakeFirst();
+		expect(resLong?.settings).toBeDefined();
+		expect(resLong?.settings?.foo).toBe(longString);
+	});
+	it('deletes the row when the setting is set to null', async () => {
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: 'value' },
+			ownerId: catId,
+		});
+		const og = await db.selectFrom('category')
+			.where('id', '=', catId)
+			.select(selectSettings({ table: 'category', settings: true }))
+			.executeTakeFirst();
+		expect(og?.settings).toBeDefined();
+		expect(og?.settings?.foo).toBe('value');
+		await saveSettings({
+			db,
+			table: 'category',
+			settings: { foo: null },
+			ownerId: catId,
+		});
+		const res = await db.selectFrom('category_setting')
+			.where('category', '=', catId)
+			.where('tag', '=', 'foo')
+			.selectAll()
+			.executeTakeFirst();
+		expect(res).toBeUndefined();
 	});
 });

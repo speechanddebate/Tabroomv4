@@ -56,11 +56,11 @@
 			getUserInboxMarkReadMockHandler((info) => {
 				const messageId = Number(info.params.messageId ?? 0);
 				inbox = inbox.map((msg) =>
-					msg.id === messageId ? { ...msg, readAt: nowISO } : msg,
+					msg.id === messageId ? { ...msg, read_at: nowISO } : msg,
 				);
 			}),
 			getUserInboxMarkAllReadMockHandler(() => {
-				inbox = inbox.map((msg) => ({ ...msg, readAt: nowISO }));
+				inbox = inbox.map((msg) => ({ ...msg, read_at: nowISO }));
 			}),
 			getUserInboxMarkDeletedMockHandler((info) => {
 				const messageId = Number(info.params.messageId ?? 0);
@@ -69,7 +69,7 @@
 			getUserInboxMarkUnreadMockHandler((info) => {
 				const messageId = Number(info.params.messageId ?? 0);
 				inbox = inbox.map((msg) =>
-					msg.id === messageId ? { ...msg, readAt: null } : msg,
+					msg.id === messageId ? { ...msg, read_at: null } : msg,
 				);
 			}),
 		];

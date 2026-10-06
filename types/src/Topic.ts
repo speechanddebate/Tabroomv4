@@ -1,6 +1,5 @@
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 import { z } from 'zod';
-import { datetime } from './utils.js';
 import { EventSchema } from './Event.js';
 import { PersonSchema } from './Person.js';
 
@@ -12,7 +11,7 @@ export const TopicZodSchema = z.object({
 	eventType: z.string(),
 	pattern: z.string(),
 	topicText: z.string(),
-	createdAt: datetime(),
+	createdAt: z.iso.datetime(),
 	createdBy: PersonSchema,
 	Events: z.array(EventSchema),
 }) satisfies ZodOpenApiSchemaObject;

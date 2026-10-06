@@ -51,7 +51,7 @@ async function createEntry(db: Database, data: Insertable<Entry> & { settings?: 
 		.executeTakeFirstOrThrow();
 
 	if (settings) {
-		saveSettings({db, table: 'entry', ownerId: res.id, settings});
+		await saveSettings({db, table: 'entry', ownerId: res.id, settings});
 		return {
 			...res,
 			settings,

@@ -1,7 +1,5 @@
-import { assert } from 'chai';
 import request from 'supertest';
 import server from '../../../../app';
-import config from '../../../config';
 import factories from '../../../../tests/factories';
 
 describe('Attendee Search Function', () => {
@@ -26,26 +24,26 @@ describe('Attendee Search Function', () => {
 		const manOverboard = await request(server)
 			.get(`/v1/tab/tourns/29774/all/search/${searchNavy}`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
 		const lifePreserver = manOverboard.body;
 
-		assert.typeOf(lifePreserver, 'object', 'Object returned');
-		assert.typeOf(lifePreserver.exactMatches, 'array', 'Array of exact matches found');
-		assert.typeOf(lifePreserver.partialMatches, 'array', 'Array of partial matches found');
+		expect(lifePreserver, 'Object returned').toBeTypeOf('object');
+		expect(lifePreserver.exactMatches, 'Array of exact matches found').toBeInstanceOf(Array);
+		expect(lifePreserver.partialMatches, 'Array of partial matches found').toBeInstanceOf(Array);
 
-		assert.typeOf(lifePreserver.partialMatches[0].id, 'number', 'ID of partial match is a number');
-		assert.typeOf(lifePreserver.partialMatches[0].name, 'string', 'Name of partial match is a number');
+		expect(lifePreserver.partialMatches[0].id, 'ID of partial match is a number').toBeTypeOf('number');
+		expect(lifePreserver.partialMatches[0].name, 'Name of partial match is a string').toBeTypeOf('string');
 
-		assert.typeOf(lifePreserver.exactMatches[0].id, 'number', 'ID of exact matches is a number');
-		assert.equal(lifePreserver.exactMatches[0].id, 651034, 'Exact match ID is correct');
-		assert.equal(lifePreserver.exactMatches[0].name, 'Navy', 'Exact match name is correct');
-		assert.equal(lifePreserver.exactMatches[0].tag, 'school', 'Exact match tag is correct');
+		expect(lifePreserver.exactMatches[0].id, 'ID of exact matches is a number').toBeTypeOf('number');
+		expect(lifePreserver.exactMatches[0].id, 'Exact match ID is correct').toBe(651034);
+		expect(lifePreserver.exactMatches[0].name, 'Exact match name is correct').toBe('Navy');
+		expect(lifePreserver.exactMatches[0].tag, 'Exact match tag is correct').toBe('school');
 
-		assert.equal(lifePreserver.partialMatches[0].id, 1400939, 'Exact match ID is correct');
-		assert.equal(lifePreserver.partialMatches[0].tag, 'entry', 'Exact match tag is correct');
+		expect(lifePreserver.partialMatches[0].id, 'Partial match ID is correct').toBe(1400939);
+		expect(lifePreserver.partialMatches[0].tag, 'Partial match tag is correct').toBe('entry');
 
 		// Search for an individual in that same tournament and BONUS ROUND!
 		// make sure the special character doesn't mess with us
@@ -55,16 +53,15 @@ describe('Attendee Search Function', () => {
 		const resDVOG = await request(server)
 			.get(`/v1/tab/tourns/29774/all/search/${searchDaisy}`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.typeOf(resDVOG.body, 'object', 'Object returned');
-		assert.typeOf(resDVOG.body.exactMatches, 'array', 'Array of exact matches found');
-		assert.typeOf(resDVOG.body.partialMatches, 'array', 'Array of partial matches found');
-		assert.equal(resDVOG.body.partialMatches.length, 0, 'Array of partial matches is empty');
-		assert.equal(resDVOG.body.exactMatches[0].first, 'Danielle', 'Name match found for exact match');
-		assert.equal(resDVOG.body.exactMatches[0].tag, 'judge', 'Exact match tag is correct');
+		expect(resDVOG.body, 'Object returned').toBeTypeOf('object');
+		expect(resDVOG.body.exactMatches, 'Array of exact matches found').toBeInstanceOf(Array);
+		expect(resDVOG.body.partialMatches, 'Array of partial matches is empty').toEqual([]);
+		expect(resDVOG.body.exactMatches[0].first, 'Name match found for exact match').toBe('Danielle');
+		expect(resDVOG.body.exactMatches[0].tag, 'Exact match tag is correct').toBe('judge');
 
 	});
 });

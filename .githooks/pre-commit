@@ -1,12 +1,11 @@
 #!/bin/sh
 set -e
-echo "Linting..."
+echo "Linting"
 npm run lint
-echo "Typecheck..."
-# schemats super fails typecheck right now
-npm run typecheck --workspace=indexcards
+echo "Typecheck"
+npm run typecheck
 
-echo "Updating openapi.json..."
+echo "Updating openapi.json"
 npm run build:openapi --workspace=indexcards
 git  add indexcards/api/routes/openapi/openapi.json
 

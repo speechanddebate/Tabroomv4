@@ -42,6 +42,21 @@ describe('findByUserKey', () => {
 		expect(session?.Person?.id).toBe(Session.person);
 		expect(session?.Su?.id).toBe(Su.id);
 	});
+	it('returns the Person and Su timezones', async () => {
+		const TzPerson = await factories.person.create({ tz: 'America/Chicago' });
+		const Su = await factories.person.create({ tz: 'Europe/London' });
+		const Session = await factories.session.create({person: TzPerson.id, su: Su.id});
+		const session = await sessionRepo.findByUserKey(db, Session.userkey);
+		expect(session?.Person?.tz).toBe('America/Chicago');
+		expect(session?.Su?.tz).toBe('Europe/London');
+	});
+	it('returns the session with banned status when it exists', async () => {
+		const bannedPerson = await factories.person.create({settings: { banned: '1' }});
+		const Session = await factories.session.create({ person: bannedPerson.id });
+		const session = await sessionRepo.findByUserKey(db, Session.userkey);
+		expect(session).toBeDefined();
+		expect(session?.Person?.banned).toBe('1');
+	});
 
 });
 

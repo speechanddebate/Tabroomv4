@@ -1,4 +1,3 @@
-import { assert } from 'chai';
 import request from 'supertest';
 import server from '../../../app';
 
@@ -21,12 +20,12 @@ describe('Tournament Search Function', () => {
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.typeOf(res.body, 'object', 'Object returned');
-		assert.typeOf(res.body.exactMatches, 'array', 'Array of exact matches found');
-		assert.typeOf(res.body.partialMatches, 'array', 'Array of partial matches found');
+		expect(res.body, 'Object returned').toBeTypeOf('object');
+		expect(res.body.exactMatches, 'Array of exact matches found').toBeInstanceOf(Array);
+		expect(res.body.partialMatches, 'Array of partial matches found').toBeInstanceOf(Array);
 
-		assert.typeOf(res.body.partialMatches[0].id, 'number', 'ID of partial match is a number');
-		assert.typeOf(res.body.partialMatches[0].name, 'string', 'Name of partial match is a number');
-		assert.equal(res.body.partialMatches[0].webname, 'ncfl', 'Exact match webname clears');
+		expect(res.body.partialMatches[0].id, 'ID of partial match is a number').toBeTypeOf('number');
+		expect(res.body.partialMatches[0].name, 'Name of partial match is a string').toBeTypeOf('string');
+		expect(res.body.partialMatches[0].webname, 'Exact match webname clears').toBe('ncfl');
 	});
 });

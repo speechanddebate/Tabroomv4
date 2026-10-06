@@ -8,7 +8,7 @@
 		UnlinkedJudgeSchema,
 		RestJudgesUnlinkedSearchParams,
 	} from '$indexcards/schemas';
-	import { Button } from 'flowbite-svelte';
+	import Button from '$lib/components/Button.svelte';
 	import { renderSnippet } from '@tanstack/svelte-table';
 
 	import QueryTable from '$lib/components/utils/QueryTable.svelte';
@@ -115,16 +115,15 @@
 
 {#snippet requestCell(row: UnlinkedJudgeSchema)}
 	{#if isRequested(row)}
-		<span class="block text-center text-sm font-semibold text-red-700">
+		<span class="block text-center text-sm font-semibold text-danger">
 			Request made, awaiting coach/tournament approval.
 		</span>
 	{:else}
 		<div class="flex justify-center">
 			<Button
 				class="min-w-[10rem]"
-				color="light"
 				onclick={() => requestLink(row)}
-				type="button"
+				variant="outline"
 			>
 				Request Link
 			</Button>
@@ -132,16 +131,16 @@
 	{/if}
 {/snippet}
 
-<div class="flex flex-1 flex-col bg-slate-50 p-3 sm:p-4">
-	<section class="rounded-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
-		<h2 class="text-xl font-semibold text-slate-900">Unlinked Judges named {searchName}</h2>
-		<p class="mt-2 text-sm text-slate-700">
+<div class="flex flex-1 flex-col bg-surface-alt p-3 sm:p-4">
+	<section class="rounded-md border border-border bg-surface px-4 py-4 shadow-sm">
+		<h2 class="text-xl font-semibold text-text">Unlinked Judges named {searchName}</h2>
+		<p class="mt-2 text-sm text-text">
 			Link a judge record to your account to be notified of pairings and ballot assignments, and to
 			access online ballots. The administrators of your team or school will need to approve claim
 			requests before you can access them.
 		</p>
 
-		<p class="mt-3 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+		<p class="mt-3 rounded-md border border-danger bg-danger-soft px-4 py-3 text-sm text-text">
 			Do NOT link your account to your school's other judges. That can prevent them from
 			accessing online ballots, getting texts, or being contacted by tournaments. If you want
 			updates for one of your team's judges, sign up on the tournament's online updates page
@@ -149,9 +148,9 @@
 		</p>
 	</section>
 
-	<section class="mt-3 rounded-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
-		<h3 class="text-base font-semibold text-slate-900">Name Search</h3>
-		<p class="mt-1 text-sm text-slate-700">
+	<section class="mt-3 rounded-md border border-border bg-surface px-4 py-4 shadow-sm">
+		<h3 class="text-base font-semibold text-text">Name Search</h3>
+		<p class="mt-1 text-sm text-text">
 			If your judge record name is spelled differently from your account profile, search alternate
 			spellings below.
 		</p>
@@ -159,14 +158,14 @@
 		<form class="mt-3 grid pb-3 gap-3 sm:grid-cols-[1fr_1fr_auto]" onsubmit={handleSearchSubmit}>
 			<input
 				name="first"
-				class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+				class="w-full rounded-md border border-border-strong px-3 py-2 text-sm"
 				placeholder="First name"
 				type="text"
 				bind:value={firstInput}
 			/>
 			<input
 				name="last"
-				class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+				class="w-full rounded-md border border-border-strong px-3 py-2 text-sm"
 				placeholder="Last name"
 				type="text"
 				bind:value={lastInput}
@@ -178,7 +177,7 @@
 
 		<QueryTable
 			{columns}
-			containerClass="bg-back w-full"
+			containerClass="bg-surface w-full"
 			data={rows}
 			emptyMessage={emptyResultsMessage}
 			query={unlinkedSearchQuery}

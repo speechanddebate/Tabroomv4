@@ -6,11 +6,14 @@
 	import type { Tourn } from '$indexcards/schemas';
 	let tourn:Tourn = getContext('webnameTourn');
 
-	let linkUrl = $derived(`/invite/${tourn.webname}/entries/${row.Opponent.id}`);
+	let linkUrl = $derived(resolve('/invite/[tourn]/entries/[entryId]', {
+		tourn   : tourn.webname,
+		entryId : String(row.Opponent.id),
+	}));
 	let linkText = $derived(row.Opponent.code);
 
 </script>
 	<a
-		class = 'hover:text-primary-700 hover:text-decoration-line break-normal font-normal'
-		href  = {resolve(linkUrl,{})}
+		class = 'hover:text-primary-strong hover:text-decoration-line break-normal font-normal'
+		href  = {linkUrl}
 	>{@html linkText}</a>

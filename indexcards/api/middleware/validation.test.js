@@ -113,20 +113,28 @@ async function makeMethodSpecificOpenApiApp() {
 }
 
 describe('ValidateRequest', () => {
-	it('validates the request and attaches valid data to req.valid', async () => {
+	it('validates the request and replaces req params, query and body with the valid data', async () => {
 		const { req, res } = createValidationContext();
 		await ValidateRequest(req, res, () => {});
-		expect(req.valid).toEqual({
-			params: {
-				value: 'test',
+		expect(req.params).toEqual({ value: 'test' });
+		expect(req.query).toEqual({ value: 'test' });
+		expect(req.body).toEqual({ value: 'test' });
+	});
+	it('coerces params and query in place', async () => {
+		const app = express();
+		app.route('/v1/coerce/:id').get(ValidateRequest, (req, res) => res.json({
+			id: req.params.id,
+			limit: req.query.limit,
+		})).openapi = {
+			path: '/coerce/{id}',
+			requestParams: {
+				path: z.object({ id: z.coerce.number().int() }),
+				query: z.object({ limit: z.coerce.number().int().default(10) }),
 			},
-			query: {
-				value: 'test',
-			},
-			body: {
-				value: 'test',
-			},
-		});
+		};
+
+		const res = await request(app).get('/v1/coerce/42');
+		expect(res.body).toEqual({ id: 42, limit: 10 });
 	});
 	it('returns a 400 error when validation fails', async () => {
 		let { req, res } = createValidationContext();

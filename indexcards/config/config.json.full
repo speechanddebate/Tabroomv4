@@ -8,14 +8,10 @@
     "database": "tabroom",
     "user": "root",
     "pass": "root",
-    "sequelizeOptions": {
-      "dialect": "mariadb",
-      "define": {
-        "freezeTableName": true,
-        "modelName": "singularName",
-        "underscored": true,
-        "timestamps": false
-      }
+    "pool": {
+      "connectionLimit": 5,
+      "acquireTimeout": 10000,
+      "idleTimeout": 1800
     }
   },
   "shared_secret": "",
@@ -28,7 +24,6 @@
     "name": "TabroomToken",
     "domain": ".tabroom.com"
   },
-  "session_header": "tabroom-session",
   "csrf": {
     "trusted_origins": [
       "/tabroom.com$/"

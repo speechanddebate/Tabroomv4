@@ -5,20 +5,22 @@
 	import { goto } from '$app/navigation';
 
 	import indexFetch from '$lib/indexfetch';
-	import Sidebar from '$lib/layouts/Sidebar.svelte';
+	import type { EventField } from '@tabroom/types';
     import Select from '$lib/layouts/Select.svelte';
-	import type { Entry, Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '$indexcards/schemas';
+
+	type FieldEntry = EventField['Entries'][number];
 
 	let { event } = $props();
-	let selectedEntryId = $derived(parseInt(page.params.entryId));
+	let selectedEntryId = $derived(parseInt(page.params.entryId ?? ''));
 	let tourn:Tourn = getContext('webnameTourn');
 
-	let field = $derived(indexFetch(`/rest/tourns/${tourn.id}/events/${event.abbr}/field`));
+	let field = $derived(indexFetch<EventField>(`/rest/tourns/${tourn.id}/events/${event.abbr}/field`));
 
 	let selections = $derived.by( () => {
-		return field.data?.Entries.sort( (a:Entry, b:Entry) => {
-			return a.code.localeCompare(b.code);
-		}).map( (entry:Entry) => {
+		return field.data?.Entries.sort( (a:FieldEntry, b:FieldEntry) => {
+			return (a.code ?? '').localeCompare(b.code ?? '');
+		}).map( (entry:FieldEntry) => {
 			return {
 				value: entry.id,
 				label: `${entry.code}: ${entry.name}`,
@@ -35,16 +37,14 @@
 
 </script>
 
+	<!-- invite/entries/[entryId]/sidebar.svelte: content for a WithSidebar sidebar snippet -->
 	{#if field.isSuccess}
-
-		<Sidebar>
-			<div class="sidenote">
-				<h4>Entries in {event.abbr}</h4>
-				<Select
-					items   = {selections}
-					options = {options}
-					startId = {selectedEntryId}
-				/>
-			</div>
-		</Sidebar>
+		<div class="sidenote">
+			<h4>Entries in {event.abbr}</h4>
+			<Select
+				items   = {selections}
+				options = {options}
+				startId = {selectedEntryId}
+			/>
+		</div>
 	{/if}

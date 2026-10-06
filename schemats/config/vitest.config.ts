@@ -21,6 +21,8 @@ const storybookViewport =
 export default defineConfig({
 	plugins: [sveltekit(), svelteTesting()],
 	test: {
+		// CI runners are 2 vCPU running 2 jobs at once
+		maxWorkers: process.env.CI ? 1 : undefined,
 		projects: [
 			{
 				extends: true,
@@ -40,7 +42,9 @@ export default defineConfig({
 					}),
 				],
 				test: {
-					name: 'storybook',
+					name: 'a11y',
+					// the first stories pay for vite's cold transforms, which overrun the 15s default on CI runners
+					testTimeout: process.env.CI ? 60_000 : undefined,
 					browser: {
 						enabled: true,
 						headless: true,

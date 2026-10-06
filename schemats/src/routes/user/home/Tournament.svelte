@@ -1,8 +1,7 @@
 <script lang="ts">
-    import TabItem from '$lib/layouts/TabItem.svelte';
-    import Tabs from '$lib/layouts/Tabs.svelte';
+    import { Tabs, TabItem } from '$lib/components/Tabs';
 	import { showDateRange } from '$lib/helpers/dt';
-    import IconButton from '$lib/components/IconButton.svelte';
+    import Button from '$lib/components/Button.svelte';
     import { FileText } from '@lucide/svelte';
 	import {
 		createUserTournsSummary,
@@ -35,15 +34,15 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 }));
 
 </script>
-<div class="w-full border-2 rounded-md border-surface-500 shadow-md bg-surface-50 overflow-hidden">
+<div class="w-full border-2 rounded-md border-border shadow-md bg-surface overflow-hidden">
 	<div
-		class="h-1 w-full bg-primary-500 animate-pulse"
+		class="h-1 w-full bg-primary animate-pulse"
 		class:invisible={!TournSummaryQuery.isFetching && !CurrBallotsQuery.isFetching && !FinesQuery.isFetching}
 	></div>
 	<div class="p-2">
 		<div class="flex flex-row flex-wrap">
 		<div class="text-xl font-medium flex-grow-1">{tourn.name}</div>
-		<a class="flex-grow-1 text-right hover:underline text-primary-600" href="/index/tourn/index.mhtml?tourn_id={tourn.id}">https://{tourn.webname}.tabroom.com</a>
+		<a class="flex-grow-1 text-right hover:underline text-primary-strong" href="/index/tourn/index.mhtml?tourn_id={tourn.id}">https://{tourn.webname}.tabroom.com</a>
 		</div>
 		<div>{dateOutput} {timeOutput}</div>
 		<!-- TODO
@@ -57,7 +56,7 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 		<div class="flex flex-wrap">
 				{#if (tournSummary && tournSummary.livedocs.length > 0)}
 				{#each tournSummary.livedocs as livedoc (livedoc.url)}
-				<div class="relative shadow-sm border border-primary-700 rounded-lg px-2 py-2 m-2 basis-3xs grow">
+				<div class="relative shadow-sm border border-primary-strong rounded-lg px-2 py-2 m-2 basis-3xs grow">
 					<div class="flex justify-center">
 						<a class="font-semibold text-center" href={livedoc.url}>
 							{livedoc.caption ?? 'Live Doc'}
@@ -65,27 +64,28 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 					</div>
 
 					<div class="absolute right-2 top-1/2 -translate-y-1/2">
-						<IconButton color="primary" label="Live Doc">
+						<!-- TODO: pick an option from the "Live Doc Card (options)" story. This button does nothing yet. -->
+						<Button color="primary" label="Live Doc" variant="outline">
 							<FileText size="20" />
-						</IconButton>
+						</Button>
 					</div>
 				</div>
 				{/each}
 			{/if}
 			{#if (tournSummary?.roles.includes('coach'))}
-				<div class="relative shadow-sm border border-primary-700 rounded-lg px-2 py-2 m-2 basis-3xs grow">
+				<div class="relative shadow-sm border border-primary-strong rounded-lg px-2 py-2 m-2 basis-3xs grow">
 					<div class="flex justify-center">
 							Coach Dashboard (not yet implemented)
 					</div>
 				</div>
-				<div class="relative shadow-sm border border-primary-700 rounded-lg px-2 py-2 m-2 basis-3xs grow">
+				<div class="relative shadow-sm border border-primary-strong rounded-lg px-2 py-2 m-2 basis-3xs grow">
 					<div class="flex justify-center">
 							Registration (not yet implemented)
 					</div>
 				</div>
 			{/if}
 			{#if (tournSummary?.roles.includes('student'))}
-				<div class="relative shadow-sm border border-primary-700 rounded-lg px-2 py-2 m-2 basis-3xs grow">
+				<div class="relative shadow-sm border border-primary-strong rounded-lg px-2 py-2 m-2 basis-3xs grow">
 					<div class="flex justify-center">
 							Student Dashboard (not yet implemented)
 					</div>
@@ -94,12 +94,12 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 		</div>
 	</div>
 	{#snippet notImplemented()}
-		<div class="rounded-md border border-yellow-200 bg-yellow-50 p-4">
-			<h2 class="text-lg font-semibold text-yellow-900">Feature Under Development</h2>
-			<p class="mt-2 text-sm text-yellow-800">
+		<div class="rounded-md border border-warning bg-warning-soft p-4">
+			<h2 class="text-lg font-semibold text-text">Feature Under Development</h2>
+			<p class="mt-2 text-sm text-text">
 				This feature is still in progress. If you don't see what you need, please visit the
 				<a
-					class="font-semibold underline hover:text-yellow-900"
+					class="font-semibold underline hover:text-warning"
 					href="https://www.tabroom.com/user/setup.mhtml"
 					rel="noopener noreferrer"
 					target="_blank"
@@ -111,7 +111,7 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 	{/snippet}
 
 	{#if (!tournSummary && !TournSummaryQuery.isFetching)}
-		<div class="text-center text-sm text-neutral-500">
+		<div class="text-center text-sm text-muted">
 			There was a problem loading this tournament's information. Please try again later.
 		</div>
 	{:else if (tournSummary)}

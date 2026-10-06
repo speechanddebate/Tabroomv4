@@ -1,0 +1,18 @@
+{
+	"name": "e2e",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"test": "docker compose -f compose.e2e.yml up --build --abort-on-container-exit --no-attach tabroomdb-e2e --exit-code-from e2e; code=$?; npm run report; exit $code",
+		"report": "rm -rf playwright-report test-results; docker compose -f compose.e2e.yml cp e2e:/app/e2e/playwright-report ./playwright-report; docker compose -f compose.e2e.yml cp e2e:/app/e2e/test-results ./test-results || true",
+		"down": "docker compose -f compose.e2e.yml down -v",
+		"typecheck": "tsc --noEmit",
+		"lint": "oxlint .",
+		"lint:fix": "oxlint --fix ."
+	},
+	"devDependencies": {
+		"@playwright/test": "1.63.0",
+		"@types/node": "24.13.1"
+	}
+}

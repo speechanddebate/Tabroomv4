@@ -8,7 +8,7 @@ describe('getChangeLog', () => {
 		expect(fetchedChangeLog).toBeTruthy();
 		expect(fetchedChangeLog!.description).toBe('Test Change Log');
 	});
-	it('returns null if no changelog is found', async () => {
+	it('returns undefined if no changelog is found', async () => {
 		const changeLog = await changeLogRepo.getChangeLog(db, 999999);
 		expect(changeLog).toBeUndefined();
 	});

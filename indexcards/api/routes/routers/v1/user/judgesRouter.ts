@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import judgesController from '../../../../controllers/user/judgesController.js';
-import { UnlinkedJudgeSchema, JudgeHistorySchema } from '@tabroom/types';
+import { UnlinkedJudgeSchema, JudgeHistorySchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import z from 'zod';
 
 const router = Router();
@@ -12,7 +12,7 @@ router.route('/linkRequests')
 		description: 'Get active judge link requests for the logged in user',
 		path: '/user/judges/linkRequests',
 		operationId: 'UserJudgesLinkRequests',
-		tags: ['Orval'],
+		tags: ['Orval','User: Judge'],
 		responses: {
 			200: {
 				description: 'Successful response',
@@ -33,7 +33,7 @@ router.route('/claim')
 		description: 'Claim a judge or chapter judge as the logged in user.',
 		path: '/user/judges/claim',
 		operationId: 'UserJudgesClaim',
-		tags: ['Orval'],
+		tags: ['Orval','User: Judge'],
 		requestParams: {
 			query: z.object({
 				judgeId: z.coerce.number().int().optional().meta({
@@ -49,14 +49,7 @@ router.route('/claim')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.object({
-							message: z.string().meta({
-								description: 'A message indicating the claim request was submitted',
-							}),
-							detail: z.string().meta({
-								description: 'Additional details about the claim request submission',
-							}),
-						}),
+						schema: ClaimResponseSchema,
 					},
 				},
 			},
@@ -69,7 +62,7 @@ router.route('/history')
 		description: 'Gets a persons history of judging',
 		path: '/user/judges/history',
 		operationId: 'UserJudgesHistory',
-		tags: ['Orval','Judges'],
+		tags: ['Orval','User: Judge','Judges'],
 		requestParams: {
 			query: z.object({
 			limit: z.coerce.number().int().default(100),
@@ -81,7 +74,7 @@ router.route('/history')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: JudgeHistorySchema,
+						schema: z.array(JudgeHistorySchema),
 					},
 				},
 			},
@@ -92,7 +85,7 @@ router.route('/paradigm')
 	.get(judgesController.getParadigm)
 	.post(ValidateRequest, judgesController.updateParadigm).openapi = {
 		path: '/user/judges/paradigm',
-		tags: ['Orval','Judges'],
+		tags: ['Orval','User: Judge'],
 		get: {
 			summary: 'get paradigm',
 			operationId: 'UserJudgesParadigm',
@@ -101,11 +94,7 @@ router.route('/paradigm')
 					description: 'Successful response',
 					content: {
 						'application/json': {
-							schema: z.object({
-								paradigm: z.string().meta({
-									description: 'The current paradigm for the user',
-								}),
-							}),
+							schema: UserParadigmSchema,
 						},
 					},
 				},
@@ -117,11 +106,7 @@ router.route('/paradigm')
 			requestBody: {
 				content: {
 					'application/json': {
-						schema: z.object({
-							paradigm: z.string().max(65535).meta({
-								description: 'The new paradigm for the user',
-							}),
-						}),
+						schema: UserParadigmSchema,
 					},
 				},
 			},
@@ -141,21 +126,13 @@ router.route('/livedocs')
 		description: 'Get live docs for the logged in user',
 		path: '/user/judges/livedocs',
 		operationId: 'UserJudgesLiveDocs',
-		tags: ['Orval','Judges'],
+		tags: ['Orval','User: Judge'],
 		responses: {
 			200: {
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.array(z.object({
-							judgeId: z.coerce.number().int(),
-							categoryAbbr: z.string(),
-							tournName: z.string(),
-							tournEnd: z.iso.datetime(),
-							tournTz: z.string(),
-							url: z.string(),
-							caption: z.string().nullable(),
-						})),
+						schema: z.array(JudgeLiveDocSchema),
 					},
 				},
 			},

@@ -1,23 +1,38 @@
-import { checkJudgePerson } from '../../../helpers/auth.js';
+import { summon } from '../../../repos/utils/summon.js';
 import logger from '../../../helpers/logger.js';
-import db from '../../../data/db.js';
+import { db } from '../../../data/database.js';
+import { ballotRepo } from '../../../repos/ballotRepo.js';
+import scoreRepo from '../../../repos/scoreRepo.js';
+
+// moved here from the removed helpers/auth.js, with req.session swapped for req.person
+const checkJudgePerson = async (req, judgeId) => {
+
+	if (!req.person) {
+		return false;
+	}
+
+	if (req.person.site_admin) {
+		return true;
+	}
+
+	const judge = await summon(db, 'judge',judgeId);
+
+	if (judge.person === req.person.id) {
+		return true;
+	}
+
+	return false;
+};
 
 export async function checkActive(req, res) {
 	const judgeId = parseInt(req.params.judgeId);
 
-	const judges = await db.sequelize.query(`
-		select
-		judge.active, judge.id, judge.person personId
-		from judge
-		where judge.id = :judgeId
-	`, {
-		replacements: {
-			judgeId,
-		},
-		type : db.Sequelize.QueryTypes.SELECT,
-	});
+	const judges = await db.selectFrom('judge')
+		.where('judge.id', '=', judgeId)
+		.select(['judge.active', 'judge.id', 'judge.person as personId'])
+		.execute();
 
-	if (judges && judges[0].person === req.session.person) {
+	if (judges && judges[0].person === req.person?.id) {
 		return (judges[0].active);
 	}
 };
@@ -26,20 +41,12 @@ export async function checkBallotAccess (req, res) {
 	const judgeId = parseInt(req.params.judgeId);
 	const sectionId = parseInt(req.params.sectionId);
 
-	const access = await db.sequelize.query(`
-		select
-			ballot.id, ballot.audit, judge.person personId
-			from ballot, judge
-		where ballot.judge = :judgeId
-			and ballot.panel = :sectionId
-			and ballot.judge = judge.id
-	`, {
-		replacements: {
-			sectionId,
-			judgeId,
-		},
-		type : db.Sequelize.QueryTypes.SELECT,
-	});
+	const access = await db.selectFrom('ballot')
+		.innerJoin('judge', 'ballot.judge', 'judge.id')
+		.where('ballot.judge', '=', judgeId)
+		.where('ballot.panel', '=', sectionId)
+		.select(['ballot.id', 'ballot.audit', 'ballot.judge','judge.person as personId'])
+		.execute();
 
 	if (access && access.length > 0) {
 
@@ -48,8 +55,8 @@ export async function checkBallotAccess (req, res) {
 
 		for (const ballot of access) {
 			if (stop < 1) {
-				if (!req.session?.person
-					|| (ballot.personId !== req.session.person && !req.person.site_admin)
+				if (!req.person
+					|| (ballot.personId !== req.person.id && !req.person.site_admin)
 				) {
 					stop++;
 					return res.status(200).json({
@@ -90,19 +97,11 @@ export async function getBallotSides(req, res) {
 	const judgeId = parseInt(req.params.judgeId);
 	const sectionId = parseInt(req.params.sectionId);
 
-	const ballots = await db.sequelize.query(`
-		select
-			ballot.id, ballot.entry, ballot.side
-		from ballot
-		where ballot.judge = :judgeId
-			and ballot.panel = :sectionId
-	`, {
-		replacements: {
-			sectionId,
-			judgeId,
-		},
-		type : db.Sequelize.QueryTypes.SELECT,
-	});
+	const ballots = await db.selectFrom('ballot')
+		.where('ballot.judge', '=', judgeId)
+		.where('ballot.panel', '=', sectionId)
+		.select(['ballot.id', 'ballot.entry', 'ballot.side'])
+		.execute();
 
 	const ballotData = {
 		affBallot: 0,
@@ -129,7 +128,7 @@ export async function saveRubric(req, res) {
 	// putting the judgeId into parameters and not the body because
 	// eventually I'll want to put these access checks up the chain
 
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(200).json({
 			error   : true,
 			message : 'You do not appear to be logged in with a current active session',
@@ -145,7 +144,7 @@ export async function saveRubric(req, res) {
 		});
 	}
 
-	const ballot = await db.summon(db.ballot, autoSave.ballot);
+	const ballot = await ballotRepo.getBallot(db,autoSave.ballot);
 
 	if (ballot?.judge !== judgeId) {
 		return res.status(200).json({
@@ -154,14 +153,20 @@ export async function saveRubric(req, res) {
 		});
 	}
 
-	const score = await db.score.findOne({ where: { ballot: ballot.id, tag: 'rubric' } });
+	const score = await db.selectFrom('score')
+		.where('score.ballot', '=', ballot.id)
+		.where('score.tag', '=', 'rubric')
+		.selectAll()
+		.executeTakeFirst();
 	delete autoSave.ballot;
 
 	if (score && score.id) {
 
 		try {
-			score.content = JSON.stringify(autoSave);
-			await score.save();
+			await db.updateTable('score')
+				.set({ content: JSON.stringify(autoSave) })
+				.where('id', '=', score.id)
+				.execute();
 		} catch (err) {
 			logger.error(`Error encountered in savings scores ${err} ballot ${ballot.id} score ${score.id}`);
 		}
@@ -169,11 +174,11 @@ export async function saveRubric(req, res) {
 	} else {
 
 		try {
-			await db.score.create({
+			await scoreRepo.createScore(db,{
 				ballot  : ballot.id,
 				tag     : 'rubric',
 				value   : 0,
-				content : JSON.stringify(autoSave),
+				content : JSON.stringify(autoSave)
 			});
 		} catch (err) {
 			logger.error(`Error encountered in savings scores ${err} ballot ${ballot?.id} score ${score?.id}`);

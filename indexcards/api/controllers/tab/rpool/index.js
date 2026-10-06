@@ -1,27 +1,21 @@
-import { NotFound, UnexpectedError } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { NotFound, NotImplemented, UnexpectedError } from '../../../helpers/problem.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 
 export async function getRPool(req, res) {
-	const rpool = await db.summon(db.rpool, req.params.rpoolId);
+	const rpool = await summon(kdb, 'rpool',req.params.rpoolId);
 	return res.status(200).json(rpool);
 }
+// Never worked: it called update() on a plain object.
 export async function createRPool(req, res) {
-	const rpool = await db.summon(db.rpool, req.params.rpoolId);
-	const updates = req.body;
-	delete updates.id;
-
-	try {
-		await rpool.update(updates);
-	} catch (err) {
-		return UnexpectedError(req, res, err.message);
-	}
-	return res.status(200).json(rpool);
+	return NotImplemented(req, res, 'Updating a room pool is not yet implemented');
 };
 export async function deleteRPool(req, res) {
 	try {
-		await db.rpool.destroy({
-			where: { id: req.params.rpoolId },
-		});
+		await kdb.deleteFrom('rpool')
+			.where('id', '=', req.params.rpoolId)
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -38,17 +32,10 @@ export async function deleteRPool(req, res) {
 // Update a single room.  Only POST and DELETE needed here.
 export async function createRPoolRoom(req, res) {
 	try {
-		await db.sequelize.query(`
-			INSERT IGNORE into rpool_room
-				(rpool, room)
-				values (:rpoolId, :roomId)
-		`, {
-			replacements : {
-				rpoolId  : req.params.rpoolId,
-				roomId   : req.params.roomId,
-			},
-			type: db.sequelize.QueryTypes.INSERT,
-		});
+		await kdb.insertInto('rpool_room')
+			.ignore()
+			.values({ rpool: req.params.rpoolId, room: req.params.roomId })
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -59,18 +46,10 @@ export async function createRPoolRoom(req, res) {
 	});
 }
 export async function deleteRPoolRoom(req, res) {
-	await db.sequelize.query(`
-		delete rpj.*
-			from rpool_room rpj
-			where rpj.rpool = :rpoolId
-			and rpj.room = :roomId
-	`, {
-		replacements : {
-			rpoolId  : req.params.rpoolId,
-			roomId   : req.params.roomId,
-		},
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	await kdb.deleteFrom('rpool_room')
+		.where('rpool', '=', req.params.rpoolId)
+		.where('room', '=', req.params.roomId)
+		.execute();
 
 	return res.status(200).json({
 		error: false,
@@ -79,14 +58,11 @@ export async function deleteRPoolRoom(req, res) {
 }
 
 export async function getRPoolRooms(req, res) {
-	const rooms = await db.sequelize.query(`
+	const { rows: rooms } = await sql`
 		select room.* from room, rpool_room rpj
 			where room.id = rpj.room
-			and rpj.rpool = :rpoolId
-	`, {
-		replacements: { rpoolId: req.params.rpoolId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+			and rpj.rpool = ${req.params.rpoolId}
+	`.execute(kdb);
 
 	return res.status(200).json(rooms);
 };
@@ -95,17 +71,10 @@ export async function createRPoolRooms(req, res) {
 
 	req.body.rooms.forEach( async (roomId) => {
 		try {
-			await db.sequelize.query(`
-					INSERT IGNORE into rpool_room
-						(rpool, room)
-						values (:rpoolId, :roomId)
-				`, {
-				replacements: {
-					rpoolId: req.params.rpoolId,
-					roomId,
-				},
-				type: db.sequelize.QueryTypes.INSERT,
-			});
+			await kdb.insertInto('rpool_room')
+				.ignore()
+				.values({ rpool: req.params.rpoolId, room: roomId })
+				.execute();
 
 		} catch (err) {
 			errs += err;
@@ -119,12 +88,9 @@ export async function createRPoolRooms(req, res) {
 	return res.status(200).json('Rooms added to pool');
 };
 export async function deleteRPoolRooms(req, res) {
-	await db.sequelize.query(`
-			delete rpj.* from rpool_room rpj where rpj.rpool = :rpoolId
-		`, {
-		replacements: { rpoolId: req.params.rpoolId },
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	await kdb.deleteFrom('rpool_room')
+		.where('rpool', '=', req.params.rpoolId)
+		.execute();
 
 	return res.status(200).json('All rooms removed from pool');
 };
@@ -136,17 +102,10 @@ export async function deleteRPoolRooms(req, res) {
 
 export async function createRPoolRound(req, res) {
 	try {
-		await db.sequelize.query(`
-			INSERT IGNORE into rpool_round
-				(rpool, round)
-				values (:rpoolId, :roundId)
-		`, {
-			replacements: {
-				rpoolId: req.params.rpoolId,
-				roundId: req.params.roundId,
-			},
-			type: db.sequelize.QueryTypes.INSERT,
-		});
+		await kdb.insertInto('rpool_round')
+			.ignore()
+			.values({ rpool: req.params.rpoolId, round: req.params.roundId })
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -154,18 +113,10 @@ export async function createRPoolRound(req, res) {
 	return res.status(200).json('Round added to pool');
 }
 export async function deleteRPoolRound(req, res) {
-	await db.sequelize.query(`
-		delete rpr.*
-			from rpool_round rpr
-			where rpr.rpool = :rpoolId
-			and rpr.round = :roundId
-	`, {
-		replacements: {
-			rpoolId: req.params.rpoolId,
-			roundId: req.params.roundId,
-		},
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	await kdb.deleteFrom('rpool_round')
+		.where('rpool', '=', req.params.rpoolId)
+		.where('round', '=', req.params.roundId)
+		.execute();
 
 	return res.status(200).json({
 		error: false,
@@ -176,14 +127,11 @@ export async function deleteRPoolRound(req, res) {
 // Update a bunch of rounds
 
 export async function getRPoolRounds(req, res) {
-	const rounds = await db.sequelize.query(`
+	const { rows: rounds } = await sql`
 		select round.* from round, rpool_round rpr
 		where round.id = rpr.round
-			and rpr.rpool = :rpoolId
-	`, {
-		replacements : { rpoolId : req.params.rpoolId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+			and rpr.rpool = ${req.params.rpoolId}
+	`.execute(kdb);
 
 	return res.status(200).json(rounds);
 };
@@ -194,15 +142,12 @@ export async function createRPoolRounds(req, res) {
 
 	if (req.body.property_value) {
 
-		const rounds = await db.sequelize.query(`
+		const { rows: rounds } = await sql`
 			select round.id, round.label, round.name, event.abbr
 			from round, event
-			where round.id = :roundId
+			where round.id = ${req.body.property_value}
 			and round.event = event.id
-		`, {
-			replacements: { roundId: req.body.property_value },
-			type: db.Sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
 		if (!rounds || rounds.length < 1) {
 			return NotFound(req, res,`No round found with ID ${req.body.property_value}`);
@@ -211,17 +156,10 @@ export async function createRPoolRounds(req, res) {
 		const round = rounds.shift();
 
 		try {
-			await db.sequelize.query(`
-				INSERT IGNORE into rpool_round
-					(rpool, round)
-					values (:rpoolId, :roundId)
-			`, {
-				replacements: {
-					rpoolId: req.params.rpoolId,
-					roundId: parseInt(req.body.property_value),
-				},
-				type: db.sequelize.QueryTypes.INSERT,
-			});
+			await kdb.insertInto('rpool_round')
+				.ignore()
+				.values({ rpool: req.params.rpoolId, round: parseInt(req.body.property_value) })
+				.execute();
 
 		} catch (err) {
 			errs += err;
@@ -248,17 +186,10 @@ export async function createRPoolRounds(req, res) {
 
 		req.body.rounds.forEach( async (roundId) => {
 			try {
-				await db.sequelize.query(`
-					INSERT IGNORE into rpool_round
-						(rpool, round)
-						values (:rpoolId, :roundId)
-				`, {
-					replacements: {
-						rpoolId: req.params.rpoolId,
-						roundId,
-					},
-					type: db.sequelize.QueryTypes.INSERT,
-				});
+				await kdb.insertInto('rpool_round')
+					.ignore()
+					.values({ rpool: req.params.rpoolId, round: roundId })
+					.execute();
 
 			} catch (err) {
 				errs += err;
@@ -282,15 +213,9 @@ export async function createRPoolRounds(req, res) {
 	return res.status(200).json('Rounds added to pool');
 };
 export async function deleteRPoolRounds(req, res) {
-	await db.sequelize.query(`
-		delete
-			rpr.*
-		from rpool_round rpr
-		where rpr.rpool = :rpoolId
-	`, {
-		replacements: { rpoolId: req.params.rpoolId },
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	await kdb.deleteFrom('rpool_round')
+		.where('rpool', '=', req.params.rpoolId)
+		.execute();
 
 	res.status(200).json('All rounds removed from pool');
 };

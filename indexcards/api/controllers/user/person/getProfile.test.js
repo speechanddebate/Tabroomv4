@@ -1,6 +1,4 @@
 import request from 'supertest';
-import { assert } from 'chai';
-import config from '../../../config.js';
 import server from '../../../../app';
 import factories from '../../../../tests/factories';
 
@@ -11,19 +9,13 @@ describe('User Profile Loader', () => {
 		const res = await request(server)
 			.get(`/v1/user/profile`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.isObject(res.body, 'Response is an object');
-
-		assert.equal(
-			res.body.email,
-			Person.email,
-			'Correct fake user profile is returned'
-		);
-
-		assert.isTrue(res.body.site_admin, 'Site Admin powers are enabled');
+		expect(res.body, 'Response is an object').toBeTypeOf('object');
+		expect(res.body.email, 'Correct fake user profile is returned').toBe(Person.email);
+		expect(res.body.site_admin, 'Site Admin powers are enabled').toBe(1);
 	});
 
 	it('Returns correct JSON for another user profile request', async () => {
@@ -32,15 +24,11 @@ describe('User Profile Loader', () => {
 		const res = await request(server)
 			.get(`/v1/user/profile/1`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.isObject(res.body, 'Response is an object');
-
-		assert.exists(
-			res.body.email,
-			'Email field is present'
-		);
+		expect(res.body, 'Response is an object').toBeTypeOf('object');
+		expect(res.body.email, 'Email field is present').toEqual(expect.anything());
 	});
 });

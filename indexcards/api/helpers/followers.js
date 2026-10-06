@@ -1,68 +1,76 @@
-import db from './litedb.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../data/database.js';
 import logger from './logger.js';
+
+// Values for an IN (...) list. Accepts a single value or an array, and renders
+// an empty list as NULL so the query stays valid.
+const inList = (values) => {
+	const list = [].concat(values ?? []);
+	return list.length > 0 ? sql.join(list) : sql`NULL`;
+};
 
 export const getFollowers = async (replacements, options = { recipients: 'all' }) => {
 
-	let whereLimit = '';
-	let fields = '';
+	let whereLimit = sql``;
+	let fields = sql``;
 
 	if (replacements.panelId) {
-		whereLimit = ` where panel.id = :panelId `;
+		whereLimit = sql` where panel.id = ${replacements.panelId} `;
 		delete replacements.roundId;
 	} else if (replacements.sectionId) {
-		whereLimit = ` where panel.id = :sectionId `;
+		whereLimit = sql` where panel.id = ${replacements.sectionId} `;
 		delete replacements.roundId;
 	} else if (replacements.roundId) {
-		whereLimit = ` where panel.round = :roundId `;
+		whereLimit = sql` where panel.round = ${replacements.roundId} `;
 	} else if (replacements.timeslotId) {
-		whereLimit = ` where panel.round = round.id and round.timeslot = :timeslotId `;
-		fields = ',round';
+		whereLimit = sql` where panel.round = round.id and round.timeslot = ${replacements.timeslotId} `;
+		fields = sql`,round`;
 		if (replacements.eventIds) {
-			whereLimit += `  and round.event IN (:eventIds) `;
+			whereLimit = sql`${whereLimit}  and round.event IN (${inList(replacements.eventIds)}) `;
 		}
 	} else {
 		return { error: true, message: `No round ID to blast sent.` };
 	}
 
 	if (replacements.flight) {
-		whereLimit +=  ` and panel.flight = :flight `;
+		whereLimit = sql`${whereLimit} and panel.flight = ${replacements.flight} `;
 	}
 
-	let queryLimits = '';
+	let queryLimits = sql``;
 
 	if (replacements.speaker) {
-		queryLimits += ` and ballot.speakerorder = :speakerOrder `;
+		queryLimits = sql`${queryLimits} and ballot.speakerorder = ${replacements.speakerOrder} `;
 	}
 
 	if (replacements.status === 'unstarted' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and (ballot.judge_started IS NULL)
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	} else if (replacements.status === 'unentered' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and NOT EXISTS (
 				select score.id from score where score.ballot = ballot.id
 			)
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	} else if (replacements.status === 'unconfirmed' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	}
 
 	if (options.limits?.event ) {
-		queryLimits += `
-			and round.event IN (:eventIds)
-		`;
 		replacements.eventIds = Object.keys(options.limits.event);
+		queryLimits = sql`${queryLimits}
+			and round.event IN (${inList(replacements.eventIds)})
+		`;
 	}
 
 	const persons = [];
 
 	if (replacements.recipients !== 'judges') {
-		const entryIds = await db.sequelize.query(`
+		const { rows: entryIds } = await sql`
 			select person.id, person.email, person.no_email
 				from (person, entry, entry_student es, student, ballot, panel ${fields})
 			${whereLimit}
@@ -73,17 +81,14 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 				and es.student = student.id
 				and student.person = person.id
 				${queryLimits}
-		`, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
 		persons.push(...entryIds);
 	}
 
 	if (replacements.recipients !== 'entries') {
 
-		const judgeIds = await db.sequelize.query(`
+		const { rows: judgeIds } = await sql`
 			select person.id, person.email, person.no_email
 				from (person, judge, ballot, panel ${fields})
 			${whereLimit}
@@ -91,17 +96,14 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 				and ballot.judge = judge.id
 				and judge.person = person.id
 				${queryLimits}
-		`, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 		persons.push(...judgeIds);
 	}
 
 	if (!replacements.noFollowers && !replacements.no_followers) {
 
 		if (replacements.recipients !== 'entries') {
-			const judgeFollowers = await db.sequelize.query(`
+			const { rows: judgeFollowers } = await sql`
 				select person.id, person.email, person.no_email
 					from (person, follower, ballot, panel ${fields})
 				${whereLimit}
@@ -109,16 +111,13 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 					and ballot.judge = follower.judge
 					and follower.person = person.id
 					${queryLimits}
-			`, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			`.execute(kdb);
 
 			persons.push(...judgeFollowers);
 		}
 
 		if (replacements.recipients !== 'judges') {
-			const entryFollowers = await db.sequelize.query(`
+			const { rows: entryFollowers } = await sql`
 				select person.id, person.email, person.no_email
 					from (person, follower, entry, ballot, panel ${fields})
 				${whereLimit}
@@ -128,10 +127,7 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 					and entry.id = follower.entry
 					and follower.person = person.id
 					${queryLimits}
-			`, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			`.execute(kdb);
 
 			persons.push(...entryFollowers);
 		}
@@ -139,41 +135,35 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 
 	if (replacements.sectionFollowers) {
 		if (replacements.sectionId) {
-			whereLimit = ` where ps.panel = :sectionId `;
+			whereLimit = sql` where ps.panel = ${replacements.sectionId} `;
 		} else if (replacements.panelId) {
-			whereLimit = ` where ps.panel = :panelId `;
+			whereLimit = sql` where ps.panel = ${replacements.panelId} `;
 		}
 
-		const sectionFollowerIds = await db.sequelize.query(`
+		const { rows: sectionFollowerIds } = await sql`
 			select
 				ps.id, ps.value_text followers
 			from panel_setting ps
 			${whereLimit}
 				and ps.tag = 'share_followers'
-		`, {
-			replacements,
-			type: db.Sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
-		let followerIds = '';
+		let followerIds = [];
 
 		if (sectionFollowerIds[0]?.followers) {
 			try {
-				followerIds = JSON.parse(sectionFollowerIds[0].followers).join(',');
+				followerIds = JSON.parse(sectionFollowerIds[0].followers);
 			} catch (err) {
 				logger.error(err);
 			}
 		}
 
-		const sectionFollowers = await db.sequelize.query(`
-			select person.id, person.email, person.no_email
-				from (person)
-			where person.id IN (:followerIds)
-				and person.no_email = 0
-		`, {
-			replacements : { followerIds },
-			type         : db.sequelize.QueryTypes.SELECT,
-		});
+		const sectionFollowers = followerIds.length < 1 ? [] : await kdb
+			.selectFrom('person')
+			.select(['person.id', 'person.email', 'person.no_email'])
+			.where('person.id', 'in', followerIds)
+			.where('person.no_email', '=', 0)
+			.execute();
 
 		persons.push(...sectionFollowers);
 	}
@@ -201,61 +191,61 @@ export const getFollowers = async (replacements, options = { recipients: 'all' }
 
 export const getPairingFollowers = async (replacements, options = { recipients: 'all' }) => {
 
-	let whereLimit = '';
-	let fields = '';
+	let whereLimit = sql``;
+	let fields = sql``;
 
 	if (replacements.panelId) {
-		whereLimit = ` where panel.id = :panelId `;
+		whereLimit = sql` where panel.id = ${replacements.panelId} `;
 		delete replacements.roundId;
 	} else if (replacements.sectionId) {
-		whereLimit = ` where panel.id = :sectionId `;
+		whereLimit = sql` where panel.id = ${replacements.sectionId} `;
 		delete replacements.roundId;
 	} else if (replacements.roundId) {
-		whereLimit = ` where panel.round = :roundId `;
+		whereLimit = sql` where panel.round = ${replacements.roundId} `;
 	} else if (replacements.timeslotId) {
-		whereLimit = ` where panel.round = round.id and round.timeslot = :timeslotId `;
-		fields = ',round';
+		whereLimit = sql` where panel.round = round.id and round.timeslot = ${replacements.timeslotId} `;
+		fields = sql`,round`;
 	} else {
 		return { error: true, message: `No round or section to blast sent` };
 	}
 
 	if (options.flight) {
-		whereLimit +=  ` and panel.flight = :panelFlight `;
 		replacements.panelFlight = options.flight;
+		whereLimit = sql`${whereLimit} and panel.flight = ${replacements.panelFlight} `;
 	}
 
-	let queryLimits = '';
+	let queryLimits = sql``;
 
 	if (options.speaker) {
-		queryLimits += `
-			and ballot.speakerorder = :speakerOrder
-		`;
 		replacements.speakerOrder = options.speakerOrder;
+		queryLimits = sql`${queryLimits}
+			and ballot.speakerorder = ${replacements.speakerOrder}
+		`;
 	}
 
 	if (options.status === 'unstarted' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and (ballot.judge_started IS NULL)
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	} else if (options.status === 'unentered' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and NOT EXISTS (
 				select score.id from score where score.ballot = ballot.id
 			)
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	} else if (options.status === 'unconfirmed' ) {
-		queryLimits += `
+		queryLimits = sql`${queryLimits}
 			and (ballot.audit = 0 OR ballot.audit IS NULL)
 		`;
 	}
 
 	if (options.limits?.event ) {
-		queryLimits += `
-			and round.event IN (:eventIds)
-		`;
 		replacements.eventIds = Object.keys(options.limits.event);
+		queryLimits = sql`${queryLimits}
+			and round.event IN (${inList(replacements.eventIds)})
+		`;
 	}
 
 	const blastBy = {
@@ -267,7 +257,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 
 	if (options.recipients !== 'judges') {
 
-		const entryPeopleQuery = `
+		const entryPeopleQuery = sql`
 			select
 				person.id, person.email, person.phone, person.provider, entry.id entry, entry.school school
 			from (panel, person, ballot, entry, entry_student es, student ${fields})
@@ -282,10 +272,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 			${queryLimits}
 		`;
 
-		const rawEntryPeople = await db.sequelize.query(entryPeopleQuery, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: rawEntryPeople } = await entryPeopleQuery.execute(kdb);
 
 		for (const person of rawEntryPeople) {
 
@@ -298,7 +285,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 
 	if (options.recipients !== 'entries') {
 
-		const judgePeopleQuery = `
+		const judgePeopleQuery = sql`
 			select
 				person.id, person.email, person.phone, person.provider, judge.id judge, judge.school school
 			from (person, ballot, judge, panel ${fields})
@@ -310,10 +297,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 			${queryLimits}
 		`;
 
-		const rawJudgePeople = await db.sequelize.query(judgePeopleQuery, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: rawJudgePeople } = await judgePeopleQuery.execute(kdb);
 
 		for (const person of rawJudgePeople) {
 
@@ -329,7 +313,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 
 		if (options.recipients !== 'judges') {
 
-			const entryFollowersQuery = `
+			const entryFollowersQuery = sql`
 				select
 					person.id, person.email, person.phone, person.provider, entry.id entry
 				from (person, ballot, entry, follower, panel ${fields})
@@ -343,10 +327,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				${queryLimits}
 			`;
 
-			const rawEntryFollowers = await db.sequelize.query(entryFollowersQuery, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			const { rows: rawEntryFollowers } = await entryFollowersQuery.execute(kdb);
 
 			for (const person of rawEntryFollowers) {
 
@@ -357,7 +338,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				blastBy.entries[person.entry].push(`${person.id}`);
 			}
 
-			const schoolFollowersQuery = `
+			const schoolFollowersQuery = sql`
 				select
 					person.id, person.email, follower.school school
 				from (person, ballot, entry, follower, panel ${fields})
@@ -371,10 +352,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				${queryLimits}
 			`;
 
-			const rawSchoolFollowers = await db.sequelize.query(schoolFollowersQuery, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			const { rows: rawSchoolFollowers } = await schoolFollowersQuery.execute(kdb);
 
 			for (const person of rawSchoolFollowers) {
 				if (!blastBy.schools[person.school]) {
@@ -386,7 +364,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 
 		if (options.recipients !== 'entries') {
 
-			const judgeFollowersQuery = `
+			const judgeFollowersQuery = sql`
 				select
 					person.id, person.email, person.phone, person.provider, ballot.judge judge,
 					push_notify.value web
@@ -402,10 +380,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				${queryLimits}
 			`;
 
-			const rawJudgeFollowers = await db.sequelize.query(judgeFollowersQuery, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			const { rows: rawJudgeFollowers } = await judgeFollowersQuery.execute(kdb);
 
 			for (const person of rawJudgeFollowers) {
 
@@ -416,7 +391,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				blastBy.judges[person.judge].push(`${person.id}`);
 			}
 
-			const schoolFollowersQuery = `
+			const schoolFollowersQuery = sql`
 				select
 					person.id, person.email, ballot.judge judge
 				from (person, judge, ballot, follower, panel ${fields})
@@ -430,10 +405,7 @@ export const getPairingFollowers = async (replacements, options = { recipients: 
 				${queryLimits}
 			`;
 
-			const rawSchoolFollowers = await db.sequelize.query(schoolFollowersQuery, {
-				replacements,
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			const { rows: rawSchoolFollowers } = await schoolFollowersQuery.execute(kdb);
 
 			for (const person of rawSchoolFollowers) {
 
@@ -458,21 +430,18 @@ export const getJPoolJudges = async (replacements, options = { recipients: 'all'
 
 	const judges = {};
 
-	const judgePeopleQuery = `
+	const judgePeopleQuery = sql`
 		select
 			person.id, judge.id judgeId, judge.first, judge.last
 		from (person, judge, jpool_judge jpj, jpool)
-		where jpool.id = :jpoolId
+		where jpool.id = ${replacements.jpoolId}
 			and jpool.id = jpj.jpool
 			and jpj.judge = judge.id
 			and judge.person = person.id
 			and person.no_email = 0
 	`;
 
-	const rawJudgePeople = await db.sequelize.query(judgePeopleQuery, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: rawJudgePeople } = await judgePeopleQuery.execute(kdb);
 
 	for await (const person of rawJudgePeople) {
 		if (!person.judgeId) {
@@ -489,11 +458,11 @@ export const getJPoolJudges = async (replacements, options = { recipients: 'all'
 	}
 
 	if (!options.no_followers) {
-		const judgeFollowersQuery = `
+		const judgeFollowersQuery = sql`
 			select
 				person.id, judge.id judgeId, judge.first, judge.last
 			from (person, judge, jpool_judge jpj, jpool, follower)
-			where jpool.id = :jpoolId
+			where jpool.id = ${replacements.jpoolId}
 				and jpool.id        = jpj.jpool
 				and jpj.judge       = judge.id
 				and judge.id        = follower.judge
@@ -501,10 +470,7 @@ export const getJPoolJudges = async (replacements, options = { recipients: 'all'
 				and person.no_email = 0
 		`;
 
-		const rawJudgeFollowers = await db.sequelize.query(judgeFollowersQuery, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: rawJudgeFollowers } = await judgeFollowersQuery.execute(kdb);
 
 		for await (const person of rawJudgeFollowers) {
 			if (!person.judgeId) {
@@ -532,12 +498,12 @@ export const getTimeslotJudges = async (replacements, options = { recipients: 'a
 		school : {},
 	};
 
-	const judgePeopleQuery = `
+	const judgePeopleQuery = sql`
 		select
 			person.id, person.email, person.phone, person.provider, judge.id judge, judge.school school
 		from (person, judge, jpool_judge jpj, jpool, jpool_round jpr, round)
-		where round.timeslot = :timeslotId
-			and round.site = :siteId
+		where round.timeslot = ${replacements.timeslotId}
+			and round.site = ${replacements.siteId}
 			and round.id = jpr.round
 			and jpr.jpool = jpool.id
 			and jpool.id = jpj.jpool
@@ -547,10 +513,7 @@ export const getTimeslotJudges = async (replacements, options = { recipients: 'a
 			and person.no_email = 0
 	`;
 
-	const rawJudgePeople = await db.sequelize.query(judgePeopleQuery, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: rawJudgePeople } = await judgePeopleQuery.execute(kdb);
 
 	for await (const person of rawJudgePeople) {
 		if (!person.judge) {
@@ -573,12 +536,12 @@ export const getTimeslotJudges = async (replacements, options = { recipients: 'a
 
 	if (!options.no_followers) {
 
-		const judgeFollowersQuery = `
+		const judgeFollowersQuery = sql`
 			select
 				person.id, person.email, person.phone, person.provider, jpj.judge judge
 			from (person, judge, jpool_judge jpj, jpool, jpool_round jpr, round, follower)
-			where round.timeslot = :timeslotId
-				and round.site = :siteId
+			where round.timeslot = ${replacements.timeslotId}
+				and round.site = ${replacements.siteId}
 				and round.id = jpr.round
 				and jpr.jpool = jpool.id
 				and jpool.id = jpj.jpool
@@ -589,10 +552,7 @@ export const getTimeslotJudges = async (replacements, options = { recipients: 'a
 				and person.no_email = 0
 		`;
 
-		const rawJudgeFollowers = await db.sequelize.query(judgeFollowersQuery, {
-			replacements,
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: rawJudgeFollowers } = await judgeFollowersQuery.execute(kdb);
 
 		for await (const person of rawJudgeFollowers) {
 			if (!person.judge) {

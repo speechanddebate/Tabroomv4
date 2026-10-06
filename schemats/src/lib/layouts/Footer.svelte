@@ -1,5 +1,7 @@
 <script lang="ts">
 
+	import { version } from '$app/env';
+
 	import {
 		Footer,
 		FooterCopyright,
@@ -8,21 +10,21 @@
 	} from 'flowbite-svelte';
 
 	const footerLinkClass = `
-		hover:text-secondary-300
-		hover:bg-primary-400
+		hover:text-white
+		hover:bg-primary-strong
 		text-center
 		p-4
 		radius-lg
 		hover:underline
-		hover:decoration-solid decoration underline-offset-4 hover:decoration-secondary-300
+		hover:decoration-solid decoration underline-offset-4 hover:decoration-accent
 	`;
 
 </script>
 
-<div class='min-h-[96px] bg-primary-500 px-6 rounded-t-none'>
+<div>
 
 	<Footer
-		class="bg-primary-700"
+		class="bg-primary-deep rounded-none shadow-none"
 		role="contentinfo"
 	>
 		<div class='items-center py- w-full block'>
@@ -30,7 +32,7 @@
 			<nav aria-label="Footer links">
 				<FooterLinkGroup
 					class = "flex flex-wrap items-center mt-2
-						text-md text-secondary-300 w-full
+						text-md text-accent w-full
 						sm:mt-0 font-semibold sm:items-center sm:justify-between
 					"
 				>
@@ -67,12 +69,15 @@
 
 			<div class='mx-auto w-full py-4'>
 				<FooterCopyright
-					class = "text-primary-50 hover:text-primary-200 font-medium mx-auto text-center pt-4"
+					class = "text-primary-soft hover:text-accent font-medium mx-auto text-center pt-4"
 					by    = "National Speech & Debate Assocation™"
 					href  = "https://www.speechanddebate.org"
 					rel   = "noopener noreferrer"
 					year  = {new Date().getFullYear()}
 				/>
+				<p class="text-primary-soft text-xs text-center pt-2">
+					build {version}
+				</p>
 			</div>
 		</div>
 	</Footer>

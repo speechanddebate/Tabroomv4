@@ -57,8 +57,8 @@ export async function createFull(overrides: FullTournOverrides = {}){
 	const data = createTournData(tournOverrides);
 	const tourn = await tournRepo.createTourn(db, data);
 	const Category = await factories.category.create({ tourn: tourn.id });
-	const CreatedEvent = await factories.event.create({ ...Event, category: Category.id });
-	const CreatedTimeslot = await factories.timeslot.create(Timeslot);
+	const CreatedEvent = await factories.event.create({ tourn: tourn.id, ...Event, category: Category.id });
+	const CreatedTimeslot = await factories.timeslot.create({ tourn: tourn.id, ...Timeslot });
 	const CreatedRound = await factories.round.create({
 		event: CreatedEvent.id,
 		timeslot: CreatedTimeslot.id,
@@ -72,6 +72,7 @@ export async function createFull(overrides: FullTournOverrides = {}){
 		Tourn: tourn,
 		Category,
 		Event: CreatedEvent,
+		Timeslot: CreatedTimeslot,
 		Round: CreatedRound
 	};
 };

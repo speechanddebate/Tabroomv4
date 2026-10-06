@@ -1,5 +1,8 @@
+import { sql } from 'kysely';
 import { verify } from 'unixcrypt';
+import { db as kdb } from '../../../data/database.js';
 import { BadRequest } from '../../../helpers/problem.js';
+import personRepo from '../../../repos/personRepo.js';
 
 // This name is currently a misnomer, because this doesn't actually create a
 // session, it just validates the username and password Eventually, this should
@@ -7,18 +10,12 @@ import { BadRequest } from '../../../helpers/problem.js';
 
 export const login = {
 	POST: async (req, res) => {
-		const db = req.db;
 
 		if (!req.body?.username) {
 			return BadRequest(req, res, 'No username sent');
 		}
 
-		const person = await db.person.findOne({
-			where: { email: req.body.username },
-			include : [
-				{ model: db.personSetting, as: 'Settings' },
-			],
-		});
+		const person = await personRepo.getPersonByUsername(kdb, req.body.username);
 
 		if (!person || typeof person !== 'object' || !person.id || !person.password) {
 			return BadRequest(req, res, 'No user found for username');
@@ -43,16 +40,13 @@ export const login = {
 		};
 
 		// Check if the account is banned, bail early if so
-		const isBannedQuery = await db.sequelize.query(`
+		const isBannedQuery = (await sql`
 			SELECT COUNT(*) AS 'count'
 				FROM person_setting PS
-			WHERE PS.person = :personId
+			WHERE PS.person = ${person.id}
 				AND PS.tag = 'banned'
 				AND PS.value = 1
-		`, {
-			replacements: { personId: person.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb)).rows;
 
 		if (!isBannedQuery
 			|| isBannedQuery.length === 0
@@ -62,7 +56,7 @@ export const login = {
 		}
 
 		// On a student roster for a school with at least one tournament entry at a real tourn
-		const onStudentRoster = await db.sequelize.query(`
+		const onStudentRoster = (await sql`
 			SELECT COUNT(*) AS 'count'
 				FROM student S
 			INNER JOIN chapter C ON C.id = S.chapter
@@ -70,12 +64,10 @@ export const login = {
 			INNER JOIN tourn T ON T.id = SC.tourn
 			INNER JOIN result_set RS ON RS.tourn = T.id
 			WHERE
-				S.person = :personId
+				S.person = ${person.id}
 				AND T.hidden = 0
 			GROUP BY S.person
-		`, { replacements: { personId: person.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb)).rows;
 
 		if (onStudentRoster.length > 0
 			&& onStudentRoster[0].count > 0
@@ -85,7 +77,7 @@ export const login = {
 		}
 
 		// On a judge roster for a school with at least one tournament entry at a real tourn
-		const onJudgeRoster = await db.sequelize.query(`
+		const onJudgeRoster = (await sql`
 			SELECT COUNT(*) AS 'count'
 			FROM chapter_judge CJ
 			INNER JOIN chapter C ON C.id = CJ.chapter
@@ -93,12 +85,10 @@ export const login = {
 			INNER JOIN tourn T ON T.id = SC.tourn
 			INNER JOIN result_set RS ON RS.tourn = T.id
 			WHERE
-				CJ.person = :personId
+				CJ.person = ${person.id}
 				AND T.hidden = 0
 			GROUP BY CJ.person
-		`, { replacements: { personId: person.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb)).rows;
 
 		if (onJudgeRoster.length > 0
 			&& onJudgeRoster[0].count > 0
@@ -108,20 +98,18 @@ export const login = {
 		}
 
 		// Is a coach for a school with at least one tournament entry at a real tourn
-		const isCoach = await db.sequelize.query(`
+		const isCoach = (await sql`
 			SELECT COUNT(*) AS 'count'
 			FROM permission P
 			INNER JOIN chapter C ON C.id = P.chapter
 			INNER JOIN school SC ON SC.chapter = C.id
 			INNER JOIN tourn T ON T.id = SC.tourn
 			INNER JOIN result_set RS ON RS.tourn = T.id
-			WHERE P.person = :personId
+			WHERE P.person = ${person.id}
 				AND P.tag = 'chapter'
 				AND T.hidden = 0
 			GROUP BY P.person
-		`, { replacements: { personId: person.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb)).rows;
 
 		if (isCoach.length > 0
 			&& isCoach[0].count > 0

@@ -67,7 +67,7 @@ describe('tournRepo', () => {
 			const tournData = factories.tourn.createTournData();
 			const tourn = await tournRepo.createTourn(db, tournData);
 			expect(tourn).toBeDefined();
-			const result = await tournRepo.getTourn(db, tournData.webname);
+			const result = await tournRepo.getTourn(db, tournData.webname!);
 			expect(result).toBeDefined();
 		});
 		it('returns undefined if tourn not found', async () => {

@@ -11,7 +11,7 @@
 	import { handleOrval, type ExtractedRow, type OrvalEnvelope } from '$lib/helpers/query';
 	import type { TableProps } from './table.types';
     import type { CreateInfiniteQueryResult, CreateQueryResult } from '@tanstack/svelte-query';
-    import type { Problem } from '$indexcards/schemas';
+    import type { Problem } from '@tabroom/types';
 
 	type TableRow = Extract<ExtractedRow<TResponse>, RowData>;
 

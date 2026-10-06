@@ -14,7 +14,7 @@ export async function getCategory(req: Request, res: Response) {
 export async function getCategories(req: Request, res: Response) {
 	const tournId = Number(req.params.tournId);
 	if (!tournId) return BadRequest(req,res,'Tournament ID is required');
-	const categories = await categoryRepo.getCategories(db, { tournId });
+	const categories = await categoryRepo.getCategories(db, { tourn: tournId });
 
 	res.json(categories);
 }

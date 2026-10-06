@@ -1,5 +1,6 @@
 import axios from 'axios';
-import db from '../data/db.js';
+import { db } from '../data/database.js';
+import { sql } from 'kysely';
 import emailBlast from './mail.js';
 import config from '../config.js';
 import logger from './logger.js';
@@ -102,20 +103,19 @@ export const webBlast = async (inputData) => {
 			web     : inputData.ids.length,
 		};
 	}
-
-	const recipients = await db.sequelize.query(`
-		select
-			person.id, person.first, person.last, person.no_email,
-			session.push_notify
-		from person, session
-		where person.id IN (:personIds)
-			and person.id = session.person
-			and session.push_notify is NOT NULL
-			and session.last_access > DATE_SUB(NOW(), INTERVAL 60 DAY)
-	`, {
-		replacements: { personIds: inputData.ids },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const recipients = await db.selectFrom('person')
+		.innerJoin('session', 'person.id', 'session.person')
+		.where('person.id', 'in', inputData.ids)
+		.where('session.push_notify', 'is not', null)
+		.where('session.last_access', '>', sql`DATE_SUB(NOW(), INTERVAL 60 DAY)`)
+		.select([
+			'person.id',
+			'person.first',
+			'person.last',
+			'person.no_email',
+			'session.push_notify',
+		])
+		.execute();
 
 	if (recipients.length < 1) {
 		return {
@@ -207,15 +207,15 @@ export const emailNotify = async (inputData) => {
 		};
 	}
 
-	const recipients = await db.sequelize.query(`
-		select
-			person.id, person.first, person.last, person.email, person.no_email
-		from person
-		where person.id IN (:personIds)
-	`, {
-		replacements: { personIds: inputData.ids },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const recipients = await db.selectFrom('person')
+		.where('person.id', 'in', inputData.ids)
+		.select([
+			'person.id',
+			'person.first',
+			'person.last',
+			'person.no_email',
+		])
+		.execute();
 
 	inputData.email = recipients.filter( (person) => {
 		if (inputData.ignoreNoEmail || (!person.no_email)) {
@@ -285,10 +285,11 @@ export const inboxMessage = async (inputData) => {
 	inputData.ids.forEach( async (id) => {
 
 		try {
-			const response = db.message.create({
-				person: id,
-				...message,
-			});
+			const response = db.insertInto('message')
+				.values({
+					person: id,
+					...message,
+				});
 			responses.push(response);
 		} catch (err) {
 			errors.push(err);

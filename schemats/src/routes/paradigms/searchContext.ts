@@ -1,10 +1,10 @@
-import type { RestParadigms200Item, ProblemSchema } from '$indexcards/schemas';
+import type { ParadigmSearchResult, ProblemSchema } from '$indexcards/schemas';
 import type { CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 
 export type ParadigmsSearchContext = {
 	getSearchTerm: () => string;
 	getShowResults: () => boolean;
-	getResults: () => RestParadigms200Item[];
+	getResults: () => ParadigmSearchResult[];
 	getSelectedHref: () => (id: number) => string;
 	paradigmsQuery: CreateInfiniteQueryResult<unknown, ProblemSchema>;
 };

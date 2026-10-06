@@ -3,7 +3,7 @@ import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import z from 'zod';
-import { InboxMessageSchema } from '@tabroom/types';
+import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import messageRepo from '../../../../repos/messageRepo.js';
 import { db } from '../../../../data/database.js';
 import { faker } from '@faker-js/faker';
@@ -11,10 +11,14 @@ import { faker } from '@faker-js/faker';
 describe('Inbox Router', () => {
 	let personId : number;
 	let userkey: string;
+	let nonExistentId: number;
 	beforeAll(async () => {
 		({ id: personId } = await factories.person.create());
 		await factories.message.create({ person: personId });
 		({ userkey } = await factories.session.create({ person: personId }));
+		({ id: nonExistentId } = await factories.message.create({ person: personId }));
+		await db.deleteFrom('message').where('id', '=', nonExistentId).execute();
+
 	});
 
 	describe('GET /user/inbox', () => {
@@ -23,7 +27,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -43,7 +47,7 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect('Content-Type', /json/)
 				.expect(200);
 
@@ -64,11 +68,10 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get('/v1/user/inbox/unread')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${key1}`)
+				.asPerson(key1)
 				.expect('Content-Type', /json/)
 				.expect(200);
-			expect(res.body).toBeTypeOf('object');
-			expect(res.body).toHaveProperty('count');
+			expect(res.body).toMatchSchema(InboxUnreadCountSchema);
 			expect(res.body.count).toBe(1);
 		});
 	});
@@ -78,14 +81,14 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post('/v1/user/inbox/markAllRead')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey)
+				.expect(204);
 			expect(res).not.toBeProblemResponse();
 			const message = await messageRepo.getMessage(db,Message.id);
 			expect(message?.read_at).not.toBeNull();
 
 		});
 	});
-
 	describe('POST /user/inbox/{messageId}/markRead', () => {
 		it('Marks a message as read', async () => {
 			const Message = await factories.message.create({ person: personId });
@@ -93,15 +96,22 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markRead`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey)
+				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
 			const message = await messageRepo.getMessage(db,Message.id,personId);
 			expect(message?.read_at).not.toBeNull();
 
 		});
+		it('returns 404 when the message does not exist', async () => {
+			const res = await request(server)
+				.post(`/v1/user/inbox/${nonExistentId}/markRead`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey);
+			expect(res).toBeProblemResponse(404);
+		});
 	});
-
 	describe('POST /user/inbox/{messageId}/markUnread', () => {
 		it('Marks a message as unread', async () => {
 			const Message = await factories.message.create({ person: personId });
@@ -109,16 +119,24 @@ describe('Inbox Router', () => {
 			await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markRead`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey);
 
 			const res = await request(server)
 				.post(`/v1/user/inbox/${Message.id}/markUnread`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey)
+				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
 			const message = await messageRepo.getMessage(db,Message.id,personId);
 			expect(message?.read_at).toBeNull();
+		});
+		it('returns 404 when the message does not exist', async () => {
+			const res = await request(server)
+				.post(`/v1/user/inbox/${nonExistentId}/markUnread`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey);
+			expect(res).toBeProblemResponse(404);
 		});
 	});
 	describe('GET /user/inbox/{messageId}', () => {
@@ -128,11 +146,18 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.get(`/v1/user/inbox/${Message.id}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
 			expect(res.body).toMatchSchema(InboxMessageSchema);
+		});
+		it('returns 404 when the message does not exist', async () => {
+			const res = await request(server)
+				.get(`/v1/user/inbox/${nonExistentId}`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey);
+			expect(res).toBeProblemResponse(404);
 		});
 	});
 	describe('DELETE /user/inbox/{messageId}', () => {
@@ -142,12 +167,21 @@ describe('Inbox Router', () => {
 			const res = await request(server)
 				.delete(`/v1/user/inbox/${Message.id}`)
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`);
+				.asPerson(userkey)
+				.expect(204);
 
 			expect(res).not.toBeProblemResponse();
 			const message = await messageRepo.getMessage(db,Message.id,personId);
 			expect(message?.deleted_at).not.toBeNull();
 
+		});
+		it('returns 404 when the message does not exist', async () => {
+			const res = await request(server)
+				.delete(`/v1/user/inbox/${nonExistentId}`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey);
+
+			expect(res).toBeProblemResponse(404);
 		});
 	});
 });

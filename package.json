@@ -28,20 +28,21 @@
 	"type": "module",
 	"scripts": {
 		"prepare": "git config core.hooksPath .githooks && npm run prepare --workspaces --if-present",
-		"lint": "npm run lint --workspaces --if-present",
-		"lint:fix": "npm run lint:fix --workspaces --if-present",
+		"lint": "oxlint . && npm run lint:svelte --workspace=schemats",
+		"lint:fix": "oxlint --fix . && npm run lint:svelte --workspace=schemats -- --fix",
 		"typecheck": "npm run typecheck --workspaces --if-present",
 		"dev": "npm run dev --workspaces --if-present",
 		"test:ci": "npm run test:ci --workspaces --if-present"
 	},
 	"workspaces": [
 		"types",
+		"e2e",
 		"schemats",
 		"indexcards"
 	],
 	"private": true,
 	"devDependencies": {
-		"eslint-plugin-storybook": "^10.5.10",
+		"eslint-plugin-storybook": "^10.6.1",
 		"oxlint": "^1.80.0"
 	},
 	"allowScripts": {}

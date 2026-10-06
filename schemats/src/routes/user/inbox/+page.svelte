@@ -12,15 +12,10 @@
 	import type { InboxMessage } from '$indexcards/schemas/inboxMessage';
 	import { renderSnippet } from '@tanstack/svelte-table';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import IconButton from '$lib/components/IconButton.svelte';
-	import {
-		RefreshOutline,
-		EnvelopeSolid,
-		EnvelopeOpenOutline,
-		EnvelopeOpenSolid,
-	} from 'flowbite-svelte-icons';
+	import Button from '$lib/components/Button.svelte';
+	import { RefreshCw, Mail, MailOpen } from '@lucide/svelte';
 	import QueryTable from '$lib/components/utils/QueryTable.svelte';
-    import MessageReader from '$lib/components/messageReader.svelte';
+    import MessageReader from './messageReader.svelte';
 	import { handleOrval } from '$lib/helpers/query';
 	import { showDateTime } from '$lib/helpers/dt';
 
@@ -106,9 +101,9 @@
 
 {#snippet statusCell(readAt: string | null)}
 	{#if !readAt}
-		<EnvelopeSolid />
+		<Mail class="size-5" />
 	{:else}
-		<EnvelopeOpenOutline />
+		<MailOpen class="size-5" />
 	{/if}
 {/snippet}
 
@@ -116,32 +111,34 @@
 	<span class:font-semibold={!msg.read_at}>{msg.subject ?? 'No subject'}</span>
 {/snippet}
 
-<div class="flex flex-1 flex-col bg-slate-50">
-	<section class="mx-3 mt-3 rounded-md border border-slate-200 bg-white px-4 py-3 shadow-sm">
+<div class="flex flex-1 flex-col bg-surface-alt">
+	<section class="mx-3 mt-3 rounded-md border border-border bg-surface px-4 py-3 shadow-sm">
 		<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 			<div>
-				<h1 class="text-lg font-semibold text-slate-900">Your Tabroom Message Inbox</h1>
+				<h1 class="text-lg font-semibold text-text">Your Tabroom Message Inbox</h1>
 			</div>
 
 			<div class="flex flex-wrap gap-2">
-				<IconButton
+				<Button
 					disabled={inboxQuery.isFetching}
 					label="Refresh inbox"
 					onclick={refreshInbox}
+					variant="outline"
 				>
-				<RefreshOutline class="h-5 w-5" />
-				</IconButton>
-				<IconButton
+				<RefreshCw class="h-5 w-5" />
+				</Button>
+				<Button
 					disabled={markAllReadMutation.isPending}
 					label="Mark all messages as read"
 					onclick={markAllRead}
+					variant="outline"
 				>
-				<EnvelopeOpenSolid class="h-5 w-5" />
-				</IconButton>
+				<MailOpen class="h-5 w-5" />
+				</Button>
 			</div>
 		</div>
 
-			<p class="text-sm text-slate-600">
+			<p class="text-sm text-muted">
 					Note that messages won't live here forever; they'll be auto-deleted starting a week after the tournament
 					that sent them is over, or a month after they're sent if they're not tied to a tournament. Messages from
 					tournaments appear here even when normal email delivery is unreliable.
@@ -158,7 +155,7 @@
 			>
 				<QueryTable
 					{columns}
-					containerClass="bg-back w-full h-full overflow-hidden"
+					containerClass="bg-surface w-full h-full overflow-hidden"
 					emptyMessage="You have no messages."
 					getRowClassName={getInboxRowClassName}
 					onRowClick={async (row) => await selectMsg(row.id)}

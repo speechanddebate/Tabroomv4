@@ -40,7 +40,7 @@ describe('paradigmsController', () => {
 				],
 			});
 			const { req, res } = createContext({
-				valid: {query: {}},
+				query: {},
 			});
 			await paradigmsController.getParadigms(req, res);
 			expect(res).not.toBeProblemResponse();
@@ -85,7 +85,7 @@ describe('paradigmsController', () => {
 				],
 			});
 			const { req, res } = createContext({
-				valid: {query: {}},
+				query: {},
 			});
 			await paradigmsController.getParadigms(req, res);
 			expect(res).not.toBeProblemResponse();
@@ -98,7 +98,7 @@ describe('paradigmsController', () => {
 		it('returns an empty array if no paradigms are found', async () => {
 			vi.spyOn(personRepo, 'personSearch').mockResolvedValue([]);
 			const { req, res } = createContext({
-				valid: {query: {}},
+				query: {},
 			});
 			await paradigmsController.getParadigms(req, res);
 			expect(res).not.toBeProblemResponse();
@@ -112,7 +112,7 @@ describe('paradigmsController', () => {
 					id: 1,
 					person: 1,
 					quiz: 1,
-					pending: false,
+					pending: 0,
 					approved_by: null,
 					updated_at: '2026-01-01T00:00:00.000Z',
 					quizId: 1,
@@ -141,7 +141,7 @@ describe('paradigmsController', () => {
 				},
 			});
 			const { req, res } = createContext({
-				valid: {params: { personId: 1 }},
+				params: { personId: 1 },
 			});
 			await paradigmsController.getParadigmByPersonId(req, res);
 			expect(res).not.toBeProblemResponse();
@@ -152,7 +152,7 @@ describe('paradigmsController', () => {
 			const selectFromSpy = vi.spyOn(db, 'selectFrom');
 			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
 			const { req, res } = createContext({
-				valid: {params: { personId: 999 }},
+				params: { personId: 999 },
 			});
 			await paradigmsController.getParadigmByPersonId(req, res);
 			expect(res).toBeProblemResponse(404);
@@ -181,9 +181,7 @@ describe('paradigmsController', () => {
 			vi.spyOn(judgeRecordsService, 'judgeRecord').mockResolvedValue(mockRecord);
 
 			const { req, res } = createContext({
-				valid: {
-					params: { personId: 1 },
-				},
+				params: { personId: 1 },
 			});
 
 			await paradigmsController.getJudgingRecord(req, res);

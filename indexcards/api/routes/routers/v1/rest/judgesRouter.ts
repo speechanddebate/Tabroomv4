@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { requireLogin } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import z from 'zod';
 import judgesController from '../../../../controllers/rest/judgesController.js';
 import { UnlinkedJudgeSchema } from '@tabroom/types';
@@ -8,7 +8,7 @@ import { UnlinkedJudgeSchema } from '@tabroom/types';
 const router = Router();
 
 router.route('/unlinked/search')
-	.get(requireLogin, ValidateRequest,judgesController.unlinkedSearch).openapi = {
+	.get(requirePerson, ValidateRequest,judgesController.unlinkedSearch).openapi = {
 		summary: 'Search for unlinked judges',
 		path: '/rest/judges/unlinked/search',
 		operationId: 'RestJudgesUnlinkedSearch',

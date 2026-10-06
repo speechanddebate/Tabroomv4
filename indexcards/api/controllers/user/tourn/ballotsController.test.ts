@@ -87,7 +87,7 @@ describe('getCurrent', () => {
 		const returnedBallot = (res.body as Array<{ flight: number; start: string; deadline: string; status: string }>)[0];
 		expect(returnedBallot.flight).toBe(2);
 		expect(returnedBallot.start).toBeDefined();
-		expect(returnedBallot.start).toEqual(new Date(roundStart.getTime() + offset * 60_000));
+		expect(returnedBallot.start).toEqual(new Date(roundStart.getTime() + offset * 60_000).toISOString());
 		expect(returnedBallot.deadline).toBeDefined();
 		expect(returnedBallot.status).toBe('not_started');
 	});

@@ -1,8 +1,10 @@
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 // NSDA Nationals Specific code to create judge pools with according weights via auto assignment.
 
 export async function placeJudgesNats(req, res) {
-	const tourn = await db.summon(db.tourn, req.params.tournId);
+	const tourn = await summon(kdb, 'tourn',req.params.tournId);
 
 	const now = new Date();
 
@@ -26,7 +28,7 @@ export async function placeJudgesNats(req, res) {
 		return;
 	}
 
-	const parentPool = await db.summon(db.jpool, req.params.jpoolId);
+	const parentPool = await summon(kdb, 'jpool',req.params.jpoolId);
 
 	if (!parentPool) {
 		res.status(201).json({
@@ -37,10 +39,10 @@ export async function placeJudgesNats(req, res) {
 	}
 
 	if (!req.body.augment) {
-		await db.sequelize.query(`
+		await sql`
 			delete jpj.*
 				from jpool, jpool_judge jpj
-			where jpool.parent = :parentId
+			where jpool.parent = ${parentPool.id}
 				and jpj.jpool = jpool.id
 				and jpool.id != jpool.parent
 
@@ -50,14 +52,11 @@ export async function placeJudgesNats(req, res) {
 					where pool_ignore.tag = 'pool_ignore'
 					and pool_ignore.jpool = jpj.jpool
 			)
-		`, {
-			replacements : { parentId: parentPool.id },
-			type         : db.sequelize.QueryTypes.DELETE,
-		});
+		`.execute(kdb);
 	}
 
-	const children = await getNatsChildPools(db, parentPool.id);
-	const judges = await getNatsJPoolJudges(db, parentPool.id, children, weights);
+	const children = await getNatsChildPools(parentPool.id);
+	const judges = await getNatsJPoolJudges(parentPool.id, children, weights);
 	const jpoolsByPriority = {};
 
 	// Now arrange the pools into arrays keyed by the priority.  Do this so
@@ -288,13 +287,9 @@ export async function placeJudgesNats(req, res) {
 	// Write them in
 	Object.keys(jpoolJudges).forEach( (jpoolId) => {
 		jpoolJudges[jpoolId].forEach( async (judgeId) => {
-			await db.sequelize.query(
-				`insert into jpool_judge (judge, jpool) values (:judgeId, :jpoolId)`,
-				{
-					replacements : { judgeId, jpoolId },
-					type         : db.sequelize.QueryTypes.INSERT,
-				}
-			);
+			await kdb.insertInto('jpool_judge')
+				.values({ judge: judgeId, jpool: jpoolId })
+				.execute();
 		});
 	});
 
@@ -308,7 +303,7 @@ export async function placeJudgesNats(req, res) {
 
 const getNatsChildPools = async (parentId) => {
 
-	const jpoolChildren = await db.sequelize.query(`
+	const jpoolChildren = (await sql`
 		select jpool.id, jpool.name,
 			pool_target.value target, pool_priority.value priority,
 			rounds.value rounds,
@@ -341,7 +336,7 @@ const getNatsChildPools = async (parentId) => {
 			left join event on round.event = event.id
 			left join timeslot on round.timeslot = timeslot.id
 
-		where jpool.parent = :parentId
+		where jpool.parent = ${parentId}
 
 			and not exists (
 				select pool_ignore.id
@@ -351,10 +346,7 @@ const getNatsChildPools = async (parentId) => {
 			)
 
 		group by jpool.id
-	`, {
-		replacements : { parentId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	const jpoolsById = {};
 
@@ -364,7 +356,7 @@ const getNatsChildPools = async (parentId) => {
 		jpoolsById[child.id] = child;
 	}
 
-	const entryData = await db.sequelize.query(`
+	const entryData = (await sql`
 		select
 			jpool.id jpool, jpool.name jpoolname,
 			entry.id entry, entry.school, entry.code,
@@ -373,7 +365,7 @@ const getNatsChildPools = async (parentId) => {
 		from (entry, event, round, jpool_round jpr, jpool)
 			left join school on entry.school = school.id
 
-		where jpool.parent        = :parentId
+		where jpool.parent        = ${parentId}
 			and jpool.id          = jpr.jpool
 			and jpr.round         = round.id
 			and round.event       = event.id
@@ -386,10 +378,7 @@ const getNatsChildPools = async (parentId) => {
 					and pool_ignore.jpool = jpool.id
 			)
 		group by entry.id, jpool.id
-	`, {
-		replacements : { parentId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	for (const entry of entryData) {
 
@@ -441,7 +430,7 @@ const getNatsChildPools = async (parentId) => {
 
 const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 
-	const rawJudges = await db.sequelize.query(`
+	const rawJudges = (await sql`
 		select
 			judge.id, judge.first, judge.last, judge.school, school.region state,
 			judge.obligation, judge.hired,
@@ -484,7 +473,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 					and jps.tag = 'registrant'
 				)
 
-		where jpool.id         = :parentId
+		where jpool.id         = ${parentId}
 			and jpool.id       = jpj.jpool
 			and jpj.judge      = judge.id
 			and judge.active   = 1
@@ -492,10 +481,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 			and category.tourn = tourn.id
 		group by judge.id
 		order by judge.id
-	`, {
-		replacements : { parentId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	const prioritize = (item) => {
 		let priority = 0;
@@ -526,7 +512,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 		});
 	}, {});
 
-	const rawStrikes =  await db.sequelize.query(`
+	const rawStrikes = (await sql`
 		select
 			judge.id judge,
 			strike.id strike, strike.type type,
@@ -536,7 +522,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 			tourn.end tournEnd
 		from (judge, jpool_judge jpj, jpool, category, tourn, strike)
 
-		where jpool.id         = :parentId
+		where jpool.id         = ${parentId}
 			and jpool.id       = jpj.jpool
 			and jpj.judge      = judge.id
 			and judge.active   = 1
@@ -544,10 +530,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 			and category.tourn = tourn.id
 			and judge.id       = strike.judge
 			and strike.type IN ('event', 'time', 'departure')
-	`, {
-		replacements : { parentId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	rawStrikes.forEach( (strike) => {
 
@@ -589,7 +572,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 		}
 	});
 
-	const rawJPoolJudges = await db.sequelize.query(`
+	const rawJPoolJudges = (await sql`
 		select
 			judge.id judge,
 			jpool.id jpool, jpool.name, rounds.value rounds,
@@ -606,7 +589,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 				on rounds.tag = 'rounds'
 				and rounds.jpool = jpool.id
 
-		where rpj.jpool = :parentId
+		where rpj.jpool = ${parentId}
 			and rpj.judge = judge.id
 			and judge.id = jpj.judge
 			and jpj.jpool = jpool.id
@@ -621,10 +604,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 					and pool_ignore.jpool = jpj.jpool
 			)
 		group by jpj.id
-	`, {
-		replacements : { parentId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	rawJPoolJudges.forEach( (jpj) => {
 
@@ -656,7 +636,7 @@ const getNatsJPoolJudges = async (parentId, jpools, weights) => {
 };
 
 export async function placeSuppOnlyJudges(req, res) {
-	const suppJPools = await db.sequelize.query(`
+	const suppJPools = (await sql`
 		SELECT
 			jpool.id, jpool.name,
 			rounds.value rounds,
@@ -690,7 +670,7 @@ export async function placeSuppOnlyJudges(req, res) {
 				on pool_priority.jpool = jpool.id
 				and pool_priority.tag = 'pool_priority'
 
-		where jpool.parent = :parentId
+		where jpool.parent = ${req.params.jpoolId}
 
 			and jpool.id = jpr.jpool
 			and jpr.round = round.id
@@ -708,18 +688,15 @@ export async function placeSuppOnlyJudges(req, res) {
 			and supp.tag = 'supp'
 		group by jpool.id
 		order by pool_priority.value
-	`, {
-		replacements: { parentId: req.params.jpoolId },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	// Get all judges who are
 	// 1) are in the parent jpool
 	// 2) whose schools have only supp entries.
 	// Indicate who has debate and speech and both.
 
-	const parent = await db.summon(db.jpool, req.params.jpoolId);
-	const suppOnlyJudges = await db.sequelize.query(`
+	const parent = await summon(kdb, 'jpool',req.params.jpoolId);
+	const suppOnlyJudges = (await sql`
 		SELECT
 			judge.id,
 			judge.first, judge.last,
@@ -740,7 +717,7 @@ export async function placeSuppOnlyJudges(req, res) {
 				and exists ( select db.id from event db where db.id = speech.event and db.type = 'speech')
 
 
-		where judge.category = :categoryId
+		where judge.category = ${parent.category}
 			and judge.school = school.id
 			and NOT EXISTS (
 				select entry.id
@@ -756,10 +733,7 @@ export async function placeSuppOnlyJudges(req, res) {
 			)
 		group by judge.id
 		order by judge.obligation DESC
-	`, {
-		replacements : { categoryId: parent.category },
-		type         : db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	const judgeIds = suppOnlyJudges.map( (judge) => {
 		return judge.id;
@@ -769,26 +743,19 @@ export async function placeSuppOnlyJudges(req, res) {
 	});
 
 	// Remove existing pool assignments from supp subpools
-	await db.sequelize.query(`
-		delete jpj.* 
-			from jpool_judge jpj
-		where jpj.judge IN (:judgeIds)
-		and jpj.jpool IN (:jpoolIds)
-	`, {
-		replacements: { jpoolIds, judgeIds },
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	if (judgeIds.length > 0 && jpoolIds.length > 0) {
+		await kdb.deleteFrom('jpool_judge')
+			.where('judge', 'in', judgeIds)
+			.where('jpool', 'in', jpoolIds)
+			.execute();
+	}
 
-	const judgeStrikes = await db.sequelize.query(`
-		select
-			judge.id, strike.type, strike.start, strike.end
-		from judge, strike
-		where strike.judge = judge.id
-			and judge.id IN ( :judgeIds )
-	`, {
-		replacements: {  judgeIds },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const judgeStrikes = judgeIds.length < 1 ? [] : await kdb
+		.selectFrom('judge')
+		.innerJoin('strike', 'strike.judge', 'judge.id')
+		.select(['judge.id', 'strike.type', 'strike.start', 'strike.end'])
+		.where('judge.id', 'in', judgeIds)
+		.execute();
 
 	const judges = {};
 
@@ -824,12 +791,9 @@ export async function placeSuppOnlyJudges(req, res) {
 				}
 
 				if (!busy) {
-					judges[judgeId].response = await db.sequelize.query(`
-						insert into jpool_judge (jpool, judge) values (:jpoolId, :judgeId)
-					`, {
-						replacements: { jpoolId: jpool.id, judgeId },
-						type: db.sequelize.QueryTypes.INSERT,
-					});
+					judges[judgeId].response = await kdb.insertInto('jpool_judge')
+						.values({ jpool: jpool.id, judge: judgeId })
+						.execute();
 
 					judges[judgeId].rounds -= jpool.rounds;
 

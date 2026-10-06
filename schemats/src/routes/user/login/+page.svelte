@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { Problem } from '$indexcards/schemas/problem';
 	import { createAuthLogin } from '$indexcards';
@@ -54,7 +53,8 @@
 			});
 
 			if (success) {
-				await goto(resolve(target, {}), { replaceState: true, invalidateAll: true });
+				// target is already a full in-app path from the redirect param
+				await goto(target, { replaceState: true, invalidateAll: true });
 				return;
 			}
 		} catch (err) {
@@ -66,9 +66,9 @@
 </script>
 
 <div class="flex w-full justify-center py-10">
-	<div class="w-full max-w-md bg-back-100 border border-back-300 rounded-md p-6">
-		<h2 class="text-xl font-semibold text-primary-900">Sign in</h2>
-		<p class="text-sm text-back-700 mb-4">
+	<div class="w-full max-w-md bg-surface-alt border border-border rounded-md p-6">
+		<h2 class="text-xl font-semibold text-primary-deep">Sign in</h2>
+		<p class="text-sm text-muted mb-4">
 			Use the email address tied to your Tabroom account.
 		</p>
 		{#if reasonParam === 'auth'}
@@ -92,7 +92,7 @@
 			<label class="flex flex-col gap-1">
 				<span class="text-sm font-semibold">Email</span>
 				<input
-					class="form-input p-2 rounded border border-back-300"
+					class="form-input p-2 rounded border border-border-strong"
 					autocomplete="username"
 					required
 					bind:value={username}
@@ -102,7 +102,7 @@
 			<label class="flex flex-col gap-1">
 				<span class="text-sm font-semibold">Password</span>
 				<input
-					class="form-input p-2 rounded border border-back-300"
+					class="form-input p-2 rounded border border-border-strong"
 					autocomplete="current-password"
 					required
 					type="password"
@@ -112,12 +112,12 @@
 
 			<button
 				class="
-					bg-success-700
-					text-stone-50
+					bg-success
+					text-white
 					font-semibold
 					rounded-md
 					py-2
-					hover:bg-success-600
+					hover:brightness-90
 					disabled:opacity-60"
 				disabled={isSubmitting}
 				type="submit"

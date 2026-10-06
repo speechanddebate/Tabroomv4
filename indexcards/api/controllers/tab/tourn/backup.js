@@ -1,12 +1,19 @@
 // import { showDateTime } from '../../../helpers/common.js';
 import { objectify, arrayify, objectStrip, objectifySettings, objectifyGroupSettings } from '../../../helpers/objectify.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
 import BackupService from '../../../services/BackupService.js';
-import { handleDomainError } from '../../../helpers/problem.js';
+
+const allByTourn = (table, tournId) => kdb.selectFrom(table)
+	.selectAll()
+	.where('tourn', '=', tournId)
+	.execute();
 
 export async function backupTourn(req,res) {
-	const tournShell  = await db.tourn.findByPk(req.params.tournId);
-	const tourn = tournShell.dataValues;
+	const tourn = await kdb.selectFrom('tourn')
+		.selectAll()
+		.where('id', '=', req.params.tournId)
+		.executeTakeFirst();
 
 	tourn.backup_created = new Date();
 	tourn.created_by     = req.person.email;
@@ -15,42 +22,36 @@ export async function backupTourn(req,res) {
 	// A bunch of little things that are all at the other end of a simple
 	// FK relationship:
 
-	tourn.emails      = objectify(await db.email.findAll({ where: { tourn: tourn.id } }));
-	tourn.webpages    = objectify(await db.webpage.findAll({ where: { tourn: tourn.id } }));
-	tourn.permissions = objectify(await db.permission.findAll({ where: { tourn: tourn.id } }));
-	tourn.fines       = objectify( await db.fine.findAll({ where: { tourn: tourn.id } }));
-	tourn.patterns    = objectify( await db.pattern.findAll({ where: { tourn: tourn.id } }));
-	tourn.timeslots   = objectify( await db.timeslot.findAll({ where: { tourn: tourn.id } }));
+	tourn.emails      = objectify(await allByTourn('email', tourn.id));
+	tourn.webpages    = objectify(await allByTourn('webpage', tourn.id));
+	tourn.permissions = objectify(await allByTourn('permission', tourn.id));
+	tourn.fines       = objectify( await allByTourn('fine', tourn.id));
+	tourn.patterns    = objectify( await allByTourn('pattern', tourn.id));
+	tourn.timeslots   = objectify( await allByTourn('timeslot', tourn.id));
 
 	tourn.settings      = objectifySettings(
-		await db.tournSetting.findAll({ where: { tourn: tourn.id } })
+		await allByTourn('tourn_setting', tourn.id)
 	);
 
 	// Circuits have a many to many join table so that's harder
-	tourn.circuits = arrayify(await db.sequelize.query(`
+	tourn.circuits = arrayify((await sql`
 		select circuit.id
 			from circuit, tourn_circuit tc
-			where tc.tourn = :tournId
+			where tc.tourn = ${req.params.tournId}
 			and tc.circuit = circuit.id
 		order by circuit.abbr
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	}), 'id');
+	`.execute(kdb)).rows, 'id');
 
 	// Protocols, formerly known as tiebreak sets.
-	const protocols = await db.sequelize.query(`
+	const protocols = (await sql`
 		select protocol.id pid, protocol.name pname,
 			tiebreak.*
 		from protocol
 			left join tiebreak on tiebreak.protocol = protocol.id
-		where protocol.tourn = :tournId
+		where protocol.tourn = ${req.params.tournId}
 		group by tiebreak.id
 		order by protocol.id, tiebreak.name
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	tourn.protocols = {};
 
@@ -69,30 +70,24 @@ export async function backupTourn(req,res) {
 		);
 	});
 
-	const rawProtocolSettings = await db.sequelize.query(`
+	const rawProtocolSettings = (await sql`
 		select ps.*
 		from protocol, protocol_setting ps
-		where protocol.tourn = :tournId
+		where protocol.tourn = ${req.params.tournId}
 			and ps.protocol = protocol.id
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	tourn.protocols = objectifyGroupSettings(rawProtocolSettings, 'protocol', tourn.protocols);
 
 	// Room Pools
-	tourn.rpools = await db.sequelize.query(`
+	tourn.rpools = (await sql`
 		select rpool.id, rpool.name, GROUP_CONCAT(distinct rpool_room.room) rooms, GROUP_CONCAT(distinct rpool_round.round) rounds
 			from rpool, rpool_room,  rpool_round
-		where rpool.tourn = :tournId
+		where rpool.tourn = ${req.params.tournId}
 			and rpool.id = rpool_room.rpool
 			and rpool.id = rpool_round.rpool
 		group by rpool.id
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	tourn.rpools.forEach( (rpool)  => {
 		rpool.rooms = rpool.rooms.toString().split(',');
@@ -101,19 +96,16 @@ export async function backupTourn(req,res) {
 
 	// Sites
 
-	const sites = await db.sequelize.query(`
+	const sites = (await sql`
 		select site.id sid, site.name sname, site.online, room.*
 			from site, tourn_site ts, room
-		where ts.tourn = :tournId
+		where ts.tourn = ${req.params.tournId}
 			and ts.site = site.id
 			and site.id = room.site
 			and room.deleted = 0
 		group by room.id
 			order by site.id, room.name
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	tourn.sites = {};
 
@@ -133,17 +125,14 @@ export async function backupTourn(req,res) {
 	});
 
 	// Tournament result sets.  These can be bulky.
-	tourn.result_sets = objectify(await db.resultSet.findAll({ where: { tourn: tourn.id } }));
+	tourn.result_sets = objectify(await allByTourn('result_set', tourn.id));
 
-	const resultKeys = await db.sequelize.query(`
+	const resultKeys = (await sql`
 		select result_key.*
 			from result_set, result_key
 		where result_key.result_set = result_set.id
-			and result_set.tourn = :tournId
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+			and result_set.tourn = ${req.params.tournId}
+	`.execute(kdb)).rows;
 
 	resultKeys.forEach( (rkey) => {
 		if (!tourn.result_sets[rkey.result_set].keys) {
@@ -156,15 +145,12 @@ export async function backupTourn(req,res) {
 		);
 	});
 
-	const results = await db.sequelize.query(`
+	const results = (await sql`
 		select result.*
 			from result_set, result
 		where result.result_set = result_set.id
-			and result_set.tourn = :tournId
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+			and result_set.tourn = ${req.params.tournId}
+	`.execute(kdb)).rows;
 
 	results.forEach( (result) => {
 		if (!tourn.result_sets[result.result_set].results) {
@@ -176,16 +162,13 @@ export async function backupTourn(req,res) {
 		);
 	});
 
-	const resultValues = await db.sequelize.query(`
+	const resultValues = (await sql`
 		select result_value.*, result_set.id result_set
 			from result_set, result, result_value
 		where result.result_set = result_set.id
-			and result_set.tourn = :tournId
+			and result_set.tourn = ${req.params.tournId}
 			and result.id = result_value.result
-	`, {
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	resultValues.forEach( (rValue) => {
 
@@ -200,21 +183,18 @@ export async function backupTourn(req,res) {
 	});
 
 	// And now the fun parts.  Registration data, which includes schools, entries, etc.  NOT judges in the full tourn dump.
-	tourn.schools = objectify( await db.school.findAll({ where: { tourn: tourn.id } }));
+	tourn.schools = objectify( await allByTourn('school', tourn.id));
 
-	const rawSchoolSettings = await db.sequelize.query(`
+	const rawSchoolSettings = (await sql`
 		select ps.*
 		from school, school_setting ps
-		where school.tourn = :tournId
+		where school.tourn = ${req.params.tournId}
 			and ps.school = school.id
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	tourn.schools = objectifyGroupSettings(rawSchoolSettings, 'school', tourn.schools);
 
-	const rawSchoolStudents = await db.sequelize.query(`
+	const rawSchoolStudents = (await sql`
 		select
 			student.id,
 			student.first, student.middle, student.last, student.phonetic,
@@ -222,16 +202,13 @@ export async function backupTourn(req,res) {
 			student.person, student.chapter,
 			school.id school
 		from event, entry, entry_student es, student, school
-		where event.tourn = :tournId
+		where event.tourn = ${req.params.tournId}
 			and event.id = entry.event
 			and entry.id = es.entry
 			and es.student = student.id
 			and student.chapter = school.chapter
 			and school.tourn = event.tourn
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	rawSchoolStudents.forEach( (student) => {
 		const school = tourn.schools[student.school];
@@ -244,7 +221,7 @@ export async function backupTourn(req,res) {
 		delete school.students[student.id].id;
 	});
 
-	const rawSchoolEntries = await db.sequelize.query(`
+	const rawSchoolEntries = (await sql`
 		select
 			entry.id,
 			entry.code, entry.name,
@@ -253,12 +230,9 @@ export async function backupTourn(req,res) {
 			entry.created_at, entry.registered_by,
 			entry.event, entry.school
 		from school, entry
-		where school.tourn = :tournId
+		where school.tourn = ${req.params.tournId}
 			and school.id = entry.school
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	rawSchoolEntries.forEach( (entry) => {
 		const school = tourn.schools[entry.school];
@@ -271,19 +245,16 @@ export async function backupTourn(req,res) {
 		delete school.entries[entry.id].id;
 	});
 
-	const rawEntrySettings = await db.sequelize.query(`
+	const rawEntrySettings = (await sql`
 		select
 			entry.id entry, entry.school,
 			es.tag, es.value, es.value_date, es.value_text
 		from (entry, entry_setting es, school)
-		where school.tourn = :tournId
+		where school.tourn = ${req.params.tournId}
 			and school.id = entry.school
 			and entry.id = es.entry
 		group by entry.id
-	`,{
-		replacements: { tournId: req.params.tournId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb)).rows;
 
 	rawEntrySettings.forEach( (es) => {
 		const entry = tourn.schools[es.school].entries[es.entry];
@@ -329,21 +300,16 @@ export async function restoreTourn(req,res) {
 	return res.status(501).json({ message: 'This feature is a stub and not yet implemented' });
 };
 
-export async function Backup(req, res, next) {
+export async function Backup(req, res) {
 	// TODO permission check
-	try {
-		const scope = req.body.scope || {};
+	const scope = req.body.scope || {};
 
-		const backupData = await BackupService.generateBackup(
-			Number(req.params.tournId),
-			scope.type,
+	const backupData = await BackupService.generateBackup(
+		Number(req.params.tournId),
+		scope.type,
 		scope.id !== undefined ? Number(scope.id) : null,
 		{}
-		);
+	);
 
-		return res.status(200).json(backupData);
-
-	} catch (err) {
-		return handleDomainError(err, req, res, next);
-	}
+	return res.status(200).json(backupData);
 };

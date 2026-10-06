@@ -1,4 +1,5 @@
 export * from './src/Ad.js';
+export * from './src/Admin.js';
 export * from './src/Auth.js';
 export * from './src/Ballot.js';
 export * from './src/Category.js';

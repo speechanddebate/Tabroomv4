@@ -1,11 +1,13 @@
 import type { Request, Response } from 'express';
+import { getPerson } from '../../../middleware/auth/authorization.js';
 import type { CurrentBallot } from '@tabroom/types';
 import panelRepo from '../../../repos/panelRepo.js';
 import { db } from '../../../data/database.js';
 
 export async function getCurrent(req: Request,res: Response) {
+	const person = getPerson(req);
 	const { tournId } = req.params;
-	const sections = await panelRepo.getCurrentBallots(db,req.actor?.Person?.id as number,Number(tournId));
+	const sections = await panelRepo.getCurrentBallots(db,person.id,Number(tournId));
 
 	let ballots: CurrentBallot[] = [];
 
@@ -59,8 +61,8 @@ export async function getCurrent(req: Request,res: Response) {
 			show_async: s.settings.show_async === 1,
 			onlineBallots: s.Judge.Category.Event.settings.online_ballots ?? false,
 			legion: s.Judge.Category.Tourn.settings.legion === 1,
-			start: new Date(s.Round.start ? addFlightOffset(s.Round.start,s): addFlightOffset(s.Round.Timeslot.start,s)),
-			deadline: new Date(s.Round.end ? addFlightOffset(s.Round.end,s): addFlightOffset(s.Round.Timeslot.end,s)),
+			start: new Date(s.Round.start ? addFlightOffset(s.Round.start,s): addFlightOffset(s.Round.Timeslot.start,s)).toISOString(),
+			deadline: new Date(s.Round.end ? addFlightOffset(s.Round.end,s): addFlightOffset(s.Round.Timeslot.end,s)).toISOString(),
 			roomId: s.Room.id,
 			roomName: s.Room.name,
 			roomUrl: s.Room.url,

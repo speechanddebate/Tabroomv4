@@ -1,6 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import Ballot from './Ballot.svelte';
+	import type { CurrentBallot } from '@tabroom/types';
 
 	const { Story } = defineMeta({
 		component: Ballot,
@@ -9,20 +10,29 @@
 		},
 	});
 
-	function debateBallot() {
+	function debateBallot(): CurrentBallot {
 		return {
+			id: 1,
+			name: 1,
 			flight: null,
+			show_async: false,
 			onlineBallots: true,
 			flipStatus: null,
 			legion: false,
 			label: 'Round 1',
 			JudgeId: 1,
 			RoundId: 1,
-			RoomId: 1,
+			roomId: 1,
 			roomName: 'Room 101',
+			roomUrl: null,
+			roomNotes: null,
 			start: new Date().toISOString(),
+			deadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
 			status: 'not_started',
+			startText: null,
 			ballotText: 'Please hit start right away so blah blah blah you know',
+			chair: true,
+			audited: false,
 			TournTz: 'America/Chicago',
 			eventType: 'debate',
 			onlineMode: null,
@@ -30,11 +40,13 @@
 				{
 					id: 1,
 					side: 'Aff',
+					speakerOrder: null,
 					code: 'Test Prep XZ',
 				},
 				{
 					id: 2,
 					side: 'Neg',
+					speakerOrder: null,
 					code: 'Example High LY',
 				},
 			],

@@ -1,0 +1,42 @@
+name: tabroom-dev
+services:
+    nginx:
+        container_name: nginx
+        image: nginx:latest
+        ports:
+            - '80:80'
+            - '443:443'
+        volumes:
+            - ../nginx.conf:/etc/nginx/conf.d/tabroom.conf:ro
+        networks:
+            default:
+                aliases:
+                    - dev.tabroom.com
+                    - api.dev.tabroom.com
+    indexcards:
+        container_name: indexcards-dev
+        build:
+            context: .
+            dockerfile: ./indexcards/Dockerfile
+            target: dev
+        ports:
+            - '8001:8001'
+        volumes:
+            - ./indexcards/api:/app/indexcards/api 
+    schemats:
+        container_name: schemats-dev
+        build:
+            context: .
+            dockerfile: ./schemats/Dockerfile
+            target: dev
+        command: sh -c "npm run dev -- --host 0.0.0.0 & npm run storybook -- --host 0.0.0.0 & wait"
+        ports:
+            - '9000:9000'
+            - '6006:6006'
+        volumes:
+            - ./schemats/src:/app/schemats/src
+
+networks:
+    default:
+        external: true
+        name: nsda-network

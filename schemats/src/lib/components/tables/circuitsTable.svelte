@@ -1,5 +1,8 @@
 <script lang="ts">
-import type { ActiveCircuitsResponse, ActiveCircuitsResponseItem } from '$indexcards/schemas';
+import type { ActiveCircuitResponse } from '@tabroom/types';
+
+type ActiveCircuitsResponse = ActiveCircuitResponse;
+type ActiveCircuitsResponseItem = ActiveCircuitResponse[number];
 import type { GridOptions } from '$lib/layouts/grid/svgrid.js';
 import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
 import CalendarCell from './cells/circuitsCalendarCell.svelte';
@@ -52,7 +55,7 @@ let options: GridOptions = {
 </script>
 
 {#if circuitsData && circuitsData.length > 0}
-<div class='px-3 overflow-x-scroll py-3 bg-back wg-full'>
+<div class='px-3 overflow-x-scroll py-3 bg-surface wg-full'>
 	<SVGrid
 		columns={columns}
 		data={circuitsData}

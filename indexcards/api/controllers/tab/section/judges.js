@@ -1,9 +1,11 @@
 import { getRoundAvailableJudges, getRoundJudgeConflicts } from '../round/judges.js';
 import { getSectionEntries } from './entries.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 
 export async function getSectionCleanJudges(req, res) {
-	const section = await db.summon(db.section, req.params.sectionId);
+	const section = await summon(kdb, 'panel',req.params.sectionId);
 
 	// Pull settings and everything else we need about this round
 	section.round = await roundData(section.round);
@@ -41,7 +43,7 @@ export async function getSectionCleanJudges(req, res) {
 
 const roundData = async (roundId) => {
 
-	const [round] = await db.sequelize.query(`
+	const { rows: [round] } = await sql`
 		select
 			round.id id, round.type type, round.timeslot timeslot,
 			event.id event, event.type eventType,
@@ -135,14 +137,11 @@ const roundData = async (roundId) => {
 			left join jpool_round jpr on jpr.round = round.id
 			left join jpool on jpr.jpool = jpool.id
 
-		where round.id = :roundId
+		where round.id = ${roundId}
 			and round.event = event.id
 			and event.category = category.id
 			and round.timeslot = timeslot.id
-	`, {
-		replacements: { roundId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb);
 
 	if (round.conflict_dioregion_judges && round.diocese_regions) {
 		round.dioregions = JSON.parse(round.diocese_regions);

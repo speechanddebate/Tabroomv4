@@ -18,7 +18,7 @@ function buildCircuitQuery(db: Database, opts: queryOpts = {}) {
 	.$if(opts.settings !== undefined && opts.settings !== false, (qb) => 
 		qb.select(selectSettings({
 			table: 'circuit',
-			settings: opts.settings ?? false
+			settings: opts.settings!,
 		})))
 
 	if(opts.active) query = query.where('circuit.active', '=', 1); 

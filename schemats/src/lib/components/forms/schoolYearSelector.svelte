@@ -38,7 +38,7 @@
 	</label>
 	<select
 		id='schoolYearStart'
-		class='mt-1 w-full rounded border border-back-400 bg-back px-2 py-1 text-sm'
+		class='mt-1 w-full rounded border border-border-strong bg-surface px-2 py-1 text-sm'
 		onchange={onChange}
 		value={value}
 	>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { TabItem, Tabs, Skeleton } from 'flowbite-svelte';
+	import { Skeleton } from 'flowbite-svelte';
+	import { Tabs, TabItem } from '$lib/components/Tabs';
 	import { showDateTime } from '$lib/helpers/dt';
 	import Quiz from './Quiz.svelte';
 	import type { ParadigmDetailsSchema } from '$indexcards/schemas';
@@ -22,10 +23,10 @@
 
 </script>
 
-<div class="rounded-lg border border-secondary-400 bg-white p-2 lg:p-6 text-slate-700 w-full">
+<div class="rounded-lg border border-accent bg-surface p-2 lg:p-6 text-text w-full">
 	{#if displayBack}
 		<button
-			class="mb-4 text-primary-600 hover:text-primary-900 text-sm font-semibold"
+			class="mb-4 text-primary-strong hover:text-primary-deep text-sm font-semibold"
 			onclick={backFunction}
 			type="button"
 		>
@@ -38,7 +39,7 @@
 	>
 		<span>{paradigmDetails?.name ?? (isLoading ? 'Loading...' : 'No data')}</span>
 		{#if paradigmDetails?.lastReviewed}
-			<span class="text-sm font-normal text-primary-600 sm:ml-4 sm:text-base sm:whitespace-nowrap">
+			<span class="text-sm font-normal text-primary-strong sm:ml-4 sm:text-base sm:whitespace-nowrap">
 				Last reviewed: {showDateTime({
 					dt: new Date(paradigmDetails.lastReviewed),
 					tz: person?.tz || 'UTC',
@@ -60,10 +61,10 @@
 							{@html paradigmDetails.paradigm}
 						</div>
 					{:else}
-						<p class="text-primary-600">No paradigm text available</p>
+						<p class="text-primary-strong">No paradigm text available</p>
 					{/if}
 				{:else}
-					<p class="text-primary-600">No paradigm information available</p>
+					<p class="text-primary-strong">No paradigm information available</p>
 				{/if}
 			</div>
 		</TabItem>
@@ -73,7 +74,7 @@
 			{:else if record && record.length > 0}
 				<JudgeRecordTable records={record} />
 			{:else}
-				<p class="text-primary-600">No record information available</p>
+				<p class="text-primary-strong">No record information available</p>
 			{/if}
 			</TabItem>
 		{#if paradigmDetails?.certifications && paradigmDetails.certifications.length > 0}

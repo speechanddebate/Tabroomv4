@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 import { BallotSchema } from './Ballot.js';
 import { JudgeSchema } from './Judge.js';
@@ -18,8 +18,8 @@ export const CurrentBallotSchema = z.object({
 	show_async: z.boolean(),
 	onlineBallots: z.boolean().meta({ description: 'true if the tournament uses online ballots'}),
 	legion: z.boolean(),
-	start: utils.datetime(),
-	deadline: utils.datetime(),
+	start: z.iso.datetime(),
+	deadline: z.iso.datetime(),
 	roomId: RoomSchema.shape.id.nullable(),
 	roomName: RoomSchema.shape.name.nullable(),
 	roomUrl: RoomSchema.shape.url.nullable(),

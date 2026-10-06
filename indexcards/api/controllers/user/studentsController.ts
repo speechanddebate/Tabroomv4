@@ -5,11 +5,16 @@ import chapterRepo from '../../repos/chapterRepo.js';
 import logger from '../../helpers/logger.js';
 import  { db } from '../../data/database.js';
 
+import { getPerson } from '../../middleware/auth/authorization.js';
+
 import type { Request, Response } from 'express';
+import type { ValidatedRequest } from '../../middleware/validation.js';
+import type { SessionPerson } from '../../middleware/auth/types.js';
 
 async function linkRequests(req: Request, res: Response) {
+	const person = getPerson(req);
 	const students = await studentRepo.getStudents(db, {
-		person_request: req.actor.Person!.id,
+		person_request: person.id,
 	});
 
 	const results = students.map(s => ({
@@ -23,8 +28,9 @@ async function linkRequests(req: Request, res: Response) {
 	return res.status(200).json(results);
 };
 
-async function claimRequest(req: Request, res: Response) {
-	const { studentId } = req.valid.query;
+async function claimRequest(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
+	const { studentId } = req.query;
 	if (!studentId) return BadRequest(req, res, 'Must provide studentId');
 
 	const Student = await studentRepo.getStudent(db, studentId);
@@ -36,8 +42,8 @@ async function claimRequest(req: Request, res: Response) {
 	.select('id')
 	.where('chapter', '=', Student.chapter)
 	.where((eb) => eb.or([
-		eb('person', '=', req.actor.Person!.id),
-		eb('person_request', '=', req.actor.Person!.id)
+		eb('person', '=', person.id),
+		eb('person_request', '=', person.id)
 	  ]))
 	.executeTakeFirst();
 	if (already) {
@@ -49,18 +55,18 @@ async function claimRequest(req: Request, res: Response) {
 	const admins = await chapterRepo.getAdmins(db, Student.chapter);
 
 	//if the person requesting is an admin for the chapter, auto-approve the request and skip sending the email
-	if(admins.some(a => a.id === req.actor.Person!.id)) {
-		await studentRepo.updateStudent(db, studentId, { person: req.actor.Person!.id, person_request: null });
+	if(admins.some(a => a.id === person.id)) {
+		await studentRepo.updateStudent(db, studentId, { person: person.id, person_request: null });
 		return res.status(200).json({
 			message: 'Competitor linked successfully.',
 			detail: 'Because you are a chapter admin, your request to link to this student has been automatically approved.',
 		});
 
 	}
-	await studentRepo.updateStudent(db, studentId, { person_request: req.actor.Person!.id });
+	await studentRepo.updateStudent(db, studentId, { person_request: person.id });
 
 	if(admins.some(a => a.email && !a.no_email)) {
-		const emailData = buildChapterStudentClaimEmail(Student, req.actor.Person!);
+		const emailData = buildChapterStudentClaimEmail(Student, person);
 		await notify({
 			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
 			...emailData,
@@ -81,7 +87,7 @@ export default {
 
 function buildChapterStudentClaimEmail(
 	chapterStudent: NonNullable<Awaited<ReturnType<typeof studentRepo.getStudent>>>, 
-	person: NonNullable<Request['actor']['Person']>) {
+	person: SessionPerson) {
 	let text = `The Tabroom user \n\n${person.first} ${person.last} (${person.email}) \n\n
 	has requested online access to updates, ballots and texts for competitor ${chapterStudent.first} ${chapterStudent.last} on your team roster.\n\n
 	If these are the same people, approve this request by logging into Tabroom and visiting\n\n

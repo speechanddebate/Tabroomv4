@@ -1,8 +1,9 @@
+import { sql } from 'kysely';
 import objectify from '../../../helpers/objectify.js';
-import db from '../../../data/db.js';
+import { db } from '../../../data/database.js';
 
 export async function getRoundChangeLog(req, res) {
-	const roundQuery = `
+	const roundQuery = sql`
     select
       cl.id, cl.tag, cl.description, cl.count,
       CONVERT_TZ(cl.timestamp, "+00:00", tourn.tz) timestamp,
@@ -13,18 +14,15 @@ export async function getRoundChangeLog(req, res) {
 
       left join person on cl.person = person.id
 
-    where round.id = :roundId
+    where round.id = ${req.params.roundId}
       and round.id = cl.round
       and round.event = event.id
       and event.tourn = tourn.id
   `;
 
-	const rawRoundLogs = await db.sequelize.query(roundQuery, {
-		replacements: { roundId: req.params.roundId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: rawRoundLogs } = await roundQuery.execute(db);
 
-	const panelQuery = `
+	const panelQuery = sql`
       select
       cl.id, cl.tag, cl.description, cl.count,
       CONVERT_TZ(cl.timestamp, "+00:00", tourn.tz) timestamp,
@@ -36,17 +34,14 @@ export async function getRoundChangeLog(req, res) {
 
       left join person on cl.person = person.id
 
-    where round.id = :roundId
+    where round.id = ${req.params.roundId}
       and round.id = panel.round
       and panel.id = cl.panel
       and round.event = event.id
       and event.tourn = tourn.id
   `;
 
-	const rawPanelLogs = await db.sequelize.query(panelQuery, {
-		replacements: { roundId: req.params.roundId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: rawPanelLogs } = await panelQuery.execute(db);
 
 	const roundLogs = [...rawPanelLogs, ...rawRoundLogs];
 

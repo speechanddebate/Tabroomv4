@@ -1,21 +1,20 @@
-// Run me by the command `NODE_ENV=test node createTestDatabase.js` when fresh
-// data has been loaded onto the test environment database
+// Run me from indexcards with `NODE_ENV=test npx tsx tests/createTestDatabase.js`
+// when fresh data has been loaded onto the test environment database. It needs
+// tsx because it imports the TypeScript Kysely database module.
 
-import db from '../api/helpers/litedb.js';
+import { sql } from 'kysely';
+import { db } from '../api/data/database.js';
 import config from '../api/config.js';
 import logger from '../api/helpers/logger.js';
 
 // run big cascading deletes in batches to avoid locking the whole database
-const batchDelete = async (table, query, replacements = {}) => {
+const batchDelete = async (table, query) => {
 	const batchSize = 10000;
 	let deletedRows, totalDeleted = 0;
 	logger.progress(`Deleted 0 rows from ${table}`);
 	do {
-		const [results] = await db.sequelize.query(query + ` LIMIT :batchSize`, {
-			replacements: { ...replacements, batchSize },
-
-		});
-		deletedRows = results.affectedRows;
+		const result = await sql`${query} LIMIT ${batchSize}`.execute(db);
+		deletedRows = Number(result.numAffectedRows ?? 0);
 		totalDeleted += deletedRows;
 		logger.progress(`Deleted ${totalDeleted} rows from ${table}`);
 	} while (deletedRows === batchSize);
@@ -44,27 +43,21 @@ const pruneDatabase = async () => {
 		291000,291003,291004,282898,286196,289814,289815,289816,289819,289821,
 	];
 
-	await batchDelete('event', `delete from event where id NOT IN (:keeperEvents)`, { keeperEvents });
+	await batchDelete('event', sql`delete from event where id NOT IN (${sql.join(keeperEvents)})`);
 	// deleting tourns without these two queries leads to a FK error
-	await db.sequelize.query(`
+	await sql`
 		DELETE r
 		FROM round r
 		JOIN protocol p ON r.protocol = p.id
-		WHERE p.tourn NOT IN (:keeperTourns);
-	`, {
-		replacements: { keeperTourns },
-		type: db.sequelize.QueryTypes.DELETE,
-	});
-	await db.sequelize.query(`
+		WHERE p.tourn NOT IN (${sql.join(keeperTourns)});
+	`.execute(db);
+	await sql`
 		DELETE p
 			FROM protocol p
-			WHERE p.tourn NOT IN (:keeperTourns);
-	`, {
-		replacements: { keeperTourns },
-		type: db.sequelize.QueryTypes.DELETE,
-	});
-	await batchDelete('tourn', `delete from tourn where id NOT IN (:keeperTourns)`, { keeperTourns });
-	await batchDelete('school', `
+			WHERE p.tourn NOT IN (${sql.join(keeperTourns)});
+	`.execute(db);
+	await batchDelete('tourn', sql`delete from tourn where id NOT IN (${sql.join(keeperTourns)})`);
+	await batchDelete('school', sql`
 		DELETE FROM school
 		WHERE 1=1
 		and NOT EXISTS (
@@ -75,45 +68,35 @@ const pruneDatabase = async () => {
 		)
 		`);
 	logger.progress('pruning chapter...');
-	await db.sequelize.query(`
+	await sql`
 		DELETE
 			FROM chapter WHERE 1=1
 			AND NOT EXISTS (select school.id from school where school.chapter = chapter.id LIMIT 1)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning student...');
-	await db.sequelize.query(`
+	await sql`
 		DELETE FROM student
 		where 1=1
 		AND not exists ( select es.id from entry_student es where es.student = student.id LIMIT 1);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning chapter_judge...');
-	await db.sequelize.query(`
+	await sql`
 		delete
 			from chapter_judge
 		WHERE 1=1
 		and not exists (select judge.id from judge where judge.chapter_judge = chapter_judge.id LIMIT 1);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning session...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table session
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning message...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table message
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning person...');
-	await db.sequelize.query(`
+	await sql`
 		DELETE
 			FROM person
 		WHERE 1=1
@@ -121,81 +104,59 @@ const pruneDatabase = async () => {
 			AND NOT EXISTS (select judge.id from judge where judge.person = person.id)
 			AND NOT EXISTS (select permission.id from permission,tourn where permission.person = person.id and permission.tourn = tourn.id)
 			AND NOT EXISTS (select chapter_judge.id from chapter_judge where chapter_judge.person = person.id)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning result_key...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table result_key;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning result_value...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table result_value;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning campus_log...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table campus_log;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning change_log...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table change_log;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning site...');
-	await db.sequelize.query(`
+	await sql`
 		delete from site where not exists (select ts.id from tourn_site ts where ts.site = site.id);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning room...');
-	await db.sequelize.query(`
+	await sql`
 		delete from room where not exists (select site.id from site where site.id = room.site);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning housing_slots...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table housing_slots;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning housing...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table housing;
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning rating...');
-	await db.sequelize.query(`
+	await sql`
 		delete rating.*
 			from (rating, entry)
 		where 1=1
 			and rating.entry = entry.id
 			and rating.type = 'entry'
 			and entry.event NOT IN ('248106', '275389')
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning rating_tier...');
-	await db.sequelize.query(`
+	await sql`
 		delete rating_tier.*
 			from (rating_tier, category)
 		where 1=1
 			and type='coach'
 			and rating_tier.category = category.id
 			and category.tourn != '31059'
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
-	await db.sequelize.query(`
+	await sql`
 		delete rating_tier.*
 			from (rating_tier)
 		where 1=1
@@ -205,11 +166,9 @@ const pruneDatabase = async () => {
 				from rating
 				where rating.rating_tier = rating_tier.id
 		);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning entry_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from entry_setting where tag IN (
 			'po',
 			'source_entry',
@@ -220,12 +179,10 @@ const pruneDatabase = async () => {
 			'coach_script',
 			'script_history'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning round_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from round_setting where tag IN (
 			'disaster_checked',
 			'publish_entry_list',
@@ -234,12 +191,10 @@ const pruneDatabase = async () => {
 			'first_ballot',
 			'last_ballot'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning panel_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from panel_setting where tag IN (
 			'confirmed_started',
 			'flip_at',
@@ -248,19 +203,17 @@ const pruneDatabase = async () => {
 			'flip_winner',
 			'flip_status'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning student_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from student_setting where tag IN (
 			'nsda_membership',
 			'nsda_paid',
 			'nsda_points',
 			'nats_appearances',
 			'nsda_joined',
-			'districts_eligible'
+			'districts_eligible',
 			'ada',
 			'birthdate',
 			'diet',
@@ -272,42 +225,32 @@ const pruneDatabase = async () => {
 			'school_sid',
 			'student_email'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning follower...');
-	await db.sequelize.query(`
+	await sql`
 		delete from follower where id NOT IN (
 			1420670,
 			1453992,
 			1431214
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning room...');
-	await db.sequelize.query(`
+	await sql`
 		delete from room where not exists (select panel.id from panel where panel.room = room.id);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning rpool...');
-	await db.sequelize.query(`
+	await sql`
 		delete from rpool where not exists (select jpr.id from rpool_round jpr where jpr.rpool = rpool.id);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning jpool...');
-	await db.sequelize.query(`
+	await sql`
 		delete from jpool where not exists (select jpr.id from jpool_round jpr where jpr.jpool = jpool.id);
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning school_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from school_setting where tag IN (
 			'contact_email',
 			'contact_name',
@@ -324,11 +267,11 @@ const pruneDatabase = async () => {
 			'registered_by',
 			'category_contacts',
 			'country',
-			'state'
+			'state',
 			'contact',
 			'hotel',
 			'eligibility_forms',
-			'release_forms'
+			'release_forms',
 			'contact',
 			'judging_unmet',
 			'notes',
@@ -355,12 +298,10 @@ const pruneDatabase = async () => {
 			'upload_file',
 			'upload_file_timestamp'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning judge_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from judge_setting where tag IN (
 			'ballot_trained',
 			'cfl_tab_first',
@@ -398,12 +339,10 @@ const pruneDatabase = async () => {
 			'sub_only',
 			'tab_room'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning person_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from person_setting where tag IN (
 			'accesses',
 			'paradigm',
@@ -428,7 +367,7 @@ const pruneDatabase = async () => {
 			'last_attempt_ip',
 			'last_login_ip',
 			'inbox_accessed',
-			'default_chapter'
+			'default_chapter',
 			'ban_reason',
 			'campus_test_private',
 			'campus_test_public',
@@ -457,39 +396,29 @@ const pruneDatabase = async () => {
 			'learn_sync',
 			'nsda_beta'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning quiz...');
-	await db.sequelize.query(`
+	await sql`
 		delete from quiz where ID != 27
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning email...');
-	await db.sequelize.query(`
+	await sql`
 		delete from email
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning invoice...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table invoice
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning fine...');
-	await db.sequelize.query(`
+	await sql`
 		truncate table fine
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning score...');
-	await db.sequelize.query(`
+	await sql`
 		delete from score where tag IN (
 			'rfd',
 			'comments',
@@ -501,11 +430,9 @@ const pruneDatabase = async () => {
 			'title',
 			'time'
 		)
-	`, {
-		type: db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 	logger.progress('pruning entry_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from entry_setting where tag IN (
 			'accepted_at',
 			'accepted_by',
@@ -540,12 +467,10 @@ const pruneDatabase = async () => {
 			'title',
 			'topic'
 		)
-	`, {
-		type : db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning chapter_setting...');
-	await db.sequelize.query(`
+	await sql`
 		delete from chapter_setting where tag IN (
 			'ceeb',
 			'coaches',
@@ -563,13 +488,11 @@ const pruneDatabase = async () => {
 			'nsda_strength',
 			'self_prefs'
 		)
-	`, {
-		type : db.sequelize.QueryTypes.DELETE,
-	});
+	`.execute(db);
 
 	logger.progress('pruning complete, anonymizing data...');
 	const pruners = [];
-	const personPruner = db.sequelize.query(`
+	const personPruner = sql`
 		update IGNORE person
 			set nsda    = LEFT(UUID(), 8),
 				first   = LEFT(MD5(RAND()), 8),
@@ -581,13 +504,11 @@ const pruneDatabase = async () => {
 				pronoun = "Test/Pronoun",
 				state   = 'MA',
 				country = 'US'
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(personPruner);
 
-	const studentPruner = db.sequelize.query(`
+	const studentPruner = sql`
 		update IGNORE student
 			set nsda           = LEFT(UUID(), 8),
 				first          = LEFT(MD5(RAND()), 8),
@@ -598,13 +519,11 @@ const pruneDatabase = async () => {
 				nsda           = NULL,
 				gender         = NULL,
 				person_request = NULL
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(studentPruner);
 
-	const judgePruner = db.sequelize.query(`
+	const judgePruner = sql`
 		update IGNORE judge
 			set
 				first          = LEFT(MD5(RAND()), 8),
@@ -612,13 +531,11 @@ const pruneDatabase = async () => {
 				last           = LEFT(MD5(RAND()), 8),
 				ada            = NULL,
 				person_request = NULL
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(judgePruner);
 
-	const chapterJudgePruner = db.sequelize.query(`
+	const chapterJudgePruner = sql`
 		update IGNORE chapter_judge
 			set
 				first          = LEFT(MD5(RAND()), 8),
@@ -629,62 +546,52 @@ const pruneDatabase = async () => {
 				email          = NULL,
 				diet           = NULL,
 				person_request = NULL
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(chapterJudgePruner);
 
-	const schoolPruner = db.sequelize.query(`
+	const schoolPruner = sql`
 		update IGNORE school
 			set
 				name  = LEFT(MD5(RAND()), 8),
 				code  = LEFT(MD5(RAND()), 8),
 				state = LEFT(MD5(RAND()), 8)
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(schoolPruner);
 
-	const entryPruner = await db.sequelize.query(`
+	const entryPruner = await sql`
 		update IGNORE entry
 			set
 				code = LEFT(MD5(RAND()), 8),
 				name = LEFT(MD5(RAND()), 8),
 				ada  = NULL
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(entryPruner);
 
-	const adPruner = await db.sequelize.query(`
+	const adPruner = await sql`
 		delete from ad where id > 2
-	`, { type: db.sequelize.QueryTypes.DELETE });
+	`.execute(db);
 
 	pruners.push(adPruner);
 
-	const coachPruner = await db.sequelize.query(`
+	const coachPruner = await sql`
 		update IGNORE chapter
 			set
 				coaches = LEFT(MD5(RAND()), 8)
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(coachPruner);
 
-	const personDeepPruner = await db.sequelize.query(`
+	const personDeepPruner = await sql`
 		UPDATE person
 		SET
 			street = NULL,
 			city   = NULL,
 			zip    = NULL,
 			postal = NULL
-	`, {
-		type: db.sequelize.QueryTypes.UPDATE,
-	});
+	`.execute(db);
 
 	pruners.push(personDeepPruner);
 
@@ -696,18 +603,14 @@ const startTime = Date.now();
 logger.info('Pruning database...');
 try{
 	try {
-		await db.sequelize.authenticate();
+		await sql`SELECT 1`.execute(db);
 		logger.info('connected to database successfully, starting pruning');
 	} catch (err) {
 		logger.error('Unable to connect to the database:', err);
 		process.exit(1);
 	}
-	await db.sequelize.query("CREATE USER IF NOT EXISTS 'tabroom'@'localhost' IDENTIFIED BY 'tabroom'", {
-		type: db.sequelize.QueryTypes.RAW,
-	});
-	await db.sequelize.query(`GRANT ALL PRIVILEGES ON \`${config.DB_DATABASE}\`.* TO 'tabroom'@'localhost'`, {
-		type: db.sequelize.QueryTypes.RAW,
-	});
+	await sql`CREATE USER IF NOT EXISTS 'tabroom'@'localhost' IDENTIFIED BY 'tabroom'`.execute(db);
+	await sql`GRANT ALL PRIVILEGES ON ${sql.id(config.db.database)}.* TO 'tabroom'@'localhost'`.execute(db);
 
 	await pruneDatabase();
 	const endTime = Date.now();
@@ -720,4 +623,5 @@ try{
 	process.exit(1);
 }
 
+await db.destroy();
 process.exit();

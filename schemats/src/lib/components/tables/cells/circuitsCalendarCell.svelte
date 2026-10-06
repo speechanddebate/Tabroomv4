@@ -1,7 +1,7 @@
 <script lang="ts">
 
 	import { resolve } from '$app/paths';
-	import { CalendarMonthSolid } from 'flowbite-svelte-icons';
+	import { CalendarDays } from '@lucide/svelte';
 
 	let {row, column} = $props();
 
@@ -9,12 +9,9 @@
 
 </script>
 <span
-class = "w-1/3 text-primary-600 hover:text-primary-700 py-1"
+class = "w-1/3 text-primary-strong hover:text-primary-deep py-1"
 >
 <a href="{resolve(linkUrl,{})}">
-	<CalendarMonthSolid
-		class = 'm-auto '
-		size  = 'sm'
-	/>
+	<CalendarDays class='m-auto size-4' />
 </a>
 </span>

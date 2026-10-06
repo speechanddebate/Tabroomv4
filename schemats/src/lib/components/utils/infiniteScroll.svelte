@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 	import type { Snippet } from 'svelte';
-	import type { Problem } from '$indexcards/schemas';
+	import type { Problem } from '@tabroom/types';
 
 	import { Spinner } from 'flowbite-svelte';
 

@@ -8,7 +8,7 @@ import { readFile } from 'node:fs/promises';
 import security from './security.js';
 
 import type { ZodOpenApiObject, ZodOpenApiOperationObject } from 'zod-openapi';
-import type { OpenAPIObject } from 'openapi3-ts/oas31';
+import type { OpenAPIObject } from 'openapi3-ts/oas32';
 import type { RouteOpenApiConfig } from '../../types/express.d.js';
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as const;
@@ -34,21 +34,15 @@ const pkg = JSON.parse(
 export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 	// Collect paths + used tags
 	const { paths, usedTags } = collectOpenApi(apiRouter);
+	const unusedTags = declaredTags.filter(tag => !usedTags.has(tag.name));
 
-	// Start with explicitly declared tags
-	const tagMap = new Map(
-		declaredTags.map(tag => [tag.name, tag])
-	);
-
-	// Add any missing tags that were used by operations
-	for (const tagName of usedTags) {
-		if (!tagMap.has(tagName)) {
-			tagMap.set(tagName, {
-				name: tagName,
-				description: 'Auto-discovered tag',
-			});
-		}
+	for (const tag of unusedTags) {
+		logger.warn(`Unused OpenAPI tag: ${tag.name}`);
 	}
+
+	const tags = declaredTags.filter(tag => usedTags.has(tag.name));
+
+	const tagGroups = buildTagGroups(declaredTagGroups, usedTags);
 
 	const doc: ZodOpenApiObject = {
 		openapi: '3.1.1',
@@ -64,8 +58,8 @@ export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 			},
 		},
 		security: security.defaultSecurity,
-		tags: Array.from(tagMap.values()),
-		'x-tagGroups': buildTagGroups(declaredTagGroups, usedTags),
+		tags,
+		'x-tagGroups': tagGroups,
 		paths,
 		components: {
 			schemas,
@@ -228,21 +222,35 @@ function extractPathParams(path: string) {
 	});
 }
 
-function buildTagGroups(tagGroups: Array<{ name: string; tags: string[] }>, usedTags: Set<string>) {
-	const grouped = new Set(
-		tagGroups.flatMap((g: { tags: string[] }) => g.tags)
-	);
+function buildTagGroups(
+	tagGroups: Array<{ name: string; tags: string[] }>,
+	usedTags: Set<string>,
+) {
+	const grouped = new Set<string>();
 
-	const otherTags = [...usedTags].filter(
-		tag => !grouped.has(tag)
-	);
+	const finalGroups = tagGroups
+		.map(group => {
+			const tags = group.tags.filter(tag => usedTags.has(tag));
 
-	const finalGroups = [...tagGroups];
+			for (const tag of tags) {
+				grouped.add(tag);
+			}
 
-	if (otherTags.length) {
+			return {
+				...group,
+				tags,
+			};
+		})
+		.filter(group => group.tags.length > 0);
+
+	const otherTags = [...usedTags]
+		.filter(tag => !grouped.has(tag))
+		.sort();
+
+	if (otherTags.length > 0) {
 		finalGroups.push({
 			name: 'Other',
-			tags: otherTags.sort(),
+			tags: otherTags,
 		});
 	}
 

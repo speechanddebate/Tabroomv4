@@ -1,6 +1,6 @@
 <script lang='ts'>
 	import type { QueryObserverResult } from '@tanstack/svelte-query';
-	import type { Problem } from '$indexcards/schemas';
+	import type { Problem } from '@tabroom/types';
 
 	/* An attempt to not have to write the same looping loading/etc code every
 	time. I suspect this is not best practice but haven't found a good example
@@ -62,22 +62,22 @@
 </script>
 
 	{#if loadStatus.tag === 'pending'}
-		<div class="main pt-4 ps-4">
+		<div>
 			<h4>Hold, please</h4>
-			<div class='text-success-500 font-semibold'>
+			<div class='text-success font-semibold'>
 				Accessing Data from Indexcards...
 			</div>
 		</div>
 	{:else if loadStatus.tag === 'error'}
-		<div class="main pt-4 ps-4">
+		<div>
 			<h4>Oh noes!</h4>
 			<p>An error was encountered loading that data</p>
 			<h5>Error contents:</h5>
 		</div>
 	{:else if loadStatus.isPending}
-		<div class="main pt-4 ps-4">
+		<div>
 			<h4>Just a minute</h4>
-			<div class='text-success-500 font-semibold'>
+			<div class='text-success font-semibold'>
 				Data Updating...
 			</div>
 		</div>

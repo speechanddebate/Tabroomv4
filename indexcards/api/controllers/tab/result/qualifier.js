@@ -1,14 +1,19 @@
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
 export async function circuitQualifiers(req, res) {
 	let events = [];
 
 	if (req.body.name === 'qualifying_target') {
-		const event = await db.event.findByPk(req.body.property_value);
+		const event = await kdb.selectFrom('event')
+			.selectAll()
+			.where('id', '=', req.body.property_value)
+			.executeTakeFirst();
 		events.push(event);
 	} else {
-		events = await db.event.findAll(
-			{ where: { tourn: req.params.tournId } }
-		);
+		events = await kdb.selectFrom('event')
+			.selectAll()
+			.where('tourn', '=', req.params.tournId)
+			.execute();
 	}
 
 	let msg = '';
@@ -41,7 +46,7 @@ export const saveEventResult = async (eventId) => {
 
 	// Get event and qualifier event tags
 
-	const eventQuery = `
+	const eventQuery = sql`
 		select
 			tourn.id tournId,
 			event.id, event.abbr, event.type,
@@ -75,7 +80,7 @@ export const saveEventResult = async (eventId) => {
 						and ballot.panel = panel.id
 						and panel.bye != 1
 				)
-		where event.id = :eventId
+		where event.id = ${eventId}
 			and event.tourn = tourn.id
 			and tourn.id = tc.tourn
 			and tc.circuit = cr.circuit
@@ -84,10 +89,7 @@ export const saveEventResult = async (eventId) => {
 		group by event.id, tc.circuit
 	`;
 
-	const eventsWithQualifiers = await db.sequelize.query(eventQuery, {
-		replacements: { eventId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: eventsWithQualifiers } = await eventQuery.execute(kdb);
 
 	let message = '';
 
@@ -154,30 +156,31 @@ export const saveEventResult = async (eventId) => {
 		}
 
 		// Create results set, wiping out any existing ones, for this event & circuit.
-		await db.resultSet.destroy({
-			where: {
-				event   : eventId,
-				circuit : event.circuit,
-			},
-		});
+		await kdb.deleteFrom('result_set')
+			.where('event', '=', eventId)
+			.where('circuit', '=', event.circuit)
+			.execute();
 
-		const newResultSet = await db.resultSet.create({
-			circuit   : event.circuit,
-			event     : eventId,
-			tourn     : event.tournId,
-			tag       : 'entry',
-			label     : `${event.circuitAbbr} Qualification`,
-			code      : event.eventCode,
-			generated : new Date(),
-		});
+		const { insertId: newResultSetId } = await kdb.insertInto('result_set')
+			.values({
+				circuit   : event.circuit,
+				event     : eventId,
+				tourn     : event.tournId,
+				tag       : 'entry',
+				label     : `${event.circuitAbbr} Qualification`,
+				code      : event.eventCode,
+				generated : new Date(),
+			})
+			.executeTakeFirstOrThrow();
+		const newResultSet = { id: Number(newResultSetId) };
 
 		// Get final results set for the rankings
 
-		const finalResultQuery = `
+		const finalResultQuery = sql`
 			select
 				result.entry, result.rank
 			from result, result_set
-			where result_set.event = :eventId
+			where result_set.event = ${eventId}
 				and result_set.label = 'Final Places'
 				and result_set.id = result.result_set
 				and exists (
@@ -186,16 +189,13 @@ export const saveEventResult = async (eventId) => {
 					where entry.id = result.entry
 						and entry.school = school.id
 						and school.chapter = cc.chapter
-						and cc.circuit = :circuitId
+						and cc.circuit = ${event.circuit}
 				)
 			group by result.entry
 			order by result.rank
 		`;
 
-		const finalResults = await db.sequelize.query(finalResultQuery, {
-			replacements: { eventId, circuitId: event.circuit },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: finalResults } = await finalResultQuery.execute(kdb);
 
 		if (finalResults.length < 1) {
 			return;
@@ -211,28 +211,25 @@ export const saveEventResult = async (eventId) => {
 
 		// Get last round participated data
 		//
-		const lastRoundQuery = `
+		const lastRoundQuery = sql`
 			select entry.id entry, max(round.name) roundname
 				from entry, ballot, panel, round
-			where entry.event = :eventId
+			where entry.event = ${eventId}
 				and entry.id = ballot.entry
 				and ballot.panel = panel.id
 				and panel.round = round.id
-				and round.event = :eventId
+				and round.event = ${eventId}
 				and exists (
 					select cc.id
 						from chapter_circuit cc, school
 					where school.id = entry.school
 						and school.chapter = cc.chapter
-						and cc.circuit = :circuitId
+						and cc.circuit = ${event.circuit}
 				)
 			group by entry.id
 		`;
 
-		const lastRound = await db.sequelize.query(lastRoundQuery, {
-			replacements: { eventId, circuitId: event.circuit },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		const { rows: lastRound } = await lastRoundQuery.execute(kdb);
 
 		if (lastRound.length < 1) {
 			return;
@@ -249,16 +246,13 @@ export const saveEventResult = async (eventId) => {
 			entriesByLastRound[entryRound.roundname].push(entryRound.entry);
 		}
 
-		const allElims = await db.sequelize.query(`
+		const { rows: allElims } = await sql`
 			select round.name, round.label
 				from round
-			where round.event = :eventId
+			where round.event = ${eventId}
 				and round.type IN ('elim', 'final')
 			ORDER BY round.name DESC
-		`, {
-			replacements: { eventId },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
 		const entryPoints = {};
 		const entryPlace = {};
@@ -297,11 +291,11 @@ export const saveEventResult = async (eventId) => {
 
 		if (eventRules.individuals) {
 
-			const entryStudentsQuery = `
+			const entryStudentsQuery = sql`
 				select
 					entry.id entry, student.id student
 				from entry, entry_student es, student, score, ballot
-				where entry.event = :eventId
+				where entry.event = ${eventId}
 					and entry.id = es.entry
 					and es.student = student.id
 					and student.id = score.student
@@ -311,34 +305,28 @@ export const saveEventResult = async (eventId) => {
 				group by student.id
 			`;
 
-			const entryStudent = await db.sequelize.query(entryStudentsQuery, {
-				replacements: { eventId },
-				type: db.sequelize.QueryTypes.SELECT,
-			});
+			const { rows: entryStudent } = await entryStudentsQuery.execute(kdb);
 
 			const thresholdUnmet = {};
 
 			if (eventRules.min_percent) {
-				const prelimsQuery = `
+				const prelimsQuery = sql`
 					select count (distinct round.id) as prelimCount
 						from round
-					where round.event = :eventId
+					where round.event = ${eventId}
 						and round.type NOT IN ('elim', 'final', 'runoff')`;
 
-				const numPrelims = await db.sequelize.query(prelimsQuery, {
-					replacements: { eventId },
-					type: db.sequelize.QueryTypes.SELECT,
-				});
+				const { rows: numPrelims } = await prelimsQuery.execute(kdb);
 
 				const roundCount = parseInt(numPrelims[0].prelimCount);
 				eventRules.min_percent = parseInt(eventRules.min_percent);
 				const threshold = Math.floor(roundCount * parseFloat((eventRules.min_percent / 100)));
 
-				const spokeCountQuery = `
+				const spokeCountQuery = sql`
 					select
 						student.id student, count(distinct panel.id) speechCount
 					from student, entry_student es, entry, score, ballot, panel, round
-					where entry.event = :eventId
+					where entry.event = ${eventId}
 						and entry.id = ballot.entry
 						and entry.id = es.entry
 						and es.student = student.id
@@ -351,10 +339,7 @@ export const saveEventResult = async (eventId) => {
 					group by student.id
 				`;
 
-				const spokeCounts = await db.sequelize.query(spokeCountQuery, {
-					replacements: { eventId },
-					type: db.sequelize.QueryTypes.SELECT,
-				});
+				const { rows: spokeCounts } = await spokeCountQuery.execute(kdb);
 
 				for (const spoke of spokeCounts) {
 					if (spoke.speechCount < threshold) {
@@ -379,13 +364,13 @@ export const saveEventResult = async (eventId) => {
 			// Save the award points for entries
 			Object.keys(entryPoints).forEach( async (entry) => {
 				entryStudents[entry].forEach( async (student) => {
-					await db.result.create({
+					await kdb.insertInto('result').values({
 						result_set : newResultSet.id,
 						rank       : entryPoints[entry],
 						place      : entryPlace[entry],
 						student,
 						entry,
-					});
+					}).execute();
 				});
 			});
 
@@ -393,12 +378,12 @@ export const saveEventResult = async (eventId) => {
 
 			// Save the award points for entries
 			Object.keys(entryPoints).forEach( async (entry) => {
-				await db.result.create({
+				await kdb.insertInto('result').values({
 					result_set : newResultSet.id,
 					rank       : entryPoints[entry],
 					place      : entryPlace[entry],
 					entry,
-				});
+				}).execute();
 			});
 		}
 	});

@@ -2,7 +2,8 @@
 import { randomPhrase } from '@speechanddebate/nsda-js-utils';
 import { getFollowers } from '../../../helpers/followers.js';
 import { emailBlast } from '../../../helpers/mail.js';
-import { db } from '../../../helpers/litedb.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
 
 export async function makeShareRooms(req, res) {
 	const counter = await shareRooms(req.params.roundId);
@@ -13,7 +14,7 @@ export async function makeShareRooms(req, res) {
 
 export const shareRooms = async (roundId) => {
 
-	const sections = await db.sequelize.query(`
+	const { rows: sections } = await sql`
 		select
 			distinct panel.id id, panel.letter letter,
 			tourn.name tournName, round.label roundLabel, round.name roundName,
@@ -24,7 +25,7 @@ export const shareRooms = async (roundId) => {
 				on auto_docshare.tag = 'auto_docshare'
 				and auto_docshare.event = event.id
 
-		where panel.round = :roundId
+		where panel.round = ${roundId}
 			and panel.bye = 0
 			and NOT EXISTS (
 				select ps.id
@@ -35,10 +36,7 @@ export const shareRooms = async (roundId) => {
 			and panel.round = round.id
 			and round.event = event.id
 			and event.tourn = tourn.id
-	`, {
-		replacements: { roundId },
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb);
 
 	const emailPromises = [];
 	let counter = 0;
@@ -49,15 +47,10 @@ export const shareRooms = async (roundId) => {
 
 			const phrase = randomPhrase();
 
-			await db.sequelize.query(`
-				insert into panel_setting (panel, tag, value)
-				values (:sectionId, 'share', :phrase)
-				on duplicate key update
-				value = :phrase
-			`, {
-				replacements: { sectionId: section.id, phrase },
-				type: db.Sequelize.QueryTypes.INSERT,
-			});
+			await kdb.insertInto('panel_setting')
+				.values({ panel: section.id, tag: 'share', value: phrase })
+				.onDuplicateKeyUpdate({ value: phrase })
+				.execute();
 
 			const email = await getFollowers({
 				panelId        : section.id,

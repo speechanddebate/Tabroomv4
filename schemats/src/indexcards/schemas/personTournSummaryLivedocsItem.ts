@@ -7,6 +7,13 @@
  */
 
 export type PersonTournSummaryLivedocsItem = {
+	/**
+	 * @maximum 9007199254740991
+	 * @exclusiveMinimum 0
+	 */
+	categoryId: number;
+	/** @nullable */
+	categoryName: string | null;
 	url: string;
 	/** @nullable */
 	caption: string | null;

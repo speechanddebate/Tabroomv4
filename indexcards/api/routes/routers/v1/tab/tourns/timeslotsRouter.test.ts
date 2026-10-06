@@ -2,10 +2,12 @@
 import request from 'supertest';
 import app from '../../../../../../app.js';
 import factories from '../../../../../../tests/factories/index.js';
+import { TimeslotResponseSchema } from '@tabroom/types';
+import z from 'zod';
 
 let tournId: number | null = null;
 let personId: number | null = null;
-let userkey: string | null = null;
+let userkey: string;
 
 describe('Timeslots', () => {
 	beforeAll(async () => {
@@ -19,7 +21,7 @@ describe('Timeslots', () => {
 			const timeslotData = factories.timeslot.createTimeslotData({ tourn: tournId });
 			const response = await request(app)
 				.post(`/v1/tab/tourns/${tournId}/timeslots`)
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.send(timeslotData)
 				.expect(201);
 			expect(response.body).toBeDefined();
@@ -32,7 +34,7 @@ describe('Timeslots', () => {
 			const invalidData = { name: '', start: 'invalid-date', end: 'invalid-date', tournId };
 			const res = await request(app)
 				.post(`/v1/tab/tourns/${tournId}/timeslots`)
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.send(invalidData);
 
 			expect(res).toBeProblemResponse(400);
@@ -42,9 +44,9 @@ describe('Timeslots', () => {
 		await factories.timeslot.create({ tourn: tournId });
 		const response = await request(app)
 			.get(`/v1/tab/tourns/${tournId}/timeslots`)
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect(200);
-		expect(Array.isArray(response.body)).toBe(true);
+		expect(response.body).toMatchSchema(z.array(TimeslotResponseSchema));
 		expect(response.body).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -66,13 +68,14 @@ describe('Timeslots', () => {
 		};
 		await request(app)
 			.put(`/v1/tab/tourns/${tournId}/timeslots/${timeslot.id}`)
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send(updatedData)
 			.expect(204);
 		const getResponse = await request(app)
 			.get(`/v1/tab/tourns/${tournId}/timeslots/${timeslot.id}`)
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect(200);
+		expect(getResponse.body).toMatchSchema(TimeslotResponseSchema);
 		expect(getResponse.body.name).toBe(updatedData.name);
 		expect(new Date(getResponse.body.start).getTime()).toBe(updatedData.start.getTime());
 		expect(new Date(getResponse.body.end).getTime()).toBe(updatedData.end.getTime());

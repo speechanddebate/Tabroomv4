@@ -1,7 +1,9 @@
 // Event level access maniuplation
 
 import { BadRequest, Forbidden, NotFound, NotImplemented } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
+import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Add permissions that are not there already (create)
 export async function createAccess(req, res) {
@@ -10,8 +12,8 @@ export async function createAccess(req, res) {
 
 // Alter existing permissions (update)
 export async function updateAccess(req, res) {
-	const targetPerson = await db.summon(db.person, req.params.personId);
-	const targetEvent = await db.summon(db.event, req.params.eventId);
+	const targetPerson = await summon(kdb, 'person',req.params.personId);
+	const targetEvent = await summon(kdb, 'event',req.params.eventId);
 
 	if (!targetPerson || !targetEvent) {
 		return NotFound(req, res, 'No person found with that Tabroom ID');
@@ -22,19 +24,21 @@ export async function updateAccess(req, res) {
     req.session.perms.tourn[targetEvent.tourn] === 'tabber' ||
     req.session.perms.event[targetEvent.id] === 'tabber'
 	) {
-		const currentPerm = await db.permission.findOne({
-			where: {
-				person: targetPerson.id,
-				event: targetEvent.id,
-			},
-		});
+		const currentPerm = await kdb.selectFrom('permission')
+			.selectAll()
+			.where('person', '=', targetPerson.id)
+			.where('event', '=', targetEvent.id)
+			.executeTakeFirst();
 
 		if (!currentPerm) {
 			return Forbidden(req, res, `User ${targetPerson.email} does not have access ${targetEvent.abbr} and so it cannot be altered`);
 		}
 
 		currentPerm.tag = currentPerm.tag === 'checker' ? 'tabber' : 'checker';
-		await currentPerm.save();
+		await kdb.updateTable('permission')
+			.set({ tag: currentPerm.tag })
+			.where('id', '=', currentPerm.id)
+			.execute();
 		const description = `${targetPerson.email}'s access to ${targetEvent.abbr} is now ${currentPerm.tag}`;
 
 		const replace = [
@@ -43,12 +47,12 @@ export async function updateAccess(req, res) {
 				content: currentPerm.tag.toUpperCase(),
 			},
 		];
-		await db.changeLog.create({
-			person: req.session.person,
+		await changeLogRepo.createChangeLog(kdb, {
+			person: req.person.id,
 			tourn: req.params.tournId,
 			event: targetEvent.id,
 			tag: 'access',
-			created_at: Date(),
+			created_at: new Date(),
 			description,
 		});
 
@@ -72,28 +76,25 @@ export async function getAccess(req, res) {
 
 // Delete a user's access to this tournament
 export async function deleteAccess(req, res) {
-	const targetEvent = await db.summon(db.event, req.params.eventId);
-	const targetPerson = await db.summon(db.person, req.params.personId);
+	const targetEvent = await summon(kdb, 'event',req.params.eventId);
+	const targetPerson = await summon(kdb, 'person',req.params.personId);
 
 	if (
 		req.session.perms.tourn[targetEvent.tourn] === 'owner' ||
     req.session.perms.tourn[targetEvent.tourn] === 'tabber' ||
     req.session.perms.event[targetEvent.id] === 'tabber'
 	) {
-		await db.sequelize.query(
-			`delete perm.* from permission perm where perm.person = :personId and perm.event = :eventId`,
-			{
-				replacements: { ...req.params },
-				type: db.sequelize.QueryTypes.DELETE,
-			}
-		);
+		await kdb.deleteFrom('permission')
+			.where('person', '=', req.params.personId)
+			.where('event', '=', req.params.eventId)
+			.execute();
 
-		const log = await db.changeLog.create({
-			person: req.session.person,
+		const log = await changeLogRepo.createChangeLog(kdb, {
+			person: req.person.id,
 			tourn: req.params.tournId,
 			event: targetEvent.id,
 			tag: 'access',
-			created_at: Date(),
+			created_at: new Date(),
 			description: `${targetPerson.email} access removed from ${targetEvent.abbr}`,
 		});
 
@@ -109,8 +110,8 @@ export async function deleteAccess(req, res) {
 
 // Create backup follower for a whole event
 export async function createBackupAccess(req, res) {
-	const targetPerson = await db.summon(db.person, req.params.personId);
-	const targetEvent = await db.summon(db.event, req.params.eventId);
+	const targetPerson = await summon(kdb, 'person',req.params.personId);
+	const targetEvent = await summon(kdb, 'event',req.params.eventId);
 
 	if (!targetPerson) {
 		return NotFound(req, res, 'No tabroom account was found with that email');
@@ -120,12 +121,11 @@ export async function createBackupAccess(req, res) {
 		return BadRequest(req, res, 'That Tabroom account is set to not allow emails to be sent to it');
 	}
 
-	const backupAccounts = await db.eventSetting.findOne({
-		where: {
-			event: req.params.eventId,
-			tag: 'backup_followers',
-		},
-	});
+	const backupAccounts = await kdb.selectFrom('event_setting')
+		.selectAll()
+		.where('event', '=', req.params.eventId)
+		.where('tag', '=', 'backup_followers')
+		.executeTakeFirst();
 
 	const followers = [];
 	if (backupAccounts?.id) {
@@ -144,15 +144,19 @@ export async function createBackupAccess(req, res) {
 	const uniqueFollowers = [...new Set(followers)];
 
 	if (backupAccounts?.id) {
-		backupAccounts.value_text = uniqueFollowers;
-		await backupAccounts.update();
+		await kdb.updateTable('event_setting')
+			.set({ value: 'json', value_text: JSON.stringify(uniqueFollowers) })
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	} else {
-		await db.eventSetting.create({
-			event: req.params.eventId,
-			tag: 'backup_followers',
-			value: 'json',
-			value_text: uniqueFollowers,
-		});
+		await kdb.insertInto('event_setting')
+			.values({
+				event: req.params.eventId,
+				tag: 'backup_followers',
+				value: 'json',
+				value_text: JSON.stringify(uniqueFollowers),
+			})
+			.execute();
 	}
 
 	return res.status(200).json(`Added ${targetPerson.email} as a backup follower for ${targetEvent.abbr}`);
@@ -160,12 +164,11 @@ export async function createBackupAccess(req, res) {
 
 // Delete backup follower
 export async function deleteBackupAccess(req, res) {
-	const backupAccounts = await db.eventSetting.findOne({
-		where: {
-			event: req.params.eventId,
-			tag: 'backup_followers',
-		},
-	});
+	const backupAccounts = await kdb.selectFrom('event_setting')
+		.selectAll()
+		.where('event', '=', req.params.eventId)
+		.where('tag', '=', 'backup_followers')
+		.executeTakeFirst();
 
 	if (!backupAccounts?.id) {
 		return res.status(200).json(`Event has no current backup followers`);
@@ -185,10 +188,14 @@ export async function deleteBackupAccess(req, res) {
 	}
 
 	if (followers.length < 1) {
-		await backupAccounts.destroy();
+		await kdb.deleteFrom('event_setting')
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	} else {
-		backupAccounts.value_text = followers;
-		await backupAccounts.update();
+		await kdb.updateTable('event_setting')
+			.set({ value: 'json', value_text: JSON.stringify(followers) })
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	}
 
 	return res.status(200).json(`Backup follower removed`);

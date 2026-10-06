@@ -16,6 +16,12 @@ describe('buildCircuitQuery', () => {
 		expect(circuit?.settings).toBeDefined();
 		expect(circuit?.settings?.exampleSetting).toBe('exampleValue');
 	});
+	it('filters inactive circuits when opts.active is true', async () => {
+		const inactiveCircuit = await factories.circuit.create({ active: 0 });
+
+		const circuit = await circuitRepo.getCircuit(db,inactiveCircuit.id, { active: true });
+		expect(circuit).toBeUndefined(); // since the inactive circuit should not be returned
+	});
 });
 describe('getCircuits', () => {
 	it('should return an empty array if no circuits exist for a tourn', async () => {
@@ -33,6 +39,14 @@ describe('getCircuits', () => {
 	});
 });
 describe('getActiveCircuits', () => {
+	it('should throw an error if startDate or endDate is missing', async () => {
+		// @ts-expect-error Testing runtime validation of an invalid endDate
+		await expect(circuitRepo.getActiveCircuits(db, { startDate: faker.date.past(), endDate: undefined }))
+			.rejects.toThrow('getActiveCircuits: startDate and endDate are required');
+			// @ts-expect-error Testing runtime validation of an invalid startDate
+		await expect(circuitRepo.getActiveCircuits(db, { startDate: undefined, endDate: faker.date.future() }))
+			.rejects.toThrow('getActiveCircuits: startDate and endDate are required');
+	});
 	it('should return active circuits within a date range', async () => {
 		const Circuit = await factories.circuit.create();
 		await factories.tourn.create({ circuit: Circuit.id, start: new Date() });

@@ -13,6 +13,20 @@ export default defineConfig({
 				'eslint/no-unassigned-vars': 'off',
 			},
 		},
+		{
+			// zod's default import emits .d.ts refs (z.z.*) that only resolve
+			// under nodenext, so consumers on bundler resolution infer `unknown`
+			files: ['types/**'],
+			rules: {
+				'eslint/no-restricted-imports': ['error', {
+					paths: [{
+						name: 'zod',
+						importNames: ['default'],
+						message: "Use `import { z } from 'zod'` so emitted types resolve in every consumer.",
+					}],
+				}],
+			},
+		},
 	],
 	rules: {
 		'vitest/require-to-throw-message': 'off',

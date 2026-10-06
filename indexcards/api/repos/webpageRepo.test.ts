@@ -126,7 +126,7 @@ describe('createWebpage', () => {
 		expect(result?.timestamp).toBeDefined();
 		expect(result?.title).toBe(webpageData.title);
 		expect(result?.content).toBe(webpageData.content);
-		expect(result?.published).toBe(webpageData.published === 1);
+		expect(result?.published).toBe(Number(webpageData.published));
 	});
 });
 describe('updateWebpage', () => {

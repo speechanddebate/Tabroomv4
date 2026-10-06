@@ -1,4 +1,4 @@
-name: Indexcards CI
+name: CI
 
 on:
   push:
@@ -9,8 +9,60 @@ on:
       - main
 
 jobs:
-  ci:
-    name: CI
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ./package.json
+
+      - name: Install dependencies
+        run: |
+            npm ci
+
+      - name: Build types
+        run: |
+            npm run build --workspace=types
+
+      - name: Lint
+        run: |
+            npm run lint
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ./package.json
+
+      - name: Install dependencies
+        run: |
+            npm ci
+
+      - name: Build
+        run: |
+            npm run build --workspace=types
+            npm run build --workspace=indexcards
+
+      - name: Typecheck
+        run: |
+            npm run typecheck
+
+  indexcards-unit:
+    name: Indexcards Tests
+    needs: [lint, typecheck]
     runs-on: ubuntu-latest
     services:
       mariadb:
@@ -43,23 +95,10 @@ jobs:
         run: |
             npm ci
 
-      - name: Build
+      - name: Build types
         run: |
             npm run build --workspace=types
-            npm run build --workspace=indexcards
-      - name: Lint
-        run: |
-            npm run lint
 
-      - name: Typecheck
-        run: |
-            npm run typecheck --workspace=indexcards
-            
-      - name: Install MariaDB client
-        run: |
-          apt-get update
-          apt-get install -y mariadb-client
-      
       - name: Seed database
         run: |
           mariadb \
@@ -68,7 +107,107 @@ jobs:
             --user=tabroom \
             --password=tabroom \
             tabroom < ./indexcards/tests/test.sql
-          
-      - name: Test
+
+      - name: Test Indexcards
         run: |
             npm run test:ci --workspace=indexcards
+
+  schemats-unit:
+    name: Schemats Unit Tests
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ./package.json
+
+      - name: Install dependencies
+        run: |
+            npm ci
+
+      - name: Build types
+        run: |
+            npm run build --workspace=types
+
+      - name: Test Schemats (unit)
+        run: |
+            npm run test:ci:unit --workspace=schemats
+
+  a11y:
+    name: A11y Tests
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    # browsers come preinstalled. Tag must match playwright in schemats/package.json
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: ./package.json
+
+      - name: Install dependencies
+        run: |
+            npm ci
+
+      - name: Build types
+        run: |
+            npm run build --workspace=types
+
+      # viewports run one after the other in a single job to keep load off the 2 vCPU runners
+      - name: Test Schemats (a11y desktop)
+        env:
+          STORYBOOK_VIEWPORT: desktop
+        run: |
+            npm run test:a11y --workspace=schemats
+
+      # still runs when desktop fails so both results show
+      - name: Test Schemats (a11y mobile)
+        if: ${{ !cancelled() }}
+        env:
+          STORYBOOK_VIEWPORT: mobile
+        run: |
+            npm run test:a11y --workspace=schemats
+
+  e2e:
+    name: E2E Tests
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: E2E Tests
+        run: |
+            npm run test --workspace=e2e
+
+  build:
+    name: Build
+    needs: [indexcards-unit, schemats-unit, a11y, e2e]
+    if: github.ref == 'refs/heads/main'
+    uses: ./.forgejo/workflows/build.yml
+    secrets: inherit
+
+  notify:
+    name: Notify
+    needs: [build]
+    # report every push to main, including when checks fail and the build is skipped
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send slack notification
+        uses: https://git.speechanddebate.org/speechanddebate/action-slack-notify@master
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_ICON: ${{ needs.build.result == 'success' && ':white_check_mark:' || ':x:' }}

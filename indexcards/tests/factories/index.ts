@@ -5,10 +5,12 @@ import chapter from './chapter.js';
 import chapterJudge from './chapterJudge.js';
 import changeLog from './changelog.js';
 import circuit from './circuit.js';
+import contact from './contact.js';
 import email from './email.js';
 import entry from './entry.js';
 import event from './event.js';
 import file from './file.js';
+import fine from './fine.js';
 import judge from './judge.js';
 import message from './message.js';
 import permission from './permission.js';
@@ -40,6 +42,7 @@ const factories = {
 	entry,
 	event,
 	file,
+	fine,
 	judge,
 	message,
 	permission,
@@ -47,6 +50,7 @@ const factories = {
 	room,
 	round,
 	school,
+	contact,
 	score,
 	panel,
 	session,

@@ -3,7 +3,6 @@ import server from '../../../../app.js';
 import factories from '../../../../tests/factories/index.js';
 import sessionRepo from '../../../repos/sessionRepo.js';
 import personRepo from '../../../repos/personRepo.js';
-import { hashPassword } from '../../../services/AuthService.js';
 import { db } from '../../../data/database.js';
 
 let adminId! : number, userId!: number;
@@ -17,9 +16,7 @@ describe('Auth Router', () => {
 	describe('/login' , () => {
 		it('Logs in an existing user', async () => {
 			const password = 'securepassword';
-			const Person = await factories.person.create({
-				password: hashPassword(password),
-			});
+			const Person = await factories.person.create({ password });
 
 			const res = await request(server)
 				.post('/v1/auth/login')
@@ -39,7 +36,7 @@ describe('Auth Router', () => {
 		});
 		it('Fails to log in with incorrect password', async () => {
 			const Person = await factories.person.create({
-				password: hashPassword('securepassword'),
+				password: 'securepassword',
 			});
 
 			const res = await request(server)
@@ -62,11 +59,30 @@ describe('Auth Router', () => {
 
 			expect(res).toBeProblemResponse(400);
 		});
+		it('does not allow a banned user to log in', async () => {
+			const Person = await factories.person.create({
+				password: 'securepassword',
+				settings: {
+					banned: 1,
+				},
+			});
+			
+			const res = await request(server)
+				.post('/v1/auth/login')
+				.send({
+					username: Person.email,
+					password: 'securepassword',
+				})
+				.set('Accept', 'application/json')
+				.expect('Content-Type', /json/);
+
+			expect(res).toBeProblemResponse(403);
+		});
 	});
 	describe('/logout', () => {
 		it('logs out an existing user', async () => {
 			const Person = await factories.person.create({
-				password: hashPassword('securepassword'),
+				password: 'securepassword',
 			});
 
 			const loginRes = await request(server)
@@ -83,7 +99,7 @@ describe('Auth Router', () => {
 
 			await request(server)
 				.post('/v1/auth/logout')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.expect(204);
 
 			const session = await sessionRepo.findByUserKey(db,token);
@@ -118,7 +134,7 @@ describe('Auth Router', () => {
 		it('starts an su session', async () => {
 			const Person = await factories.person.create({
 				site_admin: 1,
-				password: hashPassword('securepassword'),
+				password: 'securepassword',
 			});
 
 			const loginRes = await request(server)
@@ -134,12 +150,12 @@ describe('Auth Router', () => {
 			const token = loginRes.body.token;
 
 			const suTarget = await factories.person.create({
-				password: hashPassword('securepassword'),
+				password: 'securepassword',
 			});
 
 			const res = await request(server)
 				.post('/v1/auth/su')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.send({ suId: suTarget.id })
 				//.expect(204);
 
@@ -148,7 +164,7 @@ describe('Auth Router', () => {
 		it('fails to start an su session with invalid suId', async () => {
 			const Person = await factories.person.create({
 				site_admin: 1,
-				password: hashPassword('securepassword'),
+				password: 'securepassword',
 			});
 
 			const loginRes = await request(server)
@@ -165,7 +181,7 @@ describe('Auth Router', () => {
 
 			const res = await request(server)
 				.post('/v1/auth/su')
-				.set('Authorization', `Bearer ${token}`)
+				.asPerson(token)
 				.send({ suId: 'string' })
 				.expect(400);
 
@@ -183,7 +199,7 @@ describe('Auth Router', () => {
 
 			const res = await request(server)
 			.post('/v1/auth/suEnd')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect(204);
 
 			expect(res).not.toBeProblemResponse();

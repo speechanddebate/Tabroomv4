@@ -1,5 +1,9 @@
-import { roundCheck } from '../../../helpers/auth.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db } from '../../../data/database.js';
+
+// TODO: stand-in for roundCheck from the removed helpers/auth.js, which read req.session.perms.
+// Port this to req.actor.can('round', 'write', roundId) before these routes are enabled.
+const roundCheck = async (req, res, _roundId) => false;
 
 // This function needs to be adapted to the new permissions model to enable it
 // to ONLY merge and unmerge the rounds that a given user has access to under
@@ -21,20 +25,17 @@ export async function mergeTimeslotRounds(req, res) {
 	}
 
 	try {
-		await db.sequelize.query(`
+		await sql`
 			update
 				panel, round, round r2, event, event e2
 			set panel.round = round.id
-			where round.id = :roundId
+			where round.id = ${roundId}
 				and panel.round = r2.id
 				and r2.timeslot = round.timeslot
 				and round.event = event.id
 				and r2.event = e2.id
 				and e2.category = event.category
-		`, {
-			replacements : { roundId },
-			type         : db.sequelize.QueryTypes.UPDATE,
-		});
+		`.execute(db);
 
 	} catch (err) {
 
@@ -45,14 +46,9 @@ export async function mergeTimeslotRounds(req, res) {
 	}
 
 	try {
-		await db.sequelize.query(`
-			insert into round_setting
-			(round, tag, value)
-			values (:roundId, 'timeslot_merge', 1)
-		`, {
-			replacements : { roundId },
-			type         : db.sequelize.QueryTypes.INSERT,
-		});
+		await db.insertInto('round_setting')
+			.values({ round: roundId, tag: 'timeslot_merge', value: '1' })
+			.execute();
 	} finally {
 
 		res.status(200).json({
@@ -75,21 +71,18 @@ export async function unmergeTimeslotRounds(req,res) {
 	}
 
 	try {
-		await db.sequelize.query(`
+		await sql`
 			update
 				panel, ballot, entry, event, round, round current
 			set panel.round = round.id
-			where panel.round = :roundId
+			where panel.round = ${roundId}
 				and panel.id = ballot.panel
 				and ballot.entry = entry.id
 				and entry.event = event.id
 				and event.id = round.event
 				and panel.round = current.id
 				and current.timeslot = round.timeslot
-		`, {
-			replacements : { roundId },
-			type         : db.sequelize.QueryTypes.UPDATE,
-		});
+		`.execute(db);
 
 	} catch (err) {
 
@@ -100,15 +93,10 @@ export async function unmergeTimeslotRounds(req,res) {
 	}
 
 	try {
-		await db.sequelize.query(`
-			delete rs.*
-			from round_setting rs
-			where rs.round = :roundId
-			and rs.tag = 'timeslot_merge'
-		`, {
-			replacements : { roundId },
-			type         : db.sequelize.QueryTypes.DELETE,
-		});
+		await db.deleteFrom('round_setting')
+			.where('round', '=', roundId)
+			.where('tag', '=', 'timeslot_merge')
+			.execute();
 
 	} catch (err) {
 

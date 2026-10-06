@@ -60,7 +60,7 @@ Open the API reference (Scalar) at:
 - `http://<HOST>:<PORT>/v1/reference`
 
 > [!NOTE]
-> You will likely need to be 'logged in' for certain endpoints. You should be able to register a user and login with the auth endpoints in the scalar UI. the login endpoint will return a token that you will then need to send as a bearer token.
+> You will likely need to be 'logged in' for certain endpoints. You should be able to register a user and login with the auth endpoints in the scalar UI. the login endpoint sets the session cookie, which is then sent with subsequent requests.
 
 
 

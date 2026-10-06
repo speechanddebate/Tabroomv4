@@ -1,8 +1,23 @@
 import logger from '../logger.js';
 import { adminBlast } from '../admin.js';
+import { Forbidden, ServiceUnavailable, Unauthorized } from '../problem.js';
 import config from '../../config.js';
 
 export const errorHandler = (err, req, res, next) => {
+	// MariaDB aborted a query that ran past db.pool.queryTimeout. Expected under load, so no admin email.
+	// The DB logger already warned with the query, and the request logger records the 503
+	if (err.code === 'ER_STATEMENT_TIMEOUT') {
+		return ServiceUnavailable(req, res, 'The request took too long to process. Please try again later.');
+	}
+
+	// auth failures thrown from handlers, e.g. getPerson() or req.actor.assert()
+	if (err.code === 'AUTH_UNAUTHENTICATED') {
+		return Unauthorized(req, res, err.message);
+	}
+	if (err.code === 'AUTH_FORBIDDEN') {
+		return Forbidden(req, res, err.message);
+	}
+
 	logger.error('Error while processing request', {
 		message: err.message,
 		url: req.originalUrl,
@@ -33,7 +48,7 @@ Stack
 ${err.stack}
 
 Login Session
-${JSON.stringify(req.session, null, 4)}
+${JSON.stringify({ auth: req.auth, person: req.person }, null, 4)}
 
 Request Parameters
 ${JSON.stringify(req.params, null, 4)}

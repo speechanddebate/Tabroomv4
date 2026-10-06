@@ -112,10 +112,6 @@ Controllers are tested by mocking any dependencies and passing in fake `req` and
 import { createContext } from '../../tests/httpMocks.js';
 ...
 
-afterEach(() => {
-	vi.restoreAllMocks();
-});
-
 describe('authController',() => {
 	describe('login', () => {
 

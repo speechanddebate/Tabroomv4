@@ -7,14 +7,13 @@ import cookieParser from 'cookie-parser';
 
 import config from './api/config.js';
 import errorHandler from './api/helpers/errors/errorHandler.js';
-import { Authenticate } from './api/middleware/authentication.js';
+import { Authenticate } from './api/middleware/auth/authentication.js';
 import csrfMiddleware from './api/middleware/csrfMiddleware.js';
 import v1Router from './api/routes/routers/v1/indexRouter.js';
 import { rateLimiterMiddleware } from './api/middleware/rateLimiter.js';
-import db from './api/data/db.js';
-import { localAuth } from './api/helpers/auth.js';
+import { db } from './api/data/database.js';
+import { sql } from 'kysely';
 import logger, { setupRequest } from './api/helpers/logger.js';
-import { Forbidden, Unauthorized } from './api/helpers/problem.js';
 
 const app = express();
 
@@ -24,7 +23,7 @@ logger.info('Initializing API...');
 logger.info(`Loading environment ${process.env?.NODE_ENV}`);
 
 try {
-	await db.sequelize.authenticate();
+	await sql`SELECT 1`.execute(db);
 	logger.info(`Successfully connected to database ${config.db.database} at ${config.db.host}:${config.db.port}`);
 } catch (error) {
 	logger.error(`Failed to connect to database ${config.db.database} at ${config.db.host}:${config.db.port}`, error );
@@ -47,14 +46,11 @@ app.use(cors(corsOptions));
 
 // Add a unique UUID to every request, and add the configuration for easy
 // transport
-//
-// Database handle volleyball; don't have to call it in every last route. For I
-// am lazy, and apologize not.
 
 app.use((req, res, next) => {
+	req.db = db;
 	req.uuid   = uuid();
 	req.config = config;
-	req.db     = db;
 	return next();
 });
 
@@ -93,26 +89,6 @@ app.get('/', (req, res) => {
 });
 
 app.use('/v1',v1Router);
-
-app.use('/v1/local', async (req, res, next) => {
-
-	// APIs related to administrators of districts (the committee), or a
-	// region, or an NCFL diocese, or a circuit.
-
-	if (!req.actor || req.actor.type === 'anonymous') {
-		return Unauthorized(req, res, 'Admin: You are not logged in.');
-	}
-
-	const response = await localAuth(req, res);
-
-	if (typeof response === 'object') {
-		req[req.params.localType] = response.local;
-		req.session.perms = { ...req.session.perms, ...response.perms };
-		next();
-	} else {
-		return Forbidden(req, res, `Admin : You do not have the access required.`);
-	}
-});
 
 // Final fallback error handling
 app.use(errorHandler);

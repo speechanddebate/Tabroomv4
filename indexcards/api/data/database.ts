@@ -3,9 +3,7 @@ import { createPool } from 'mariadb'
 import { Kysely, SafeNullComparisonPlugin } from 'kysely'
 import { MariadbDialect } from "kysely-mariadb";
 import config from '../config.js'
-import logger from '../helpers/logger.js'
-
-import type { FieldInfo } from 'mariadb'
+import logger, { getCallerFrame } from '../helpers/logger.js'
 
 const dialect = new MariadbDialect({
   mariadb: createPool({
@@ -15,15 +13,11 @@ const dialect = new MariadbDialect({
     password: config.db.pass,
     port: config.db.port,
 	timezone: 'Z',
-    connectionLimit: 5,
+	...config.db.pool,
 	bigIntAsNumber: true,
-	//Convert all TINYINT(1) to boolean, instead of number
-	typeCast(field: FieldInfo, next: Function) {
-		if (field.type === 'TINY' && field.columnLength === 1) {
-			return field.string() === '1';
-		}
-		return next();
-	},
+	// TINYINT(1) columns come back as numbers. Several of them hold values
+	// other than 0/1 (ballot.side, entry.unconfirmed, panel.publish), so
+	// casting them to booleans loses data.
   })
 })
 
@@ -34,10 +28,35 @@ export const db = new Kysely<DB>({
 	],
 	log(event){
 		if (event.level === 'error'){
-			logger.error('DB Error Event:', event);
+			const error = event.error as { code?: string; sqlMessage?: string | null; message?: string };
+			const details = {
+				code: error.code,
+				error: error.sqlMessage ?? error.message,
+				sql: event.query.sql,
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			};
+
+			if (error.code === 'ER_STATEMENT_TIMEOUT') {
+				logger.warn('Query timed out', details);
+			} else {
+				logger.error('DB error', details);
+			}
+			return;
 		}
-		if (event.level === 'query') {
-			logger.debug('DB Event:', event);
+
+		if(event.queryDurationMillis >= config.logging.slowQueryLimit){
+			logger.warn('Slow SQL query', {
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			});
+		} else if (logger.isDebugEnabled()) {
+			//need to check if debug to avoid building caller frame on every query
+			logger.debug('SQL query', {
+				sql: event.query.sql,
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			});
 		}
 	},
 })

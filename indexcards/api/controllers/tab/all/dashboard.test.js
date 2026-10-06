@@ -1,7 +1,5 @@
 import request from 'supertest';
-import { assert } from 'chai';
-import config from '../../../config';
-import db from '../../../data/db';
+import { db } from '../../../data/database.js';
 import server from '../../../../app';
 import factories from '../../../../tests/factories';
 
@@ -46,7 +44,7 @@ describe('Status Board', () => {
 			},
 		];
 
-		await db.campusLog.bulkCreate(campusLogs);
+		await db.insertInto('campus_log').values(campusLogs).execute();
 
 	});
 
@@ -55,29 +53,26 @@ describe('Status Board', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.isObject(res.body, 'Response is an object');
+		expect(res.body, 'Response is an object').toBeTypeOf('object');
 
-		assert.equal(
+		expect(
 			res.body.person[testTourn.person][testTourn.panel].tag,
-			'present',
 			'Judge Giordano marked present by an admin'
-		);
+		).toBe('present');
 
-		assert.equal(
+		expect(
 			res.body.entry[testTourn.entry][testTourn.panel].tag,
-			'present',
 			'LASA marked present by an admin'
-		);
+		).toBe('present');
 
-		assert.equal(
+		expect(
 			res.body.entry[testTourn.entry][testTourn.panel].markerId,
-			personId,
 			'LASA marked present by the correct admin'
-		);
+		).toBe(personId);
 	});
 
 	it('Reflects absence & presence changes in a new status object', async() => {
@@ -86,7 +81,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId : testTourn.person,   	// person who was absent now present
 				panel    : testTourn.panel, 	// panel ID
@@ -99,7 +94,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId   : testTourn.entry,
 				panel      : testTourn.panel,
@@ -113,7 +108,7 @@ describe('Status Board', () => {
 		await request(server)
 			.post(`/v1/tab/tourns/${testTourn.id}/all/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.send({
 				targetId      : testTourn.judge,
 				panel         : 7212078,
@@ -127,40 +122,34 @@ describe('Status Board', () => {
 		const newResponse = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/rounds/${testTourn.round}/attendance`)
 			.set('Accept', 'application/json')
-			.set('Authorization', `Bearer ${userkey}`)
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.isObject(newResponse.body, 'Response is indeed an object');
+		expect(newResponse.body, 'Response is indeed an object').toBeTypeOf('object');
 		const newBody = newResponse.body;
 
-		assert.equal(
+		expect(
 			newBody.person[testTourn.person][testTourn.panel].tag,
-			'present',
 			'After the change posted, Judge Giordano marked absent by an admin'
-		);
+		).toBe('present');
 
-		assert.equal(
+		expect(
 			newBody.entry[testTourn.entry][testTourn.panel].tag,
-			'present',
 			'LASA marked present by an admin'
-		);
+		).toBe('present');
 
-		assert.equal(
+		expect(
 			newBody.entry[testTourn.entry][testTourn.panel].markerId,
-			personId,
 			'LASA marked present by the correct admin'
-		);
+		).toBe(personId);
 	});
 
 	afterAll(async () => {
 
-		await db.sequelize.query(`delete from campus_log where marker = :personId`,
-			{
-				replacements: { personId: personId },
-				type: db.sequelize.QueryTypes.DELETE,
-			}
-		);
+		await db.deleteFrom('campus_log')
+			.where('marker', '=', personId)
+			.execute();
 	});
 
 });
@@ -184,23 +173,13 @@ describe.todo('Event Dashboard', () => {
 		const res = await request(server)
 			.get(`/v1/tab/tourns/${testTourn.id}/status/dashboard`)
 			.set('Accept', 'application/json')
-			.set('Cookie', [`${config.cookie.name}=${userkey}`])
+			.asPerson(userkey)
 			.expect('Content-Type', /json/)
 			.expect(200);
 
-		assert.isObject(res.body, 'Response is an object');
-
-		assert.equal(
-			res.body[7].abbr,
-			'LD',
-			'Event 7 is LD');
-		assert.equal(
-			res.body[7].rounds[1][1].unstarted,
-			'25',
-			'15 unstarted in Round 1 flight 1');
-
-		assert.isTrue(
-			res.body[7].rounds[1][2].undone,
-			'Flight 2 is not done');
+		expect(res.body, 'Response is an object').toBeTypeOf('object');
+		expect(res.body[7].abbr, 'Event 7 is LD').toBe('LD');
+		expect(res.body[7].rounds[1][1].unstarted, '25 unstarted in Round 1 flight 1').toBe(25);
+		expect(res.body[7].rounds[1][2].undone, 'Flight 2 is not done').toBe(true);
 	});
 });

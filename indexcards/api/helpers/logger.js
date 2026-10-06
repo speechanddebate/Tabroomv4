@@ -18,8 +18,8 @@ function attachRequestContext(info) {
 
 	return info;
 }
-/** helper function to get the caller of a sequelize call for logging */
-function getCallerFrame(options = {}) {
+/** helper function to get the caller of a database query for logging */
+export function getCallerFrame(options = {}) {
 	const {
 		skipContains = [],
 		preferContains = '/api/',
@@ -42,21 +42,6 @@ function getCallerFrame(options = {}) {
 	return preferred ?? frames[0] ?? 'unknown';
 }
 
-export function logDB(_sql, timingMs) {
-	//if debug logging is on, log all queries otherwise just log the slow ones
-	if(timingMs >= config.logging.slowQueryLimit){
-		logger.warn('Slow SQL query', {
-			durationMs: timingMs,
-			caller: getCallerFrame({ skipContains: ['/node_modules/sequelize/', '/api/data/db.js'] }),
-		});
-	} else {
-		logger.debug('SQL query', {
-			durationMs: timingMs,
-			caller: getCallerFrame({ skipContains: ['/node_modules/sequelize/', '/api/data/db.js'] }),
-		});
-	}
-};
-
 const requestContextFormat = winston.format((info) => attachRequestContext(info));
 
 function Labels(props = {}) {
@@ -64,6 +49,7 @@ function Labels(props = {}) {
 		app: 'indexcards',
 		host: os.hostname(),
 		container: config.dockerhost,
+		commit: process.env.GIT_COMMIT || undefined,
 		...props,
 	};
 }
@@ -178,6 +164,8 @@ export const setupRequest = (req, res, next) => {
 			method: req.method,
 			url: req.originalUrl ?? '',
 			path: normalizePath(req.originalUrl ?? ''),
+			ip: req.ip,
+			session: req.auth?.sessionId ?? null,
 			statusCode: `${res.statusCode ?? ''}`,
 			responseTimeMs: `${duration}`,
 		});

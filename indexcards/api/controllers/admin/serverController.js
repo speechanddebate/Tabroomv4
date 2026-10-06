@@ -1,4 +1,8 @@
 import axios from 'axios';
+import { sql } from 'kysely';
+import { db as kdb } from '../../data/database.js';
+import { summon } from '../../repos/utils/summon.js';
+import changeLogRepo from '../../repos/changeLogRepo.js';
 import notify from '../../helpers/blast.js';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
@@ -67,29 +71,41 @@ export async function getTabroomInstance(req, res) {
 // Simple counter of how many servers are currently running to display in the
 // header of cloud service administrators.
 export async function getTabroomInstanceCounts(req, res) {
-	const tabwebCount = await req.db.sequelize.query(`
+	const { rows: tabwebCount } = await sql`
 		select
 			count(distinct id) as count
 		from server
 			where 1=1
 			and hostname like 'tabweb%'
 			and status = 'running'
-	`, {
-		type: req.db.Sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb);
 
 	if (tabwebCount && tabwebCount.length > 0) {
 		return res.status(200).json({ ...tabwebCount[0] });
 	}
 };
 
+// who to credit in server messages, which read "<name> <email> has ...".
+// while su'd: "Admin Name admin@email while su'd as Person Name person@email"
+const whoDunnit = (req) => {
+	const { person } = req;
+	const su = req.auth.su;
+	return {
+		name: su
+			? `${su.first} ${su.last} ${su.email} while su'd as ${person.first} ${person.last}`
+			: `${person.first} ${person.last}`,
+		email: person.email,
+	};
+};
+
 // API facing functions that will bring up or destroy machines.
 export async function changeInstanceCount(req, res) {
+	const who = whoDunnit(req);
 	const user = {
-		su    : req.session.su,
-		id    : req.session.person,
-		name  : `${req.person.name}`,
-		email : req.person.email,
+		su    : req.auth.su?.id ?? null,
+		id    : req.person.id,
+		name  : who.name,
+		email : who.email,
 	};
 
 	const serverCount = parseInt(req.params.target) || parseInt(req.body.target) || 0;
@@ -117,8 +133,9 @@ export async function rebootInstance(req, res) {
 		});
 	}
 
+	const who = whoDunnit(req);
 	const resultMessages = [
-		`${req.person.name} ${req.person.email} has REBOOTED ${machine}:\n`,
+		`${who.name} ${who.email} has REBOOTED ${machine}:\n`,
 		'\n',
 	];
 
@@ -149,8 +166,8 @@ export async function rebootInstance(req, res) {
 		});
 	}
 
-	await req.db.changeLog.create({
-		person     : req.session.su || req.session.person,
+	await changeLogRepo.createChangeLog(kdb, {
+		person     : req.auth.su?.id ?? req.person.id,
 		tag        : 'sitewide',
 		created_at : new Date(),
 		description: resultMessages.join('\n'),
@@ -165,22 +182,19 @@ export async function rebootInstance(req, res) {
 
 const notifyCloudAdmins = async (req, log, subject) => {
 
-	const cloudAdmins = await req.db.sequelize.query(`
+	const { rows: cloudAdmins } = await sql`
 		select distinct person.id
 			from person, person_setting ps
 		where person.id = ps.person
-			and ps.tag = :tag
-	`, {
-		replacements: { tag: 'system_administrator' },
-		type: req.db.sequelize.QueryTypes.SELECT,
-	});
+			and ps.tag = ${'system_administrator'}
+	`.execute(kdb);
 
 	let sender = '';
 
-	if (req.session.su) {
-		sender = await req.db.summon(req.db.person, req.session.su);
+	if (req.auth.su) {
+		sender = await summon(kdb, 'person',req.auth.su.id);
 	} else {
-		sender = await req.db.summon(req.db.person, req.session.person);
+		sender = await summon(kdb, 'person',req.person.id);
 	}
 
 	const adminIds = cloudAdmins.map( item => item.id );

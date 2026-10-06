@@ -13,10 +13,12 @@
 	"scripts": {
 	  "build": "tsc --build",
 	  "typecheck": "tsc --noEmit",
+	  "lint": "oxlint .",
+	  "lint:fix": "oxlint --fix .",
 	  "dev": "tsc --watch"
 	},
 	"dependencies": {
-	  "zod": "^4.0.0",
-	  "zod-openapi": "^5.4.6"
+	  "zod": "^4.6.5",
+	  "zod-openapi": "^6.0.2"
 	}
   }

@@ -17,7 +17,8 @@ async function getFines(db: Database, person: number, tourn: number){
 			'fine.levied_at as leviedAt',
 			'fine.tourn',
 			'currency.value as currency',
-			'school.name as school',
+			'fine.school as school',
+			'school.name as schoolName',
 		])
 		.where((eb) => eb.or([
 			eb('fine.person', '=', person),

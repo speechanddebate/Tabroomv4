@@ -1,16 +1,16 @@
 <script lang="ts">
     import { showDateTime } from '$lib/helpers/dt';
     import { getPerson } from '$lib/helpers/SessionContext.svelte';
-import type { PersonTournSummaryFinesItem } from '$indexcards/schemas';
-let { fine }:{fine: PersonTournSummaryFinesItem } = $props();
+import type { Fine } from '$indexcards/schemas';
+let { fine }:{fine: Fine } = $props();
 
 const person = getPerson();
 
 </script>
 
 <div class="pt-1 ">
-	<div class="w-full mb-4 p-0 bg-surface-400 border border-x-surface-700 border-b-surface-600 border-t-primary-600">
-		<div class="w-full box-border pt-1 bg-surface-500 border-x border-x-surface-700">
+	<div class="w-full mb-4 p-0 bg-surface border border-x-border-strong border-b-border border-t-primary-strong">
+		<div class="w-full box-border pt-1 bg-surface-alt border-x border-x-border-strong">
 			<span class="inline-block w-[8.5%] px-[0.45%] py-[3px] my-[2px] font-semibold pl-2">
 				Amount:
 			</span>

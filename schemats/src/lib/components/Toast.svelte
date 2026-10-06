@@ -32,13 +32,13 @@
 	function severityToBorderClass(toastSeverity: ToastSeverity | undefined): string {
 		switch (toastSeverity) {
 			case 'warning':
-				return 'border-l-4 border-yellow-600';
+				return 'border-l-4 border-warning';
 			case 'error':
-				return 'border-l-4 border-red-600';
+				return 'border-l-4 border-danger';
 			case 'success':
-				return 'border-l-4 border-green-600';
+				return 'border-l-4 border-success';
 			default:
-				return 'border-l-4 border-blue-600';
+				return 'border-l-4 border-primary-strong';
 		}
 	}
 </script>
@@ -50,7 +50,7 @@
 	onclose={onclose}
 	toastStatus={visible}
 >
-	<div class="flex flex-col gap-1 text-gray-900">
+	<div class="flex flex-col gap-1 text-text">
 		<p class="text-sm font-semibold">{message}</p>
 		{#if detail}
 			<p class="text-sm opacity-90">{detail}</p>

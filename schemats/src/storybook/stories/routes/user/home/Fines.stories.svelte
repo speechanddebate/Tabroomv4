@@ -16,8 +16,9 @@ const { Story } = defineMeta({
 			currency: '$',
 			amount: 100.0,
 			reason: `JUDGE FINE: ${faker.person.firstName()} ${faker.person.lastName()}`,
-			school: 'example school',
-			levied: faker.date.recent(),
+			school: 1,
+			schoolName: 'example school',
+			leviedAt: faker.date.recent().toISOString(),
 		},
 	}}
 />

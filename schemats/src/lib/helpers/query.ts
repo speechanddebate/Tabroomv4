@@ -1,7 +1,7 @@
 import type {
 	HTTPStatusCode2xx,
 } from '$indexcards';
-import type { Problem } from '$indexcards/schemas';
+import type { Problem } from '@tabroom/types';
 import { toast } from '$lib/helpers/toasts';
 
 import type {
@@ -19,6 +19,11 @@ type ExtractEnvelope<T> = T extends InfiniteData<infer E> ? E : T;
 
 export type SuccessData<TResponse extends OrvalEnvelope> =
 	Extract<TResponse, { status: HTTPStatusCode2xx }>['data'];
+
+export type ExtractedRow<TResponse extends OrvalEnvelope> =
+	NonNullable<SuccessData<TResponse>> extends readonly (infer TItem)[]
+		? TItem
+		: NonNullable<SuccessData<TResponse>>;
 
 export type QueryLike<TResponse extends OrvalEnvelope, TQueryError> = {
 	data: TResponse | null | undefined;

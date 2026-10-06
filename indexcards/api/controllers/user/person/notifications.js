@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 import axios from 'axios';
-import { Op } from 'sequelize';
+import { db } from '../../../data/database.js';
 import logger from '../../../helpers/logger.js';
 import config from '../../../config.js';
 
@@ -66,42 +66,37 @@ export async function pushSubscribe(req,res) {
 		return res.status(200).json('Session subscription enabled');
 	}
 
-	await req.db.session.update(
-		{
+	await db.updateTable('session')
+		.set({
 			push_notify: null,
 			last_access: new Date(),
-		},
-		{ where: { push_notify : req.params.subscriptionId } },
-	);
+		})
+		.where('push_notify', '=', req.params.subscriptionId)
+		.execute();
 
 	return res.status(200).json('Session subscription disabled');
 }
 export async function pushSync(req, res) {
-	const sessionId = req.body.sessionid || req.session.id;
+	const sessionId = req.body.sessionid || req.auth.sessionId;
 	const push_notify = req.body.subscriptionId || null;
 	const promises = [];
 
 	if (push_notify != null) {
-		const erasePromise = req.db.session.update(
-			{
-				push_notify: null,
-			},
-			{ where: {
-				id         : { [Op.ne]: sessionId },
-				push_notify,
-			},
-			},
-		);
+		const erasePromise = db.updateTable('session')
+			.set({ push_notify: null })
+			.where('id', '!=', sessionId)
+			.where('push_notify', '=', push_notify)
+			.execute();
 		promises.push(erasePromise);
 	}
 
-	const updateSession = req.db.session.update(
-		{
+	const updateSession = db.updateTable('session')
+		.set({
 			push_notify,
 			last_access: new Date(),
-		},
-		{ where: { id : sessionId } },
-	);
+		})
+		.where('id', '=', sessionId)
+		.execute();
 
 	promises.push(updateSession);
 	await Promise.all(promises);

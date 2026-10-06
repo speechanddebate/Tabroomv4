@@ -1,30 +1,35 @@
 
 import factories from '../../tests/factories/index.js';
 import personRepo from './personRepo.js';
-import db2 from '../data/db.js';
 
 import { db } from '../data/database.js';
 
 //kinda hate this but it allows us to test the paradigm cutoff logic without having to mock out the entire settings system or
 // manipulate time in a way that could affect other tests. will eventually want to setup more robust settings testing
 async function setTabroomDateSetting(tag: string, valueDate: Date) {
-	const [setting] = await db2.tabroomSetting.findOrCreate({
-		where: { tag },
-		defaults: {
-			tag,
+	const row = await db.selectFrom('tabroom_setting').where('tag', '=', tag).selectAll().executeTakeFirst();
+	if (!row) {
+		await db.insertInto('tabroom_setting')
+			.values({
+				tag,
+				value: 'date',
+				value_date: valueDate,
+			})
+			.execute();
+	}
+	const setting = await db.selectFrom('tabroom_setting').where('tag', '=', tag).selectAll().executeTakeFirst();
+
+	await db.updateTable('tabroom_setting')
+		.set({
 			value: 'date',
 			value_date: valueDate,
-		},
-	});
-
-	await setting.update({
-		value: 'date',
-		value_date: valueDate,
-	});
+		})
+		.where('id', '=', setting!.id)
+		.execute();
 }
 
 async function getTabroomDateSettingSnapshot(tag: string) {
-	const row = await db2.tabroomSetting.findOne({ where: { tag } });
+	const row = await db.selectFrom('tabroom_setting').where('tag', '=', tag).selectAll().executeTakeFirst();
 	if (!row) return null;
 
 	return {
@@ -39,19 +44,20 @@ async function getTabroomDateSettingSnapshot(tag: string) {
 
 async function restoreTabroomDateSetting(tag: string, snapshot: Awaited<ReturnType<typeof getTabroomDateSettingSnapshot>>) {
 	if (!snapshot) {
-		await db2.tabroomSetting.destroy({ where: { tag } });
+		// If no snapshot exists, delete the setting
+		await db.deleteFrom('tabroom_setting').where('tag', '=', tag).execute();
 		return;
 	}
 
-	await db2.tabroomSetting.update(
-		{
+	await db.updateTable('tabroom_setting')
+		.set({
 			value: snapshot.value,
 			value_text: snapshot.value_text,
 			value_date: snapshot.value_date,
 			person: snapshot.person,
-		},
-		{ where: { id: snapshot.id } }
-	);
+		})
+		.where('id', '=', snapshot.id)
+		.execute();
 }
 
 describe('PersonRepo', () => {

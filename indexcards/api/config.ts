@@ -50,20 +50,18 @@ export const ConfigSchema = z.object({
 		replica: z.string().min(1).optional(),
 		user: z.string().default('root'),
 		pass: z.string().min(1),
-		sequelizeOptions : z.object({
-			dialect : z.enum(['mariadb', 'mysql', 'postgres', 'sqlite', 'mssql']).default('mariadb'),
-			define  : z.object({
-				freezeTableName : z.boolean().default(true),
-				modelName       : z.string().default('singularName'),
-				underscored     : z.boolean().default(true),
-				timestamps      : z.boolean().default(false),
-			}).prefault({}),
-			pool: z.object({
-				max: z.int().min(1),
-				min: z.int().min(0),
-				acquire: z.int().min(0),
-				idle: z.int().min(0),
-			}).optional(),
+		/** mariadb connection pool options */
+		pool: z.object({
+			/** Maximum number of connections */
+			connectionLimit: z.int().min(1).default(5),
+			/** Connections to keep open when idle. Defaults to connectionLimit */
+			minimumIdle: z.int().min(0).optional(),
+			/** Milliseconds to wait for a free connection before erroring */
+			acquireTimeout: z.int().min(0).default(10000),
+			/** Seconds an idle connection stays open before it is released */
+			idleTimeout: z.int().min(0).default(1800),
+			/** Milliseconds before MariaDB aborts a query (max_statement_time). 0 means no limit */
+			queryTimeout: z.int().min(0).default(30000),
 		}).prefault({}),
 	}),
 	//------------------------------------------------------------------------------
@@ -78,7 +76,6 @@ export const ConfigSchema = z.object({
 		name: z.string().default('TabroomToken'),
 		domain: z.string().default('.tabroom.com'),
 	}).prefault({}),
-	session_header: z.string().min(1).default('tabroom-session'),
 	csrf: z.object({
 		trusted_origins: z.array(z.string()).default(['http://dev.tabroom.com']),
 	}).prefault({}),
@@ -191,22 +188,20 @@ export const ConfigSchema = z.object({
 
 type RuntimeConfig = z.infer<typeof ConfigSchema>;
 
-// Load a config file from path
+// Load a config file from path. A missing file is fine (defaults apply), but a
+// file that exists and can't be read or parsed is fatal, e.g. a failed docker
+// bind mount leaves an empty directory at the path
 function loadConfigFile(filePath: string): Record<string, object> {
+  if (!fs.existsSync(filePath)) {
+    if(process.env.NODE_ENV !== 'test') console.info(`Config not found at ${filePath}`);
+    return {};
+  }
   try {
-    if (!fs.existsSync(filePath)) {
-	console.info(`Config not found at ${filePath}`);
-	return {};
-    }
     const configText = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(configText);
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      console.warn(`Invalid JSON in ${filePath}: ${error.message}`);
-    } else {
-      console.warn(`Error loading ${filePath}: ${error}`);
-    }
-    return {};
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to load config at ${filePath}: ${reason}`, { cause: error });
   }
 }
 
@@ -221,13 +216,13 @@ async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   // Load base config
   const baseConfig = loadConfigFile(baseConfigPath);
   if (Object.keys(baseConfig).length > 0) {
-    console.info(`Loaded base configuration from ${baseConfigPath}`);
+    if(process.env.NODE_ENV !== 'test') console.info(`Loaded base configuration from ${baseConfigPath}`);
   }
 
   // Load environment-specific override
   const envConfig = loadConfigFile(envConfigPath);
   if (Object.keys(envConfig).length > 0) {
-    console.info(`Loaded ${nodeEnv}-specific overrides from ${envConfigPath}`);
+    if(process.env.NODE_ENV !== 'test') console.info(`Loaded ${nodeEnv}-specific overrides from ${envConfigPath}`);
   }
 
   // Merge: base → env-specific
@@ -236,7 +231,7 @@ async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   // Validate against schema
   try {
     const validated = ConfigSchema.parse(mergedData);
-    console.info('Configuration validated successfully against schema');
+    if(process.env.NODE_ENV !== 'test') console.info('Configuration validated successfully against schema');
 
     return validated;
   } catch (error) {

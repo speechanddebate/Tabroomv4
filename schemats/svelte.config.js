@@ -16,6 +16,10 @@ const config = {
 		experimental: {
 			explicitEnvironmentVariables: true,
 		},
+		// exposed as `version` from $app/env. Falls back to kit's default (build timestamp) outside CI
+		version: {
+			name: process.env.GIT_COMMIT || undefined,
+		},
 	},
 
 	compilerOptions: {

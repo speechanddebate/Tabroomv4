@@ -1,6 +1,5 @@
 
 import factories from '../../tests/factories/index.js';
-import { encrypt } from 'unixcrypt';
 import { ValidationError } from '../helpers/errors/errors.js';
 
 import AuthService,{ AUTH_INVALID }  from './AuthService.js';
@@ -11,7 +10,7 @@ describe('AuthService', () => {
 		it('authenticates a user with valid credentials', async () => {
 			const password = 'mypassword';
 			const Person = await factories.person.create({
-				password: encrypt(password),
+				password: password,
 			});
 
 			//Act
@@ -27,7 +26,7 @@ describe('AuthService', () => {
 		it('throws AUTH_INVALID for invalid credentials', async () => {
 			const password = 'mypassword';
 			const Person = await factories.person.create({
-				password: encrypt(password),
+				password: password,
 			});
 
 			await expect(AuthService.login(Person.email!, 'wrongpassword')).rejects.toBe(AUTH_INVALID);
@@ -70,22 +69,9 @@ describe('AuthService', () => {
 		});
 	});
 
-	describe('generateCSRFToken', () => {
-		it('generates a valid CSRF token as a hex string', () => {
-			const userkey = 'testkey';
-			const token = AuthService.generateCSRFToken(userkey);
-			expect(typeof token).toBe('string');
-			expect(token.length).toBe(64); // sha256 hex digest length
-		});
-	});
-
 	describe('getCookieOptions', () => {
 		it('returns Auth Cookie Options', () => {
 			const opts = AuthService.getAuthCookieOptions();
-			expect(opts).toBeDefined();
-		});
-		it('returns CSRF Cookie Options', () => {
-			const opts = AuthService.getCSRFCookieOptions();
 			expect(opts).toBeDefined();
 		});
 	});

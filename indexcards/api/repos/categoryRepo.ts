@@ -7,6 +7,7 @@ import type { Updateable, Insertable } from 'kysely';
 import type { Settings } from './utils/settings.js';
 
 type CategoryOpts = {
+	tourn?: number;
 	settings?: boolean | string[];
 };
 
@@ -14,8 +15,9 @@ function buildCategoryQuery<TOpts extends CategoryOpts>(db: Database, opts: TOpt
 	let query = db.selectFrom('category')
 	.$if(opts.settings !== undefined && opts.settings !== false, (q) => q.select(selectSettings({
 		table: 'category',
-		settings: opts.settings ?? false,
+		settings: opts.settings!,
 	})))
+	if(opts.tourn) query = query.where('category.tourn', '=', opts.tourn);
 	return query;
 }
 
@@ -24,22 +26,14 @@ export async function getCategory(db: Database, id: number, opts: CategoryOpts =
 	.where('category.id', '=', id);
 	return await query.selectAll('category').executeTakeFirst();
 }
-async function getCategories(db: Database, scope: { tournId?: number } = {},opts: CategoryOpts = {}) {
-	let query = buildCategoryQuery(db,opts);
-	if (scope?.tournId) {
-		query = query.where('category.tourn', '=', scope.tournId);
-	}
-
-	return await query.selectAll('category').execute();
+async function getCategories(db: Database, opts: CategoryOpts = {}) {
+	return await buildCategoryQuery(db,opts)
+		.selectAll('category')
+		.execute();
 }
-async function createCategory(db: Database, data: Insertable<Category> & { settings?: Settings }, opts = {}) {
+async function createCategory(db: Database, data: Insertable<Category> & { settings?: Settings }) {
 	const { settings, ...categoryData } = data;
-
 	return await db.transaction().execute(async (trx) => {
-		if (Object.keys(categoryData).length === 0) {
-			throw new Error('createCategory requires category data');
-		}
-
 		const category = await trx
 			.insertInto('category')
 			.values(categoryData)
@@ -54,12 +48,11 @@ async function createCategory(db: Database, data: Insertable<Category> & { setti
 				ownerId: category.id,
 			});
 		}
-
 		return category;
 	});
 }
 
-async function updateCategory(db: Database, id: number, data: Updateable<Category> & { settings?: Settings }, opts = {}) {
+async function updateCategory(db: Database, id: number, data: Updateable<Category> & { settings?: Settings }) {
 	const { settings, ...categoryData } = data;
 
 	return await db.transaction().execute(async (trx) => {

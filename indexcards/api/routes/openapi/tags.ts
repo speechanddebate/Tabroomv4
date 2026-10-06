@@ -14,7 +14,7 @@ export const tags: TagObject[] = [
 		description: 'Administrative functions for testing mail and notifications',
 	},
 	{
-		name: 'ads',
+		name: 'Ads',
 		description: 'Endpoints related to advertisements displayed on Tabroom',
 	},
 	{
@@ -26,23 +26,7 @@ export const tags: TagObject[] = [
 		description: 'Endpoints for managing tournament backups and restores',
 	},
 	{
-		name: 'Ext : Caselist',
-		description: 'Endpoints for external access to Caselist data',
-	},
-	{
-		name: 'Ext : Share',
-		description: 'Endpoints for external access to Share data',
-	},
-	{
-		name: 'Ext : NSDA',
-		description: 'Endpoints for external access to NSDA data',
-	},
-	{
-		name: 'Ext : Mason',
-		description: 'Endpoints for external access to Mason data',
-	},
-	{
-		name: 'Inbox',
+		name: 'User: Inbox',
 		description: 'Endpoints for managing user inbox messages',
 	},
 	{
@@ -58,7 +42,7 @@ export const tags: TagObject[] = [
 		description: 'Endpoints for managing categories within tournaments',
 	},
 	{
-		name: 'Session',
+		name: 'User: Session',
 		description: 'Endpoints related to a users session',
 	},
 	{
@@ -88,16 +72,6 @@ export const declaredTagGroups = [
 		],
 	},
 	{
-		name: 'Ext',
-		tags: [
-			'Ext',
-			'Ext : Caselist',
-			'Ext : Share',
-			'Ext : NSDA',
-			'Ext : Mason',
-		],
-	},
-	{
 		name: 'Tournament Management',
 		tags: [
 			'Tournament',
@@ -111,9 +85,12 @@ export const declaredTagGroups = [
 	{
 		name: 'User',
 		tags: [
-			'Inbox',
-			'Session',
-			'Push Notifications',
+			'User: Inbox',
+			'User: Session',
+			'User: Chapter',
+			'User: Tournament',
+			'User: Chapter',
+			'User: Judge'
 		],
 	},
 ];

@@ -1,7 +1,8 @@
 
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db } from '../../../data/database.js';
 export async function getSectionEntries(req, res) {
-	const entryQuery = `
+	const entryQuery = sql`
 		select
 			entry.id,
 			entry.school,
@@ -18,15 +19,12 @@ export async function getSectionEntries(req, res) {
 			left join chapter on school.chapter = chapter.state
 			left join strike hybrid on hybrid.type = 'hybrid' and hybrid.entry = entry.id
 
-		where ballot.panel = :sectionId
+		where ballot.panel = ${req.params.sectionId}
 			and ballot.entry = entry.id
 			and entry.active = 1
 	`;
 
-	const rawEntries = await db.sequelize.query(entryQuery, {
-		replacements: { sectionId: req.params.sectionId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: rawEntries } = await entryQuery.execute(db);
 
 	const entries = {};
 	entries.Entries = [];

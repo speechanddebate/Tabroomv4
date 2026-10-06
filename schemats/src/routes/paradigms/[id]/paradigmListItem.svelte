@@ -1,12 +1,15 @@
 <script lang="ts">
-	import type { RestParadigms200Item } from '$indexcards/schemas';
+	import type { ParadigmSearchResult } from '$indexcards/schemas';
 
 	let {
 		item,
 		href,
+		onselect,
 	}: {
-		item: RestParadigms200Item;
+		item: ParadigmSearchResult;
 		href?: string;
+		// Called when the "View Paradigm" link is clicked.
+		onselect?: () => void;
 	} = $props();
 </script>
 
@@ -15,19 +18,19 @@
 		group
 		relative
 		rounded-lg
-		border border-slate-200
-		bg-white
+		border border-border
+		bg-surface
 		shadow-sm
 		transition-all
 		duration-200
 		hover:shadow-lg
-		hover:border-slate-300
+		hover:border-border-strong
 		overflow-hidden"
 >
 	<!-- Header with action button -->
 	<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-4 sm:p-5 pb-3 sm:pb-3">
 		<div class="flex-1 min-w-0">
-			<h3 class="text-base sm:text-lg md:text-xl font-semibold text-slate-900 truncate">
+			<h3 class="text-base sm:text-lg md:text-xl font-semibold text-text truncate">
 				{item.name}
 			</h3>
 		</div>
@@ -42,15 +45,16 @@
 				sm:text-sm
 				font-medium
 				rounded-md
-				bg-primary-600
+				bg-primary-strong
 				text-white
 				transition-colors
-				hover:bg-primary-700
-				active:bg-primary-800
+				hover:bg-primary-deep
+				active:bg-primary-deep
 				whitespace-nowrap
 				cursor-pointer"
+			aria-label="View Paradigm for {item.name}"
 			href={href}
-			title="View paradigm"
+			onclick={onselect}
 		>
 			View Paradigm
 		</a>
@@ -61,9 +65,9 @@
 		<!-- Tournament stats -->
 		{#if item.tournJudged !== undefined && item.tournJudged !== null}
 			<div class="flex items-center gap-2">
-				<div class="flex-shrink-0 w-1 h-1 bg-slate-400 rounded-full"></div>
-				<p class="text-xs sm:text-sm text-slate-600">
-					Judged at <span class="font-semibold text-slate-900">{item.tournJudged}</span>
+				<div class="flex-shrink-0 w-1 h-1 bg-border-strong rounded-full"></div>
+				<p class="text-xs sm:text-sm text-muted">
+					Judged at <span class="font-semibold text-text">{item.tournJudged}</span>
 					tournament{item.tournJudged !== 1 ? 's' : ''}
 				</p>
 			</div>
@@ -72,27 +76,24 @@
 		<!-- Schools -->
 		{#if item.schools && item.schools.length > 0}
 			<div class="space-y-2">
-				<p class="text-xs sm:text-sm font-semibold text-slate-700">Has judged for:</p>
+				<p class="text-xs sm:text-sm font-semibold text-text">Has judged for:</p>
 				<div class="flex flex-wrap gap-2">
 					{#each item.schools as school, i (item.id + '-' + i)}
 						<span class="
 							inline-flex
 							items-center
 							rounded-full
-							bg-gradient-to-r
-							from-blue-50
-							to-blue-100
+							bg-primary-soft
 							px-2.5
 							sm:px-3
 							py-1
 							text-xs
 							sm:text-sm
 							font-medium
-							text-blue-700
-							border border-blue-200
+							text-primary-strong
+							border border-primary-soft
 							transition-colors
-							group-hover:from-blue-100
-							group-hover:to-blue-200
+							group-hover:border-primary
 						">
 							{school.name}
 						</span>

@@ -36,5 +36,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["index.ts"]
+  // list src too: `tsc --build` only checks root files to decide if dist is stale
+  "include": ["index.ts", "src"]
 }

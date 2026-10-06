@@ -17,6 +17,7 @@ runs:
       run: |
         docker build \
           -f "${{ inputs.dockerfile }}" \
+          --build-arg GIT_COMMIT="$(git rev-parse --short HEAD)" \
           -t "${{ inputs.image }}:${FORGEJO_SHA}" \
           -t "${{ inputs.image }}:production" \
           .

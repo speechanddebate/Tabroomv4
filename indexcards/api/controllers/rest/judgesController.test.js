@@ -16,10 +16,6 @@ import judgeRepo from '../../repos/judgeRepo.js';
 import chapterJudgeRepo from '../../repos/chapterJudgeRepo.js';
 
 describe('judgesController.unlinkedSearch', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
 	it('combines judge and chapter_judge results', async () => {
 		vi.mocked(judgeRepo.unlinkedSearch).mockResolvedValue([
 			{ id: 1, first: 'Alex', middle: null, last: 'Smith', tourn_name: 'State', school_name: 'Central High' },
@@ -29,8 +25,8 @@ describe('judgesController.unlinkedSearch', () => {
 		]);
 
 		const req = createReq({
-			valid: { query: { first: 'Alex', last: 'Smith' } },
-			actor: { id: 99, Person: { first: 'Alex', last: 'Smith' } },
+			query: { first: 'Alex', last: 'Smith' },
+			person: { id: 99, first: 'Alex', last: 'Smith' },
 		});
 		const res = createRes();
 
@@ -52,8 +48,8 @@ describe('judgesController.unlinkedSearch', () => {
 		vi.mocked(chapterJudgeRepo.unlinkedSearch).mockResolvedValue([]);
 
 		const req = createReq({
-			valid: { query: {} },
-			actor: { id: 5, Person: { first: 'Jordan', last: 'Lee' } },
+			query: {},
+			person: { id: 5, first: 'Jordan', last: 'Lee' },
 		});
 		const res = createRes();
 

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { createRestParadigmsInfinite } from '$indexcards';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import { onMount, setContext } from 'svelte';
-	import { Search, Button } from 'flowbite-svelte';
+	import { setContext } from 'svelte';
+	import { Search } from 'flowbite-svelte';
+	import Button from '$lib/components/Button.svelte';
 
 	import { handleOrval } from '$lib/helpers/query';
-	import Sidebar from '$lib/layouts/Sidebar.svelte';
+	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
 	import ParadigmResultsList from './paradigmResultsList.svelte';
 	import type { ParadigmsSearchContext } from './searchContext';
 	import type { Snippet } from 'svelte';
@@ -19,23 +19,7 @@
 
 	const LIMIT = 25;
 
-	let query = $state('');
-	let searchTerm = $state('');
-	let isLgUp = $state(false);
-
-	onMount(() => {
-		const mediaQuery = window.matchMedia('(min-width: 1024px)');
-		isLgUp = mediaQuery.matches;
-
-		const handleMediaChange = (event: MediaQueryListEvent) => {
-			isLgUp = event.matches;
-		};
-
-		mediaQuery.addEventListener('change', handleMediaChange);
-		return () => {
-			mediaQuery.removeEventListener('change', handleMediaChange);
-		};
-	});
+	const searchTerm = $derived(page.url.searchParams.get('search')?.trim() ?? '');
 
 	const paradigmsQuery = createRestParadigmsInfinite(
 		() => ({ search: searchTerm, limit: LIMIT }),
@@ -72,106 +56,62 @@
 	};
 
 	setContext('paradigmsSearch', paradigmsSearchContext);
-
-	function updatePathSearch(nextSearch: string) {
-		const target = new URL(page.url);
-		if (!nextSearch) {
-			target.searchParams.delete('search');
-		} else {
-			target.searchParams.set('search', nextSearch);
-		}
-
-		goto(`${target.pathname}${target.search}`, {
-			replaceState: true,
-			keepFocus: true,
-			noScroll: true,
-		});
-	}
-
-	function handleSearch() {
-		const nextSearch = query.trim();
-		updatePathSearch(nextSearch);
-	}
-
-	$effect(() => {
-		const nextSearch = page.url.searchParams.get('search')?.trim() ?? '';
-		if (nextSearch === searchTerm) return;
-		searchTerm = nextSearch;
-		query = nextSearch;
-	});
 </script>
 
-<div class="flex min-h-[80vh] flex-wrap override px-2 sm:px-4 bg-white">
-	<div class="w-full pb-1 pl-1 pt-0 sm:pl-2">
-			<h2>Judge Paradigms</h2>
-	</div>
-	<div class="main !w-full !px-3 !pb-6 !pt-2 sm:!px-5">
-		{#if isDetailPage}
-			<div class="flex w-full flex-row">
-				<div class="min-w-0 flex-1">
-					{@render children()}
-				</div>
+{#snippet searchBox()}
+	<form data-sveltekit-replacestate data-sveltekit-reset="false" method="GET" role="search">
+		<Search
+			id="paradigm-search"
+			name="search"
+			aria-label="Search paradigms"
+			placeholder="ex: Winston Smith"
+			type="search"
+			value={searchTerm}
+		>
+			<Button
+				class="me-1"
+				color="primary"
+				disabled={paradigmsQuery.isLoading}
+				size="sm"
+				type="submit"
+			>
+				{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
+			</Button>
+		</Search>
+	</form>
+{/snippet}
 
-				{#key page.url.pathname}
-				<Sidebar initialOpen={isLgUp}>
-					<div class="sidenote">
-						<Search
-							id="paradigm-search"
-							onkeydown={(e) => e.key === 'Enter' && handleSearch()}
-							placeholder="ex: Winston Smith"
-							type="search"
-							bind:value={query}
-						>
-							<Button
-								class="me-1"
-								color="primary"
-								disabled={paradigmsQuery.isLoading}
-								onclick={handleSearch}
-								type="button"
-							>
-								{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
-							</Button>
-						</Search>
-					</div>
+{#if isDetailPage}
+	<WithSidebar>
+		<h2>Judge Paradigms</h2>
+		{@render children()}
 
-					{#if showResults}
-						<div class="sidenote mt-3 max-h-[calc(100dvh-14rem)] overflow-y-auto pr-1">
-							<ParadigmResultsList
-								paradigmsQuery={paradigmsQuery}
-								results={results}
-								searchTerm={searchTerm}
-								selectedHref={selectedHref}
-							/>
-						</div>
-					{/if}
-				</Sidebar>
-				{/key}
+		{#snippet sidebar({ closeDrawer })}
+			<div class="sidenote">
+				{@render searchBox()}
 			</div>
-		{:else}
-			<div class="mx-auto w-full max-w-5xl">
-				<div class="rounded-lg border border-secondary-300 bg-white p-3">
-					<Search
-						id="paradigm-search"
-						onkeydown={(e) => e.key === 'Enter' && handleSearch()}
-						placeholder="ex: Winston Smith"
-						type="search"
-						bind:value={query}
-					>
-						<Button
-							class="me-1"
-							color="primary"
-							disabled={paradigmsQuery.isLoading}
-							onclick={handleSearch}
-							type="button"
-						>
-							{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
-						</Button>
-					</Search>
+
+			{#if showResults}
+				<div class="sidenote mt-3 max-h-[calc(100dvh-14rem)] overflow-y-auto pr-1">
+					<ParadigmResultsList
+						onselect={closeDrawer}
+						paradigmsQuery={paradigmsQuery}
+						results={results}
+						searchTerm={searchTerm}
+						selectedHref={selectedHref}
+					/>
 				</div>
-				<section class="mt-3">
-					{@render children()}
-				</section>
-			</div>
-		{/if}
+			{/if}
+		{/snippet}
+	</WithSidebar>
+{:else}
+	<h2>Judge Paradigms</h2>
+	<div class="mx-auto w-full max-w-5xl">
+		<div class="rounded-lg border border-accent bg-surface p-3">
+			{@render searchBox()}
+		</div>
+		<section class="mt-3">
+			{@render children()}
+		</section>
 	</div>
-</div>
+{/if}

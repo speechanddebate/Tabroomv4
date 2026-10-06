@@ -23,7 +23,7 @@ async function getTimeslots(req: Request, res: Response) {
 
 //tourns/:tournId/timeslots
 async function createTimeslot(req: Request, res: Response) {
-	const timeslotData = req.valid.body;
+	const timeslotData = req.body;
 	if (isNaN(Number(timeslotData?.tourn)) || Number(timeslotData.tourn) !== Number(req.params.tournId)) {
 		return BadRequest(req, res, 'Tournament ID in body does not match URL');
 	}
@@ -32,12 +32,12 @@ async function createTimeslot(req: Request, res: Response) {
 }
 
 async function updateTimeslot(req: Request, res: Response) {
-	const timeslotId = parseInt(req.valid.params.timeslotId as string);
-	const timeslotData = req.valid.body;
-	if (!req.valid.params.timeslotId) {
+	const timeslotId = parseInt(req.params.timeslotId as string);
+	const timeslotData = req.body;
+	if (!req.params.timeslotId) {
 		return BadRequest(req, res, 'Timeslot ID is required');
 	}
-	if (timeslotData.id && Number(timeslotData.id) !== Number(req.valid.params.timeslotId)) {
+	if (timeslotData.id && Number(timeslotData.id) !== Number(req.params.timeslotId)) {
 		return BadRequest(req, res, 'Timeslot ID in body does not match URL');
 	}
 	await timeslotRepo.updateTimeslot(db, timeslotId, timeslotData);

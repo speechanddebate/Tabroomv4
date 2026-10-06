@@ -1,6 +1,5 @@
 import factories from '../../../tests/factories/index.js';
 import { judgeRecord } from './judgeRecords';
-import db from '../../data/db.js';
 describe('Judge Record Service', async () => {
 	let personId,judgeId, tournId, roundId, panelId, eventId;
 	let entryId;
@@ -15,12 +14,11 @@ describe('Judge Record Service', async () => {
 			post_primary: 3,
 		})); //published round with public primary results
 		({ id: panelId } = await factories.panel.create({ round: roundId }));
-		const entry = await db.entry.create({
+		({ id: entryId } = await factories.entry.create({
 			event: eventId,
 			tourn: tournId,
 			code: 'AFF1',
-		});
-		entryId = entry.id;
+		}));
 	});
 	it('returns the public judging record of a person', async () => {
 		const Ballot = await factories.ballot.create({

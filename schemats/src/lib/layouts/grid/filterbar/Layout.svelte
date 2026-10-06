@@ -12,7 +12,7 @@
 	} from '@svar-ui/svelte-core';
 	import { createFilterRule } from '@svar-ui/filter-store/dist/index.js';
 
-	let { fields = [], debounce = 300, onchange } = $props();
+	let { fields = [], debounce = 300, onchange = undefined } = $props();
 
 	let lastField = $state(),
 		timer = $state(),

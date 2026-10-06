@@ -1,11 +1,14 @@
 name: Build
 
 on:
+  # manual trigger for emergencies
   workflow_dispatch:
+  # called by ci.yml once all checks pass on main
+  workflow_call:
 
 jobs:
   build-indexcards:
-    runs-on: linux-amd64
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -25,7 +28,7 @@ jobs:
           registry_password: ${{ secrets.REGISTRY_PASSWORD }}
 
   build-schemats:
-    runs-on: linux-amd64
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout

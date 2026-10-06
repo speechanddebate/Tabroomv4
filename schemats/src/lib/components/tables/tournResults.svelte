@@ -74,7 +74,7 @@
 
 	</script>
 
-<div class='px-3 overflow-x-scroll py-3 bg-back wg-full'>
+<div class='px-3 overflow-x-scroll py-3 bg-surface wg-full'>
 {#if data}
 	<SVGrid
 		columns={columns}

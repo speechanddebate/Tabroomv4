@@ -92,19 +92,19 @@
 
 		{#if status.tag === 'admin'}
 
-			<span class='text-error-600 w-full'>
+			<span class='text-danger w-full'>
 				{status.text}
 			</span>
 
 		{:else if status.tag === 'over'}
 
-			<span class='text-error-600 w-full'>
+			<span class='text-danger w-full'>
 				{status.text}
 			</span>
 
 		{:else if status.tag === 'notyet'}
 
-			<span class='text-primary-600 font-semibold w-1/3'>
+			<span class='text-primary-strong font-semibold w-1/3'>
 				{status.text}
 			</span>
 			<span class='w-1/3'>
@@ -116,7 +116,7 @@
 
 		{:else if status.tag === 'open'}
 
-			<span class='text-success-600 font-semibold w-1/3'>
+			<span class='text-success font-semibold w-1/3'>
 				{status.text}
 			</span>
 			<span class='w-1/3'>

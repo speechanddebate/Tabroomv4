@@ -14,8 +14,8 @@
 				<div class='w-full ps-1 pe-0.5'>
 					{#if  row.Judges[judgeId].paradigm}
 						<a
-							class  = '{ column.cellClass?.[column.id]?.[judgeId] || 'p-0 py-0.5 m-0 w-full font-normal text-black' }'
-							href   = { resolve(`/paradigms/${row.Judges[judgeId].paradigm}`, {}) }
+							class  = '{ column.cellClass?.[column.id]?.[judgeId] || 'p-0 py-0.5 m-0 w-full font-normal text-text' }'
+							href   = { resolve('/paradigms/[id]', { id: String(row.Judges[judgeId].paradigm) }) }
 							target = '_blank'
 							title  = 'Judge Paradigm'
 						>

@@ -10,10 +10,10 @@
 
 	{#if input.mailto}
 		<a
-			class = 'blue full bg-back-100 text-xs
-				border-s-2 border-primary-400
-				border-y-1 border-y-back-300
-				hover:bg-secondary-100
+			class = 'blue full bg-surface-alt text-xs
+				border-s-2 border-primary
+				border-y-1 border-y-border
+				hover:bg-accent-soft
 				${ input.linkClass }
 			'
 			href = 'mailto:{ input.email }'
@@ -22,10 +22,10 @@
 		</a>
 	{:else if input.url}
 		<a
-			class = 'blue full bg-back-100 text-xs
-				border-s-2 border-primary-400
-				border-y-1 border-y-back-300
-				hover:bg-secondary-100
+			class = 'blue full bg-surface-alt text-xs
+				border-s-2 border-primary
+				border-y-1 border-y-border
+				hover:bg-accent-soft
 				${ input.linkClass }
 			'
 			href = '{input.url}'
@@ -36,13 +36,12 @@
 		<a
 			class = '
 				{ page.url.pathname === input.location
-					? 'bg-primary-700 text-secondary-200 hover:text-black hover:bg-secondary-300'
-					: 'bg-back-100 text-black'
+					? 'bg-primary-strong text-accent-soft hover:text-text hover:bg-accent'
+					: 'bg-surface-alt text-text hover:bg-accent-soft'
 				}
-				blue full bg-back-100 text-xs
-				border-s-2 border-primary-400
-				border-y-1 border-y-back-300
-				hover:bg-secondary-100
+				blue full text-xs
+				border-s-2 border-primary
+				border-y-1 border-y-border
 				${ input.linkClass }
 			'
 			href = {resolve(input.location,{})}

@@ -1,35 +1,28 @@
 // import { showDateTime } from '../../../helpers/common';
 
-import { UnexpectedError } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { NotImplemented, UnexpectedError } from '../../../helpers/problem.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 
 // General CRUD for the jpool itself
 // Get jpool (read)
 export async function getJPool(req, res) {
-	const jpool = await db.summon(db.jpool, req.params.jpoolId);
+	const jpool = await summon(kdb, 'jpool',req.params.jpoolId);
 	res.status(200).json(jpool);
 }
 
-// Update jpool (update)
+// Update jpool (update). Never worked: it called update() on a plain object.
 export async function updateJPool(req, res) {
-	const jpool = await db.summon(db.jpool, req.params.jpoolId);
-	const updates = req.body;
-	delete updates.id;
-
-	try {
-		await jpool.update(updates);
-	} catch (err) {
-		return UnexpectedError(req, res, err.message);
-	}
-	res.status(200).json(jpool);
+	return NotImplemented(req, res, 'Updating a judge pool is not yet implemented');
 }
 
 // Delete jpool
 export async function deleteJPool(req, res) {
 	try {
-		await db.jpool.destroy({
-			where: { id: req.params.jpoolId },
-		});
+		await kdb.deleteFrom('jpool')
+			.where('id', '=', req.params.jpoolId)
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -47,16 +40,10 @@ export async function deleteJPool(req, res) {
 // Add judge to jpool (create)
 export async function createJPoolJudge(req, res) {
 	try {
-		await db.sequelize.query(
-			`INSERT IGNORE into jpool_judge set (jpool, judge) values (:jpoolId, :judgeId)`,
-			{
-				replacements: {
-					jpoolId: req.params.jpoolId,
-					judgeId: req.params.judgeId,
-				},
-				type: db.sequelize.QueryTypes.INSERT,
-			}
-		);
+		await kdb.insertInto('jpool_judge')
+			.ignore()
+			.values({ jpool: req.params.jpoolId, judge: req.params.judgeId })
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -65,29 +52,17 @@ export async function createJPoolJudge(req, res) {
 
 // Remove judge from jpool
 export async function deleteJPoolJudge(req, res) {
-	await db.sequelize.query(
-		`delete jpj.* from jpool_judge jpj where jpj.jpool = :jpoolId and jpj.judge = :judgeId`,
-		{
-			replacements: {
-				jpoolId: req.params.jpoolId,
-				judgeId: req.params.judgeId,
-			},
-			type: db.sequelize.QueryTypes.DELETE,
-		}
-	);
+	await kdb.deleteFrom('jpool_judge')
+		.where('jpool', '=', req.params.jpoolId)
+		.where('judge', '=', req.params.judgeId)
+		.execute();
 	res.status(200).json({ error: false, message: 'Judge removed from pool' });
 }
 
 // Update a bunch of judges
 // Get judges in jpool (read)
 export async function getJPoolJudges(req, res) {
-	const judges = await db.sequelize.query(
-		`select judge.* from judge, jpool_judge jpj where judge.id = jpj.judge and jpj.jpool = :jpoolId`,
-		{
-			replacements: { jpoolId: req.params.jpoolId },
-			type: db.sequelize.QueryTypes.SELECT,
-		}
-	);
+	const { rows: judges } = await sql`select judge.* from judge, jpool_judge jpj where judge.id = jpj.judge and jpj.jpool = ${req.params.jpoolId}`.execute(kdb);
 	res.status(200).json(judges);
 }
 
@@ -96,16 +71,10 @@ export async function createJPoolJudges(req, res) {
 	let errs = '';
 	for (const judgeId of req.body.judges) {
 		try {
-			await db.sequelize.query(
-				`INSERT IGNORE into jpool_judge set (jpool, judge) values (:jpoolId, :judgeId)`,
-				{
-					replacements: {
-						jpoolId: req.params.jpoolId,
-						judgeId,
-					},
-					type: db.sequelize.QueryTypes.INSERT,
-				}
-			);
+			await kdb.insertInto('jpool_judge')
+				.ignore()
+				.values({ jpool: req.params.jpoolId, judge: judgeId })
+				.execute();
 		} catch (err) {
 			errs += err;
 		}
@@ -118,13 +87,9 @@ export async function createJPoolJudges(req, res) {
 
 // Remove all judges from jpool
 export async function deleteJPoolJudges(req, res) {
-	await db.sequelize.query(
-		`delete jpj.* from jpool_judge jpj where jpj.jpool = :jpoolId`,
-		{
-			replacements: { jpoolId: req.params.jpoolId },
-			type: db.sequelize.QueryTypes.DELETE,
-		}
-	);
+	await kdb.deleteFrom('jpool_judge')
+		.where('jpool', '=', req.params.jpoolId)
+		.execute();
 	res.status(200).json('All judges removed from pool');
 }
 
@@ -136,16 +101,10 @@ export async function deleteJPoolJudges(req, res) {
 // Add round to jpool (create)
 export async function createJPoolRound(req, res) {
 	try {
-		await db.sequelize.query(
-			`INSERT IGNORE into jpool_round set (jpool, round) values (:jpoolId, :roundId)`,
-			{
-				replacements: {
-					jpoolId: req.params.jpoolId,
-					roundId: req.params.roundId,
-				},
-				type: db.sequelize.QueryTypes.INSERT,
-			}
-		);
+		await kdb.insertInto('jpool_round')
+			.ignore()
+			.values({ jpool: req.params.jpoolId, round: req.params.roundId })
+			.execute();
 	} catch (err) {
 		return UnexpectedError(req, res, err.message);
 	}
@@ -154,16 +113,10 @@ export async function createJPoolRound(req, res) {
 
 // Remove round from jpool
 export async function deleteJPoolRound(req, res) {
-	await db.sequelize.query(
-		`delete jpr.* from jpool_round jpr where jpr.jpool = :jpoolId and jpr.round = :roundId`,
-		{
-			replacements: {
-				jpoolId: req.params.jpoolId,
-				roundId: req.params.roundId,
-			},
-			type: db.sequelize.QueryTypes.DELETE,
-		}
-	);
+	await kdb.deleteFrom('jpool_round')
+		.where('jpool', '=', req.params.jpoolId)
+		.where('round', '=', req.params.roundId)
+		.execute();
 	res.status(200).json({ error: false, message: 'Round removed from pool' });
 }
 
@@ -171,13 +124,7 @@ export async function deleteJPoolRound(req, res) {
 
 // Get rounds in jpool (read)
 export async function getJPoolRounds(req, res) {
-	const rounds = await db.sequelize.query(
-		`select round.* from round, jpool_round jpr where round.id = jpr.round and jpr.jpool = :jpoolId`,
-		{
-			replacements: { jpoolId: req.params.jpoolId },
-			type: db.sequelize.QueryTypes.SELECT,
-		}
-	);
+	const { rows: rounds } = await sql`select round.* from round, jpool_round jpr where round.id = jpr.round and jpr.jpool = ${req.params.jpoolId}`.execute(kdb);
 	res.status(200).json(rounds);
 }
 
@@ -186,16 +133,10 @@ export async function createJPoolRounds(req, res) {
 	let errs = '';
 	for (const roundId of req.body.rounds) {
 		try {
-			await db.sequelize.query(
-				`INSERT IGNORE into jpool_round set (jpool, round) values (:jpoolId, :roundId)`,
-				{
-					replacements: {
-						jpoolId: req.params.jpoolId,
-						roundId,
-					},
-					type: db.sequelize.QueryTypes.INSERT,
-				}
-			);
+			await kdb.insertInto('jpool_round')
+				.ignore()
+				.values({ jpool: req.params.jpoolId, round: roundId })
+				.execute();
 		} catch (err) {
 			errs += err;
 		}
@@ -208,12 +149,8 @@ export async function createJPoolRounds(req, res) {
 
 // Remove all rounds from jpool
 export async function deleteJPoolRounds(req, res) {
-	await db.sequelize.query(
-		`delete jpr.* from jpool_round jpr where jpr.jpool = :jpoolId`,
-		{
-			replacements: { jpoolId: req.params.jpoolId },
-			type: db.sequelize.QueryTypes.DELETE,
-		}
-	);
+	await kdb.deleteFrom('jpool_round')
+		.where('jpool', '=', req.params.jpoolId)
+		.execute();
 	res.status(200).json('All rounds removed from pool');
 }

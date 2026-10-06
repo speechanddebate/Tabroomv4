@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
+import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 import {
 	getJPool,
 	updateJPool,

@@ -2,7 +2,7 @@ import factories from '../../../../../tests/factories/index.js';
 import request from 'supertest';
 import server from '../../../../../app.js';
 import z from 'zod';
-import { StudentSchema } from '@tabroom/types';
+import { ClaimResponseSchema, StudentSchema } from '@tabroom/types';
 import studentRepo from '../../../../repos/studentRepo.js';
 import { db } from '../../../../data/database.js';
 
@@ -26,9 +26,10 @@ describe('studentsRouter', () => {
 				.post('/v1/user/students/claim')
 				.query({ studentId: Student.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			//assert that the student's person_request is updated
+			expect(res.body).toMatchSchema(ClaimResponseSchema);
 			expect(res.body).toEqual({
 				   message: 'Competitor claim request submitted',
 				   detail: expect.any(String)
@@ -52,7 +53,7 @@ describe('studentsRouter', () => {
 				.post('/v1/user/students/claim')
 				.query({ studentId: Student.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(400);
 			//assert that the response contains the appropriate error message
 			expect(res).toBeProblemResponse(400);
@@ -79,7 +80,7 @@ describe('studentsRouter', () => {
 				.post('/v1/user/students/claim')
 				.query({ studentId: Student.id })
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			//assert that the student's person_request is updated and the person field is also updated to link the student to the user
 			expect(res.body).toEqual({
@@ -103,7 +104,7 @@ describe('studentsRouter', () => {
 			const res = await request(server)
 				.get('/v1/user/students/linkRequests')
 				.set('Accept', 'application/json')
-				.set('Authorization', `Bearer ${userkey}`)
+				.asPerson(userkey)
 				.expect(200);
 			//assert that the response contains the pending link request
 			expect(res.body).toMatchSchema(z.array(StudentSchema));

@@ -28,16 +28,6 @@ export const variables = defineEnvVars({
 		schema: z.string().default('TabroomToken'),
 		description: 'The name of the authentication cookie. default: TabroomToken',
 	},
-	CSRF_COOKIE_NAME: {
-		public: true,
-		schema: z.string().default('CSRF_Token'),
-		description: 'The name of the CSRF cookie. default: CSRF_Token',
-	},
-	CSRF_HEADER_NAME: {
-		public: true,
-		schema: z.string().default('x-csrf-token'),
-		description: 'The name of the CSRF header. default: x-csrf-token',
-	},
 	// LOGGING
 	LOG_LEVEL: {
 		schema: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

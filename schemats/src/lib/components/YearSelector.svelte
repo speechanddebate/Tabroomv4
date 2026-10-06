@@ -1,6 +1,6 @@
 <script lang="ts">
     import { SvelteDate } from 'svelte/reactivity';
-	import { CaretLeftSolid, CaretRightSolid } from 'flowbite-svelte-icons';
+	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 
 type Props = {
 	startDate: Date,
@@ -27,11 +27,11 @@ function shiftYears(delta: number) {
 <div class="flex justify-center gap-4">
 	<button class="cursor-pointer"
 	aria-label="Previous year"
-	onclick={() => shiftYears(-1)}><CaretLeftSolid size="xl"/></button>
+	onclick={() => shiftYears(-1)}><ChevronLeft class="size-8"/></button>
 	<p class="font-light text-5xl">{startYear}-{endYear}</p>
   <button class="cursor-pointer"
   aria-label="Next year"
-  onclick={() => shiftYears(1)}><CaretRightSolid size="xl"/></button>
+  onclick={() => shiftYears(1)}><ChevronRight class="size-8"/></button>
 </div>
 
 <style>

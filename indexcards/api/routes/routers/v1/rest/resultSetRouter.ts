@@ -3,6 +3,7 @@ import * as controller from '../../../../controllers/rest/resultSetController.js
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { ResultSetSchema, EventResultSetsSchema } from '@tabroom/types';
+import config from '../../../../config.js';
 
 // Note that this endpoint is for the delivery of result sets, which are
 // collated and calculated sets of results organized by tiebreakers, not for
@@ -32,7 +33,7 @@ router.route('/').get(ValidateRequest, controller.getResultSets).openapi = {
 			},
 		},
 	},
-	tags: ['invite', 'public', 'results', 'pairings', 'Orval'],
+	tags: ['Invite', 'Results', 'Pairings', 'Orval'],
 };
 
 router.route('/:resultSetId').get(ValidateRequest, controller.getResultSet).openapi = {
@@ -61,9 +62,9 @@ router.route('/:resultSetId').get(ValidateRequest, controller.getResultSet).open
 			},
 		},
 	},
-	tags: ['invite', 'public', 'results', 'pairings','Orval'],
+	tags: ['Invite', 'Results', 'Pairings','Orval'],
 };
-
+if(!config.features.HIDE_DEV_ENDPOINTS) {
 router.route('/event/:eventId').get(ValidateRequest, controller.getResultSets).openapi = {
 	path        : '/rest/tourns/{tournId}/results/event/{eventId}',
 	summary     : "Get event results",
@@ -87,7 +88,8 @@ router.route('/event/:eventId').get(ValidateRequest, controller.getResultSets).o
 			},
 		},
 	},
-	tags: ['invite', 'public', 'results', 'pairings'],
+	tags: ['Invite', 'Results', 'Pairings'],
 };
+}
 
 export default router;

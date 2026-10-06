@@ -1,5 +1,6 @@
 // Functions to handle the online coinflip
-import { db } from '../../../helpers/litedb.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
 import logger from '../../../helpers/logger.js';
 
 export async function scheduleRoundFlips(req,res) {
@@ -12,7 +13,7 @@ export const scheduleFlips = async (roundId) => {
 	let flips = [];
 
 	try {
-		flips = await db.sequelize.query(`
+		flips = (await sql`
 			select round.id, round.flighted, round.type, round.published,
 				round.start_time startTime, timeslot.start,
 				CONVERT_TZ(flip_already.active_at, '+00:00', tourn.tz) activeAt,
@@ -60,14 +61,11 @@ export const scheduleFlips = async (roundId) => {
 					on flip_already.round = round.id
 					and flip_already.tag like 'flip%'
 
-			where round.id = :roundId
+			where round.id = ${roundId}
 				and round.event = event.id
 				and round.timeslot = timeslot.id
 				and event.tourn = tourn.id
-		`, {
-			replacements: { roundId },
-			type: db.Sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb)).rows;
 
 	} catch (err) {
 		logger.error(`Flip schedule failed for round ${roundId} with error`,err);
@@ -143,17 +141,9 @@ export const scheduleFlips = async (roundId) => {
 						message += ` Flight ${flight} flips scheduled at ${startDate.toLocaleDateString()} UTC`;
 					}
 
-					await db.sequelize.query(`
-						insert into autoqueue (tag, round, active_at)
-							values (:tag, :roundId, :activeAt)
-					`, {
-						replacements: {
-							tag      : `flip_${flight}`,
-							activeAt : startDate,
-							roundId,
-						},
-						type: db.Sequelize.QueryTypes.INSERT,
-					});
+					await kdb.insertInto('autoqueue')
+						.values({ tag: `flip_${flight}`, round: roundId, active_at: startDate })
+						.execute();
 
 					// Add the offset to the start time for the next flight
 
@@ -162,31 +152,21 @@ export const scheduleFlips = async (roundId) => {
 
 			} else {
 
-				await db.sequelize.query(`
-					insert into autoqueue (tag, round, active_at)
-						values (:tag, :roundId, :activeAt)
-				`, {
-					replacements: { tag: `flip`, roundId, activeAt: startDate },
-					type: db.Sequelize.QueryTypes.INSERT,
-				});
+				await kdb.insertInto('autoqueue')
+					.values({ tag: `flip`, round: roundId, active_at: startDate })
+					.execute();
 			}
 		}
 	}
 
-	await db.sequelize.query(`
-		insert into change_log
-			(tag, description, round, tourn)
-		values
-			('blast', :description, :roundId, :tournId)
-	`, {
-		replacements    : {
+	await kdb.insertInto('change_log')
+		.values({
 			tag         : 'blast',
-			roundId     : round.id,
-			tournId     : round.tourn_id,
 			description : message,
-		},
-		type : db.sequelize.QueryTypes.INSERT,
-	});
+			round       : round.id,
+			tourn       : round.tourn_id,
+		})
+		.execute();
 
 	return message;
 

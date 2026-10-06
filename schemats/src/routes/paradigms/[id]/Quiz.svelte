@@ -11,7 +11,7 @@
 	let imgError = $state(false);
 </script>
 
-<div class="rounded-lg border border-primary-200 bg-white p-4 shadow-sm">
+<div class="rounded-lg border border-primary-soft bg-surface p-4 shadow-sm">
 	<div class="flex flex-wrap gap-4 justify-content-center">
 		{#if quiz?.Badge?.imageUrl}
 			<div class="flex-shrink-0 relative h-24 w-24 m-auto">
@@ -45,7 +45,7 @@
 			<div class="w-full">
 				{#if quiz.PersonQuizzes && quiz.PersonQuizzes.length > 0 && quiz.PersonQuizzes[0].updatedAt}
 				{#if quiz.PersonQuizzes[0].approvedBy ?? 0 > 0}
-					<p class="text-xs text-primary-600 text-right whitespace-nowrap">
+					<p class="text-xs text-primary-strong text-right whitespace-nowrap">
 						Confirmed: {showDateTime({
 							dt: new Date(quiz.PersonQuizzes[0].updatedAt),
 							tz: person?.tz || 'UTC',
@@ -54,11 +54,11 @@
 						})}
 					</p>
 				{:else if quiz.PersonQuizzes[0].pending}
-					<p class="text-xs text-yellow-600 text-right whitespace-nowrap">
+					<p class="text-xs text-warning text-right whitespace-nowrap">
 						Pending
 						</p>
 				{:else}
-					<p class="text-xs text-primary-600 text-right whitespace-nowrap">
+					<p class="text-xs text-primary-strong text-right whitespace-nowrap">
 						Updated at: {showDateTime({
 							dt: new Date(quiz.PersonQuizzes[0].updatedAt),
 							tz: person?.tz || 'UTC',
@@ -68,17 +68,17 @@
 					</p>
 				{/if}
 				{:else if variant === 'self'}
-					<p class="text-xs font-medium text-red-600 text-right">
+					<p class="text-xs font-medium text-danger text-right">
 						Certification not taken
 					</p>
 				{/if}
 			</div>
 			<div>
-				<h3 class="text-lg font-semibold text-primary-900">
+				<h3 class="text-lg font-semibold text-primary-deep">
 					{quiz?.label}
 				</h3>
 				{#if quiz?.description}
-					<p class="mt-1 text-sm text-primary-600">
+					<p class="mt-1 text-sm text-primary-strong">
 						{quiz?.description}
 					</p>
 				{/if}
@@ -88,8 +88,8 @@
 	{#if variant === 'self'}
 		<div class="mt-4 flex">
 			<a
-				class="text-sm flex-grow text-center font-medium bg-primary-600
-				hover:bg-primary-900 text-white px-2 py-1 rounded"
+				class="text-sm flex-grow text-center font-medium bg-primary-strong
+				hover:bg-primary-deep text-white px-2 py-1 rounded"
 				href={`${CLASSIC_URL}/user/judge/quiz_take.mhtml?quiz_id=${quiz.id}`}
 			>
 			{#if quiz.PersonQuizzes &&quiz.PersonQuizzes.length > 0 && quiz.PersonQuizzes[0].updatedAt}

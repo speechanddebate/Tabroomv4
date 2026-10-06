@@ -2,26 +2,28 @@
 // round robins that have preset patterns in the global settings.
 import { BadRequest } from '../../../helpers/problem.js';
 import { writeRound } from '../../../helpers/round.js';
-import db from '../../../data/db.js';
+import { db } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 
 export async function sectionTemplateRobin(req, res) {
-	const division = await db.summon(db.event, req.params.eventId);
+	const division = await summon(db, 'event',req.params.eventId);
 
 	if (!division || !division.id) {
 		return res.status(200).json(`No event found with ID ${req.params.eventId}`);
 	}
 
-	const entries = await db.entry.findAll({
-		where: { event: division.id, active: 1 },
-		raw: true,
-	});
+	const entries = await db.selectFrom('entry')
+		.selectAll()
+		.where('event', '=', division.id)
+		.where('active', '=', 1)
+		.execute();
 
 	const rrTag = `round_robin_${entries.length}`;
 
-	const rrSetting = await db.tabroomSetting.findOne({
-		where: { tag: rrTag },
-		raw: true,
-	});
+	const rrSetting = await db.selectFrom('tabroom_setting')
+		.selectAll()
+		.where('tag', '=', rrTag)
+		.executeTakeFirst();
 
 	const rrPattern = JSON.parse(rrSetting.value_text);
 
@@ -29,19 +31,20 @@ export async function sectionTemplateRobin(req, res) {
 		return res.status(200).json({ error: true, message: `No pattern found for ${entries.length}` });
 	}
 
-	const rounds = await db.round.findAll({
-		where: { event: division.id },
-		raw: true,
-	});
+	const rounds = await db.selectFrom('round')
+		.selectAll()
+		.where('event', '=', division.id)
+		.execute();
 
 	if (rounds.length !== rrPattern.rounds) {
 		return BadRequest(req, res,`Incorrect round count for pattern. ${rrPattern.rounds} rounds required`);
 	}
 
-	const judges = await db.judge.findAll({
-		where: { category: division.category, active: 1 },
-		raw: true,
-	});
+	const judges = await db.selectFrom('judge')
+		.selectAll()
+		.where('category', '=', division.category)
+		.where('active', '=', 1)
+		.execute();
 
 	const positions = {};
 	let index = 1;
@@ -78,7 +81,7 @@ export async function sectionTemplateRobin(req, res) {
 		});
 
 		round.type = 'debate';
-		await writeRound(db, round);
+		await writeRound(round);
 	});
 
 	return res.status(200).json({ error: false, message: `${rounds.length} paired for the round robin`, refresh: true });

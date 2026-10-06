@@ -1,7 +1,7 @@
 <script lang="ts">
 
 	let {myTourn, tourn, schematic}  = $props();
-	import Gavel from '$lib/layouts/Gavel.svelte';
+	import { Gavel } from '@lucide/svelte';
 	import { intersection } from '$lib/helpers/text';
 	import { resolve } from '$app/paths';
 
@@ -47,20 +47,20 @@
 		<span class="
 			w-45
 			mx-1 mt-2
-			bg-surface-100
+			bg-surface
 			border
-			border-primary-600
+			border-primary-strong
 			text-sm
 			flex flex-col
 			justify-between
 		">
 
 			<div>
-				<div class="w-full border-primary-600 border-b-2 text-center">
+				<div class="w-full border-primary-strong border-b-2 text-center">
 					<div class="font-semibold pt-1 {
 						section.me
-							? 'text-warning-500'
-							: section.mine ? 'text-success-500' : ''
+							? 'text-warning'
+							: section.mine ? 'text-success' : ''
 					} ">
 						{schematic.Event.type == 'congress' ? 'Chamber' : 'Section'}
 						{section.letter}
@@ -89,8 +89,11 @@
 								title='{ section.Entries[speaker].code }'
 							>
 								<a
-									class="w-full text-black font-normal flex pt-0.5"
-									href= { resolve(`/invite/${tourn.webname}/entries/${ section.Entries[speaker]?.id }`, {}) }
+									class="w-full text-text font-normal flex pt-0.5"
+									href= { resolve('/invite/[tourn]/entries/[entryId]', {
+										tourn   : tourn.webname,
+										entryId : String(section.Entries[speaker]?.id),
+									}) }
 								>
 									<span class="w-1/6 ps-0.5 leading-3">
 										{ speaker }
@@ -98,11 +101,11 @@
 									<span
 										class='w-5/6 leading-3 pe-0.5 {
 											myTourn.me.entries.includes(section.Entries[speaker].id)
-											? 'font-semibold underline decoration-warning-400'
+											? 'font-semibold underline decoration-warning'
 											: ''
 										} {
 											myTourn.mine.entries.includes(section.Entries[speaker].id)
-											? 'font-semibold underline decoration-success-500 text-success-500'
+											? 'font-semibold underline decoration-success text-success'
 											: ''
 										}'
 									>
@@ -115,7 +118,7 @@
 				</div>
 			</div>
 
-			<div class='text-xs border-t-2 border-primary-600
+			<div class='text-xs border-t-2 border-primary-strong
 				px-1 mt-1 pt-1 pb-2
 			'>
 				{#if section.Judges}
@@ -128,15 +131,15 @@
 					}
 						<div class='w-full flex justify-around text-xs overflow-x-hidden whitespace-nowrap {
 							myTourn.me.judges.includes(judgeId)
-								? 'text-warning-500 font-semibold'
+								? 'text-warning font-semibold'
 								:  myTourn.mine.judges.includes(judgeId)
-									? 'text-success-500 font-semibold'
-									: 'text-black-600'
+									? 'text-success font-semibold'
+									: 'text-text'
 						} '>
 							{#if section.Judges[judgeId].chair}
 								<div class='flex font-semibold text-xs'>
 									<span class="pe-0.5 border">
-										<Gavel />
+										<Gavel color='#954535' size={17} />
 									</span>
 									{ section.Judges[judgeId].code }
 									{ section.Judges[judgeId].first }

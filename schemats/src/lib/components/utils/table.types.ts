@@ -4,7 +4,7 @@ import type {
 	RowData,
 } from '@tanstack/svelte-table';
 import type { appFeatures } from './table.hook';
-import type { Problem } from '$indexcards/schemas';
+import type { Problem } from '@tabroom/types';
 
 export type TableProps<TData extends RowData> = {
 	data: TData[] | null | undefined;

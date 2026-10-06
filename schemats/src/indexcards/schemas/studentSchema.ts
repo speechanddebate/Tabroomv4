@@ -9,6 +9,7 @@ import type { ChapterSchema } from './chapterSchema';
 import type { PersonOutput } from './personOutput';
 import type { StudentSchemaMetadata } from './studentSchemaMetadata';
 import type { StudentSchemaSettings } from './studentSchemaSettings';
+import type { StudentSchemaSettingsTimestamps } from './studentSchemaSettingsTimestamps';
 
 export interface StudentSchema {
 	/**
@@ -68,8 +69,10 @@ export interface StudentSchema {
 	Person?: PersonOutput;
 	/** Creation timestamp */
 	readonly createdAt: string;
-	/** Custom settings for the student */
+	/** Settings keyed by tag */
 	settings?: StudentSchemaSettings;
+	/** Setting created_at and timestamp values keyed by tag */
+	settingsTimestamps?: StudentSchemaSettingsTimestamps;
 	/** Additional metadata for the student */
 	metadata?: StudentSchemaMetadata;
 }

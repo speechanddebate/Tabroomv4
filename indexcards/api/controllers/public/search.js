@@ -1,4 +1,5 @@
-import db from '../../data/db.js';
+import { sql } from 'kysely';
+import { db } from '../../data/database.js';
 export async function searchTourns(req, res) {
 
 	const replacements = {
@@ -6,15 +7,15 @@ export async function searchTourns(req, res) {
 		searchString : req.params.searchString,
 	};
 
-	let timescale = ' and tourn.start > NOW() ';
+	let timescale = sql` and tourn.start > NOW() `;
 
 	if (req.params.time === 'past') {
-		timescale = ' and tourn.start < NOW() ';
+		timescale = sql` and tourn.start < NOW() `;
 	} else if (req.params.time === 'all') {
-		timescale = '';
+		timescale = sql``;
 	}
 
-	const tourns = await db.sequelize.query(`
+	const { rows: tourns } = await sql`
 		select
 			tourn.id, tourn.webname as abbr, tourn.webname, tourn.name, tourn.city, tourn.state, tourn.tz, 'tourn' as tag,
 			CONVERT_TZ(tourn.start, '+00:00', tourn.tz) start,
@@ -25,27 +26,21 @@ export async function searchTourns(req, res) {
 			left join tourn_circuit tc on tc.tourn = tourn.id
 			left join circuit on tc.circuit = circuit.id
 		where tourn.hidden = 0
-			and (tourn.name LIKE :likeString OR tourn.name = :searchString OR tourn.webname = :searchString )
+			and (tourn.name LIKE ${replacements.likeString} OR tourn.name = ${replacements.searchString} OR tourn.webname = ${replacements.searchString} )
 			${timescale}
 		group by tourn.id
 		order by tourn.start
-	`, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(db);
 
-	const circuits = await db.sequelize.query(`
+	const { rows: circuits } = await sql`
 		select
 			circuit.id, circuit.name, circuit.abbr, count(circuit.id) as circuits, 'circuit' as tag
 		from circuit
 			left join tourn on exists (select tc.id from tourn_circuit tc where tc.circuit = circuit.id and tc.tourn = tourn.id)
 		where circuit.active = 0
-			and (circuit.name LIKE :likeString OR circuit.abbr = :searchString)
+			and (circuit.name LIKE ${replacements.likeString} OR circuit.abbr = ${replacements.searchString})
 		order by circuit.abbr
-	`, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(db);
 
 	const exactMatches = [];
 	const partialMatches = [];
@@ -74,34 +69,31 @@ export async function searchCircuitTourns(req, res) {
 		circuitId: req.params.circuitId,
 	};
 
-	let timescale = ' and tourn.start > NOW() ';
+	let timescale = sql` and tourn.start > NOW() `;
 
 	if (req.params.time && req.params.time === 'past') {
-		timescale = ' and tourn.start < NOW() ';
+		timescale = sql` and tourn.start < NOW() `;
 	} else if (req.params.time && req.params.time === 'all') {
-		timescale = '';
+		timescale = sql``;
 	}
 
-	const tourns = await db.sequelize.query(`
+	const { rows: tourns } = await sql`
 		select
 			tourn.id, tourn.webname, tourn.name, tourn.start, tourn.end, tourn.city, tourn.state, tourn.tz,
 			CONVERT_TZ(tourn.start, '+00:00', tourn.tz)
 		from tourn
 			where tourn.hidden = 0
-			and tourn.name LIKE :likeString
+			and tourn.name LIKE ${replacements.likeString}
 			and exists (
 				select tourn_circuit.id
 				from tourn_circuit
 				where tourn_circuit.tourn = tourn.id
-				and tourn_circuit.circuit = :circuitId
+				and tourn_circuit.circuit = ${replacements.circuitId}
 			)
 			${timescale}
 		group by tourn.id
 		order by tourn.start DESC
-	`, {
-		replacements,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(db);
 
 	const exactMatches = [];
 	const partialMatches = [];

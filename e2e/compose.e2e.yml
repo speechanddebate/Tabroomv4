@@ -1,0 +1,129 @@
+name: tabroom-e2e
+
+# No bind mounts: CI runs compose against a docker-in-docker daemon that can't
+# see the job's checkout. Files go in through build contexts or inline configs,
+# which compose sends over the docker API.
+
+configs:
+  indexcards:
+    content: |
+      {
+        "logging": {
+          "level": "error",
+          "usePrettyConsole": true
+        },
+        "db": {
+          "host": "tabroomdb-e2e",
+          "port": 3307,
+          "user": "root",
+          "pass": "tabroom",
+          "database": "tabroom"
+        },
+        "proxy": ["uniquelocal"],
+        "cors": {
+          "origins": ["https://e2e.tabroom.test"]
+        },
+        "cookie": {
+          "domain": ".e2e.tabroom.test"
+        },
+        "csrf": {
+          "trusted_origins": ["https://e2e.tabroom.test"]
+        }
+      }
+
+volumes:
+  # CA and server cert, written by nginx on startup
+  certs:
+
+services:
+  # Like prod, the browser and schemats' server-side calls reach both apps over
+  # HTTPS on sibling subdomains, so the Secure auth cookie is shared between them.
+  nginx:
+    build:
+      context: ./nginx
+    volumes:
+      - certs:/certs
+    networks:
+      default:
+        aliases:
+          - e2e.tabroom.test
+          - api.e2e.tabroom.test
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  tabroomdb-e2e:
+    build:
+      context: ../indexcards/tests
+      dockerfile_inline: |
+        FROM mariadb:12
+        COPY test.sql /docker-entrypoint-initdb.d/db.sql
+    command:
+      - --port=3307
+    # fresh database, seeded from test.sql, on every run
+    tmpfs:
+      - /var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: tabroom
+      MARIADB_DATABASE: tabroom
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  indexcards:
+    build:
+      context: ..
+      dockerfile: ./indexcards/Dockerfile
+      target: prod
+    configs:
+      - source: indexcards
+        target: /config/config.json
+    depends_on:
+      tabroomdb-e2e:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8001/v1/status').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  schemats:
+    build:
+      context: ..
+      dockerfile: ./schemats/Dockerfile
+      target: prod
+    env_file:
+      - ./config/schemats.env
+    volumes:
+      - certs:/certs:ro
+    depends_on:
+      nginx:
+        condition: service_healthy
+      indexcards:
+        condition: service_healthy
+
+  e2e:
+    build:
+      context: ..
+      dockerfile: ./e2e/Dockerfile
+    # tests create data through the indexcards factories
+    configs:
+      - source: indexcards
+        target: /config/config.json
+    environment:
+      BASE_URL: https://e2e.tabroom.test
+      API_URL: https://api.e2e.tabroom.test
+      CI: ${CI:-}
+    depends_on:
+      nginx:
+        condition: service_healthy
+      indexcards:
+        condition: service_healthy
+      schemats:
+        condition: service_started

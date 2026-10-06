@@ -1,23 +1,17 @@
 <script lang="ts">
 
-	// Tournament Invitation layout shell.
-	// WIP: Figuring out how to get a sidebar to work with uplift
+	// Tournament Invitation layout shell: the title and tabs sit above the
+	// page and its sidebar.
 
 	import { indexFetch } from '$lib/indexfetch';
+	import type { TournInvite } from '@tabroom/types';
 	import { setContext } from 'svelte';
 
 	import Loading from '$lib/layouts/Loading.svelte';
-	import MainTitle from '$lib/layouts/MainTitle.svelte';
+	import InviteHeader from './InviteHeader.svelte';
 
-	import { ucfirst } from '$lib/helpers/text';
-	import { showDateRange } from '$lib/helpers/dt';
-    import TabLinks from '$lib/layouts/TabLinks.svelte';
-
-	import { shortZone } from '$lib/helpers/dt';
-
-    import type { Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 	import type { Tourn } from '$indexcards/schemas';
-	import type { TabLink } from '$lib/layouts/TabLinks.svelte';
 
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky. It cost me dearly to discover this wisdom.
@@ -32,86 +26,22 @@
 
 	// svelte-ignore state_referenced_locally
 	setContext('webnameTourn', tourn);
-	const pageContent = $derived(indexFetch(`/rest/tourns/${tourn.id}/invite`));
-	let sort = 0;
-
-	const tabs:TabLink[] = $derived.by( () => {
-		return [
-			'main', 'events', 'register', 'rounds', 'results',
-		].map( (pageKey) => {
-
-			const route = `/invite/${tourn.webname}${pageKey === 'main' ? '' : `/${pageKey}` }`;
-			const matchPatterns = [];
-
-			if (pageKey === 'main') {
-				matchPatterns.push(`/invite/${tourn.webname}/page/`);
-				matchPatterns.push(`/invite/${tourn.id}/page/`);
-			}
-
-			if (pageKey === 'rounds') {
-				matchPatterns.push(`/invite/${tourn.webname}/entries/`);
-				matchPatterns.push(`/invite/${tourn.id}/page/`);
-				matchPatterns.push(`/invite/${tourn.id}/rounds/`);
-			}
-
-			sort++;
-			return	{
-				route,
-				label : ucfirst(pageKey) || '',
-				sort,
-				matchPatterns,
-			};
-		});
-	});
-
-	let ranges = $derived.by( () => {
-		return showDateRange({
-			endISO   : pageContent.data?.end,
-			startISO : pageContent.data?.start,
-			format   : 'medday',
-			mode     : 'date',
-			showTz   : true,
-			tz       : pageContent.data?.tz,
-		});
-	});
-
-	let tournLocation = $derived.by( () => {
-		if (pageContent.data.inPerson == 0 && pageContent.data.hybrid == 0) {
-			let site = `${ pageContent.data.city || 'Online'} `;
-			site += shortZone(pageContent.data.tz);
-			return site;
-		};
-		return `${pageContent.data.city}, ${pageContent.data.state || pageContent.data.country}`;
-	});
+	const pageContent = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));
 
 </script>
 
 	{#if pageContent.status !== 'success' || pageContent.isPending}
 		<Loading tanstackJob={pageContent} />
 	{:else}
-
-		<div class="
-			w-full
-			px-4
-			ps-8
-			bg-back-200
-		">
-			<!-- svelte-ignore attribute_quoted -->
-			<MainTitle
-				subtitle   = '{tournLocation}'
-				title      = '{pageContent.data.name}'
-				undertitle = {ranges?.dateOutput}
-			>
-			</MainTitle>
-
-			<div class='block invitePage'>
-				<TabLinks tabs={tabs} />
-				<div
-					class="flex w-full
-					border-t-2 border-secondary-400
-				">
-					{@render children() }
-				</div>
+		<div class='invitePage group/invite flex flex-1 flex-col'>
+			<!--
+				AppShell drops its padding when the page has a sidebar, so pad
+				the header here in that case only. Full width pages (register)
+				get AppShell's padding around both.
+			-->
+			<div class='group-has-[[data-with-sidebar]]/invite:px-4 group-has-[[data-with-sidebar]]/invite:pt-4 sm:group-has-[[data-with-sidebar]]/invite:px-6'>
+				<InviteHeader />
 			</div>
+			{@render children() }
 		</div>
 	{/if}

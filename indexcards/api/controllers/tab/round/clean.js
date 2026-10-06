@@ -1,25 +1,23 @@
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import changeLogRepo from '../../../repos/changeLogRepo.js';
 export async function cleanRoundEmpties(req, res) {
 	const allPromises = [];
 
-	const duplicateBallots = await db.sequelize.query(`
+	const { rows: duplicateBallots } = await sql`
 		select
 				b2.id
 		from ballot b1 FORCE INDEX (panel), ballot b2 FORCE INDEX (panel), panel
 		where 1=1
-				and panel.round = :roundId
+				and panel.round = ${req.params.roundId}
 				and panel.id = b1.panel
 				and panel.id = b2.panel
 				and b1.entry = b2.entry
 				and b1.judge IS NULL
 				and b2.judge IS NULL
 				and b1.id < b2.id
-	`, {
-		type: db.sequelize.QueryTypes.SELECT,
-		replacements: { roundId: req.params.roundId },
-	});
+	`.execute(kdb);
 
-	const deleteBallotQuery = ` delete from ballot where id = :ballotId`;
 	let description = ``;
 
 	if (duplicateBallots.length > 0) {
@@ -28,33 +26,24 @@ export async function cleanRoundEmpties(req, res) {
 
 		duplicateBallots.forEach( (ballot) => {
 
-			const promise = db.sequelize.query(
-				deleteBallotQuery,
-				{
-					type: db.sequelize.QueryTypes.DELETE,
-					replacements: { ballotId: ballot.id },
-				}
-			);
+			const promise = kdb.deleteFrom('ballot')
+				.where('id', '=', ballot.id)
+				.execute();
 
 			allPromises.push(promise);
 		});
 	}
 
-	const emptySections = await db.sequelize.query(`
+	const { rows: emptySections } = await sql`
 		select panel.id
 		from panel
-		where panel.round = :roundId
+		where panel.round = ${req.params.roundId}
 		and not exists (
 			select ballot.id
 			from ballot
 			where ballot.panel = panel.id
 		)
-	`, {
-		type: db.sequelize.QueryTypes.SELECT,
-		replacements: { roundId: req.params.roundId },
-	});
-
-	const deleteSectionQuery = ` delete from panel where id = :sectionId`;
+	`.execute(kdb);
 
 	if (emptySections.length > 0) {
 
@@ -66,21 +55,17 @@ export async function cleanRoundEmpties(req, res) {
 
 		emptySections.forEach( (section) => {
 
-			const promise = db.sequelize.query(
-				deleteSectionQuery,
-				{
-					type: db.sequelize.QueryTypes.DELETE,
-					replacements: { sectionId: section.id },
-				}
-			);
+			const promise = kdb.deleteFrom('panel')
+				.where('id', '=', section.id)
+				.execute();
 
 			allPromises.push(promise);
 		});
 	}
 
 	if (description) {
-		await db.ChangeLog.create({
-			person      : req.session.person,
+		await changeLogRepo.createChangeLog(kdb, {
+			person      : req.person.id,
 			round       : req.params.roundId,
 			description,
 		});

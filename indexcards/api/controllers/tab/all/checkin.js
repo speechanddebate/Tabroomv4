@@ -1,5 +1,6 @@
 import { Forbidden } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db } from '../../../data/database.js';
 
 // Enables the Online Status Attendance dashboard functions
 export async function categoryCheckin(req, res) {
@@ -19,14 +20,11 @@ export async function categoryCheckin(req, res) {
 		|| perms.category[categoryId]
 	) {
 
-		const judges = await db.sequelize.query(`
+		const { rows: judges } = await sql`
 			select judge.id, judge.active
 			from judge
-			where judge.category = :categoryId
-		`, {
-			replacements : { categoryId },
-			type         : db.sequelize.QueryTypes.SELECT,
-		});
+			where judge.category = ${categoryId}
+		`.execute(db);
 
 		res.status(200).json(judges);
 	} else {
@@ -51,14 +49,11 @@ export async function eventCheckin(req, res) {
 		|| perms.event[eventId]
 	) {
 
-		const entries = await db.sequelize.query(`
+		const { rows: entries } = await sql`
 			select entry.id, entry.active
 				from entry
-			where entry.event = :eventId
-		`, {
-			replacements : { eventId },
-			type         : db.sequelize.QueryTypes.SELECT,
-		});
+			where entry.event = ${eventId}
+		`.execute(db);
 
 		res.status(200).json(entries);
 	} else {

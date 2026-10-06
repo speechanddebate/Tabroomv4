@@ -57,4 +57,8 @@ EXPOSE 3000
 
 ENV CONFIG_DIR="/config"
 
+# short commit hash, passed by CI. Declared last so it doesn't bust the layer cache
+ARG GIT_COMMIT
+ENV GIT_COMMIT=$GIT_COMMIT
+
 CMD ["node", "dist/app.js"]

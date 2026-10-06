@@ -12,8 +12,11 @@ export type SessionPerson = {
 	 * @exclusiveMinimum 0
 	 */
 	id: number;
-	/** @pattern ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
+	/** @pattern ^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$ */
 	email: string;
 	first: string;
 	last: string;
+	site_admin?: number | null;
+	/** @nullable */
+	tz?: string | null;
 };

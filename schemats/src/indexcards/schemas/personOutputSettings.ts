@@ -6,4 +6,15 @@
  * OpenAPI spec version: 1.2.0
  */
 
-export type PersonOutputSettings = { [key: string]: unknown };
+/**
+ * Settings keyed by tag
+ */
+export type PersonOutputSettings = {
+	[key: string]:
+		| string
+		| number
+		| boolean
+		| null
+		| { [key: string]: unknown }
+		| unknown[];
+} | null;

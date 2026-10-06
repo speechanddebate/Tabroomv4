@@ -4,16 +4,9 @@ export const objectify = (array, key) => {
 		key = 'id';
 	}
 	array.forEach( (item) => {
-		if (item.dataValues) {
-			const output = item.get({ plain:true });
-			const tag = output[key];
-			dest[tag] = stripNull(output);
-			delete dest[tag][key];
-		} else {
-			const tag = item[key];
-			dest[tag] = stripNull(item);
-			delete dest[tag][key];
-		}
+		const tag = item[key];
+		dest[tag] = stripNull(item);
+		delete dest[tag][key];
 
 		Object.keys(item).forEach( (tag) => {
 			if (item[tag] === null) {
@@ -29,18 +22,10 @@ export const multiObjectify = (array) => {
 
 	const dest = {};
 	array.forEach( (item) => {
-		if (item.dataValues) {
-			const output = item.get({ plain:true });
-			if (!dest[output.id]) {
-				dest[output.id] = [];
-			}
-			dest[output.id].push(stripNull(output));
-		} else {
-			if (!dest[item.id]) {
-				dest[item.id] = [];
-			}
-			dest[item.id].push(stripNull(item));
+		if (!dest[item.id]) {
+			dest[item.id] = [];
 		}
+		dest[item.id].push(stripNull(item));
 	});
 	return dest;
 };

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Tourn, Event } from '$indexcards/schemas';
+	import type { Tourn } from '$indexcards/schemas';
+	import type { Event } from '@tabroom/types';
     import showDateRange from '$lib/helpers/dt';
 	import type { GridOptions, SchematColumn } from '$lib/layouts/grid/svgrid.js';
 	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
@@ -93,7 +94,7 @@
 	</script>
 
 	{#if tournsData && tournsData.length > 0}
-	<div class='px-3 overflow-x-scroll py-3 bg-back wg-full'>
+	<div class='px-3 overflow-x-scroll py-3 bg-surface wg-full'>
 		<SVGrid
 			columns={columns}
 			data={tournsData}

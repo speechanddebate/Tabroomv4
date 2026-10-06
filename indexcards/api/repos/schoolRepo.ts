@@ -15,7 +15,7 @@ function buildSchoolQuery(db: Database, opts: queryOpts = {}){
 	.$if(opts.settings !== undefined && opts.settings !== false, (qb) => 
 		qb.select(selectSettings({
 			table: 'school',
-			settings: opts.settings ?? false
+			settings: opts.settings!
 		}))
 	)
 	if (opts.tourn) {
@@ -41,12 +41,9 @@ async function getSchool(db: Database, id: number, opts: queryOpts = {}) {
 	return res;
 }
 async function getSchools(db: Database, opts: queryOpts = {}) {
-	let query = buildSchoolQuery(db, opts)
-	.selectAll('school');
-
-	const rows = await query.execute();
-
-	return rows;
+	return await buildSchoolQuery(db, opts)
+	.selectAll('school')
+	.execute();
 }
 async function createSchool(db: Database, data: Insertable<School> & { settings?: Settings }) {
 	const { settings, ...schoolData } = data;
@@ -55,20 +52,20 @@ async function createSchool(db: Database, data: Insertable<School> & { settings?
 		const school = await trx
 			.insertInto('school')
 			.values(schoolData)
+			.returningAll()
 			.executeTakeFirstOrThrow();
 
-		const schoolId = Number(school.insertId);
 
 		if (settings) {
 			await saveSettings({
 				db: trx,
 				table: 'school',
 				settings,
-				ownerId: schoolId,
+				ownerId: school.id,
 			});
 		}
 
-		return schoolId;
+		return school;
 	});
 }
 async function updateSchool(db: Database, id: number, data: Updateable<School> & { settings?: Settings }) {

@@ -5,10 +5,6 @@ import personRepo from '../../repos/personRepo.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
 import logger from '../../helpers/logger.js';
 
-afterEach(() => {
-	vi.restoreAllMocks();
-});
-
 describe('studentsController', () => {
 	describe('unlinkedSearch', () => {
 		it('returns mapped student results and updates settings for non-admin actor', async () => {
@@ -33,9 +29,9 @@ describe('studentsController', () => {
 			]);
 
 			const { req, res } = createContext({
-				valid: { query: { first: 'Te', last: 'St' } },
-				actor: { Person: { id: 10, site_admin: false } },
-				session: { id: 88, person: 10, su: null },
+				query: { first: 'Te', last: 'St' },
+				person: { id: 10, site_admin: false },
+				auth: { method: 'cookie', sessionId: 88, su: null },
 			});
 
 			await controller.unlinkedSearch(req, res);
@@ -77,9 +73,9 @@ describe('studentsController', () => {
 			const unlinkedSearchSpy = vi.spyOn(studentRepo, 'unlinkedSearch').mockResolvedValue([]);
 
 			const { req, res } = createContext({
-				valid: { query: { first: 'Te', last: 'St' } },
-				actor: { id: 10, Person: { site_admin: false } },
-				session: { id: 90, person: 10, su: null },
+				query: { first: 'Te', last: 'St' },
+				person: { id: 10, site_admin: false },
+				auth: { method: 'cookie', sessionId: 90, su: null },
 			});
 
 			await controller.unlinkedSearch(req, res);
@@ -101,13 +97,12 @@ describe('studentsController', () => {
 			vi.spyOn(personRepo, 'updatePerson').mockResolvedValue(undefined);
 
 			const { req, res } = createContext({
-				valid: { query: { first: 'Ada', last: 'Lovelace' } },
-				actor: { id: 11, Person: { site_admin: false } },
-				session: {
-					id: 1234,
-					person: 11,
-					su: 45,
-					Su: { email: 'admin@example.com' },
+				query: { first: 'Ada', last: 'Lovelace' },
+				person: { id: 11, email: 'ada@example.com', site_admin: false },
+				auth: {
+					method: 'cookie',
+					sessionId: 1234,
+					su: { id: 45, email: 'admin@example.com' },
 				},
 			});
 
@@ -116,8 +111,8 @@ describe('studentsController', () => {
 
 			expect(createChangeLogSpy).toHaveBeenCalledWith(expect.any(Object), {
 				tag: 'student_search',
-				person: 45,
-				description: 'Searched for student records Ada Lovelace while logged in as admin@example.com from session ID 1234',
+				person: 11,
+				description: 'Searched for student records Ada Lovelace by admin@example.com while su\'d as ada@example.com from session ID 1234',
 			});
 		});
 
@@ -128,9 +123,9 @@ describe('studentsController', () => {
 			vi.spyOn(studentRepo, 'unlinkedSearch').mockResolvedValue([]);
 
 			const { req, res } = createContext({
-				valid: { query: { first: 'Test', last: 'User' } },
-				actor: { id: 12, Person: { site_admin: true } },
-				session: { id: 222, person: 12, su: null },
+				query: { first: 'Test', last: 'User' },
+				person: { id: 12, site_admin: true },
+				auth: { method: 'cookie', sessionId: 222, su: null },
 			});
 
 			await controller.unlinkedSearch(req, res);
@@ -164,16 +159,14 @@ describe('studentsController', () => {
 			]);
 
 			const { req, res } = createContext({
-				valid: { query: {} },
-				actor: {
-					Person: {
-						id: 10,
-						first: 'Test',
-						last: 'Student',
-						site_admin: false,
-					},
+				query: {},
+				person: {
+					id: 10,
+					first: 'Test',
+					last: 'Student',
+					site_admin: false,
 				},
-				session: { id: 88, person: 10, su: null },
+				auth: { method: 'cookie', sessionId: 88, su: null },
 			});
 
 			await controller.unlinkedSearch(req, res);

@@ -1,5 +1,7 @@
 import { NotFound } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { sql } from 'kysely';
+import { db as kdb } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
 export async function getRoundAvailableJudges (req, res) {
 
 	// Returns a list of judges who can judge this round, filtering out any
@@ -17,10 +19,10 @@ export async function getRoundAvailableJudges (req, res) {
 	if (req.round) {
 		round = req.round;
 	} else {
-		round = await db.summon(db.round, req.params.roundId);
+		round = await summon(kdb, 'round',req.params.roundId);
 	}
 
-	let judgeQuery = `
+	let judgeQuery = sql`
 		select
 			judge.id, judge.first, judge.middle, judge.last, judge.code,
 			judge.hired, judge.obligation,
@@ -30,7 +32,7 @@ export async function getRoundAvailableJudges (req, res) {
 
 	if (round.jpool) {
 		// Pull judges from the judge pools linked to this round
-		judgeQuery = ` ${judgeQuery}
+		judgeQuery = sql` ${judgeQuery}
 			from (judge, jpool_judge jpj, jpool_round jpr, round, timeslot)
 				left join school on judge.school = school.id
 				left join region on school.region = region.id
@@ -38,7 +40,7 @@ export async function getRoundAvailableJudges (req, res) {
 				left join chapter on school.chapter = chapter.id
 				left join judge_setting tab_rating on tab_rating.tag = 'tab_rating' and tab_rating.judge = judge.id
 				left join judge_setting neutral on neutral.tag = 'neutral' and neutral.judge = judge.id
-			where jpr.round = :roundId
+			where jpr.round = ${round.id}
 				and jpr.jpool = jpj.jpool
 				and jpj.judge = judge.id
 				and judge.active = 1
@@ -48,7 +50,7 @@ export async function getRoundAvailableJudges (req, res) {
 	} else {
 
 		// Pull judges from the judge category linked to this round
-		judgeQuery = ` ${judgeQuery}
+		judgeQuery = sql` ${judgeQuery}
 			from (judge, round, event, timeslot)
 				left join school on judge.school = school.id
 				left join region on school.region = region.id
@@ -59,13 +61,13 @@ export async function getRoundAvailableJudges (req, res) {
 			where judge.active = 1
 				AND (judge.category = event.category OR judge.alt_category = event.category)
 				and event.id = round.event
-				AND round.id = :roundId
+				AND round.id = ${round.id}
 				and round.timeslot = timeslot.id
 		`;
 	}
 
 	// No event constraints please.
-	judgeQuery = ` ${judgeQuery}
+	judgeQuery = sql` ${judgeQuery}
 		and not exists (
 			select evs.id
 				from strike evs
@@ -76,7 +78,7 @@ export async function getRoundAvailableJudges (req, res) {
 
 	// No elim constrained judges if we're not an elim.
 	if (round.type === 'prelim') {
-		judgeQuery = ` ${judgeQuery}
+		judgeQuery = sql` ${judgeQuery}
 			and not exists (
 				select els.id
 					from strike els
@@ -88,7 +90,7 @@ export async function getRoundAvailableJudges (req, res) {
 
 	// No FYOs if we don't allow them
 	if (round.no_first_years) {
-		judgeQuery = ` ${judgeQuery}
+		judgeQuery = sql` ${judgeQuery}
 			and not exists (
 				select first_year.id
 				from judge_setting first_year
@@ -99,7 +101,7 @@ export async function getRoundAvailableJudges (req, res) {
 
 	if (round.online_mode !== 'async') {
 		// No time constraints that cover the present
-		judgeQuery = ` ${judgeQuery}
+		judgeQuery = sql` ${judgeQuery}
 			and not exists (
 				select strike.id
 					from strike
@@ -111,12 +113,9 @@ export async function getRoundAvailableJudges (req, res) {
 		`;
 	}
 
-	const initialJudges = await db.sequelize.query(judgeQuery, {
-		replacements: { roundId: round.id },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: initialJudges } = await judgeQuery.execute(kdb);
 
-	let busyQuery = `
+	let busyQuery = sql`
 		select
 			judge.id, judge.person
 		from judge, ballot, panel, round, timeslot, timeslot t2
@@ -126,7 +125,7 @@ export async function getRoundAvailableJudges (req, res) {
 				and panel.round = round.id
 				and round.timeslot = timeslot.id
 				and timeslot.tourn = t2.tourn
-				and t2.id = :timeslotId
+				and t2.id = ${round.timeslot}
 				and not exists (
 					select es.id
 					from event_setting es
@@ -137,21 +136,18 @@ export async function getRoundAvailableJudges (req, res) {
 	`;
 
 	if (round.no_back_to_back) {
-		busyQuery = ` ${busyQuery}
+		busyQuery = sql` ${busyQuery}
 			and t2.start <= timeslot.end
 			and t2.end >= timeslot.start
 		`;
 	} else {
-		busyQuery = ` ${busyQuery}
+		busyQuery = sql` ${busyQuery}
 			and t2.start < timeslot.end
 			and t2.end > timeslot.start
 		`;
 	}
 
-	const busyFolks = await db.sequelize.query(busyQuery, {
-		replacements: { timeslotId: round.timeslot },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const { rows: busyFolks } = await busyQuery.execute(kdb);
 
 	const busyJudges = {};
 	const busyPeople = {};
@@ -191,12 +187,12 @@ export async function getRoundJudgeConflicts(req, res) {
 	if (req.round) {
 		round = req.round;
 	} else {
-		round = await db.summon(db.round, req.params.roundId);
+		round = await summon(kdb, 'round',req.params.roundId);
 	}
 
 	const judgeConflicts = {};
 
-	const roundEntries = await db.sequelize.query(`
+	const { rows: roundEntries } = await sql`
 		select
 			entry.id, school.id school, region.id region, district.id district, hybrid.school hybrid, ballot.side side
 		from (entry, ballot, panel)
@@ -206,11 +202,8 @@ export async function getRoundJudgeConflicts(req, res) {
 			left join strike hybrid on hybrid.type = 'hybrid' and hybrid.entry = entry.id
 		where entry.id = ballot.entry
 			and ballot.panel = panel.id
-			and panel.round = :roundId
-	`, {
-		replacements: { roundId: round.id },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+			and panel.round = ${round.id}
+	`.execute(kdb);
 
 	const entriesBy    = {};
 
@@ -255,7 +248,7 @@ export async function getRoundJudgeConflicts(req, res) {
 	});
 
 	if (!round.allow_repeat_judging) {
-		const ballotConflicts = await db.sequelize.query(`
+		const { rows: ballotConflicts } = await sql`
 			select
 				entry.id entry, ballot.judge, ballot.side, winloss.id winloss, winloss.value winner
 			from (entry, ballot, panel, round)
@@ -265,17 +258,14 @@ export async function getRoundJudgeConflicts(req, res) {
 					from ballot b1, panel p1
 					where b1.entry = entry.id
 					and b1.panel = p1.id
-					and p1.round = :roundId
+					and p1.round = ${round.id}
 				)
 				and entry.id = ballot.entry
 				and ballot.panel = panel.id
-				and panel.round != :roundId
+				and panel.round != ${round.id}
 				and panel.round = round.id
 				and ballot.judge > 0
-		`, {
-			replacements: { roundId: round.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
 		ballotConflicts.forEach( (ballot) => {
 
@@ -304,38 +294,34 @@ export async function getRoundJudgeConflicts(req, res) {
 	}
 
 	// Process any entry, school, region or district strikes against the judges available
-	let judgeStrikesQuery = `
+	let judgeStrikesQuery = sql`
 		select
 			judge.id judge, strike.type, strike.entry, strike.school, strike.district, strike.region
 	`;
 
 	if (round.jpool) {
 		// Pull judges from the judge pools linked to this round
-		judgeStrikesQuery = ` ${judgeStrikesQuery}
+		judgeStrikesQuery = sql` ${judgeStrikesQuery}
 			from (judge, jpool_judge jpj, jpool_round jpr, strike)
 			where judge.id = strike.judge
 				and jpj.judge = judge.id
-				and jpr.round = :roundId
+				and jpr.round = ${round.id}
 				and jpr.jpool = jpj.jpool
 				and judge.active = 1
 		`;
 	} else {
 		// Pull judges from the judge category linked to this round
-		judgeStrikesQuery = ` ${judgeStrikesQuery}
+		judgeStrikesQuery = sql` ${judgeStrikesQuery}
 			from (judge, strike, round, event)
 			where judge.id = strike.judge
-				and round.id = :roundId
+				and round.id = ${round.id}
 				and round.event = event.id
 				and event.category = judge.category
 				and judge.active = 1
 		`;
 	}
 
-	const judgeStrikes = await db.sequelize.query(
-		judgeStrikesQuery,{
-			replacements: { roundId: round.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+	const { rows: judgeStrikes } = await judgeStrikesQuery.execute(kdb);
 
 	judgeStrikes.forEach( (strike) => {
 
@@ -370,19 +356,16 @@ export async function getRoundJudgeConflicts(req, res) {
 
 	if (round.auto_conflict_hires) {
 
-		const judgeHires = await db.sequelize.query(`
+		const { rows: judgeHires } = await sql`
 			select judge_hire.judge, judge_hire.school
 				from (judge_hire, school, entry, ballot, panel)
-			where panel.round = :roundId
+			where panel.round = ${round.id}
 				and panel.id = ballot.panel
 				and ballot.entry = entry.id
 				and entry.school = school.id
 				and school.id = judge_hire.school
 			group by judge_hire.id
-		`, {
-			replacements: { roundId: round.id },
-			type: db.sequelize.QueryTypes.SELECT,
-		});
+		`.execute(kdb);
 
 		judgeHires.forEach( (hire) => {
 			if (!judgeConflicts[hire.judge]) {
@@ -435,7 +418,7 @@ export async function getRoundJudgeConflicts(req, res) {
 };
 
 export async function placeJudges(req, res) {
-	const [round] = await db.sequelize.query(`
+	const { rows: [round] } = await sql`
 		select
 			round.id, round.name, round.type, round.flighted,
 			event.id eventId, event.type eventType,
@@ -455,20 +438,17 @@ export async function placeJudges(req, res) {
 			left join jpool on jpr.jpool = jpool.id
 
 		where 1=1
-			and round.id = :roundId
+			and round.id = ${req.params.roundId}
 			and round.event = event.id
 			and event.category = category.id
 			and round.timeslot = timeslot.id
-	`, {
-		replacements: { roundId: req.params.roundId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb);
 
 	if (round) {
 		return NotFound(req, res, 'No such round found');
 	}
 
-	const sections = db.sequelize.query(`
+	const sections = sql`
 		select
 			panel.id, panel.letter, panel.flight, panel.room,
 			GROUP_CONCAT(ballot.judge) as judges,
@@ -483,30 +463,27 @@ export async function placeJudges(req, res) {
 			left join district on school.district = district.id
 
 		where 1=1
-			and panel.round = :roundId
+			and panel.round = ${req.params.roundId}
 			and panel.id = ballot.panel
 			and ballot.entry = entry.id
 			and ballot.bye != 1
 			and ballot.forefit != 1
 			and panel.bye != 1
 		group by panel.id
-	`, {
-		replacements: { roundId: req.params.roundId },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb).then((result) => result.rows);
 
-	let judgeFields = '';
-	let judgeLimit = '';
+	let judgeFields = sql``;
+	let judgeLimit = sql``;
 
 	if (round.jpools) {
-		judgeFields = ' judge, jpool_judge jpj';
-		judgeLimit  = ' and jpj.jpool in (:jpoolIds) and jpj.judge = judge.id ';
+		judgeFields = sql` judge, jpool_judge jpj`;
+		judgeLimit  = sql` and jpj.jpool in (${round.jpoolIds}) and jpj.judge = judge.id `;
 	} else {
-		judgeFields = ' judge ';
-		judgeLimit  = ' and judge.category = :categoryId ';
+		judgeFields = sql` judge `;
+		judgeLimit  = sql` and judge.category = ${round.categoryId} `;
 	}
 
-	const judges = db.sequelize.query(`
+	const judges = sql`
 		select judge.id, judge.obligation, judge.hired,
 			school.id as schoolId,
 			region.id as regionId,
@@ -534,27 +511,21 @@ export async function placeJudges(req, res) {
 					and bt.panel = pt.id
 					and pt.round = rt.id
 					and rt.timeslot = t2.id
-					and t2.start <= :timeslotEnd
-					and t2.end >= :timeslotStart
-					and t2.tourn = :tournId
+					and t2.start <= ${round.timeslotEnd}
+					and t2.end >= ${round.timeslotStart}
+					and t2.tourn = ${round.tournId}
 				limit 1
 			)
-	`, {
-		replacements : round,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb).then((result) => result.rows);
 
-	const strikes = db.sequelize.query(`
+	const strikes = sql`
 		select
 			strike.*
 		from (strike, ${judgeFields})
 		where 1=1
 			${judgeLimit}
 			and judge.id = strike.judge
-	`, {
-		replacements : round,
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	`.execute(kdb).then((result) => result.rows);
 
 	const judgeById = {};
 

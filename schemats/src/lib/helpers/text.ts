@@ -7,7 +7,7 @@ export const addZero = (i:number):string => {
 };
 
 // one of the things I miss from Perl tbh
-export const ucfirst = (lowered:string) => {
+export const ucfirst = (lowered:string | null) => {
 	if (lowered) {
 		return String(lowered).charAt(0).toUpperCase() + String(lowered).slice(1);
 	}

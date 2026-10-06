@@ -12,7 +12,7 @@
 
 	let inputStyles = $derived(options.inputStyles || 'inputStyles="box-sizing: border-box;"');
 	let listHeight = $derived(options.listHeight || '54vh');
-	let border  = $derived(options.border || '1px solid var(--color-primary-500)');
+	let border  = $derived(options.border || '1px solid var(--color-primary-strong)');
 
 </script>
 

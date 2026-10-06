@@ -17,15 +17,7 @@
   "security": [],
   "tags": [
     {
-      "name": "Admin : Servers",
-      "description": "Administrative functions for managing Tabroom servers"
-    },
-    {
-      "name": "Admin : Mail",
-      "description": "Administrative functions for testing mail and notifications"
-    },
-    {
-      "name": "ads",
+      "name": "Ads",
       "description": "Endpoints related to advertisements displayed on Tabroom"
     },
     {
@@ -33,259 +25,51 @@
       "description": "Authentication related endpoints"
     },
     {
-      "name": "Backup and Restore",
-      "description": "Endpoints for managing tournament backups and restores"
-    },
-    {
-      "name": "Ext : Caselist",
-      "description": "Endpoints for external access to Caselist data"
-    },
-    {
-      "name": "Ext : Share",
-      "description": "Endpoints for external access to Share data"
-    },
-    {
-      "name": "Ext : NSDA",
-      "description": "Endpoints for external access to NSDA data"
-    },
-    {
-      "name": "Ext : Mason",
-      "description": "Endpoints for external access to Mason data"
-    },
-    {
-      "name": "Inbox",
+      "name": "User: Inbox",
       "description": "Endpoints for managing user inbox messages"
     },
     {
-      "name": "Push Notifications",
-      "description": "Endpoints for managing user push notifications"
-    },
-    {
-      "name": "Tournament",
-      "description": "Endpoints for managing tournaments"
-    },
-    {
-      "name": "Category",
-      "description": "Endpoints for managing categories within tournaments"
-    },
-    {
-      "name": "Session",
+      "name": "User: Session",
       "description": "Endpoints related to a users session"
-    },
-    {
-      "name": "Sites & Rooms",
-      "description": "Endpoints for managing sites and rooms within tournaments"
-    },
-    {
-      "name": "Schools",
-      "description": "Endpoints for managing schools within tournaments"
-    },
-    {
-      "name": "Timeslots",
-      "description": "Endpoints for managing timeslots within tournaments"
     },
     {
       "name": "Tournaments",
       "description": "Endpoints for managing tournaments"
-    },
-    {
-      "name": "Invite",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Public",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "futureTourns",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "invite",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "public",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Schematic",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Round",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "results",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "pairings",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Ads",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Orval",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Circuits",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Judges",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Rounds",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "schematics",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "rounds",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Events",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Results",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Records",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Entries",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "event",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "eventAbbr",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Schematics",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "test",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Paradigms",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Quizzes",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Students",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "User Tournament",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "Chapter",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "legacy",
-      "description": "Auto-discovered tag"
-    },
-    {
-      "name": "User Chapters",
-      "description": "Auto-discovered tag"
     }
   ],
   "x-tagGroups": [
     {
-      "name": "Admin",
-      "tags": [
-        "Admin : Servers",
-        "Admin : Mail"
-      ]
-    },
-    {
-      "name": "Ext",
-      "tags": [
-        "Ext",
-        "Ext : Caselist",
-        "Ext : Share",
-        "Ext : NSDA",
-        "Ext : Mason"
-      ]
-    },
-    {
-      "name": "Tournament Management",
-      "tags": [
-        "Tournament",
-        "Timeslots",
-        "Backup and Restore",
-        "Category",
-        "Sites & Rooms",
-        "Schools"
-      ]
-    },
-    {
       "name": "User",
       "tags": [
-        "Inbox",
-        "Session",
-        "Push Notifications"
+        "User: Inbox",
+        "User: Session",
+        "User: Chapter",
+        "User: Tournament",
+        "User: Chapter",
+        "User: Judge"
       ]
     },
     {
       "name": "Other",
       "tags": [
+        "Admin",
         "Ads",
         "Auth",
-        "Chapter",
         "Circuits",
-        "Entries",
         "Events",
         "Invite",
         "Judges",
         "Orval",
+        "Pairings",
         "Paradigms",
-        "Public",
         "Quizzes",
-        "Records",
         "Results",
-        "Round",
         "Rounds",
-        "Schematic",
-        "Schematics",
         "Students",
         "Tournaments",
-        "User Chapters",
-        "User Tournament",
-        "event",
-        "eventAbbr",
+        "Webpages",
         "futureTourns",
-        "invite",
-        "legacy",
-        "pairings",
-        "public",
-        "results",
-        "rounds",
-        "schematics",
-        "test"
+        "legacy"
       ]
     }
   ],
@@ -295,13 +79,22 @@
         "summary": "Get NSDA Event Categories",
         "description": "Retrieve a list of NSDA event categories.",
         "tags": [
-          "Invite",
-          "Public"
+          "Invite"
         ],
         "parameters": [],
         "responses": {
           "200": {
-            "description": "List of NSDA event categories"
+            "description": "List of NSDA event categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NSDACategory"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -317,48 +110,30 @@
         "summary": "Returns the public listing of upcoming tournaments",
         "tags": [
           "futureTourns",
-          "invite",
-          "public"
+          "Invite"
         ],
         "description": "GET /pages/invite/upcoming is undocumented. Need to add .openapi to handler",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of public upcoming tournaments",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Tourn"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/pages/invite/{circuit}": {
-      "get": {
-        "summary": "Returns the public listing of upcoming tournaments",
-        "tags": [
-          "futureTourns",
-          "invite",
-          "public"
-        ],
-        "description": "GET /pages/invite/{circuit} is undocumented. Need to add .openapi to handler",
         "parameters": [
           {
-            "name": "circuit",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "name": "limit",
             "schema": {
-              "type": "string"
-            }
+              "description": "Maximum number of tournaments to return",
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "description": "Maximum number of tournaments to return"
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "schema": {
+              "description": "Two letter state code to filter tournaments by",
+              "type": "string",
+              "pattern": "^[A-Za-z]{2}$"
+            },
+            "description": "Two letter state code to filter tournaments by"
           }
         ],
         "responses": {
@@ -367,37 +142,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Tourn"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/pages/invite/nextweek": {
-      "get": {
-        "summary": "Returns the public listing of upcoming tournaments in this week",
-        "operationId": "listWeeksTourns",
-        "tags": [
-          "invite",
-          "public"
-        ],
-        "description": "GET /pages/invite/nextweek is undocumented. Need to add .openapi to handler",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "List of this week's tournaments, with some stats",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Tourn"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Upcoming"
+                  }
                 }
               }
             }
@@ -416,10 +164,19 @@
         "summary": "Get Tournament ID by Webname",
         "description": "Retrieve the tournament ID and details by webname.",
         "tags": [
-          "Invite",
-          "Public"
+          "Invite"
         ],
         "parameters": [
+          {
+            "in": "path",
+            "name": "webname",
+            "schema": {
+              "type": "string",
+              "description": "The tournament webname, or a tournament id"
+            },
+            "required": true,
+            "description": "The tournament webname, or a tournament id"
+          },
           {
             "name": "webname",
             "in": "path",
@@ -431,7 +188,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Tournament information"
+            "description": "Tournament information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TournByWebname"
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -442,16 +206,15 @@
         }
       }
     },
-    "/pages/invite/{tournId}/{eventAbbr}/{roundName}": {
+    "/pages/invite/{tournId}/{eventAbbr}/{roundName}/results": {
       "get": {
         "summary": "Round published results",
         "description": "Returns results display information for a given round",
         "operationId": "getRoundPublicResults",
         "tags": [
-          "invite",
-          "public",
-          "results",
-          "pairings"
+          "Invite",
+          "Results",
+          "Pairings"
         ],
         "parameters": [
           {
@@ -512,66 +275,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "$ref": "#/components/schemas/RoundResults"
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/pages/tiebreaks/{roundId}": {
-      "get": {
-        "summary": "Get tiebreaks needed for a protocol id.  This is just for Palmer testing and will go poof.",
-        "description": "for testing and dev",
-        "tags": [
-          "Invite",
-          "Public",
-          "Schematic",
-          "Round"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Round Information"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/pages/protocol/round/{roundId}": {
-      "get": {
-        "summary": "Get tiebreaks needed for a protocol id",
-        "description": "for testing and dev",
-        "tags": [
-          "Invite",
-          "Public",
-          "Schematic",
-          "Round"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Round Information"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -819,6 +526,96 @@
         }
       }
     },
+    "/rest/pages": {
+      "get": {
+        "summary": "Get Public Pages",
+        "description": "Retrieve a list of public, sitewide pages",
+        "tags": [
+          "Webpages"
+        ],
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of public webpages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebpageSchemaOutput"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/pages/{slug}": {
+      "get": {
+        "summary": "Get Public Page By Slug",
+        "description": "Retrieve a public, sitewide page by it's slug",
+        "tags": [
+          "Webpages"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "schema": {
+              "type": "string",
+              "maxLength": 63,
+              "description": "The slug of the page"
+            },
+            "required": true,
+            "description": "The slug of the page"
+          },
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A public webpages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WebpageSchemaOutput"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/rest/tourns": {
       "get": {
         "summary": "Get Public Tournaments",
@@ -945,6 +742,16 @@
         ],
         "parameters": [
           {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
             "$ref": "#/components/parameters/tournId"
           }
         ],
@@ -981,166 +788,32 @@
         ],
         "parameters": [
           {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
             "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
           "200": {
-            "description": "List of published rounds"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/rounds/{roundId}": {
-      "get": {
-        "summary": "Returns a single Round object an ID if it is published",
-        "operationId": "getRound",
-        "tags": [
-          "invite",
-          "public",
-          "schematics",
-          "rounds",
-          "pairings"
-        ],
-        "description": "GET /rest/tourns/{tournId}/rounds/{roundId} is undocumented. Need to add .openapi to handler",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Object of Round with public information on it",
+            "description": "List of published rounds",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublishedRound"
+                  }
                 }
               }
             }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "default": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/rounds/{roundId}/schematic": {
-      "get": {
-        "summary": "Returns public round information necessary to create a full schematic",
-        "operationId": "getSchematic",
-        "tags": [
-          "invite",
-          "public",
-          "schematics",
-          "rounds",
-          "pairings"
-        ],
-        "description": "GET /rest/tourns/{tournId}/rounds/{roundId}/schematic is undocumented. Need to add .openapi to handler",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Object of Round with public information on it for a schematic,\n\t\t\t \t\twhich includes a list of entries or sections as appropriate.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "default": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/rounds/{roundId}/brackets": {
-      "get": {
-        "summary": "Get published primary results data leading up to this round for brackets",
-        "description": "Gets the outcome scores of the present round if published",
-        "tags": [
-          "Events",
-          "Results",
-          "Records",
-          "Entries"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Entries with Win Loss data attached"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/rounds/{roundId}/results": {
-      "get": {
-        "summary": "Get Published Results for a Round",
-        "description": "Gets the outcome scores of the present round if published",
-        "tags": [
-          "Events",
-          "Results",
-          "Records",
-          "Entries"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "$ref": "#/components/parameters/roundId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Entries with Win Loss data attached"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1160,10 +833,9 @@
         "description": "Returns public result information for a given tournament",
         "operationId": "getTournResultSets",
         "tags": [
-          "invite",
-          "public",
-          "results",
-          "pairings",
+          "Invite",
+          "Results",
+          "Pairings",
           "Orval"
         ],
         "parameters": [
@@ -1216,10 +888,9 @@
         "description": "Returns result set with full display information given a result set ID if it is public",
         "operationId": "getResultSet",
         "tags": [
-          "invite",
-          "public",
-          "results",
-          "pairings",
+          "Invite",
+          "Results",
+          "Pairings",
           "Orval"
         ],
         "parameters": [
@@ -1291,141 +962,6 @@
         }
       }
     },
-    "/rest/tourns/{tournId}/results/event/{eventId}": {
-      "get": {
-        "summary": "Get event results",
-        "description": "Returns public result information for a given event",
-        "operationId": "getEventResultSets",
-        "tags": [
-          "invite",
-          "public",
-          "results",
-          "pairings"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "tournId",
-            "schema": {
-              "type": "integer",
-              "minimum": -9007199254740991,
-              "maximum": 9007199254740991,
-              "description": "ID of the tournament to get results for"
-            },
-            "required": true,
-            "description": "ID of the tournament to get results for"
-          },
-          {
-            "in": "path",
-            "name": "eventId",
-            "schema": {
-              "type": "integer",
-              "minimum": -9007199254740991,
-              "maximum": 9007199254740991,
-              "description": "ID of the event to get results for"
-            },
-            "required": true,
-            "description": "ID of the event to get results for"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Result Sets connected to a given event, with published aggregated result data attached",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/events": {
-      "get": {
-        "summary": "Get Tournament Events",
-        "description": "Retrieve a list of events associated with a specific tournament.",
-        "tags": [
-          "Tournaments"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of tournament events"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/events/{eventId}/entryWins": {
-      "get": {
-        "summary": "Get Published Results by Event",
-        "description": "Given an Event ID, get published result records of the entries therein",
-        "tags": [
-          "Events",
-          "Results",
-          "Records",
-          "Entries"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Entries with Win Loss data attached"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/rest/tourns/{tournId}/events/{eventAbbr}/field": {
       "get": {
         "summary": "Get Entry Field by Event",
@@ -1437,128 +973,45 @@
           {
             "in": "path",
             "name": "tournId",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "in": "path",
-            "name": "eventAbbr",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventAbbr",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of entries"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFound"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/events/byAbbr/{eventAbbr}": {
-      "get": {
-        "summary": "Get Event and Round List by Abbr",
-        "description": "Returns Event object with list of published rounds given an event abbreviation",
-        "operationId": "getEventByAbbr",
-        "tags": [
-          "invite",
-          "public",
-          "event",
-          "eventAbbr",
-          "rounds"
-        ],
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventAbbr",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Event and Round List",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/rest/tourns/{tournId}/entries/{entryId}/records": {
-      "get": {
-        "summary": "Entry Tournament Records",
-        "description": "Shows the published available pairings and results data for a given entry",
-        "tags": [
-          "Tournaments",
-          "Entries",
-          "Results",
-          "Schematics"
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "entryId",
             "schema": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "exclusiveMinimum": 0,
               "maximum": 9007199254740991
             },
             "required": true
           },
           {
+            "in": "path",
+            "name": "eventAbbr",
+            "schema": {
+              "type": "string",
+              "description": "Abbreviation of the event"
+            },
+            "required": true,
+            "description": "Abbreviation of the event"
+          },
+          {
             "$ref": "#/components/parameters/tournId"
           },
           {
-            "name": "entryId",
+            "name": "eventAbbr",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer"
+              "type": "string"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Record of results of a given entry"
+            "description": "List of entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventField"
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1578,10 +1031,19 @@
         "operationId": "getTournInvite",
         "description": "Retrieve a public invite for a specific tournament, including pages, files, events, and contacts.",
         "tags": [
-          "Tournaments",
-          "test"
+          "Tournaments"
         ],
         "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
           {
             "$ref": "#/components/parameters/tournId"
           }
@@ -1625,7 +1087,7 @@
             "name": "tournId",
             "schema": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "exclusiveMinimum": 0,
               "maximum": 9007199254740991
             },
             "required": true
@@ -1671,10 +1133,12 @@
           {
             "in": "path",
             "name": "tournId",
-            "required": true,
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
           },
           {
             "$ref": "#/components/parameters/tournId"
@@ -1686,7 +1150,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleRound"
+                  }
                 }
               }
             }
@@ -1754,52 +1221,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991
-                      },
-                      "name": {
-                        "type": "string",
-                        "description": "Full name"
-                      },
-                      "tournJudged": {
-                        "type": "integer",
-                        "exclusiveMinimum": 0,
-                        "maximum": 9007199254740991,
-                        "description": "Number of tournaments judged"
-                      },
-                      "schools": {
-                        "type": "array",
-                        "items": {
-                          "type": "object",
-                          "properties": {
-                            "id": {
-                              "type": "integer",
-                              "exclusiveMinimum": 0,
-                              "maximum": 9007199254740991
-                            },
-                            "name": {
-                              "type": "string"
-                            }
-                          },
-                          "required": [
-                            "id",
-                            "name"
-                          ],
-                          "additionalProperties": false
-                        }
-                      }
-                    },
-                    "required": [
-                      "id",
-                      "name",
-                      "tournJudged",
-                      "schools"
-                    ],
-                    "additionalProperties": false
+                    "$ref": "#/components/schemas/ParadigmSearchResult"
                   }
                 }
               }
@@ -1935,9 +1357,6 @@
         "security": [
           {},
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -1994,9 +1413,6 @@
           "Orval"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2064,6 +1480,54 @@
         }
       }
     },
+    "/status": {
+      "get": {
+        "summary": "Get system status",
+        "description": "Returns the current system status including server load, memory usage, and other relevant information.",
+        "operationId": "getStatus",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Server is up",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatusSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/status/barf": {
+      "get": {
+        "summary": "Trigger a barf",
+        "description": "Endpoint to trigger a barf for testing purposes.",
+        "operationId": "barfPlease",
+        "tags": [
+          "Admin"
+        ],
+        "parameters": [],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "description": "Server threw an error as a result of the barf endpoint being triggered."
+          }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "summary": "Login",
@@ -2071,7 +1535,6 @@
         "description": "Logs in a user and creates a session.",
         "tags": [
           "Auth",
-          "Public",
           "Orval"
         ],
         "security": [],
@@ -2140,52 +1603,6 @@
         }
       }
     },
-    "/auth/su": {
-      "post": {
-        "summary": "Start Su session",
-        "operationId": "authSu",
-        "tags": [
-          "Auth",
-          "Orval"
-        ],
-        "description": "POST /auth/su is undocumented. Need to add .openapi to handler",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "suId": {
-                    "type": "integer",
-                    "exclusiveMinimum": 0,
-                    "maximum": 9007199254740991
-                  }
-                },
-                "required": [
-                  "suId"
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "204": {
-            "description": "No Content. Successfully logged out."
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/auth/suend": {
       "post": {
         "summary": "End Su session",
@@ -2212,46 +1629,12 @@
         }
       }
     },
-    "/auth/register": {
-      "post": {
-        "summary": "Register",
-        "operationId": "authRegister",
-        "description": "Registers a new user.",
-        "tags": [
-          "Auth",
-          "Orval"
-        ],
-        "security": [],
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/user/tourns": {
       "get": {
         "summary": "Get Current Tourns",
         "operationId": "UserTourns",
         "tags": [
-          "User Tournament",
+          "User: Tournament",
           "Orval"
         ],
         "description": "Returns an array of Tourns a person is involved in.",
@@ -2294,7 +1677,7 @@
         "summary": "Get Tournament Presence",
         "operationId": "UserTourn",
         "tags": [
-          "User Tournament"
+          "User: Tournament"
         ],
         "description": "Get a user connections to a tournament, if any",
         "parameters": [
@@ -2316,7 +1699,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Person tournament presence"
+            "description": "Person tournament presence",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonTournPresence"
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -2332,7 +1722,7 @@
         "summary": "Get Summary",
         "operationId": "UserTournsSummary",
         "tags": [
-          "User Tournament",
+          "User: Tournament",
           "Orval"
         ],
         "description": "Returns a summary of a users role in a tourn.",
@@ -2376,7 +1766,7 @@
         "summary": "Get Fines",
         "operationId": "UserTournsFines",
         "tags": [
-          "User Tournament",
+          "User: Tournament",
           "Orval"
         ],
         "description": "Returns an array of Fines for the tourn.",
@@ -2404,61 +1794,6 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Fine"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
-    "/user/tourns/{tournId}/ballots": {
-      "get": {
-        "summary": "Get Ballots",
-        "operationId": "UserTournsBallots",
-        "tags": [
-          "User Tournament",
-          "Orval"
-        ],
-        "description": "Returns an array of Fines for the tourn.",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "tournId",
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "maximum": 9007199254740991
-            },
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "audited",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Ballots",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CurrentBallot"
                   }
                 }
               }
@@ -2526,12 +1861,9 @@
         "description": "Get the list of messages for the logged-in user",
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2566,13 +1898,10 @@
         "description": "Get the count of unread messages for the logged-in user",
         "operationId": "UserInboxUnread",
         "tags": [
-          "Inbox",
+          "User: Inbox",
           "Orval"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2584,12 +1913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "count": {
-                      "type": "integer"
-                    }
-                  }
+                  "$ref": "#/components/schemas/InboxUnreadCount"
                 }
               }
             }
@@ -2610,12 +1934,9 @@
         "description": "Mark all visible messages for the logged-in user as read",
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2638,12 +1959,9 @@
       "get": {
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2695,12 +2013,9 @@
       "delete": {
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2750,12 +2065,9 @@
         "description": "Mark a specific message as read",
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2802,12 +2114,9 @@
         "description": "Mark a specific message as unread",
         "tags": [
           "Orval",
-          "Inbox"
+          "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2853,7 +2162,7 @@
         "description": "Get the current user session",
         "operationId": "UserSession",
         "tags": [
-          "Session",
+          "User: Session",
           "Orval"
         ],
         "parameters": [],
@@ -2886,7 +2195,8 @@
         "description": "Get active judge link requests for the logged in user",
         "operationId": "UserJudgesLinkRequests",
         "tags": [
-          "Orval"
+          "Orval",
+          "User: Judge"
         ],
         "parameters": [],
         "responses": {
@@ -2919,7 +2229,8 @@
         "description": "Claim a judge or chapter judge as the logged in user.",
         "operationId": "UserJudgesClaim",
         "tags": [
-          "Orval"
+          "Orval",
+          "User: Judge"
         ],
         "parameters": [
           {
@@ -2951,22 +2262,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "A message indicating the claim request was submitted"
-                    },
-                    "detail": {
-                      "type": "string",
-                      "description": "Additional details about the claim request submission"
-                    }
-                  },
-                  "required": [
-                    "message",
-                    "detail"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/ClaimResponse"
                 }
               }
             }
@@ -2987,6 +2283,7 @@
         "operationId": "UserJudgesHistory",
         "tags": [
           "Orval",
+          "User: Judge",
           "Judges"
         ],
         "parameters": [
@@ -3017,7 +2314,10 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JudgeHistory"
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JudgeHistory"
+                  }
                 }
               }
             }
@@ -3035,7 +2335,7 @@
       "get": {
         "tags": [
           "Orval",
-          "Judges"
+          "User: Judge"
         ],
         "summary": "get paradigm",
         "operationId": "UserJudgesParadigm",
@@ -3047,17 +2347,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "paradigm": {
-                      "type": "string",
-                      "description": "The current paradigm for the user"
-                    }
-                  },
-                  "required": [
-                    "paradigm"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/UserParadigmOutput"
                 }
               }
             }
@@ -3073,7 +2363,7 @@
       "post": {
         "tags": [
           "Orval",
-          "Judges"
+          "User: Judge"
         ],
         "summary": "update paradigm",
         "operationId": "PostUserJudgesParadigm",
@@ -3083,17 +2373,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "paradigm": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "description": "The new paradigm for the user"
-                  }
-                },
-                "required": [
-                  "paradigm"
-                ]
+                "$ref": "#/components/schemas/UserParadigm"
               }
             }
           }
@@ -3124,7 +2404,7 @@
         "operationId": "UserJudgesLiveDocs",
         "tags": [
           "Orval",
-          "Judges"
+          "User: Judge"
         ],
         "parameters": [],
         "responses": {
@@ -3135,47 +2415,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "properties": {
-                      "judgeId": {
-                        "type": "integer",
-                        "minimum": -9007199254740991,
-                        "maximum": 9007199254740991
-                      },
-                      "categoryAbbr": {
-                        "type": "string"
-                      },
-                      "tournName": {
-                        "type": "string"
-                      },
-                      "tournEnd": {
-                        "type": "string",
-                        "format": "date-time",
-                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-                      },
-                      "tournTz": {
-                        "type": "string"
-                      },
-                      "url": {
-                        "type": "string"
-                      },
-                      "caption": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    },
-                    "required": [
-                      "judgeId",
-                      "categoryAbbr",
-                      "tournName",
-                      "tournEnd",
-                      "tournTz",
-                      "url",
-                      "caption"
-                    ],
-                    "additionalProperties": false
+                    "$ref": "#/components/schemas/JudgeLiveDoc"
                   }
                 }
               }
@@ -3250,22 +2490,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "description": "A message indicating the claim request was submitted"
-                    },
-                    "detail": {
-                      "type": "string",
-                      "description": "Additional details about the claim request submission"
-                    }
-                  },
-                  "required": [
-                    "message",
-                    "detail"
-                  ],
-                  "additionalProperties": false
+                  "$ref": "#/components/schemas/ClaimResponse"
                 }
               }
             }
@@ -3286,7 +2511,7 @@
         "operationId": "UserChapters",
         "tags": [
           "Orval",
-          "Chapter"
+          "User: Chapter"
         ],
         "parameters": [],
         "responses": {
@@ -3312,48 +2537,11 @@
         }
       }
     },
-    "/user/chapters/byTourn/{tournId}": {
-      "get": {
-        "tags": [
-          "legacy",
-          "User Chapters"
-        ],
-        "summary": "GET /user/chapters/byTourn/{tournId}",
-        "description": "GET /user/chapters/byTourn/{tournId} is undocumented. Need to add .openapi to handler",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "tournId",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Chapters by tournament"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "500": {
-            "$ref": "#/components/responses/ErrorResponse"
-          },
-          "default": {
-            "$ref": "#/components/responses/ErrorResponse"
-          }
-        }
-      }
-    },
     "/user/chapters/byTourn/{tournId}/mySchools": {
       "get": {
         "tags": [
           "legacy",
-          "User Chapters"
+          "User: Chapter"
         ],
         "summary": "GET /user/chapters/byTourn/{tournId}/mySchools",
         "description": "GET /user/chapters/byTourn/{tournId}/mySchools is undocumented. Need to add .openapi to handler",
@@ -3361,10 +2549,12 @@
           {
             "in": "path",
             "name": "tournId",
-            "required": true,
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
           },
           {
             "$ref": "#/components/parameters/tournId"
@@ -3372,7 +2562,17 @@
         ],
         "responses": {
           "200": {
-            "description": "My schools by tournament"
+            "description": "My schools by tournament",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MySchool"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -3390,7 +2590,7 @@
       "get": {
         "tags": [
           "legacy",
-          "User Chapters"
+          "User: Chapter"
         ],
         "summary": "GET /user/chapters/byTourn/{tournId}/nonSchools",
         "description": "GET /user/chapters/byTourn/{tournId}/nonSchools is undocumented. Need to add .openapi to handler",
@@ -3398,10 +2598,12 @@
           {
             "in": "path",
             "name": "tournId",
-            "required": true,
             "schema": {
-              "type": "integer"
-            }
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
           },
           {
             "$ref": "#/components/parameters/tournId"
@@ -3409,7 +2611,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Non-school chapters by tournament"
+            "description": "Non-school chapters by tournament",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NonTournChapter"
+                  }
+                }
+              }
+            }
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -3887,7 +3099,9 @@
             ]
           },
           "published": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "page_order": {
             "anyOf": [
@@ -3930,6 +3144,257 @@
           "uploaded",
           "timestamp"
         ]
+      },
+      "InviteEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "abbr": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "description": "Event type in camelCase, e.g. mockTrial"
+          },
+          "NSDACategory": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "code": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "code"
+            ],
+            "additionalProperties": false
+          },
+          "Category": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "abbr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "settings": {
+                "type": "object",
+                "properties": {
+                  "judgeFieldReport": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "judgeFieldReport"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "abbr",
+              "name",
+              "settings"
+            ],
+            "additionalProperties": false
+          },
+          "Topic": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "eventType": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tag": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "source",
+              "eventType",
+              "tag",
+              "text"
+            ],
+            "additionalProperties": false
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "cap": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "schoolCap": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fieldReport": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "anonymousPublic": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "live_updates": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "description": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "currency": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "cap",
+              "schoolCap",
+              "fieldReport",
+              "anonymousPublic",
+              "live_updates",
+              "description",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "entryCount": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "entryCount"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "abbr",
+          "name",
+          "fee",
+          "type",
+          "NSDACategory",
+          "Category",
+          "Topic",
+          "settings",
+          "metadata"
+        ],
+        "additionalProperties": false,
+        "description": "An event with the settings shown on the public invite"
       },
       "LoginRequest": {
         "type": "object",
@@ -3980,7 +3445,9 @@
             ]
           },
           "pending": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "updatedAt": {
             "type": "string",
@@ -4033,6 +3500,18 @@
               }
             ]
           },
+          "site_admin": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "country": {
             "type": [
               "string",
@@ -4051,8 +3530,86 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "settings": {
-            "type": "object",
-            "properties": {}
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "metadata": {
             "type": "object",
@@ -4153,24 +3710,34 @@
             ]
           },
           "sitewide": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "hidden": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "approval": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "show_answers": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "admin_only": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "circuit": {
             "anyOf": [
@@ -4202,73 +3769,6 @@
           "circuit",
           "Badge"
         ]
-      },
-      "RegisterRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
-            "description": "The email address of the new user"
-          },
-          "password": {
-            "type": "string",
-            "description": "The password for the new user"
-          },
-          "first": {
-            "type": "string",
-            "description": "The first name of the new user"
-          },
-          "middleName": {
-            "description": "The middle name of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "last": {
-            "type": "string",
-            "description": "The last name of the new user"
-          },
-          "phoneNumber": {
-            "description": "The phone number of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "state": {
-            "description": "The 2 letter state code of the new user",
-            "example": "IA",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "country": {
-            "description": "The 2 letter country code of the new user",
-            "example": "US",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "tz": {
-            "description": "The IANA timezone of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "email",
-          "password",
-          "first",
-          "last"
-        ],
-        "description": "A request to register a new user"
       },
       "ResultSetEventSchema": {
         "type": "object",
@@ -4336,6 +3836,20 @@
         ],
         "additionalProperties": false
       },
+      "UserParadigm": {
+        "type": "object",
+        "properties": {
+          "paradigm": {
+            "type": "string",
+            "maxLength": 65535,
+            "description": "The paradigm for the logged in user"
+          }
+        },
+        "required": [
+          "paradigm"
+        ],
+        "description": "The paradigm of the logged in user"
+      },
       "WebpageSchema": {
         "type": "object",
         "properties": {
@@ -4362,10 +3876,14 @@
             ]
           },
           "published": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "sitewide": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "special": {
             "anyOf": [
@@ -4389,7 +3907,7 @@
               }
             ]
           },
-          "pageOrder": {
+          "page_order": {
             "anyOf": [
               {
                 "type": "integer",
@@ -4401,7 +3919,7 @@
               }
             ]
           },
-          "parentId": {
+          "parent": {
             "anyOf": [
               {
                 "type": "integer",
@@ -4413,7 +3931,7 @@
               }
             ]
           },
-          "updatedAt": {
+          "timestamp": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
@@ -4427,9 +3945,9 @@
           "sitewide",
           "special",
           "slug",
-          "pageOrder",
-          "parentId",
-          "updatedAt"
+          "page_order",
+          "parent",
+          "timestamp"
         ]
       },
       "ActiveCircuitsResponseSchema": {
@@ -4494,6 +4012,25 @@
           ],
           "additionalProperties": false
         }
+      },
+      "ClaimResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "A message indicating the claim request was submitted"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Additional details about the claim request submission"
+          }
+        },
+        "required": [
+          "message",
+          "detail"
+        ],
+        "additionalProperties": false,
+        "description": "The result of a person claiming a judge or student record"
       },
       "CurrentBallot": {
         "type": "object",
@@ -4566,10 +4103,14 @@
             "type": "boolean"
           },
           "start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "deadline": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "roomId": {
             "anyOf": [
@@ -4773,6 +4314,229 @@
         ],
         "additionalProperties": false
       },
+      "EventField": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "abbr": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "debate",
+              "speech",
+              "mock_trial",
+              "congress",
+              "wsdc",
+              "wudc",
+              "attendee",
+              "academic"
+            ]
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tourn": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "fieldWaitlist": {
+                "description": "Whether waitlisted entries are shown",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "fieldReport": {
+                "type": "string",
+                "description": "Whether the field report is published"
+              }
+            },
+            "required": [
+              "fieldWaitlist",
+              "fieldReport"
+            ],
+            "additionalProperties": false
+          },
+          "Entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "active": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "waitlist": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "School": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "code": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "code"
+                  ],
+                  "additionalProperties": false
+                },
+                "Students": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "first": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "middle": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "last": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "chapter": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "exclusiveMinimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "first",
+                      "middle",
+                      "last",
+                      "chapter"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "code",
+                "active",
+                "waitlist",
+                "School",
+                "Students"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "abbr",
+          "type",
+          "category",
+          "tourn",
+          "settings",
+          "Entries"
+        ],
+        "additionalProperties": false,
+        "description": "The published field of entries for an event"
+      },
       "EventResultSetsSchema": {
         "type": "object",
         "properties": {
@@ -4782,6 +4546,7 @@
             "maximum": 9007199254740991
           },
           "nsdacategory": {
+            "description": "Absent when the event has no NSDA category",
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
@@ -4807,7 +4572,6 @@
         },
         "required": [
           "id",
-          "nsdacategory",
           "name",
           "abbr",
           "level",
@@ -4841,10 +4605,23 @@
               "null"
             ]
           },
+          "currency": {
+            "description": "The currency symbol for the tournament, if it is set",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "school": {
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
+          },
+          "schoolName": {
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "leviedAt": {
             "type": "string",
@@ -4856,7 +4633,9 @@
           "id",
           "reason",
           "amount",
+          "currency",
           "school",
+          "schoolName",
           "leviedAt"
         ],
         "additionalProperties": false
@@ -5070,6 +4849,22 @@
         ],
         "additionalProperties": false
       },
+      "InboxUnreadCount": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "The number of unread messages"
+          }
+        },
+        "required": [
+          "count"
+        ],
+        "additionalProperties": false,
+        "description": "The count of unread messages for the logged in user"
+      },
       "JudgeHistory": {
         "type": "object",
         "properties": {
@@ -5133,6 +4928,50 @@
         ],
         "additionalProperties": false,
         "description": "A person's history of judging"
+      },
+      "JudgeLiveDoc": {
+        "type": "object",
+        "properties": {
+          "judgeId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "categoryAbbr": {
+            "type": "string"
+          },
+          "tournName": {
+            "type": "string"
+          },
+          "tournEnd": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "tournTz": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "judgeId",
+          "categoryAbbr",
+          "tournName",
+          "tournEnd",
+          "tournTz",
+          "url",
+          "caption"
+        ],
+        "additionalProperties": false,
+        "description": "A live doc link for a category the logged in user is judging in"
       },
       "JudgeRecord": {
         "type": "object",
@@ -5248,6 +5087,339 @@
         "additionalProperties": false,
         "description": "A response for a login request"
       },
+      "MySchool": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "onsite": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "chapter": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "students": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "first": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "middle": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "last": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "code": {
+                  "description": "Code of the entry the student is in",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "chapter": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "event": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991,
+                  "description": "Event of the entry the student is in"
+                }
+              },
+              "required": [
+                "id",
+                "first",
+                "middle",
+                "last",
+                "code",
+                "chapter",
+                "event"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "entries": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "event": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "eventAbbr": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "code",
+                "name",
+                "event",
+                "eventAbbr"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Active entries keyed by entry id"
+          },
+          "events": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "abbr": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "abbr"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Events the school has entries in, keyed by event id"
+          },
+          "judges": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "first": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "last": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "category": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "categoryAbbr": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "categoryName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "first",
+                "last",
+                "code",
+                "category",
+                "categoryAbbr",
+                "categoryName"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Judges keyed by judge id"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "onsite",
+          "chapter",
+          "students",
+          "entries",
+          "events",
+          "judges"
+        ],
+        "additionalProperties": false,
+        "description": "A school the logged in user can manage at a tournament, with its roster"
+      },
+      "NSDACategory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 63
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "c",
+                  "d",
+                  "s"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Congress, debate or speech"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "national": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "code",
+          "national",
+          "timestamp"
+        ],
+        "additionalProperties": false
+      },
+      "NonTournChapter": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Unique identifier for the chapter"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the chapter"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false,
+        "description": "A chapter the user administers that has no school in a tournament"
+      },
       "ParadigmDetailsSchema": {
         "type": "object",
         "properties": {
@@ -5300,7 +5472,7 @@
         ],
         "additionalProperties": false
       },
-      "PersonTournSummary": {
+      "ParadigmSearchResult": {
         "type": "object",
         "properties": {
           "id": {
@@ -5310,20 +5482,162 @@
           },
           "name": {
             "type": "string",
-            "maxLength": 63
+            "description": "Full name"
           },
-          "webname": {
-            "type": "string"
+          "tournJudged": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991,
+            "description": "Number of tournaments judged"
           },
-          "start": {
-            "type": "string"
+          "schools": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "tournJudged",
+          "schools"
+        ],
+        "additionalProperties": false,
+        "description": "A judge matching a paradigm search"
+      },
+      "PersonTournPresence": {
+        "type": "object",
+        "properties": {
+          "me": {
+            "type": "object",
+            "properties": {
+              "entries": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "judges": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "rounds": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              }
+            },
+            "required": [
+              "entries",
+              "events",
+              "judges",
+              "categories",
+              "rounds"
+            ],
+            "additionalProperties": false,
+            "description": "Ids the person is directly involved in as a competitor or judge"
           },
-          "end": {
-            "type": "string"
-          },
-          "tz": {
-            "type": "string",
-            "maxLength": 31
+          "mine": {
+            "type": "object",
+            "properties": {
+              "entries": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "judges": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              },
+              "categories": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                }
+              }
+            },
+            "required": [
+              "entries",
+              "events",
+              "judges",
+              "categories"
+            ],
+            "additionalProperties": false,
+            "description": "Ids at schools the person coaches or is a contact for, excluding those in me"
+          }
+        },
+        "required": [
+          "me",
+          "mine"
+        ],
+        "additionalProperties": false,
+        "description": "The entities a person is connected to at a tournament"
+      },
+      "PersonTournSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
           },
           "roles": {
             "type": "array",
@@ -5341,6 +5655,17 @@
             "items": {
               "type": "object",
               "properties": {
+                "categoryId": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "categoryName": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "url": {
                   "type": "string"
                 },
@@ -5352,49 +5677,19 @@
                 }
               },
               "required": [
+                "categoryId",
+                "categoryName",
                 "url",
                 "caption"
               ],
               "additionalProperties": false
             }
-          },
-          "Judge": {
-            "anyOf": [
-              {
-                "type": "object",
-                "properties": {
-                  "categoryName": {
-                    "type": "string"
-                  },
-                  "schoolName": {
-                    "type": [
-                      "string",
-                      "null"
-                    ]
-                  }
-                },
-                "required": [
-                  "categoryName",
-                  "schoolName"
-                ],
-                "additionalProperties": false
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         },
         "required": [
           "id",
-          "name",
-          "webname",
-          "start",
-          "end",
-          "tz",
           "roles",
-          "livedocs",
-          "Judge"
+          "livedocs"
         ],
         "additionalProperties": false,
         "description": "A summary of a tourn and a persons role in it for the user homepage"
@@ -5425,6 +5720,12 @@
             "description": "A URI reference to the specific occurrence.",
             "type": "string",
             "format": "uri"
+          },
+          "issues": {
+            "description": "Additional details about the error, such as validation issues.",
+            "type": "object",
+            "propertyNames": {},
+            "additionalProperties": {}
           }
         },
         "required": [
@@ -5433,6 +5734,227 @@
           "status"
         ],
         "additionalProperties": false
+      },
+      "PublishedRound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 15
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flighted": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "post_primary": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "post_secondary": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "post_feedback": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "protocol": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "Event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "abbr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "debate",
+                  "speech",
+                  "mock_trial",
+                  "congress",
+                  "wsdc",
+                  "wudc",
+                  "attendee",
+                  "academic"
+                ]
+              },
+              "level": {
+                "type": "string",
+                "enum": [
+                  "champ",
+                  "es-novice",
+                  "es-open",
+                  "jv",
+                  "middle",
+                  "novice",
+                  "open"
+                ]
+              },
+              "nsda_category": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "Settings": {
+                "type": "object",
+                "properties": {
+                  "publishResults": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "publishResults"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "abbr",
+              "type",
+              "level",
+              "nsda_category",
+              "Settings"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "label",
+          "flighted",
+          "post_primary",
+          "post_secondary",
+          "post_feedback",
+          "published",
+          "event",
+          "protocol",
+          "Event"
+        ],
+        "additionalProperties": false,
+        "description": "A published round with its event, for the public rounds listing"
       },
       "RestCircuit": {
         "type": "object",
@@ -5616,6 +6138,7 @@
                 "type": "string"
               },
               "nsdacategory": {
+                "description": "Absent when the event has no NSDA category",
                 "type": "integer",
                 "exclusiveMinimum": 0,
                 "maximum": 9007199254740991
@@ -5629,7 +6152,6 @@
               "abbr",
               "level",
               "name",
-              "nsdacategory",
               "type"
             ],
             "additionalProperties": false
@@ -5654,6 +6176,523 @@
           "results"
         ],
         "additionalProperties": false
+      },
+      "RoundResults": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "label": {
+            "type": "string"
+          },
+          "flighted": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "postPrimary": {
+            "description": "Present when primary results are public",
+            "type": "boolean",
+            "const": true
+          },
+          "postSecondary": {
+            "description": "Present when secondary results are public",
+            "type": "boolean",
+            "const": true
+          },
+          "Event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "abbr": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "debate",
+                  "speech",
+                  "mock_trial",
+                  "congress",
+                  "wsdc",
+                  "wudc",
+                  "attendee",
+                  "academic"
+                ]
+              },
+              "Settings": {
+                "type": "object",
+                "properties": {
+                  "affLabel": {
+                    "type": "string"
+                  },
+                  "negLabel": {
+                    "type": "string"
+                  },
+                  "publishResults": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "maxEntrySize": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "primaryScore": {
+                    "type": "string",
+                    "enum": [
+                      "winloss",
+                      "rank"
+                    ]
+                  }
+                },
+                "required": [
+                  "affLabel",
+                  "negLabel"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "type",
+              "Settings"
+            ],
+            "additionalProperties": false
+          },
+          "Sections": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "letter": {
+                  "type": "string"
+                },
+                "bye": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "published": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "Judges": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^-?\\d+$"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "first": {
+                        "type": "string"
+                      },
+                      "last": {
+                        "type": "string"
+                      },
+                      "chair": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "additionalProperties": false
+                  },
+                  "description": "Judges keyed by judge id"
+                },
+                "Entries": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^-?\\d+$"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "school": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "schoolName": {
+                        "type": "string"
+                      },
+                      "side": {
+                        "description": "The side label, e.g. Aff or Neg",
+                        "type": "string"
+                      },
+                      "speakerorder": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "Speakers": {
+                        "description": "Students keyed by id, for events with more than one student per entry",
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "pattern": "^-?\\d+$"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            "first": {
+                              "type": "string"
+                            },
+                            "last": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "Ballots": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string",
+                          "pattern": "^-?\\d+$"
+                        },
+                        "additionalProperties": {
+                          "type": "object",
+                          "properties": {
+                            "winloss": {
+                              "type": "string",
+                              "enum": [
+                                "W",
+                                "L",
+                                "Bye",
+                                "Fft"
+                              ]
+                            },
+                            "rank": {
+                              "type": "number"
+                            },
+                            "point": {
+                              "description": "Points, including refutation points",
+                              "type": "number"
+                            },
+                            "po": {
+                              "type": "number"
+                            },
+                            "speech": {
+                              "description": "Comma separated speech scores",
+                              "type": "string"
+                            },
+                            "Speakers": {
+                              "description": "Secondary scores keyed by student id",
+                              "type": "object",
+                              "propertyNames": {
+                                "type": "string",
+                                "pattern": "^-?\\d+$"
+                              },
+                              "additionalProperties": {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string",
+                                  "enum": [
+                                    "winloss",
+                                    "rank",
+                                    "point",
+                                    "refute",
+                                    "po",
+                                    "speech"
+                                  ]
+                                },
+                                "additionalProperties": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          },
+                          "additionalProperties": false
+                        },
+                        "description": "Ballot scores keyed by judge id"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "Ballots"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "description": "Entries keyed by side, speaker order or entry id"
+                }
+              },
+              "required": [
+                "id",
+                "Judges",
+                "Entries"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Sections keyed by section id"
+          },
+          "scoreTypes": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "enum": [
+                "winloss",
+                "rank",
+                "point",
+                "refute",
+                "po",
+                "speech"
+              ]
+            },
+            "additionalProperties": {
+              "type": "boolean",
+              "const": true
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "label",
+          "Event",
+          "Sections",
+          "scoreTypes"
+        ],
+        "additionalProperties": false,
+        "description": "Public results for a round, grouped by section"
+      },
+      "ScheduleRound": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 15
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "published": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "post_primary": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "Event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "abbr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "debate",
+                  "speech",
+                  "mock_trial",
+                  "congress",
+                  "wsdc",
+                  "wudc",
+                  "attendee",
+                  "academic"
+                ]
+              },
+              "nsda_category": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "abbr",
+              "type",
+              "nsda_category"
+            ],
+            "additionalProperties": false
+          },
+          "Timeslot": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "start": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "end": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "start",
+              "end"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "name",
+          "label",
+          "published",
+          "post_primary",
+          "start_time",
+          "Event",
+          "Timeslot"
+        ],
+        "additionalProperties": false,
+        "description": "A round in the tournament schedule with its event and timeslot"
       },
       "Session": {
         "type": "object",
@@ -5700,6 +6739,24 @@
                   },
                   "last": {
                     "type": "string"
+                  },
+                  "site_admin": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tz": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
                 "required": [
@@ -5733,6 +6790,24 @@
               },
               "last": {
                 "type": "string"
+              },
+              "site_admin": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "tz": {
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             },
             "required": [
@@ -5852,10 +6927,87 @@
             "type": "string"
           },
           "settings": {
-            "description": "Custom settings for the student",
-            "type": "object",
-            "properties": {},
-            "additionalProperties": false
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "metadata": {
             "description": "Additional metadata for the student",
@@ -5870,6 +7022,198 @@
           "createdAt"
         ],
         "additionalProperties": false
+      },
+      "SystemStatusSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "commit": {
+            "type": "string",
+            "description": "Commit hash of the current build"
+          },
+          "webhost": {
+            "type": "string"
+          },
+          "server": {
+            "type": "string"
+          },
+          "load": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "uptime": {
+            "type": "number"
+          },
+          "freemem": {
+            "type": "number"
+          },
+          "totalmem": {
+            "type": "number"
+          },
+          "node": {
+            "type": "string"
+          },
+          "runtime": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "name",
+          "version",
+          "commit",
+          "webhost",
+          "server",
+          "load",
+          "uptime",
+          "freemem",
+          "totalmem",
+          "node",
+          "database"
+        ],
+        "additionalProperties": false
+      },
+      "TournByWebname": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 63
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tz": {
+            "type": "string",
+            "maxLength": 31
+          },
+          "webname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              }
+            ],
+            "description": "The tournament webname, or the tournament id when a newer tournament shares the webname"
+          },
+          "hidden": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "reg_start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "reg_end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "type": "object",
+            "properties": {
+              "multiYear": {
+                "type": "boolean",
+                "description": "Whether other tournaments share this webname"
+              },
+              "notCurrent": {
+                "description": "Present when a newer tournament shares this webname",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "multiYear"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "city",
+          "state",
+          "country",
+          "tz",
+          "webname",
+          "hidden",
+          "start",
+          "end",
+          "reg_start",
+          "reg_end",
+          "timestamp",
+          "settings"
+        ],
+        "additionalProperties": false,
+        "description": "A tournament looked up by webname or id for the public invite pages"
       },
       "TournInviteSchema": {
         "type": "object",
@@ -5924,19 +7268,129 @@
             "type": "string"
           },
           "hidden": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "regStart": {
-            "type": "string"
+          "reg_start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "regEnd": {
-            "type": "string"
+          "reg_end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inPerson": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Count of non attendee events without an online mode"
+          },
+          "hybrid": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Count of events with online hybrid set"
           },
           "Webpages": {
             "type": "array",
@@ -5953,7 +7407,7 @@
           "Events": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/EventOutput"
+              "$ref": "#/components/schemas/InviteEvent"
             }
           },
           "Contacts": {
@@ -5974,8 +7428,11 @@
           "hidden",
           "start",
           "end",
-          "regStart",
-          "regEnd",
+          "reg_start",
+          "reg_end",
+          "timestamp",
+          "inPerson",
+          "hybrid",
           "Webpages",
           "Files",
           "Events",
@@ -6036,19 +7493,117 @@
             "type": "string"
           },
           "hidden": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "regStart": {
-            "type": "string"
+          "reg_start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "regEnd": {
-            "type": "string"
+          "reg_end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6062,8 +7617,9 @@
           "hidden",
           "start",
           "end",
-          "regStart",
-          "regEnd"
+          "reg_start",
+          "reg_end",
+          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -6196,6 +7752,237 @@
           "tournCount"
         ],
         "additionalProperties": false
+      },
+      "Upcoming": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Composite key of tournId-weekendId. weekendId is 0 for non-district tournaments"
+          },
+          "tournId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "webname": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 63
+          },
+          "tz": {
+            "type": "string",
+            "maxLength": 31
+          },
+          "tzCode": {
+            "type": "string",
+            "description": "Short timezone code, e.g. CDT"
+          },
+          "districts": {
+            "type": "string",
+            "enum": [
+              "Yes",
+              "No"
+            ]
+          },
+          "weekendId": {
+            "description": "Only present for district weekends",
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "weekendName": {
+            "description": "Only present for district weekends",
+            "type": "string"
+          },
+          "site": {
+            "description": "Only present for district weekends",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "regStart": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regEnd": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "year": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "week": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "sortnumeric": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "dates": {
+            "type": "string",
+            "description": "Short date range, e.g. 5/24-5/26"
+          },
+          "fullDates": {
+            "type": "string",
+            "description": "Long date range, e.g. Fri, May 24, 2024 - Sun, May 26, 2024"
+          },
+          "closed": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "special": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "circuits": {
+            "description": "Comma separated circuit abbreviations",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schoolCount": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "nsdaCategories": {
+            "type": "string",
+            "description": "Comma separated NSDA category names"
+          },
+          "eventTypes": {
+            "type": "string",
+            "description": "Comma separated display names of event types"
+          },
+          "events": {
+            "type": "string",
+            "description": "Comma separated event abbreviations"
+          },
+          "signup": {
+            "description": "Comma separated abbreviations of categories with open public judge signups",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modes": {
+            "type": "string"
+          },
+          "online": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "inPerson": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "hybrid": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "tournId",
+          "webname",
+          "name",
+          "tz",
+          "tzCode",
+          "districts",
+          "location",
+          "state",
+          "country",
+          "start",
+          "end",
+          "regStart",
+          "regEnd",
+          "year",
+          "week",
+          "sortnumeric",
+          "dates",
+          "fullDates",
+          "schoolCount",
+          "nsdaCategories",
+          "eventTypes",
+          "events",
+          "signup",
+          "modes",
+          "online",
+          "inPerson",
+          "hybrid"
+        ],
+        "additionalProperties": false,
+        "description": "An upcoming tournament, or a district weekend, for the public tournament listing"
       },
       "UserChapter": {
         "type": "object",
@@ -6483,7 +8270,9 @@
             ]
           },
           "published": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "page_order": {
             "anyOf": [
@@ -6559,7 +8348,9 @@
             ]
           },
           "pending": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "updatedAt": {
             "type": "string",
@@ -6613,6 +8404,18 @@
               }
             ]
           },
+          "site_admin": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "country": {
             "type": [
               "string",
@@ -6631,9 +8434,87 @@
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "settings": {
-            "type": "object",
-            "properties": {},
-            "additionalProperties": false
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "metadata": {
             "type": "object",
@@ -6737,24 +8618,34 @@
             ]
           },
           "sitewide": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "hidden": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "approval": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "show_answers": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "admin_only": {
-            "default": false,
-            "type": "boolean"
+            "default": 0,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "circuit": {
             "anyOf": [
@@ -6825,6 +8716,21 @@
         ],
         "additionalProperties": false
       },
+      "UserParadigmOutput": {
+        "type": "object",
+        "properties": {
+          "paradigm": {
+            "type": "string",
+            "maxLength": 65535,
+            "description": "The paradigm for the logged in user"
+          }
+        },
+        "required": [
+          "paradigm"
+        ],
+        "additionalProperties": false,
+        "description": "The paradigm of the logged in user"
+      },
       "WebpageSchemaOutput": {
         "type": "object",
         "properties": {
@@ -6851,10 +8757,14 @@
             ]
           },
           "published": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "sitewide": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "special": {
             "anyOf": [
@@ -6878,7 +8788,7 @@
               }
             ]
           },
-          "pageOrder": {
+          "page_order": {
             "anyOf": [
               {
                 "type": "integer",
@@ -6890,7 +8800,7 @@
               }
             ]
           },
-          "parentId": {
+          "parent": {
             "anyOf": [
               {
                 "type": "integer",
@@ -6902,8 +8812,10 @@
               }
             ]
           },
-          "updatedAt": {
-            "type": "string"
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -6914,9 +8826,9 @@
           "sitewide",
           "special",
           "slug",
-          "pageOrder",
-          "parentId",
-          "updatedAt"
+          "page_order",
+          "parent",
+          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -7007,7 +8919,7 @@
           "abbr": {
             "type": "string"
           },
-          "tournId": {
+          "tourn": {
             "type": "integer",
             "exclusiveMinimum": 0,
             "maximum": 9007199254740991
@@ -7025,19 +8937,94 @@
             ]
           },
           "settings": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {},
-              "additionalProperties": false
-            }
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
-          "createdAt": {
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "updatedAt": {
+          "timestamp": {
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
@@ -7047,11 +9034,10 @@
           "id",
           "name",
           "abbr",
-          "tournId",
+          "tourn",
           "pattern",
-          "settings",
-          "createdAt",
-          "updatedAt"
+          "created_at",
+          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -7074,16 +9060,24 @@
             "maximum": 9007199254740991
           },
           "official": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "onsite": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "email": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "book": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "nsda": {
             "type": "integer",
@@ -7112,7 +9106,9 @@
             "type": "string"
           },
           "createdAt": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "settings": {
             "type": "object",
@@ -7166,7 +9162,9 @@
             "type": "string"
           },
           "onsite": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "chapterId": {
             "type": "integer",
@@ -7298,39 +9296,6 @@
         ],
         "additionalProperties": false
       },
-      "NSDACategorySchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "name": {
-            "type": "string",
-            "maxLength": 63
-          },
-          "type": {
-            "type": "string",
-            "maxLength": 15
-          },
-          "code": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "nationals": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "type",
-          "code"
-        ],
-        "additionalProperties": false
-      },
       "PersonQuizWithQuizSchema": {
         "type": "object",
         "properties": {
@@ -7362,7 +9327,9 @@
             ]
           },
           "pending": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "updatedAt": {
             "type": "string",
@@ -7383,6 +9350,74 @@
           "Quiz"
         ],
         "additionalProperties": false
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "The email address of the new user"
+          },
+          "password": {
+            "type": "string",
+            "description": "The password for the new user"
+          },
+          "first": {
+            "type": "string",
+            "description": "The first name of the new user"
+          },
+          "middleName": {
+            "description": "The middle name of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "type": "string",
+            "description": "The last name of the new user"
+          },
+          "phoneNumber": {
+            "description": "The phone number of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "description": "The 2 letter state code of the new user",
+            "example": "IA",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "description": "The 2 letter country code of the new user",
+            "example": "US",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tz": {
+            "description": "The IANA timezone of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "first",
+          "last"
+        ],
+        "additionalProperties": false,
+        "description": "A request to register a new user"
       },
       "Room": {
         "type": "object",
@@ -7500,7 +9535,9 @@
             "type": "string"
           },
           "onsite": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "tournId": {
             "type": "integer",
@@ -7526,19 +9563,97 @@
             "maximum": 9007199254740991
           },
           "updatedAt": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "createdAt": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "settings": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "metadata": {
             "type": "object",
@@ -7562,7 +9677,6 @@
           "districtId",
           "updatedAt",
           "createdAt",
-          "settings",
           "metadata"
         ],
         "additionalProperties": false
@@ -7605,21 +9719,24 @@
             "type": "string"
           },
           "start": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "end": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
-          "tournId": {
+          "tourn": {
             "type": "integer",
             "minimum": -9007199254740991,
             "maximum": 9007199254740991
           },
-          "updatedAt": {
-            "type": "string"
-          },
-          "createdAt": {
-            "type": "string"
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           }
         },
         "required": [
@@ -7627,9 +9744,8 @@
           "name",
           "start",
           "end",
-          "tournId",
-          "updatedAt",
-          "createdAt"
+          "tourn",
+          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -7671,7 +9787,9 @@
             "type": "string"
           },
           "createdAt": {
-            "type": "string"
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
           },
           "createdBy": {
             "$ref": "#/components/schemas/PersonOutput"
@@ -7779,7 +9897,9 @@
             "type": "string"
           },
           "onsite": {
-            "type": "boolean"
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
           },
           "state": {
             "type": "string"
@@ -7942,19 +10062,11 @@
       }
     },
     "securitySchemes": {
-      "extApiKey": {
-        "type": "http",
-        "scheme": "basic"
-      },
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      },
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
         "name": "TabroomToken",
-        "description": "send the session token as a cookie. For direct API access, we recommend using bearerAuth."
+        "description": "send the session token as a cookie."
       }
     }
   }

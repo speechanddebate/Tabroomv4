@@ -92,7 +92,7 @@ describe('createOpenApiSpec', () => {
 
 		shared.openapi = {
 			path: '/spec-items/{id}',
-			tags: ['Inbox'],
+			tags: ['User: Inbox'],
 			get: {
 				summary: 'Get item',
 				responses: { 200: { description: 'get ok' } },
@@ -109,8 +109,8 @@ describe('createOpenApiSpec', () => {
 
 		expect(getOp.summary).toBe('Get item');
 		expect(deleteOp.summary).toBe('Delete item');
-		expect(getOp.tags).toContain('Inbox');
-		expect(deleteOp.tags).toContain('Inbox');
+		expect(getOp.tags).toContain('User: Inbox');
+		expect(deleteOp.tags).toContain('User: Inbox');
 		expect(getOp.responses['500']).toEqual({ $ref: '#/components/responses/ErrorResponse' });
 		expect(deleteOp.responses['401']).toEqual({ $ref: '#/components/responses/Unauthorized' });
 	});

@@ -6,4 +6,15 @@
  * OpenAPI spec version: 1.2.0
  */
 
-export type TournSettings = { [key: string]: string | number | boolean };
+/**
+ * Settings keyed by tag
+ */
+export type TournSettings = {
+	[key: string]:
+		| string
+		| number
+		| boolean
+		| null
+		| { [key: string]: unknown }
+		| unknown[];
+} | null;

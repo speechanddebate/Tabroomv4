@@ -2,7 +2,7 @@ import con from '../../../../controllers/user/studentsController.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { Router } from 'express';
 import z from 'zod';
-import { StudentSchema } from '@tabroom/types';
+import { StudentSchema, ClaimResponseSchema } from '@tabroom/types';
 
 const router = Router();
 
@@ -46,14 +46,7 @@ router.route('/claim')
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.object({
-							message: z.string().meta({
-								description: 'A message indicating the claim request was submitted',
-							}),
-							detail: z.string().meta({
-								description: 'Additional details about the claim request submission',
-							}),
-						}),
+						schema: ClaimResponseSchema,
 					},
 				},
 			},

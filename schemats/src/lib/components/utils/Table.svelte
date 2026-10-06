@@ -17,11 +17,11 @@
 		getRowClassName,
 		enableColumnResizing = true,
 		columnResizeMode = 'onChange',
-		containerClass = 'bg-back w-full',
-		tableClass = 'w-full text-sm border-collapse border border-neutral-400 rounded',
-		headerClass = 'text-left px-4 py-1 text-[11px] font-semibold bg-secondary-100 border border-secondary-400',
-		cellClass = 'px-4 py-1 border border-back-300 text-[12px] leading-4',
-		footerClass = 'text-left px-4 py-1 text-[11px] bg-back-100 border border-neutral-300',
+		containerClass = 'bg-surface w-full',
+		tableClass = 'w-full text-sm border-collapse border border-border-strong rounded',
+		headerClass = 'text-left px-4 py-1 text-[11px] font-semibold bg-accent-soft border border-accent',
+		cellClass = 'px-4 py-1 border border-border text-[12px] leading-4',
+		footerClass = 'text-left px-4 py-1 text-[11px] bg-surface-alt border border-border',
 		emptyMessage = 'No data available',
 		...props
 	}: TableProps<TData> = $props();
@@ -193,11 +193,11 @@
 	}
 
 	:global(.tabroom-table tbody tr:nth-of-type(2n)) {
-		background-color: var(--color-neutral-100);
+		background-color: var(--color-surface-alt);
 	}
 
 	:global(.tabroom-table tbody tr:hover) {
-		background-color: var(--color-back-100);
+		background-color: var(--color-accent-soft);
 	}
 
 	:global(.tabroom-table .table-header-cell) {
@@ -224,7 +224,7 @@
 	:global(.tabroom-table .table-column-resizer:focus-visible),
 	:global(.tabroom-table .table-column-resizer-active) {
 		opacity: 1;
-		background-color: var(--color-secondary-400);
+		background-color: var(--color-accent);
 	}
 
 	:global(.tabroom-table .table-sort-button) {
@@ -282,7 +282,7 @@
 		padding: 1.5rem 1rem;
 		text-align: center;
 		font-size: 0.875rem;
-		color: var(--color-neutral-600);
+		color: var(--color-muted);
 	}
 
 	:global(.tabroom-table .table-error-stack) {

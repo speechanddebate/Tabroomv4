@@ -26,9 +26,6 @@ describe('judgesController', () => {
 	beforeAll(async () => {
 		person = await factories.person.create();
 	});
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
 	describe('linkRequests', () => {
 		it('should return linked judges and chapter judges for the user', async () => {
 			const Judge1 = await factories.judge.create({ person_request: person.id });
@@ -55,11 +52,9 @@ describe('judgesController', () => {
 			const chapterJudge = await factories.chapterJudge.create();
 	
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: judge.id,
-						chapterJudgeId: chapterJudge.id,
-					},
+				query: {
+					judgeId: judge.id,
+					chapterJudgeId: chapterJudge.id,
 				},
 			});
 	
@@ -70,9 +65,7 @@ describe('judgesController', () => {
 	
 		it('should return 400 if neither judgeId nor chapterJudgeId are provided', async () => {
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {},
-				},
+				query: {},
 			});
 	
 			await con.claimRequest(req, res);
@@ -82,10 +75,8 @@ describe('judgesController', () => {
 	
 		it('should return 400 if judgeId is invalid', async () => {
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: 999999999,
-					},
+				query: {
+					judgeId: 999999999,
 				},
 			});
 	
@@ -101,10 +92,8 @@ describe('judgesController', () => {
 			});
 	
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: judge.id,
-					},
+				query: {
+					judgeId: judge.id,
 				},
 			});
 	
@@ -126,10 +115,8 @@ describe('judgesController', () => {
 			});
 	
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: requestedJudge.id,
-					},
+				query: {
+					judgeId: requestedJudge.id,
 				},
 			});
 	
@@ -151,10 +138,8 @@ describe('judgesController', () => {
 			});
 	
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: requestedJudge.id,
-					},
+				query: {
+					judgeId: requestedJudge.id,
 				},
 			});
 	
@@ -171,10 +156,8 @@ describe('judgesController', () => {
 			});
 	
 			const { req, res } = createPersonContext(person, {
-				valid: {
-					query: {
-						judgeId: Judge.id,
-					},
+				query: {
+					judgeId: Judge.id,
 				},
 			});
 	
@@ -197,12 +180,12 @@ describe('judgesController', () => {
 			]);
 		});
 		it('should return 400 if paradigm exceeds word limit', async () => {
-			req.valid = { body: { paradigm: 'word '.repeat(101) } };
+			req.body = { paradigm: 'word '.repeat(101) };
 			await con.updateParadigm(req, res);
 			expect(res).toBeProblemResponse(400);
 		});
 		it('should return 403 if persons email is unconfirmed', async () => {
-			const reqOverride = { valid: { body: { paradigm: 'word '.repeat(50) } } };
+			const reqOverride = { body: { paradigm: 'word '.repeat(50) } };
 			const unconfirmedPerson = await factories.person.create({ settings: { email_unconfirmed: 1 } });
 			const { req: req2, res: res2 } = createPersonContext(unconfirmedPerson, reqOverride);
 			//vi.mocked(personRepo.getPerson).mockResolvedValue({ id: 123, settings: { email_unconfirmed: true } });
@@ -210,19 +193,19 @@ describe('judgesController', () => {
 			expect(res2).toBeProblemResponse(403);
 		});
 		it('does not fail if no word limit is set', async () => {
-			req.valid = { body: { paradigm: 'word '.repeat(200) } };
+			req.body = { paradigm: 'word '.repeat(200) };
 			vi.mocked(tabroomRepo.getSettings).mockResolvedValue([]);
 			await con.updateParadigm(req, res);
 			expect(res).not.toBeProblemResponse();
 			expect(logger.debug).toHaveBeenCalled();
 		});
 		it('should return 400 if paradigm contains profanity', async () => {
-			req.valid = { body: { paradigm: 'word '.repeat(50) + ' shit' } };
+			req.body = { paradigm: 'word '.repeat(50) + ' shit' };
 			await con.updateParadigm(req, res);
 			expect(res).toBeProblemResponse(400);
 		});
 		it('saves the paradigm if it meets all requirements', async () => {
-			req.valid = { body: { paradigm: 'word '.repeat(50) } };
+			req.body = { paradigm: 'word '.repeat(50) };
 			await con.updateParadigm(req, res);
 			expect(res).not.toBeProblemResponse();
 			expect(changeLogRepo.createChangeLog).toHaveBeenCalled();

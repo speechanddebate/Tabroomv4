@@ -5,23 +5,24 @@
  *
  */
 
-import db from '../../data/db.js';
+import { db } from '../../data/database.js';
 
 export const checkBallots = async (roundId) => {
 
-	const ballots = await db.sequelize.query(`
-		select
-			ballot.id, ballot.entry, ballot.judge, ballot.chair,
-			ballot.speakerorder, ballot.side,
-			ballot.panel sectionId
-		from (ballot, panel)
-		where 1=1
-			and panel.round = :roundId
-			and panel.id = ballot.panel
-	`, {
-		replacements : {roundId},
-		type         : db.Sequelize.QueryTypes.SELECT,
-	});
+	const ballots = await db
+	.selectFrom('ballot')
+	.innerJoin('panel', 'panel.id', 'ballot.panel')
+	.select([
+		'ballot.id',
+		'ballot.entry',
+		'ballot.judge',
+		'ballot.chair',
+		'ballot.speakerorder',
+		'ballot.side',
+		'ballot.panel as sectionId',
+	])
+	.where('panel.round', '=', roundId)
+	.execute();
 
 	// First create a reference sample of what a complete section looks like.
 	// If there are discrepancies there's no good way for Tabroom to tell so

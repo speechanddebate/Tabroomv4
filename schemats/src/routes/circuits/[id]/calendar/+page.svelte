@@ -48,7 +48,7 @@
 	const tournsData = $derived(handleOrval(tournQuery));
 
 </script>
-<div class="bg-white pt-4">
+<div class="bg-surface pt-4">
 <p style="text-align: center;" class=" text-2xl lg:text-4xl">{circuitData?.name} District Calendar</p>
 	<YearSelector bind:startDate={seasonStart} bind:endDate={seasonEnd}/>
 

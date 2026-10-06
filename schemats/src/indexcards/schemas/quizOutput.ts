@@ -17,11 +17,31 @@ export interface QuizOutput {
 	tag: string | null;
 	label: string | null;
 	description: string | null;
-	sitewide: boolean;
-	hidden: boolean;
-	approval: boolean;
-	show_answers: boolean;
-	admin_only: boolean;
+	/**
+	 * @minimum -9007199254740991
+	 * @maximum 9007199254740991
+	 */
+	sitewide: number;
+	/**
+	 * @minimum -9007199254740991
+	 * @maximum 9007199254740991
+	 */
+	hidden: number;
+	/**
+	 * @minimum -9007199254740991
+	 * @maximum 9007199254740991
+	 */
+	approval: number;
+	/**
+	 * @minimum -9007199254740991
+	 * @maximum 9007199254740991
+	 */
+	show_answers: number;
+	/**
+	 * @minimum -9007199254740991
+	 * @maximum 9007199254740991
+	 */
+	admin_only: number;
 	circuit: number | null;
 	Badge: QuizBadgeOutput;
 	PersonQuizzes?: PersonQuizOutput[];

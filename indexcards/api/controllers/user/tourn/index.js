@@ -1,8 +1,7 @@
-import db from '../../../data/db.js';
+import { db } from '../../../data/database.js';
 import fineRepo from '../../../repos/fineRepo.js';
 import tournRepo from '../../../repos/tournRepo.js';
-
-import { db as KyselyDb } from '../../../data/database.js';
+import { sql } from 'kysely';
 
 // The purpose of this function is to deliver a complete list of "things I care
 // about" at a tournament. That will help sorting the relevant judges, entries,
@@ -14,9 +13,7 @@ import { db as KyselyDb } from '../../../data/database.js';
 
 export async function getPersonTournPresence(req, res) {
 
-	console.log('HEYO');
-
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(200).json({ message: 'You are not logged in'});
 	};
 
@@ -36,9 +33,9 @@ export async function getPersonTournPresence(req, res) {
 		},
 	};
 
-	const edata = await getPersonTournEntries(req.session.person, req.params.tournId);
-	const jdata = await getPersonTournJudges(req.session.person, req.params.tournId);
-	const sdata = await getPersonTournSchools(req.session.person, req.params.tournId);
+	const edata = await getPersonTournEntries(req.person.id, req.params.tournId);
+	const jdata = await getPersonTournJudges(req.person.id, req.params.tournId);
+	const sdata = await getPersonTournSchools(req.person.id, req.params.tournId);
 
 	// Unique lists of stuff that is me as an individual
 	Object.keys(tournPresence.me).forEach( (key) => {
@@ -59,23 +56,16 @@ export async function getPersonTournPresence(req, res) {
 
 export const getPersonTournEntries = async (personId, tournId) => {
 
-	const entryArray = await db.sequelize.query(`
-		select
-			entry.id, entry.event
-		from (event, entry, entry_student es, student)
-		where 1=1
-			and event.tourn = :tournId
-			and event.type != 'attendee'
-			and event.id = entry.event
-			and entry.active = 1
-			and entry.id = es.entry
-			and es.student = student.id
-			and student.person = :personId
-		group by entry.id
-	`, {
-		replacements : { personId, tournId },
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	const entryArray = await db.selectFrom('entry')
+		.innerJoin('entry_student as es', 'entry.id', 'es.entry')
+		.innerJoin('event', 'entry.event', 'event.id')
+		.innerJoin('student', 'es.student', 'student.id')
+		.where('event.tourn', '=', tournId)
+		.where('event.type', '!=', 'attendee')
+		.where('entry.active', '=', 1)
+		.where('student.person', '=', personId)
+		.select(['entry.id', 'entry.event'])
+		.execute();
 
 	const edata = {
 		entries    : [],
@@ -92,33 +82,37 @@ export const getPersonTournEntries = async (personId, tournId) => {
 
 export const getPersonTournJudges = async (personId, tournId) => {
 
-	const judgeArray = await db.sequelize.query(`
-		select
-			judge.id, judge.category, judge.alt_category altCategory,
-			(
-				select (GROUP_CONCAT(distinct round.event))
-					from ballot, panel, round
-				where ballot.judge = judge.id
-					and ballot.panel = panel.id
-					and panel.round = round.id
-			) as events,
-			(
-				select (GROUP_CONCAT(distinct round.id))
-					from ballot, panel, round
-				where ballot.judge = judge.id
-					and ballot.panel = panel.id
-					and panel.round = round.id
-			) as rounds
-		from (judge, category)
-		where 1=1
-			and judge.person   = :personId
-			and judge.category = category.id
-			and category.tourn = :tournId
-		group by judge.id
-	`, {
-		replacements : { personId, tournId },
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	const judgeArray = await db
+    .selectFrom('judge')
+    .innerJoin('category', 'category.id', 'judge.category')
+    .select([
+        'judge.id',
+        'judge.category',
+        'judge.alt_category as altCategory',
+        (eb) =>
+            eb
+                .selectFrom('ballot')
+                .innerJoin('panel', 'panel.id', 'ballot.panel')
+                .innerJoin('round', 'round.id', 'panel.round')
+                .select(
+                    sql`GROUP_CONCAT(DISTINCT ${sql.ref('round.event')})`
+                )
+                .whereRef('ballot.judge', '=', 'judge.id')
+                .as('events'),
+        (eb) =>
+            eb
+                .selectFrom('ballot')
+                .innerJoin('panel', 'panel.id', 'ballot.panel')
+                .innerJoin('round', 'round.id', 'panel.round')
+                .select(
+                    sql`GROUP_CONCAT(DISTINCT ${sql.ref('round.id')})`
+                )
+                .whereRef('ballot.judge', '=', 'judge.id')
+                .as('rounds'),
+    ])
+    .where('judge.person', '=', personId)
+    .where('category.tourn', '=', tournId)
+    .execute();
 
 	const jdata = {
 		judges     : [],
@@ -139,40 +133,51 @@ export const getPersonTournJudges = async (personId, tournId) => {
 };
 
 export const getPersonTournSchools = async (personId, tournId) => {
-	const schoolArray = await db.sequelize.query(`
-		select
-			school.id,
-			GROUP_CONCAT(entry.id) as entries,
-			GROUP_CONCAT(event.id) as events,
-			GROUP_CONCAT(category.id) as categories,
-			GROUP_CONCAT(judge.id) as judges
-		from (school)
-			left join entry on entry.school = school.id and entry.active = 1
-			left join judge on judge.school = school.id
-			left join category on judge.category = category.id
-			left join event on entry.event = event.id
-		where 1=1
-			and school.tourn = :tournId
-			AND (
-				EXISTS (
-					select contact.id from contact
-					where 1=1
-						and contact.person   = :personId
-						and contact.school   = school.id
-						and (contact.official = 1 OR contact.onsite = 1)
-				) OR EXISTS (
-					select permission.id from permission
-					where 1=1
-						and permission.person = :personId
-						and permission.chapter = school.chapter
-						and permission.tag = 'chapter'
-				)
-			)
-		group by school.id
-	`, {
-		replacements : { personId, tournId },
-		type: db.Sequelize.QueryTypes.SELECT,
-	});
+	const schoolArray = await db
+    .selectFrom('school')
+    .leftJoin('entry', (join) =>
+        join
+            .onRef('entry.school', '=', 'school.id')
+            .on('entry.active', '=', 1)
+    )
+    .leftJoin('judge', 'judge.school', 'school.id')
+    .leftJoin('category', 'category.id', 'judge.category')
+    .leftJoin('event', 'event.id', 'entry.event')
+    .select([
+        'school.id',
+        sql`GROUP_CONCAT(${sql.ref('entry.id')})`.as('entries'),
+        sql`GROUP_CONCAT(${sql.ref('event.id')})`.as('events'),
+        sql`GROUP_CONCAT(${sql.ref('category.id')})`.as('categories'),
+        sql`GROUP_CONCAT(${sql.ref('judge.id')})`.as('judges'),
+    ])
+    .where('school.tourn', '=', tournId)
+    .where((eb) =>
+        eb.or([
+            eb.exists(
+                eb
+                    .selectFrom('contact')
+                    .select('contact.id')
+                    .whereRef('contact.school', '=', 'school.id')
+                    .where('contact.person', '=', personId)
+                    .where((eb) =>
+                        eb.or([
+                            eb('contact.official', '=', 1),
+                            eb('contact.onsite', '=', 1),
+                        ])
+                    )
+            ),
+            eb.exists(
+                eb
+                    .selectFrom('permission')
+                    .select('permission.id')
+                    .whereRef('permission.chapter', '=', 'school.chapter')
+                    .where('permission.person', '=', personId)
+                    .where('permission.tag', '=', 'chapter')
+            ),
+        ])
+    )
+    .groupBy('school.id')
+    .execute();
 
 	const sdata = {
 		schools    : [],
@@ -193,8 +198,8 @@ export const getPersonTournSchools = async (personId, tournId) => {
 };
 
 export async function getPersonTourns(req, res){
-	const { endAfter } = req.valid.query;
-	const data = await tournRepo.getPersonTourns(KyselyDb,req.actor.id, {
+	const { endAfter } = req.query;
+	const data = await tournRepo.getPersonTourns(db,req.actor.id, {
 		endAfter,
 		unpublished: false,
 	});
@@ -209,15 +214,16 @@ export async function getPersonTourns(req, res){
 		hidden: row.hidden,
 		start: row.start,
 		end: row.end,
-		regStart: row.reg_start,
-		regEnd: row.reg_end,
+		reg_start: row.reg_start,
+		reg_end: row.reg_end,
+		timestamp: row.timestamp,
 	}));
 
 	return res.json(tourns);
 };
 
 export async function getTournSummary(req,res){
-	const tourn = await tournRepo.getPersonTournSummary(KyselyDb,req.actor.id,req.valid.params.tournId);
+	const tourn = await tournRepo.getPersonTournSummary(db,req.actor.id,req.params.tournId);
 	let roles = [];
 	let livedocs = [];
 	if(tourn.judges.length > 0)
@@ -245,11 +251,17 @@ export async function getTournSummary(req,res){
 	});
 }
 export async function getTournFines(req,res){
-	const { tournId } = req.valid.params;
-	const data = await fineRepo.getFines(KyselyDb,req.actor.id,tournId);
+	const { tournId } = req.params;
+	const data = await fineRepo.getFines(db,req.actor.id,tournId);
 
 	return res.json(data.map((row) => ({
-		...row,
+		id: row.id,
+		reason: row.reason,
+		amount: row.amount === null ? null : Number(row.amount),
+		currency: row.currency,
+		school: row.school,
+		schoolName: row.schoolName,
+		leviedAt: row.leviedAt,
 	})));
 };
 

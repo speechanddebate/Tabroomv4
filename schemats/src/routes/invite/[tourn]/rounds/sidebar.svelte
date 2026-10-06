@@ -7,11 +7,8 @@
 	let { parent = 'schematic' } = $props();
 
 	import { indexFetch } from '$lib/indexfetch';
+	import type { PersonTournPresence, PublishedRound } from '@tabroom/types';
 	import { ucfirst } from '$lib/helpers/text';
-	import Sidebar from '$lib/layouts/Sidebar.svelte';
-	import Loading from '$lib/layouts/Loading.svelte';
-
-	import type {RoundData} from '../inviteTypes';
 
 	const eventGroupKeys = ['your', 'school', 'other'] as const;
 	type EventGroupKey = typeof eventGroupKeys[number];
@@ -21,8 +18,8 @@
 	import type { Tourn } from '$indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 
-	const roundList   = $derived(indexFetch(`/rest/tourns/${tourn.id}/rounds`));
-	const myTourn     = $derived(indexFetch(`/user/tourn/${tourn.id}`));
+	const roundList   = $derived(indexFetch<PublishedRound[]>(`/rest/tourns/${tourn.id}/rounds`));
+	const myTourn     = $derived(indexFetch<PersonTournPresence>(`/user/tourns/${tourn.id}`));
 
 	let events:EventBuckets = $derived.by( ():EventBuckets => {
 
@@ -40,7 +37,7 @@
 
 		const done: number[] = [];
 
-		roundList.data.forEach( (round:RoundData) => {
+		roundList.data?.forEach( (round:PublishedRound) => {
 			if (!round.Event?.id) return;
 			if (done.includes(round.Event.id)) return;
 			let tag:EventGroupKey = 'other';
@@ -68,16 +65,16 @@
 
 		// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 		const eventBins:any = {};
-		roundList.data.forEach( (round:RoundData) => {
-			if (!eventBins[round.eventId]) {
-				eventBins[round.eventId] = [];
+		roundList.data?.forEach( (round:PublishedRound) => {
+			if (!eventBins[round.event]) {
+				eventBins[round.event] = [];
 			}
-			eventBins[round.eventId].push(round);
+			eventBins[round.event].push(round);
 		});
 
 		Object.keys(eventBins).forEach( (eventId) => {
-			eventBins[eventId] = eventBins[eventId]?.sort( (a:RoundData,b:RoundData) => {
-				if (a.name !== b.name)  return b.name - a.name;
+			eventBins[eventId] = eventBins[eventId]?.sort( (a:PublishedRound,b:PublishedRound) => {
+				if (a.name !== b.name)  return (b.name ?? 0) - (a.name ?? 0);
 			});
 		});
 
@@ -89,18 +86,15 @@
 
 </script>
 
-	<Loading tanstackJobs={ [myTourn, roundList] } />
-
 	{#if myTourn.isFetched && roundList.isFetched}
 
-	<!-- invite/rounds/eventAbbr/sidebar.svelte-->
-	<Sidebar>
+	<!-- invite/rounds/sidebar.svelte: content for a WithSidebar sidebar snippet -->
 		<div class="sidenote">
 			{#each eventGroupKeys as key (key) }
 
 				{#if events[key] && Object.keys(events[key]).length}
 
-					<h5 class='my-0 border-b border-secondary-500 pb-0 leading-8 mb-2 pt-1'>
+					<h5 class='my-0 border-b border-accent pb-0 leading-8 mb-2 pt-1'>
 						{multiple ? ucfirst(key) : ''} Events
 					</h5>
 
@@ -112,8 +106,8 @@
 						if (eA.type !== eB.type)
 							return (eA.type).localeCompare(eB.type);
 
-						if (eA.nsdaCategory !== eB.nsdaCategory)
-							return eA.nsdaCategory - eB.nsdaCategory;
+						if (eA.nsda_category !== eB.nsda_category)
+							return eA.nsda_category - eB.nsda_category;
 
 						if (eA.abbr && eB.abbr)
 							return (eA.abbr).localeCompare(eB.abbr);
@@ -121,17 +115,20 @@
 
 						<div class='flex flex-wrap'>
 							<a
-								class = 'blue w-full bg-back-100 text-sm
-									border-s-2 border-primary-400
-									border-y border-y-back-300
-									hover:bg-back-200
+								class = 'blue w-full bg-surface-alt text-sm
+									border-s-2 border-primary
+									border-y border-y-border
+									hover:bg-page
 									p-1
 									ps-2
 									text-[12px]
 									flex
-									{selectedEventAbbr === events[key][id]?.abbr ? 'selected bg-secondary-200 font-semibold' : '' }
+									{selectedEventAbbr === events[key][id]?.abbr ? 'selected bg-accent-soft font-semibold' : '' }
 								'
-								href = { resolve(`/invite/${tourn.id}/rounds/${events[key][id].abbr}`) }
+								href = { resolve('/invite/[tourn]/rounds/[eventAbbr]', {
+									tourn     : String(tourn.id),
+									eventAbbr : events[key][id].abbr,
+								}) }
 							>
 								<span class="grow">
 									{events[key][id].name}
@@ -141,7 +138,7 @@
 									flex-col
 									justify-around
 									text-right pe-0.75
-									text-back-1000 text-xs
+									text-xs
 								'>
 									{events[key][id].abbr}
 								</span>
@@ -150,11 +147,11 @@
 							<div class='block ps-2 {selectedEventAbbr === events[key][id].abbr ? '' : 'hidden' } mb-2 w-full'>
 								{#each roundsByEvent[id] as round (round.id)}
 
-									{#if round.postPrimary === 3 || round.Event?.Settings?.publishResults}
+									{#if round.post_primary === 3 || round.Event?.Settings?.publishResults}
 										<div
 											class = 'w-full flex {
 												myTourn.data?.me?.rounds.includes(round.id)
-													? 'text-warning-600 font-semibold'
+													? 'text-warning font-semibold'
 													: ''
 											}'
 										>
@@ -162,33 +159,45 @@
 												{@html '&#x21e8;'}
 											{/if}
 											<a class='w-2/3
-												bg-back-100 text-xs
-												border-s-2 border-secondary-200
-												border-y border-y-back-300
-												hover:bg-secondary-200
-												{ (parent !== 'results' && selectedRoundNumber === round.name ? 'selected bg-warning-200 ' : '') }'
-												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`)}
+												bg-surface-alt text-xs
+												border-s-2 border-accent
+												border-y border-y-border
+												hover:bg-accent-soft
+												{ (parent !== 'results' && selectedRoundNumber === round.name ? 'selected bg-warning-soft ' : '') }'
+												href = {resolve('/invite/[tourn]/rounds/[eventAbbr]/[roundNumber]', {
+													tourn       : tourn.webname,
+													eventAbbr   : events[key][id].abbr,
+													roundNumber : String(round.name),
+												})}
 											>{ events[key][id].abbr } { round.label || `Round ${round.name}`} Schematic</a>
 											<a class='w-1/4 ml-1 grow
-												bg-back-100 text-xs
-												border-s-2 border-secondary-200
-												border-y border-y-back-300
-												{ (parent === 'results' && selectedRoundNumber === round.name) ? 'selected bg-warning-200 ' : '' }
-												hover:bg-secondary-200'
-												href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}/results`)}
+												bg-surface-alt text-xs
+												border-s-2 border-accent
+												border-y border-y-border
+												{ (parent === 'results' && selectedRoundNumber === round.name) ? 'selected bg-warning-soft ' : '' }
+												hover:bg-accent-soft'
+												href = {resolve('/invite/[tourn]/rounds/[eventAbbr]/[roundNumber]/results', {
+													tourn       : tourn.webname,
+													eventAbbr   : events[key][id].abbr,
+													roundNumber : String(round.name),
+												})}
 											>Results</a>
 										</div>
 									{:else}
 										<a
 											class = 'blue w-full
-												bg-back-100 text-xs
-												border-s-2 border-secondary-200
-												border-y border-y-back-300
-												hover:bg-secondary-200
-												{myTourn.data?.me?.rounds.includes(round.id) ? 'text-warning-600 font-semibold' : '' }
-												{selectedRoundNumber === round.name ? 'selected bg-secondary-200 ' : '' }
+												bg-surface-alt text-xs
+												border-s-2 border-accent
+												border-y border-y-border
+												hover:bg-accent-soft
+												{myTourn.data?.me?.rounds.includes(round.id) ? 'text-warning font-semibold' : '' }
+												{selectedRoundNumber === round.name ? 'selected bg-accent-soft ' : '' }
 											'
-											href = {resolve(`/invite/${tourn.webname}/rounds/${events[key][id].abbr}/${round.name}`)}
+											href = {resolve('/invite/[tourn]/rounds/[eventAbbr]/[roundNumber]', {
+												tourn       : tourn.webname,
+												eventAbbr   : events[key][id].abbr,
+												roundNumber : String(round.name),
+											})}
 										>{#if myTourn.data?.me?.rounds.includes(round.id) }
 											{@html '&#x21e8;'}
 										{/if}
@@ -201,5 +210,4 @@
 				{/if}
 			{/each}
 		</div>
-	</Sidebar>
 	{/if}

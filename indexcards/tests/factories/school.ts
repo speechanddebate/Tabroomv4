@@ -1,14 +1,15 @@
-import db from '../../api/data/db.js';
+import { db } from '../../api/data/database.js';
+import schoolRepo from '../../api/repos/schoolRepo.js';
 
 async function createSchoolData(overrides = {}) {
 	return {
 		...overrides,
 	};
 };
-async function create(props = {}) {
+export async function create(props = {}) {
 	const schoolData = await createSchoolData(props);
 
-	return await db.school.create(schoolData);
+	return await schoolRepo.createSchool(db,schoolData);
 }
 
 export default {

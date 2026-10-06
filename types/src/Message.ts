@@ -1,4 +1,4 @@
-import z from 'zod';
+import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 import * as utils from './utils.js';
 
@@ -24,3 +24,12 @@ export const InboxMessageSchema = z.object({
 }).meta({
 	id: 'InboxMessage',
 }) satisfies ZodOpenApiSchemaObject;
+
+export const InboxUnreadCountSchema = z.object({
+	count: z.number().int().nonnegative().meta({ description: 'The number of unread messages' }),
+}).meta({
+	id: 'InboxUnreadCount',
+	description: 'The count of unread messages for the logged in user',
+}) satisfies ZodOpenApiSchemaObject;
+
+export type InboxUnreadCount = z.infer<typeof InboxUnreadCountSchema>;

@@ -9,3 +9,6 @@
 # Indexcards specific
 **/dist
 **/coverage
+# E2E specific
+**/playwright-report
+**/test-results

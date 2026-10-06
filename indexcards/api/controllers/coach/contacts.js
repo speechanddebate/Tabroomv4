@@ -1,23 +1,34 @@
 import { NotFound } from '../../helpers/problem.js';
+import { sql } from 'kysely';
+import { db } from '../../data/database.js';
+
+// Contact columns that updateContact may change via property_name
+const CONTACT_PROPERTIES = ['book', 'email', 'nsda', 'official', 'onsite'];
+
+const findContacts = (req) => db.selectFrom('contact')
+	.selectAll()
+	.where('school', '=', parseInt(req.body.school))
+	.where('person', '=', parseInt(req.body.person))
+	.execute();
 
 // General CRUD for contact coaches
 export async function updateContact(req, res) {
 	const firstStatusCheck = await checkContactStatus(req);
-	const contacts = await req.db.contact.findAll({
-		where: {
-			school: parseInt(req.body.school),
-			person: parseInt(req.body.person),
-		},
-	});
+	const contacts = await findContacts(req);
 	if (!contacts || contacts.length < 1) {
 		return res.status(200).json('No coach found');
 	}
 	const contact = contacts.shift();
 	for (const dupe of contacts) {
-		await dupe.destroy();
+		await db.deleteFrom('contact').where('id', '=', dupe.id).execute();
 	}
-	contact[req.body.property_name] = req.body.property_value;
-	await contact.save();
+	if (CONTACT_PROPERTIES.includes(req.body.property_name)) {
+		contact[req.body.property_name] = req.body.property_value;
+		await db.updateTable('contact')
+			.set({ [req.body.property_name]: req.body.property_value })
+			.where('id', '=', contact.id)
+			.execute();
+	}
 	const secondStatusCheck = await checkContactStatus(req, res);
 	if ((secondStatusCheck === 'OK' || firstStatusCheck === 'OK') && (secondStatusCheck !== firstStatusCheck)) {
 		return res.status(200).json({
@@ -47,14 +58,9 @@ export async function updateContact(req, res) {
 
 export async function deleteContact(req, res) {
 	const firstStatusCheck = await checkContactStatus(req, res);
-	const contacts = await req.db.contact.findAll({
-		where: {
-			school: parseInt(req.body.school),
-			person: parseInt(req.body.person),
-		},
-	});
+	const contacts = await findContacts(req);
 	for (const contact of contacts) {
-		await contact.destroy();
+		await db.deleteFrom('contact').where('id', '=', contact.id).execute();
 	}
 	const secondStatusCheck = await checkContactStatus(req, res);
 	if (secondStatusCheck !== firstStatusCheck) {
@@ -89,13 +95,13 @@ export const checkContacts = {
 
 export const checkContactStatus = async (req) => {
 
-	let limit = '';
+	let limit = sql``;
 
 	if (req.body.email_contacts) {
-		limit = 'and contact.email = 1';
+		limit = sql`and contact.email = 1`;
 	}
 
-	const contacts = await req.db.sequelize.query(`
+	const { rows: contacts } = await sql`
 		select
 			contact.id contact_id,
 			contact.created_by,
@@ -115,14 +121,11 @@ export const checkContactStatus = async (req) => {
 
 		where person.id = contact.person
 			and contact.school = school.id
-			and school.id = :schoolId
+			and school.id = ${req.body.school || req.params.schoolId}
 			${limit}
 
 		order by contact.official DESC, person.last, person.first, person.nsda
-	`, {
-		replacements: { schoolId: req.body.school || req.params.schoolId },
-		type: req.db.Sequelize.QueryTypes.SELECT,
-	});
+	`.execute(db);
 
 	if (req.body.return) {
 		return contacts;
@@ -193,34 +196,28 @@ export const checkContactStatus = async (req) => {
 };
 
 export async function userProfile(req, res) {
-	if (!req.session) {
+	if (!req.person) {
 		return res.status(201).json({ message: 'You have no active user session' });
 	}
-	let result;
+	let personId;
 	if (req.params.personId && req.person.site_admin) {
-		result = await req.db.person.findByPk(
-			req.params.personId,
-			{
-				include: [{
-					model: req.db.personSetting,
-					as: 'Settings',
-				}],
-			}
-		);
+		personId = req.params.personId;
 	} else if (req.params.personId) {
 		return res.status(201).json({ message: 'Only admin staff may access another profile' });
-	} else if (req.session.person) {
-		result = await req.db.person.findByPk(req.session.person, {
-			include: [{
-				model: req.db.personSetting,
-				as: 'Settings',
-			}],
-		});
+	} else if (req.person.id) {
+		personId = req.person.id;
 	}
-	if (!result || (result.count && result.count < 1)) {
+	const result = personId
+		? await db.selectFrom('person').selectAll().where('id', '=', personId).executeTakeFirst()
+		: undefined;
+	if (!result) {
 		return NotFound(req, res, 'User does not exist');
 	}
-	const jsonOutput = result.toJSON();
+	const Settings = await db.selectFrom('person_setting')
+		.selectAll()
+		.where('person', '=', result.id)
+		.execute();
+	const jsonOutput = { ...result, Settings };
 	delete jsonOutput.password;
 	return res.status(200).json(jsonOutput);
 }

@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { indexFetch } from '$lib/indexfetch';
+	import type { PublishedRound } from '@tabroom/types';
 	import { getContext } from 'svelte';
-	import Sidebar from './sidebar.svelte';
+	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import RoundsSidebar from './sidebar.svelte';
 
 	import type { Tourn } from '$indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
-	let roundList = $derived(indexFetch(`/rest/tourns/${tourn.id}/rounds`));
+	let roundList = $derived(indexFetch<PublishedRound[]>(`/rest/tourns/${tourn.id}/rounds`));
 
 </script>
 
-	<div class="main">
+	<WithSidebar>
 		{#if roundList.status === 'pending'}
-			<div class='text-success-500 font-semibold'>
+			<div class='text-success font-semibold'>
 				Data Loading...
 			</div>
 		{:else if roundList.status === 'error'}
@@ -19,7 +21,7 @@
 		{:else}
 
 			{#if roundList.isPending}
-				<div class='text-success-500 font-semibold'>
+				<div class='text-success font-semibold'>
 					Data Updating...
 				</div>
 
@@ -33,6 +35,8 @@
 				<h5>Published Rounds</h5>
 			{/if}
 		{/if}
-	</div>
 
-	<Sidebar />
+		{#snippet sidebar()}
+			<RoundsSidebar />
+		{/snippet}
+	</WithSidebar>

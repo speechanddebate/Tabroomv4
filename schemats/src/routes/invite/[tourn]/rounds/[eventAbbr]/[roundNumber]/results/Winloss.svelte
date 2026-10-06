@@ -112,7 +112,7 @@
 
 </script>
 
-	<div class='px-3 overflow-x-scroll pb-3 bg-back wg-full text-success-600'>
+	<div class='px-3 overflow-x-scroll pb-3 bg-surface wg-full text-success'>
 
 		<SVGrid
 			columns = { columns }

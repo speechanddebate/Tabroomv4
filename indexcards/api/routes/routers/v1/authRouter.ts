@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import z from 'zod';
 import { ValidateRequest } from '../../../middleware/validation.js';
-import { requireLogin, requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
+import { requirePerson, requireSiteAdmin } from '../../../middleware/auth/authorization.js';
 import {
 	LoginRequestSchema,
 	LoginResponseSchema,
@@ -9,6 +9,7 @@ import {
 } from '@tabroom/types';
 import * as examples from '../../openapi/examples/index.js';
 import * as controller from '../../../controllers/authController.js';
+import config from '../../../config.js';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.route('/login').post(ValidateRequest, controller.login).openapi = {
 	summary: 'Login',
 	operationId: 'authLogin',
 	description: 'Logs in a user and creates a session.',
-	tags: ['Auth', 'Public', 'Orval'],
+	tags: ['Auth', 'Orval'],
 	security: [],
 	requestBody: {
 		required: true,
@@ -53,7 +54,7 @@ router.route('/logout').post(controller.logout).openapi = {
 		},
 	},
 };
-
+if(!config.features.HIDE_DEV_ENDPOINTS) {
 router.route('/su').post(requireSiteAdmin, ValidateRequest, controller.su).openapi = {
 	path: '/auth/su',
 	summary: 'Start Su session',
@@ -76,7 +77,8 @@ router.route('/su').post(requireSiteAdmin, ValidateRequest, controller.su).opena
 		'400': { '$ref': '#/components/responses/BadRequest' },
 	},
 };
-router.route('/suend').post(requireLogin, controller.suEnd).openapi = {
+}
+router.route('/suend').post(requirePerson, controller.suEnd).openapi = {
 	path: '/auth/suend',
 	summary: 'End Su session',
 	operationId: 'authSuEnd',
@@ -88,7 +90,7 @@ router.route('/suend').post(requireLogin, controller.suEnd).openapi = {
 		'400': { '$ref': '#/components/responses/BadRequest' },
 	},
 };
-
+if(!config.features.HIDE_DEV_ENDPOINTS) {
 router.route('/register').post(ValidateRequest, controller.register).openapi = {
 	path: '/auth/register',
 	summary: 'Register',
@@ -105,5 +107,6 @@ router.route('/register').post(ValidateRequest, controller.register).openapi = {
 		},
 	},
 };
+}
 
 export default router;

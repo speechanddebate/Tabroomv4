@@ -90,7 +90,6 @@ vi.mock('$indexcards', () => ({
 
 describe('Inbox page UI', () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
 		inboxRefetch.mockResolvedValue({});
 		messageRefetch.mockResolvedValue({});
 		markReadMutateAsync.mockResolvedValue({ status: 204 });

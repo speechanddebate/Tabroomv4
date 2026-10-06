@@ -1,8 +1,27 @@
 import logger from '../../../helpers/logger.js';
 import { BadRequest, Forbidden, NotFound, NotImplemented } from '../../../helpers/problem.js';
-import db from '../../../data/db.js';
+import { db } from '../../../data/database.js';
+import { summon } from '../../../repos/utils/summon.js';
+import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Functions that manage overall tournament access.
+
+// A person's permissions in a tourn, with the ids of any event or category
+// they are scoped to
+const personTournPerms = (personId, tournId) => db.selectFrom('permission as perm')
+	.leftJoin('event', 'event.id', 'perm.event')
+	.leftJoin('category', 'category.id', 'perm.category')
+	.selectAll('perm')
+	.select(['event.id as eventId', 'category.id as categoryId'])
+	.where('perm.person', '=', personId)
+	.where('perm.tourn', '=', tournId)
+	.execute();
+
+const findBackupFollowers = (tournId) => db.selectFrom('tourn_setting')
+	.selectAll()
+	.where('tourn', '=', tournId)
+	.where('tag', '=', 'backup_followers')
+	.executeTakeFirst();
 
 // Show permissions for a user
 export async function getAccess(req, res) {
@@ -15,7 +34,7 @@ export async function createAccess(req, res) {
 }
 
 export async function updateAccess(req, res) {
-	const targetPerson = await db.summon(db.person, req.params.personId);
+	const targetPerson = await summon(db, 'person',req.params.personId);
 
 	if (!targetPerson) {
 		return NotFound(req, res, 'No person found with that Tabroom ID');
@@ -38,17 +57,7 @@ export async function updateAccess(req, res) {
 		// Remove any and all tourn level permissions from the user, except owner
 		// level permissions if I am not an owner myself.
 
-		const currentPerms = await db.permission.findAll({
-			where      : {
-				person : targetPerson.id,
-				tourn  : req.params.tournId,
-			},
-			include : [
-				{ model: db.event, as: 'Event' },
-				{ model: db.category, as: 'Category' },
-			],
-			raw: true,
-		});
+		const currentPerms = await personTournPerms(targetPerson.id, req.params.tournId);
 
 		let description = '';
 		const promises = [];
@@ -57,8 +66,8 @@ export async function updateAccess(req, res) {
 
 			if (perm.tag !== 'contact') {
 				if (
-					perm['Event.id']
-					|| perm['Category.id']
+					perm.eventId
+					|| perm.categoryId
 					|| (perm.tag === 'owner' && req.session.perms.tourn[req.params.tournId] !== 'owner')
 				) {
 
@@ -68,12 +77,9 @@ export async function updateAccess(req, res) {
 
 					description += `${perm.tag} level tournament permissions removed from ${targetPerson.email}`;
 
-					const promise = db.sequelize.query(`
-						delete permission.* from permission where permission.id = :permId
-					`, {
-						replacements: { permId: perm.id },
-						type: db.sequelize.QueryTypes.DELETE,
-					});
+					const promise = db.deleteFrom('permission')
+						.where('id', '=', perm.id)
+						.execute();
 					promises.push(promise);
 				}
 			}
@@ -82,11 +88,11 @@ export async function updateAccess(req, res) {
 		await Promise.all(promises);
 
 		if (description) {
-			await db.changeLog.create({
-				person     : req.session.person,
+			await changeLogRepo.createChangeLog(db, {
+				person     : req.person.id,
 				tourn      : req.params.tournId,
 				tag        : 'access',
-				created_at : Date(),
+				created_at : new Date(),
 				description,
 			});
 
@@ -104,20 +110,19 @@ export async function updateAccess(req, res) {
 
 		if (
 			req.session.perms.tourn[req.params.tournId] !== 'owner'
-			&& (targetPerson.id !== req.session.person
+			&& (targetPerson.id !== req.person.id
 				|| req.body.property_value
 			)
 		) {
 			return Forbidden(req, res,'Only tournament owners may adjust tournament contacts other than yourself');
 		}
 
-		const currentPerm = await db.permission.findOne({
-			where      : {
-				person : targetPerson.id,
-				tag,
-				tourn  : req.params.tournId,
-			},
-		});
+		const currentPerm = await db.selectFrom('permission')
+			.select('id')
+			.where('person', '=', targetPerson.id)
+			.where('tag', '=', tag)
+			.where('tourn', '=', req.params.tournId)
+			.executeTakeFirst();
 
 		if (req.body.property_value) {
 
@@ -126,20 +131,20 @@ export async function updateAccess(req, res) {
 				return;
 			}
 
-			await db.permission.create({
+			await db.insertInto('permission').values({
 				person     : targetPerson.id,
 				tourn      : req.params.tournId,
 				tag,
-				created_by : req.session.person,
-			});
+				created_by : req.person.id,
+			}).execute();
 
 			const description = `${targetPerson.email} has been made a tournament contact`;
 
-			await db.changeLog.create({
-				person     : req.session.person,
+			await changeLogRepo.createChangeLog(db, {
+				person     : req.person.id,
 				tourn      : req.params.tournId,
 				tag        : 'access',
-				created_at : Date(),
+				created_at : new Date(),
 				description,
 			});
 
@@ -152,21 +157,19 @@ export async function updateAccess(req, res) {
 			return BadRequest(req, res, `User ${targetPerson.email} is not a tournament contact`);
 		}
 
-		await db.permission.destroy({
-			where: {
-				person     : targetPerson.id,
-				tourn      : req.params.tournId,
-				tag,
-			},
-		});
+		await db.deleteFrom('permission')
+			.where('person', '=', targetPerson.id)
+			.where('tourn', '=', req.params.tournId)
+			.where('tag', '=', tag)
+			.execute();
 
 		const description = `${targetPerson.email} is no longer a tournament contact`;
 
-		await db.changeLog.create({
-			person     : req.session.person,
+		await changeLogRepo.createChangeLog(db, {
+			person     : req.person.id,
 			tourn      : req.params.tournId,
 			tag        : 'access',
-			created_at : Date(),
+			created_at : new Date(),
 			description,
 		});
 
@@ -201,22 +204,13 @@ export async function updateAccess(req, res) {
 		return Forbidden(req, res, 'You do not have sufficient access to grant that level of permissions');
 	}
 
-	const currentPerms = await db.permission.findAll({
-		where      : {
-			person : targetPerson.id,
-			tourn  : req.params.tournId,
-		},
-		include : [
-			{ model: db.event, as: 'Event' },
-			{ model: db.category, as: 'Category' },
-		],
-	});
+	const currentPerms = await personTournPerms(targetPerson.id, req.params.tournId);
 
 	let currentPerm = {};
 
 	for (const perm of currentPerms) {
 		if (perm.tag !== 'contact') {
-			if (!perm.Event && !perm.Category) {
+			if (!perm.eventId && !perm.categoryId) {
 				currentPerm = perm;
 			}
 		}
@@ -227,9 +221,10 @@ export async function updateAccess(req, res) {
 	}
 
 	if (currentPerm?.id) {
-		currentPerm.tag = tag;
-		currentPerm.created_by = req.session.person;
-		await currentPerm.save();
+		await db.updateTable('permission')
+			.set({ tag, created_by: req.person.id })
+			.where('id', '=', currentPerm.id)
+			.execute();
 	} else {
 
 		//	await db.permission.destroy({
@@ -237,36 +232,32 @@ export async function updateAccess(req, res) {
 		//		tourn      : req.params.tournId,
 		//	});
 
-		await db.permission.create({
+		await db.insertInto('permission').values({
 			person     : targetPerson.id,
 			tourn      : req.params.tournId,
-			created_by : req.session.person,
+			created_by : req.person.id,
 			tag,
-		});
+		}).execute();
 	}
 
 	const description = `${targetPerson.email} granted tournament wide ${tag} permissions`;
-	await db.changeLog.create({
-		person     : req.session.person,
+	await changeLogRepo.createChangeLog(db, {
+		person     : req.person.id,
 		tourn      : req.params.tournId,
 		tag        : 'access',
-		created_at : Date(),
+		created_at : new Date(),
 		description,
 	});
 
 	res.status(200).json(description);
 }
 export async function deleteAccess(req, res) {
-	const targetPerms = await db.sequelize.query(`
-		select
-			perm.id, perm.tag, perm.event, perm.category
-		from permission perm
-			where perm.person = :personId
-			and perm.tourn = :tournId
-	`, {
-		replacements: { ...req.params },
-		type: db.sequelize.QueryTypes.SELECT,
-	});
+	const targetPerms = await db
+		.selectFrom('permission as perm')
+		.select(['perm.id', 'perm.tag', 'perm.event', 'perm.category'])
+		.where('perm.person', '=', req.params.personId)
+		.where('perm.tourn', '=', req.params.tournId)
+		.execute();
 
 	const deletePerms = [];
 
@@ -285,9 +276,9 @@ export async function deleteAccess(req, res) {
 	if (deletePerms.length > 0) {
 
 		try {
-			await db.permission.destroy({
-				where: { id: deletePerms },
-			});
+			await db.deleteFrom('permission')
+				.where('id', 'in', deletePerms)
+				.execute();
 
 		} catch (err) {
 			logger.error(err.message, err);
@@ -297,7 +288,7 @@ export async function deleteAccess(req, res) {
 		let description;
 
 		try {
-			const targetPerson = await db.summon(db.person, req.params.personId);
+			const targetPerson = await summon(db, 'person',req.params.personId);
 			description = `All tournament access removed from ${targetPerson.email}`;
 		} catch (err) {
 			logger.error(err);
@@ -311,13 +302,13 @@ export async function deleteAccess(req, res) {
 		try {
 			const logCreate = {
 				tourn       : req.params.tournId,
-				person      : req.session.person,
+				person      : req.person.id,
 				tag         : 'access',
-				created_at  : Date(),
+				created_at  : new Date(),
 				description,
 			};
 
-			await db.changeLog.create(logCreate);
+			await changeLogRepo.createChangeLog(db, logCreate);
 		} catch (err) {
 			logger.error(err);
 			return;
@@ -335,11 +326,10 @@ export async function deleteAccess(req, res) {
 }
 
 export async function createBackupAccess(req, res) {
-	const newAccount = await db.person.findOne({
-		where : {
-			email: req.params.personEmail,
-		},
-	});
+	const newAccount = await db.selectFrom('person')
+		.selectAll()
+		.where('email', '=', req.params.personEmail)
+		.executeTakeFirst();
 
 	if (!newAccount) {
 		res.status.json = NotFound(req, res, 'No tabroom account was found with that email');
@@ -349,12 +339,7 @@ export async function createBackupAccess(req, res) {
 		res.status.json = BadRequest(req, res,'That Tabroom account is set to not allow emails to be sent to it');
 	}
 
-	const backupAccounts = await db.tournSetting.findOne({
-		where : {
-			tourn: req.params.tournId,
-			tag  : 'backup_followers',
-		},
-	});
+	const backupAccounts = await findBackupFollowers(req.params.tournId);
 
 	const followers = [];
 
@@ -374,26 +359,23 @@ export async function createBackupAccess(req, res) {
 	const uniqueFollowers = [...new Set(followers)];
 
 	if (backupAccounts?.id) {
-		backupAccounts.value_text = uniqueFollowers;
-		await backupAccounts.update();
+		await db.updateTable('tourn_setting')
+			.set({ value: 'json', value_text: JSON.stringify(uniqueFollowers) })
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	} else {
-		await db.tournSetting.create({
+		await db.insertInto('tourn_setting').values({
 			tourn      : req.params.tournId,
 			tag        : 'backup_followers',
 			value      : 'json',
-			value_text : uniqueFollowers,
-		});
+			value_text : JSON.stringify(uniqueFollowers),
+		}).execute();
 	}
 
 	res.status(200).json(`Added ${newAccount.email} as a tournament-wide backup follower`);
 }
 export async function deleteBackupAccess(req, res) {
-	const backupAccounts = await db.tournSetting.findOne({
-		where : {
-			tourn: req.params.tournId,
-			tag  : 'backup_followers',
-		},
-	});
+	const backupAccounts = await findBackupFollowers(req.params.tournId);
 
 	if (!backupAccounts?.id) {
 		res.status(200).json(`Tournament has no current backup followers`);
@@ -413,10 +395,14 @@ export async function deleteBackupAccess(req, res) {
 	}
 
 	if (followers.length < 1) {
-		await backupAccounts.destroy();
+		await db.deleteFrom('tourn_setting')
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	} else {
-		backupAccounts.value_text = JSON.stringify(followers);
-		await backupAccounts.save();
+		await db.updateTable('tourn_setting')
+			.set({ value: 'json', value_text: JSON.stringify(followers) })
+			.where('id', '=', backupAccounts.id)
+			.execute();
 	}
 
 	res.status(200).json(`Backup follower removed`);

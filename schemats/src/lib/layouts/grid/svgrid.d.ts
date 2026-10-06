@@ -14,7 +14,7 @@ export interface GridOptions {
 	papersize?    : 'letter' | 'a3' | 'a4',
 	filename?     : string,
 	tableOptions? : Grid,
-	rowStyle      : function,
+	rowStyle?     : function,
 }
 
 // Adds options that allow the FilterBar to work properly, as well as some

@@ -5,7 +5,6 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
-import type { PersonTournSummaryJudge } from './personTournSummaryJudge';
 import type { PersonTournSummaryLivedocsItem } from './personTournSummaryLivedocsItem';
 import type { PersonTournSummaryRolesItem } from './personTournSummaryRolesItem';
 
@@ -18,14 +17,6 @@ export interface PersonTournSummary {
 	 * @exclusiveMinimum 0
 	 */
 	id: number;
-	/** @maxLength 63 */
-	name: string;
-	webname: string;
-	start: string;
-	end: string;
-	/** @maxLength 31 */
-	tz: string;
 	roles: PersonTournSummaryRolesItem[];
 	livedocs: PersonTournSummaryLivedocsItem[];
-	Judge: PersonTournSummaryJudge;
 }

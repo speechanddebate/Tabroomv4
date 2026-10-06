@@ -14,13 +14,13 @@ async function getTourn(req: Request, res: Response) {
 
 async function createTourn(req: Request, res: Response) {
 	//TODO need to make the requesting user the owner of the tourn
-	const data = req.valid.body;
-	if(!req.actor.Person?.id) return BadRequest(req,res,'Actor person ID is required');
+	const data = req.body;
+	if(!req.person) return BadRequest(req,res,'Actor person ID is required');
 	const tourn = await tournRepo.createTourn(db,data);
 	//TODO this should be handled and validated by a middleware plugin
 	await createPermission(db, {
 		tourn: tourn.id,
-		person: req.actor.Person?.id,
+		person: req.person.id,
 		tag: 'owner',
 	});
 	return res.status(201).json(tourn);

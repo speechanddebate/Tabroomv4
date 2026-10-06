@@ -15,10 +15,6 @@ const postWithRequest = async (request: Request) => {
 };
 
 describe('POST /log', () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
-
 	it('should log valid error payload', async () => {
 		const logger = loggingModule.default;
 		const request = new Request('http://localhost/log', {
@@ -89,7 +85,6 @@ describe('POST /log', () => {
 		const logger = loggingModule.default;
 
 		for (const level of ['error', 'warn', 'info', 'debug']) {
-			vi.clearAllMocks();
 
 			const request = new Request('http://localhost/log', {
 				method: 'POST',

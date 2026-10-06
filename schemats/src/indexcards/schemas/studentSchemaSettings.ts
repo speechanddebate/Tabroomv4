@@ -7,6 +7,14 @@
  */
 
 /**
- * Custom settings for the student
+ * Settings keyed by tag
  */
-export type StudentSchemaSettings = { [key: string]: unknown };
+export type StudentSchemaSettings = {
+	[key: string]:
+		| string
+		| number
+		| boolean
+		| null
+		| { [key: string]: unknown }
+		| unknown[];
+} | null;

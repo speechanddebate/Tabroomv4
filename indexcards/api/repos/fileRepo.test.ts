@@ -45,7 +45,7 @@ describe('FileRepo', () => {
 			//expect all files to have tournId and published = true
 			for (const f of files) {
 				expect(f.tourn).toBe(tourn.id);
-				expect(f.published).toBe(true);
+				expect(f.published).toBe(1);
 			}
 		});
 	});

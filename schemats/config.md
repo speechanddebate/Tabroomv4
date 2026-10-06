@@ -21,8 +21,6 @@ Examples of defaults currently provided:
 - `CLASSIC_URL` defaults to `https://tabroom.com`
 - `INDEXCARDS_BASE_PATH` defaults to `/v1`
 - `AUTH_COOKIE` defaults to `TabroomToken`
-- `CSRF_COOKIE_NAME` defaults to `CSRF_Token`
-- `CSRF_HEADER_NAME` defaults to `x-csrf-token`
 - `LOG_LEVEL` defaults to `info`
 - `LOGGING_FILE_MAXSIZE` defaults to `2097152`
 - `LOGGING_FILE_MAXFILES` defaults to `5`

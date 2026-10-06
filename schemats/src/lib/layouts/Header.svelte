@@ -1,7 +1,6 @@
 <script lang="ts">
 
 	import { resolve } from '$app/paths';
-	import { invalidateAll } from '$app/navigation';
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 
@@ -15,17 +14,16 @@
 		DropdownHeader,
 		DropdownItem,
 		DropdownGroup,
-		Button,
 		Tooltip,
 		Indicator,
 	} from 'flowbite-svelte';
 	import {
-		HomeSolid,
-		EnvelopeSolid,
-		UserSolid,
-		ArrowRightToBracketOutline,
-		ChalkboardSolid, FileCheckSolid,
-	}  from 'flowbite-svelte-icons';
+		House,
+		Mail,
+		LogOut,
+		LayoutDashboard,
+		Search,
+	} from '@lucide/svelte';
 
 	import { isAuthenticated, isSuSession, getSessionOwner, getPerson } from '$lib/helpers/SessionContext.svelte';
 
@@ -38,23 +36,24 @@
 	const loginRedirect = $derived(
 		encodeURIComponent(`${page.url.pathname}${page.url.search}`)
 	);
-	const loginHref = $derived(`/user/login?redirect=${loginRedirect}`);
+	const loginHref = $derived(`${resolve('/user/login')}?redirect=${loginRedirect}`);
 	const hideAuthControls = $derived(page.url.pathname === '/user/login');
 
 	let loggingOut = $state(false);
 	const logout = async (event: Event) => {
 		loggingOut = true;
 		event?.preventDefault();
-		await logoutFn();
-		await invalidateAll(); // Force reload +layout.server.ts
-		loggingOut = false;
+		try {
+			await logoutFn();
+		} finally {
+			loggingOut = false;
+		}
 	};
 	let suEnding = $state(false);
 	const suEnd = async (event: Event) => {
 		suEnding = true;
 		event?.preventDefault();
 		await suEndFn();
-		await invalidateAll(); // Force reload +layout.server.ts
 		suEnding = false;
 	};
 
@@ -65,13 +64,13 @@
 		activeUrl = page.url.pathname;
 	});
 
-	const dropdownItemClasses = 'text-sm hover:bg-gray-200 dark:hover:bg-neutral-600 py-2 flex items-center gap-1';
+	const dropdownItemClasses = 'text-sm hover:bg-accent-soft py-2 flex items-center gap-1';
 </script>
 
 <div>
 	<Navbar
 		class = 'items-start flex-nowrap flex-row
-			bg-linear-to-b from-primary-1000 to-primary-800
+			bg-primary-deep
 			sm:px-2 xl:px-4'
 		breakpoint="lg"
 		fluid = {true}
@@ -79,7 +78,7 @@
 	>
 		<NavBrand
 			class = 'flex-wrap mt-2 mb'
-			href  = {resolve('/', {})}
+			href  = {resolve('/')}
 		>
 			<div class="flex nowrap
 				p-0 m-0
@@ -103,7 +102,7 @@
 					<h1
 						class="
 						hidden sm:inline
-							whitespace-nowrap font-semibold text-neutral-50
+							whitespace-nowrap font-semibold text-white
 							text-[28px]
 							md:text-[36px] md:leading-4 md:tracking-[0.02em]
 							lg:text-[42px] lg:tracking-[.02em] lg:py-1 lg:leading-7 pe-2
@@ -114,7 +113,7 @@
 						TABROOM.COM
 					</h1>
 					<div class="
-						text-secondary-300 italic w-auto font-semibold
+						text-accent italic w-auto font-semibold
 						sm:inline
 						md:text-[12px] md:ms-1 md:pb-1
 						lg:text-[14px] lg:ms-1 lg:pb-1
@@ -133,9 +132,9 @@
 					order-2'
 			{activeUrl}
 			classes={{
-				ul: 'bg-primary-900 border-primary-700 lg:bg-inherit lg:border-none lg:flex-row lg:justify-around lg:p-2 lg:text-xs lg:font-medium lg:mt-0 xl:mt-0',
-				active: '!text-neutral-50 font-semibold underline underline-offset-4 decoration-secondary-400 decoration-solid hover:bg-primary-700 hover:!text-secondary-300 lg:hover:bg-transparent lg:hover:!text-secondary-300 lg:hover:underline lg:ps-2 lg:pe-2 lg:w-[12ex] xl:w-[12ex]',
-				nonActive: '!text-neutral-200 tracking-wide hover:bg-primary-700 hover:!text-white lg:hover:bg-transparent lg:hover:!text-secondary-300 lg:hover:underline lg:hover:underline-offset-4 lg:ps-2 lg:pe-2 lg:w-[11ex] xl:w-[12ex]',
+				ul: 'bg-primary-deep border-primary-strong lg:bg-inherit lg:border-none lg:flex-row lg:justify-around lg:p-2 lg:text-xs lg:font-medium lg:mt-0 xl:mt-0',
+				active: '!text-white font-semibold underline underline-offset-4 decoration-accent decoration-solid hover:bg-primary-strong hover:!text-white lg:hover:bg-transparent lg:hover:!text-accent lg:hover:underline lg:ps-2 lg:pe-2 lg:w-[12ex] xl:w-[12ex]',
+				nonActive: '!text-primary-soft tracking-wide hover:bg-primary-strong hover:!text-white lg:hover:bg-transparent lg:hover:!text-accent lg:hover:underline lg:hover:underline-offset-4 lg:ps-2 lg:pe-2 lg:w-[11ex] xl:w-[12ex]',
 			}}
 		>
 			<NavLi
@@ -164,7 +163,7 @@
 
 		<!-- The Flowbite Svelte Search module proved to be a real PITA of obscurity -->
 		<div id="search-bar"
-			class="text-stone-200 mx-1
+			class="text-primary-soft mx-1
 				md:flex
 				md:order-3 md:w-1/6 md:ml-2 mr-2
 				xl:ps-1 xl:pe-1 xl:w-1/5
@@ -172,38 +171,24 @@
 		">
 			<form class='w-full'>
 			<label
-				class = "mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white"
+				class = "mb-2 text-sm font-medium text-text sr-only"
 				for   = "default-search"
 			>
 				Search
 			</label>
 			<div class="relative">
 				<div class="absolute inset-y-0 inset-s-0 flex items-center ps-3 pointer-events-none">
-					<svg
-						class       = "w-4 h-4 text-secondary-100"
-						aria-hidden = "true"
-						fill        = "none"
-						viewBox     = "0 0 20 20"
-						xmlns       = "http://www.w3.org/2000/svg"
-					>
-						<path
-							d               = "m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-							stroke          = "currentColor"
-							stroke-linecap  = "round"
-							stroke-linejoin = "round"
-							stroke-width    = "2"
-						/>
-					</svg>
+					<Search class="w-4 h-4 text-accent-soft" />
 				</div>
 				<input
 					id    = "default-search"
 					class = "block w-full p-2 ps-9 text-xs italic
 						rounded-lg
-						bg-primary-700
+						bg-primary-strong
 						text-white
-						border border-primary-500
-						focus:border-warning-400
-						lg:placeholder-stone-300
+						border border-primary
+						focus:border-accent
+						lg:placeholder-primary-soft
 						placeholder-transparent
 					"
 					placeholder = "Ctrl-s to search..."
@@ -226,30 +211,30 @@
 			{:else if isAuthenticated()}
 			<div class="flex flex-col items-end gap-2">
 				<div id="auth-user-buttons" class="flex gap-2">
-					{#snippet authButton({link,linkLabel,tooltip, type}:
-						{link: string, linkLabel: string, tooltip: string, type: 'home' | 'inbox' | 'profile'})}
-						<Button
+					{#snippet authButton({href,linkLabel,tooltip, type}:
+						{href?: string, linkLabel: string, tooltip: string, type: 'home' | 'User: Inbox' | 'profile'})}
+						<svelte:element
+							this={href ? 'a' : 'button'}
 							id="{type}-button"
 							class="
 								relative
-								text-2xl
-								font-bold
+								inline-flex items-center justify-center
 								w-12 h-12
-								bg-stone-50
-								hover:bg-stone-50!
-								active:bg-stone-50!
-								text-primary-800
-								hover:text-warning-600
-								border-2
-								border-primary-300
+								rounded-full
+								border-2 border-primary
+								bg-surface
+								text-2xl font-semibold
+								text-primary-deep
+								hover:text-warning
+								focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent
 							"
-							{...(type !== 'profile' ? { href: resolve(link, {}) } : {})}
 							aria-label={linkLabel}
-							pill={true}
+							{href}
+							type={href ? undefined : 'button'}
 						>
-						{#if type === 'home'}<HomeSolid class="h-6 w-6" />{/if}
-						{#if type === 'inbox'}
-							<EnvelopeSolid class="h-6 w-6" />
+						{#if type === 'home'}<House class="h-6 w-6" strokeWidth={2.5} />{/if}
+						{#if type === 'User: Inbox'}
+							<Mail class="h-6 w-6" strokeWidth={2.5} />
 							{#if notificationCount > 0}
 							<Indicator color="red" placement="top-right" size="xl">
 								<span class="text-xs font-bold text-white">{notificationCount > 99 ? '99+' : notificationCount}</span>
@@ -259,22 +244,22 @@
 						{#if type === 'profile'}
 							{activePerson?.first?.[0]}{activePerson?.last?.[0]}
 						{/if}
-						</Button>
+						</svelte:element>
 						<Tooltip placement="bottom">{tooltip}</Tooltip>
 					{/snippet}
-					{@render authButton({link: '/user/home', linkLabel: 'go to user Home', tooltip: 'Home', type: 'home'})}
-					{@render authButton({link: '/user/inbox', linkLabel: 'go to user Inbox', tooltip: 'Inbox', type: 'inbox'})}
-					{@render authButton({link: '/user/profile', linkLabel: 'open user dropdown', tooltip: 'Profile', type: 'profile'})}
+					{@render authButton({href: resolve('/user/home'), linkLabel: 'go to user Home', tooltip: 'Home', type: 'home'})}
+					{@render authButton({href: resolve('/user/inbox'), linkLabel: 'go to user Inbox', tooltip: 'User: Inbox', type: 'User: Inbox'})}
+					{@render authButton({linkLabel: 'open user dropdown', tooltip: 'Profile', type: 'profile'})}
 				</div>
 				<div id="auth-user-details"
 					class="flex flex-col leading-tight pe-1 ps-1 text-right w-full">
 					{#if isSuSession()}
-					<span class="text-xs italic text-secondary-300 whitespace-nowrap">
+					<span class="text-xs italic text-accent whitespace-nowrap">
 						{rootPerson?.email}
 					</span>
 					{/if}
-					<a class="text-xs italic text-secondary-200 whitespace-nowrap hover:underline"
-					href="{resolve('/user/home', {})}">
+					<a class="text-xs italic text-accent-soft whitespace-nowrap hover:underline"
+					href="{resolve('/user/home')}">
 						{isSuSession() ? 'as ' : ''}{activePerson?.email}
 					</a>
 				</div>
@@ -285,7 +270,7 @@
 				triggeredBy = "#profile-button"
 			>
 				<DropdownHeader
-					class = "block w-full px-2 pt-1 border-b border-warning-700 text-primary-1000"
+					class = "block w-full px-2 pt-1 border-b border-warning text-primary-deep"
 				>
 						<span class="block text-xs font-semibold">
 							{activePerson?.first} {activePerson?.last}
@@ -302,14 +287,14 @@
 				<DropdownGroup>
 					<DropdownItem
 					class={dropdownItemClasses}
-					href={resolve('/user/home', {})}
-					><HomeSolid class="w-4 h-4" />Home</DropdownItem>
+					href={resolve('/user/home')}
+					><House class="w-4 h-4" />Home</DropdownItem>
 				<DropdownItem
 						class={dropdownItemClasses}
-						href={resolve('/user/inbox', {})}
+						href={resolve('/user/inbox')}
 						>
 						<span class="relative inline-flex items-center">
-							<EnvelopeSolid class="w-4 h-4" />
+							<Mail class="w-4 h-4" />
 							{#if notificationCount > 0}
 								<Indicator color="red" placement="top-right" size="xs"/>
 							{/if}
@@ -317,17 +302,9 @@
 						Inbox
 				</DropdownItem>
 				<DropdownItem
-					class={dropdownItemClasses}
-					href={resolve('/user/judge/ballots', {})}
-					><FileCheckSolid class="w-4 h-4" />Ballots</DropdownItem>
-				<DropdownItem
-					class={dropdownItemClasses}
-					href={resolve('/user/dashboard', {})}
-					><ChalkboardSolid class="w-4 h-4" />Dashboard</DropdownItem>
-				<DropdownItem
-					class={dropdownItemClasses}
-					href={resolve('/user/profile', {})}
-					><UserSolid class="w-4 h-4" />Profile</DropdownItem>
+					class="{dropdownItemClasses} opacity-50 cursor-not-allowed"
+					aria-disabled="true"
+					><LayoutDashboard class="w-4 h-4" />Dashboard</DropdownItem>
 				</DropdownGroup>
 				<DropdownGroup>
 				{#if isSuSession()}
@@ -335,28 +312,27 @@
 					class="{dropdownItemClasses} cursor-pointer"
 					disabled={suEnding}
 					onclick={suEnd}
-					><ArrowRightToBracketOutline class="w-4 h-4" />End Su Session</DropdownItem>
+					><LogOut class="w-4 h-4" />End Su Session</DropdownItem>
 				{/if}
 				<DropdownItem
 					class="{dropdownItemClasses} cursor-pointer"
 					disabled={loggingOut}
 					onclick={logout}
-					><ArrowRightToBracketOutline class="w-4 h-4" />{loggingOut ? 'Logging out...' : 'Logout'}</DropdownItem>
+					><LogOut class="w-4 h-4" />{loggingOut ? 'Logging out...' : 'Logout'}</DropdownItem>
 				</DropdownGroup>
 			</Dropdown>
 			{:else} <!-- Logged out state -->
 			<div class="flex items-center gap-2">
 				<a
 					class='
-						bg-secondary-400
-						text-gray-900
-						hover:bg-secondary-300
-						focus:ring-4 focus:outline-hidden focus:ring-secondary-500
+						bg-accent
+						text-text
+						hover:bg-accent-soft
+						focus:ring-4 focus:outline-hidden focus:ring-accent
 						font-medium rounded-md text-sm
 						px-2 py-1.5
 						text-center
-						border border-secondary-600
-						hover:border-secondary-500
+						border border-accent
 					'
 					href="https://www.tabroom.com/user/login/new_user.mhtml"
 				>
@@ -365,17 +341,17 @@
 
 				<a
 					class='
-						text-neutral-50
-						bg-primary-600
-						hover:bg-primary-500
-						focus:ring-4 focus:outline-hidden focus:ring-primary-300
+						text-white
+						bg-primary-strong
+						hover:bg-primary-deep
+						focus:ring-4 focus:outline-hidden focus:ring-primary
 						font-medium rounded-md text-sm
 						px-2 py-1.5
 						text-center
-						border border-primary-900
-						hover:border-primary-300
+						border border-primary-deep
+						hover:border-primary
 					'
-					href={resolve(loginHref, {})}
+					href={loginHref}
 				>
 					LOGIN
 				</a>

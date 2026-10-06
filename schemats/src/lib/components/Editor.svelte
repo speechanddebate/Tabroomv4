@@ -175,10 +175,10 @@
 		display: flex;
 		gap: 6px;
 		padding: 8px;
-		border: 1px solid #ddd;
+		border: 1px solid var(--color-border-strong);
 		border-bottom: none;
 		border-radius: 6px 6px 0 0;
-		background: #fafafa;
+		background: var(--color-surface-alt);
 		flex-wrap: wrap;
 	}
 
@@ -189,33 +189,33 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid #ddd;
-		background: white;
+		border: 1px solid var(--color-border-strong);
+		background: var(--color-surface);
 		cursor: pointer;
 		border-radius: 4px;
 		font-size: 13px;
 	}
 
 	button.active {
-		background: var(--color-primary-500);
+		background: var(--color-primary-strong);
 		color: white;
-		border-color: var(--color-primary-600);
+		border-color: var(--color-primary-strong);
 	}
 
 	button:disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
-		background: #f5f5f5;
+		background: var(--color-surface-alt);
 	}
 
 	.divider {
 		width: 1px;
-		background: #ddd;
+		background: var(--color-border);
 		margin: 0 4px;
 	}
 
 	.editor {
-		border: 1px solid #ddd;
+		border: 1px solid var(--color-border-strong);
 		border-radius: 0 0 6px 6px;
 		padding: 12px;
 		min-height: 300px;

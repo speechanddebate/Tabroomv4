@@ -49,12 +49,12 @@
 					<div class='font-semibold
 						mb-0.5 pb-0.5
 						text-sm
-						text-{tags[key]} flex border-b border-b-neutral-400 border-{tags[key]}
+						text-{tags[key]} flex border-b border-b-border-strong border-{tags[key]}
 					'>
 						<span class="grow w-2/5 italic">
 							{ timeLabels[key] || ucfirst(key) }
 						</span>
-						<span class="text-right pe-0.5 text-black">
+						<span class="text-right pe-0.5 text-text">
 							<ShowDate
 								dtISO  = {times[1][key]}
 								format = 'fullDayOnly'
@@ -62,7 +62,7 @@
 								tz     = {tournTz || 'UTC'}
 							/>
 						</span>
-						<span class="text-black text-right ps-3">
+						<span class="text-text text-right ps-3">
 							<ShowDate
 								dtISO  = {times[1][key]}
 								mode   = 'time'

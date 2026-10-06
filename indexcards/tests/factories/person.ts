@@ -1,6 +1,7 @@
 import personRepo from '../../api/repos/personRepo.js';
 import { faker } from '@faker-js/faker';
 import factories from './index.js';
+import { hashPassword } from '../../api/services/AuthService.js';
 
 import { db } from '../../api/data/database.js';
 
@@ -24,7 +25,9 @@ export function createPersonData(overrides: Parameters<typeof personRepo.createP
 export async function create(overrides: Overrides & { personId?: number } = {}) {
 	delete overrides.Judge;
 	delete overrides.Ballot;
-
+	if (overrides.password) {
+		overrides.password = hashPassword(overrides.password);
+	}
 	const data = createPersonData(overrides);
 
 	return await personRepo.createPerson(db, data);

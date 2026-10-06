@@ -1,0 +1,383 @@
+import { Meta, ColorPalette, ColorItem, Typeset } from '@storybook/addon-docs/blocks';
+
+<Meta title="Design System/Proposed Palette" />
+
+{/* Storybook does not load static/font/fonts.css globally; app.html does. */}
+<link rel="stylesheet" href="/font/fonts.css" />
+
+# Proposed Palette
+
+The Tabroom color tokens, defined in `src/app.css`. Values on this page are
+hard-coded copies, so update both together.
+
+## Brand
+
+<ColorPalette>
+	<ColorItem
+		title="primary"
+		subtitle="Tabroom blue · brand, active states (not for text on white)"
+		colors={{ primary: '#00abe8' }}
+	/>
+	<ColorItem
+		title="primary-strong"
+		subtitle="Legacy button blue · buttons, link text"
+		colors={{ 'primary-strong': '#016f94' }}
+	/>
+	<ColorItem
+		title="primary-deep"
+		subtitle="Header chrome, headings, hover on primary-strong"
+		colors={{ 'primary-deep': '#00445f' }}
+	/>
+	<ColorItem
+		title="primary-soft"
+		subtitle="Selected / hover tint"
+		colors={{ 'primary-soft': '#dfeff6' }}
+	/>
+	<ColorItem
+		title="accent"
+		subtitle="Tabroom yellow · table header rule, highlights"
+		colors={{ accent: '#fec937' }}
+	/>
+	<ColorItem
+		title="accent-soft"
+		subtitle="Row hover"
+		colors={{ 'accent-soft': '#fef8ef' }}
+	/>
+</ColorPalette>
+
+## Neutrals
+
+<ColorPalette>
+	<ColorItem
+		title="page"
+		subtitle="Page background (legacy cool gray)"
+		colors={{ page: '#e5ebed' }}
+	/>
+	<ColorItem
+		title="surface / surface-alt"
+		subtitle="Panels · striped rows, read-only inputs"
+		colors={{ surface: '#fefefe', 'surface-alt': '#f5f5f5' }}
+	/>
+	<ColorItem
+		title="border / border-strong"
+		subtitle="Decorative borders · control borders (3:1 minimum)"
+		colors={{ border: '#dddddd', 'border-strong': '#8a8a8a' }}
+	/>
+	<ColorItem
+		title="text / muted"
+		subtitle="Body text · secondary text"
+		colors={{ text: '#222222', muted: '#666666' }}
+	/>
+</ColorPalette>
+
+## Status
+
+<ColorPalette>
+	<ColorItem
+		title="success"
+		subtitle="base · soft"
+		colors={{ success: '#3f7500', 'success-soft': '#e4eed9' }}
+	/>
+	<ColorItem
+		title="warning"
+		subtitle="base · soft"
+		colors={{ warning: '#826100', 'warning-soft': '#fef3dd' }}
+	/>
+	<ColorItem
+		title="danger"
+		subtitle="base · soft"
+		colors={{ danger: '#ba1d00', 'danger-soft': '#f6d9d9' }}
+	/>
+	<ColorItem
+		title="tertiary"
+		subtitle="Infrequently used purple · base · soft"
+		colors={{ tertiary: '#85198c', 'tertiary-soft': '#f3e6f4' }}
+	/>
+</ColorPalette>
+
+## Contrast
+
+WCAG AA requires 4.5:1 for text and 3:1 for control boundaries and focus indicators.
+
+export const C = {
+	primary: '#00abe8', 'primary-strong': '#016f94', 'primary-deep': '#00445f', 'primary-soft': '#dfeff6',
+	accent: '#fec937', 'accent-soft': '#fef8ef', page: '#e5ebed', surface: '#fefefe', 'surface-alt': '#f5f5f5',
+	border: '#dddddd', 'border-strong': '#8a8a8a', text: '#222222', muted: '#666666', white: '#ffffff',
+	success: '#3f7500', 'success-soft': '#e4eed9', warning: '#826100', 'warning-soft': '#fef3dd',
+	danger: '#ba1d00', 'danger-soft': '#f6d9d9', tertiary: '#85198c', 'tertiary-soft': '#f3e6f4',
+};
+
+export const TextSample = ({ fg, bg }) => (
+	<span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 4, background: C[bg], color: C[fg], fontFamily: 'open_sans, sans-serif', fontSize: 14, fontWeight: 600, border: '1px solid #dddddd' }}>
+		Round 3 Pairings
+	</span>
+);
+
+export const EdgeSample = ({ edge, bg, ring }) => (
+	<span style={{ display: 'inline-block', padding: 8, background: C[bg], borderRadius: 4 }}>
+		<span style={{ display: 'inline-block', width: 120, height: 24, borderRadius: 4, background: C[bg], border: ring ? 'none' : `1px solid ${C[edge]}`, outline: ring ? `2px solid ${C[edge]}` : 'none', outlineOffset: 2 }} />
+	</span>
+);
+
+export const Pair = ({ fg, bg }) => <><code>{fg}</code> on <code>{bg}</code></>;
+
+<table>
+	<thead>
+		<tr><th>Sample</th><th>Pairing</th><th>Ratio</th><th>Use</th></tr>
+	</thead>
+	<tbody>
+		<tr><td><TextSample fg="text" bg="surface" /></td><td><Pair fg="text" bg="surface" /></td><td>15.8:1</td><td>Body text</td></tr>
+		<tr><td><TextSample fg="text" bg="page" /></td><td><Pair fg="text" bg="page" /></td><td>13.2:1</td><td>Body text on the page background</td></tr>
+		<tr><td><TextSample fg="muted" bg="surface" /></td><td><Pair fg="muted" bg="surface" /></td><td>5.7:1</td><td>Secondary text</td></tr>
+		<tr><td><TextSample fg="muted" bg="surface-alt" /></td><td><Pair fg="muted" bg="surface-alt" /></td><td>5.3:1</td><td>Secondary text in striped rows</td></tr>
+		<tr><td><TextSample fg="muted" bg="page" /></td><td><Pair fg="muted" bg="page" /></td><td>4.8:1</td><td>Secondary text on the page background</td></tr>
+		<tr><td><TextSample fg="primary-strong" bg="surface" /></td><td><Pair fg="primary-strong" bg="surface" /></td><td>5.6:1</td><td>Links</td></tr>
+		<tr><td><TextSample fg="primary-strong" bg="surface-alt" /></td><td><Pair fg="primary-strong" bg="surface-alt" /></td><td>5.2:1</td><td>Links in striped rows</td></tr>
+		<tr><td><TextSample fg="primary-strong" bg="page" /></td><td><Pair fg="primary-strong" bg="page" /></td><td>4.7:1</td><td>Links on the page background</td></tr>
+		<tr><td><TextSample fg="primary-strong" bg="primary-soft" /></td><td><Pair fg="primary-strong" bg="primary-soft" /></td><td>4.8:1</td><td>Active tab</td></tr>
+		<tr><td><TextSample fg="primary-deep" bg="surface" /></td><td><Pair fg="primary-deep" bg="surface" /></td><td>10.5:1</td><td>Headings, link hover</td></tr>
+		<tr><td><TextSample fg="white" bg="primary-strong" /></td><td><Pair fg="white" bg="primary-strong" /></td><td>5.7:1</td><td>Primary button</td></tr>
+		<tr><td><TextSample fg="white" bg="primary-deep" /></td><td><Pair fg="white" bg="primary-deep" /></td><td>10.5:1</td><td>Header, button hover</td></tr>
+		<tr><td><TextSample fg="accent" bg="primary-deep" /></td><td><Pair fg="accent" bg="primary-deep" /></td><td>6.8:1</td><td>Header tagline, footer links</td></tr>
+		<tr><td><TextSample fg="primary-soft" bg="primary-deep" /></td><td><Pair fg="primary-soft" bg="primary-deep" /></td><td>8.9:1</td><td>Footer copyright</td></tr>
+		<tr><td><TextSample fg="accent-soft" bg="primary-strong" /></td><td><Pair fg="accent-soft" bg="primary-strong" /></td><td>5.4:1</td><td>Selected side link</td></tr>
+		<tr><td><TextSample fg="text" bg="accent" /></td><td><Pair fg="text" bg="accent" /></td><td>10.3:1</td><td>Sign-up button</td></tr>
+		<tr><td><TextSample fg="white" bg="danger" /></td><td><Pair fg="white" bg="danger" /></td><td>6.4:1</td><td>Danger button</td></tr>
+		<tr><td><TextSample fg="success" bg="surface" /></td><td><Pair fg="success" bg="surface" /></td><td>5.5:1</td><td>Status text</td></tr>
+		<tr><td><TextSample fg="success" bg="success-soft" /></td><td><Pair fg="success" bg="success-soft" /></td><td>4.7:1</td><td>Badge</td></tr>
+		<tr><td><TextSample fg="warning" bg="surface" /></td><td><Pair fg="warning" bg="surface" /></td><td>5.7:1</td><td>Status text</td></tr>
+		<tr><td><TextSample fg="warning" bg="warning-soft" /></td><td><Pair fg="warning" bg="warning-soft" /></td><td>5.2:1</td><td>Badge</td></tr>
+		<tr><td><TextSample fg="danger" bg="surface" /></td><td><Pair fg="danger" bg="surface" /></td><td>6.4:1</td><td>Error text</td></tr>
+		<tr><td><TextSample fg="danger" bg="danger-soft" /></td><td><Pair fg="danger" bg="danger-soft" /></td><td>4.9:1</td><td>Badge</td></tr>
+		<tr><td><TextSample fg="tertiary" bg="surface" /></td><td><Pair fg="tertiary" bg="surface" /></td><td>8.3:1</td><td>Tertiary text</td></tr>
+		<tr><td><TextSample fg="tertiary" bg="tertiary-soft" /></td><td><Pair fg="tertiary" bg="tertiary-soft" /></td><td>6.9:1</td><td>Badge, button hover</td></tr>
+		<tr><td><TextSample fg="white" bg="tertiary" /></td><td><Pair fg="white" bg="tertiary" /></td><td>8.3:1</td><td>Tertiary button</td></tr>
+		<tr><td><TextSample fg="white" bg="warning" /></td><td><Pair fg="white" bg="warning" /></td><td>5.7:1</td><td>Warning button</td></tr>
+		<tr><td><TextSample fg="white" bg="success" /></td><td><Pair fg="white" bg="success" /></td><td>5.6:1</td><td>Success button</td></tr>
+		<tr><td><EdgeSample edge="border-strong" bg="surface" /></td><td><Pair fg="border-strong" bg="surface" /></td><td>3.4:1</td><td>Input and button borders</td></tr>
+		<tr><td><EdgeSample edge="border-strong" bg="surface-alt" /></td><td><Pair fg="border-strong" bg="surface-alt" /></td><td>3.2:1</td><td>Input borders in striped rows</td></tr>
+		<tr><td><EdgeSample edge="primary-strong" bg="surface" ring /></td><td><code>primary-strong</code> ring on <code>surface</code></td><td>5.6:1</td><td>Focus indicator</td></tr>
+		<tr><td><EdgeSample edge="primary-strong" bg="page" ring /></td><td><code>primary-strong</code> ring on <code>page</code></td><td>4.7:1</td><td>Focus indicator on the page background</td></tr>
+		<tr><td><TextSample fg="primary" bg="surface" /></td><td><Pair fg="primary" bg="surface" /></td><td>2.6:1</td><td><strong>Fails.</strong> Decoration only: never text or control edges</td></tr>
+		<tr><td><TextSample fg="white" bg="primary" /></td><td><Pair fg="white" bg="primary" /></td><td>2.6:1</td><td><strong>Fails.</strong> Never put text on plain <code>primary</code></td></tr>
+		<tr><td><TextSample fg="primary-strong" bg="text" /></td><td><code>primary-strong</code> vs <code>text</code></td><td>2.8:1</td><td><strong>Fails</strong> as a color-only cue: links in prose must be underlined</td></tr>
+	</tbody>
+</table>
+
+`border`, `accent` and the `surface`/`page` edge are decorative and exempt.
+
+## Type
+
+<Typeset
+	fontFamily="PTSans-Narrow-Bold"
+	fontSizes={['2rem', '1.5rem', '1.25rem', '1.125rem']}
+	sampleText="Round 3 Pairings"
+/>
+
+<Typeset
+	fontFamily="open_sans"
+	fontSizes={['0.875rem', '0.75rem']}
+	sampleText="Body text at 14px, with small text at 12px for table headers and notes."
+/>
+
+<Typeset
+	fontFamily="Inconsolata"
+	fontSizes={['0.875rem']}
+	sampleText="0123456789 · 28.5 · 29.0 · W 3-0"
+/>
+
+## In context
+
+A rough mock of the base styles using these tokens.
+
+<style>{`
+	.ds-preview {
+		--primary: #00abe8;
+		--primary-strong: #016f94;
+		--primary-soft: #dfeff6;
+		--accent: #fec937;
+		--accent-soft: #fef8ef;
+		--page: #e5ebed;
+		--surface: #fefefe;
+		--surface-alt: #f5f5f5;
+		--border: #dddddd;
+		--border-strong: #8a8a8a;
+		--text: #222222;
+		--muted: #666666;
+		--success: #3f7500;
+		--success-soft: #e4eed9;
+		--warning: #826100;
+		--warning-soft: #fef3dd;
+		--danger: #ba1d00;
+		--danger-soft: #f6d9d9;
+		--radius: 4px;
+
+		background: var(--page);
+		color: var(--text);
+		font-family: open_sans, ui-sans-serif, system-ui, sans-serif;
+		font-size: 14px;
+		padding: 24px;
+		border-radius: var(--radius);
+	}
+	.ds-preview * { box-sizing: border-box; }
+	.ds-preview .layout { display: flex; gap: 16px; align-items: flex-start; }
+	.ds-preview .main {
+		flex: 1;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 24px;
+	}
+	.ds-preview .sidebar { width: 240px; display: flex; flex-direction: column; gap: 16px; }
+	.ds-preview h2, .ds-preview h4 {
+		font-family: PTSans-Narrow-Bold, sans-serif;
+		margin: 0 0 4px;
+		color: var(--text);
+		border: none;
+	}
+	.ds-preview h2 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: .5px; }
+	.ds-preview h4 { font-size: 1.125rem; }
+	.ds-preview .subtitle { color: var(--muted); margin: 0 0 16px; }
+	.ds-preview .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+	.ds-preview .actions { display: flex; gap: 8px; }
+	.ds-preview a { color: var(--primary-strong); text-decoration: none; }
+	.ds-preview a:hover { text-decoration: underline; }
+	/* Link color alone is 2.8:1 against body text, so prose links need an underline (1.4.1). */
+	.ds-preview p a { text-decoration: underline; }
+	.ds-preview :focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+
+	.ds-preview .btn {
+		font: inherit;
+		font-weight: 600;
+		padding: 6px 12px;
+		border-radius: var(--radius);
+		border: 1px solid transparent;
+		cursor: pointer;
+	}
+	.ds-preview .btn-primary { background: var(--primary-strong); color: #fff; }
+	.ds-preview .btn-primary:hover { background: #015a78; }
+	.ds-preview .btn-secondary { background: var(--surface); color: var(--primary-strong); border-color: var(--border-strong); }
+	.ds-preview .btn-secondary:hover { background: var(--primary-soft); }
+	.ds-preview .btn-danger { background: var(--danger); color: #fff; }
+	.ds-preview .btn-ghost { background: transparent; color: var(--primary-strong); }
+	.ds-preview .btn-ghost:hover { background: var(--primary-soft); }
+
+	.ds-preview table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+	.ds-preview th {
+		text-align: left;
+		font-size: 12px;
+		font-weight: 600;
+		padding: 4px 8px;
+		border-bottom: 2px solid var(--accent);
+	}
+	.ds-preview td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+	.ds-preview tbody tr:nth-child(even) { background: var(--surface-alt); }
+	.ds-preview tbody tr:hover { background: var(--accent-soft); }
+	.ds-preview .num { font-family: Inconsolata, monospace; }
+
+	.ds-preview .badge {
+		display: inline-block;
+		font-size: 12px;
+		font-weight: 600;
+		padding: 1px 8px;
+		border-radius: 999px;
+	}
+	.ds-preview .badge-success { background: var(--success-soft); color: var(--success); }
+	.ds-preview .badge-warning { background: var(--warning-soft); color: var(--warning); }
+	.ds-preview .badge-danger { background: var(--danger-soft); color: var(--danger); }
+
+	.ds-preview .alert {
+		margin-top: 16px;
+		padding: 8px 12px;
+		border-radius: var(--radius);
+		border-left: 4px solid;
+	}
+	.ds-preview .alert-warning { background: var(--warning-soft); border-color: var(--warning); }
+	.ds-preview .alert-success { background: var(--success-soft); border-color: var(--success); }
+
+	.ds-preview .panel {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 12px;
+	}
+	.ds-preview .panel-note { border-left: 3px solid var(--primary); }
+	.ds-preview .sidelink {
+		display: block;
+		padding: 6px 8px;
+		margin-bottom: 2px;
+		border-radius: var(--radius);
+		color: var(--text);
+	}
+	.ds-preview .sidelink:hover { background: var(--accent-soft); text-decoration: none; }
+	.ds-preview .sidelink.active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
+
+	.ds-preview label { display: block; font-weight: 600; font-size: 12px; margin: 12px 0 4px; }
+	.ds-preview input {
+		font: inherit;
+		width: 100%;
+		padding: 6px 8px;
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius);
+		background: var(--surface);
+	}
+	.ds-preview .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+`}</style>
+
+<div className="ds-preview">
+	<div className="layout">
+		<div className="main">
+			<div className="header">
+				<div>
+					<h2>Round 3 Pairings</h2>
+					<p className="subtitle">Varsity Lincoln-Douglas · Saturday 10:30 AM</p>
+				</div>
+				<div className="actions">
+					<button className="btn btn-ghost">Print</button>
+					<button className="btn btn-secondary">Edit</button>
+					<button className="btn btn-primary">Publish</button>
+				</div>
+			</div>
+
+			<table>
+				<thead>
+					<tr><th>Room</th><th>Aff</th><th>Neg</th><th>Judge</th><th>Status</th></tr>
+				</thead>
+				<tbody>
+					<tr><td>101</td><td><a href="#">Lincoln HS AB</a></td><td><a href="#">Douglas Prep CD</a></td><td>Smith, J.</td><td><span className="badge badge-success">Entered</span></td></tr>
+					<tr><td>102</td><td><a href="#">Westside EF</a></td><td><a href="#">Central GH</a></td><td>Jones, K.</td><td><span className="badge badge-warning">Started</span></td></tr>
+					<tr><td>103</td><td><a href="#">North IJ</a></td><td><a href="#">South KL</a></td><td>Lee, M.</td><td><span className="badge badge-danger">Not started</span></td></tr>
+					<tr><td>104</td><td><a href="#">East MN</a></td><td><a href="#">Valley OP</a></td><td>Garcia, R.</td><td><span className="badge badge-success">Entered</span></td></tr>
+				</tbody>
+			</table>
+
+			<div className="alert alert-warning" role="alert"><strong>Warning:</strong> 2 judges are double-booked in this timeslot.</div>
+			<div className="alert alert-success" role="status"><strong>Done:</strong> Pairings published 10:12 AM.</div>
+
+			<p style={{ marginTop: '16px' }}>
+				Ballots are due 15 minutes after the round starts. See the <a href="#">judge instructions</a> for
+				late ballot policy.
+			</p>
+
+			<div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+				<button className="btn btn-danger">Dump round</button>
+			</div>
+		</div>
+
+		<div className="sidebar">
+			<div className="panel">
+				<h4>Rounds</h4>
+				<a className="sidelink" href="#">Round 1</a>
+				<a className="sidelink" href="#">Round 2</a>
+				<a className="sidelink active" href="#">Round 3</a>
+				<a className="sidelink" href="#">Round 4</a>
+			</div>
+			<div className="panel panel-note">
+				<h4>Speaker points</h4>
+				<label htmlFor="ds-points">Points</label>
+				<input id="ds-points" className="num" defaultValue="28.5" />
+				<div className="hint">Range 25.0 – 30.0, tenths allowed.</div>
+			</div>
+		</div>
+	</div>
+</div>
