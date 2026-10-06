@@ -294,7 +294,7 @@ export const entryRecords = async (entryId, tournId, options) => {
 						}
 					} else {
 						if (!results[row.judgeId][scoreTag]) results[row.judgeId][scoreTag] = 0;
-						results[row.judgeId][scoreTag] +=
+						results[row.judgeId][scoreTag] =
 							addDecimals([results[row.judgeId][scoreTag], row.scoreValue]);
 					}
 				}
