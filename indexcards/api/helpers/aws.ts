@@ -97,7 +97,7 @@ const s3Client = {
 			const response = await client.send(getCommand);
 			stream = await response.Body?.transformToWebStream();
 		} catch (err) {
-			console.error(err);
+			logger.error(err);
 		}
 		return stream;
 	},
@@ -114,7 +114,7 @@ const s3Client = {
 		try {
 			response = await client.send(putCommand);
 		} catch (err) {
-			console.error(err);
+			logger.error(err);
 		}
 		return response;
 	},

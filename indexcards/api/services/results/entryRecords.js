@@ -3,6 +3,7 @@ import { sql } from 'kysely';
 import { db } from '../../data/database.js';
 import { snakeToCamel } from '../../helpers/text.js';
 import { addDecimals } from '../../helpers/math.js';
+import logger from '../../helpers/logger.js';
 
 export const entryRecords = async (entryId, tournId, options) => {
 
@@ -251,7 +252,7 @@ export const entryRecords = async (entryId, tournId, options) => {
 			if (row.sectionBye) records.Rounds[row.roundName].bye = true;
 			if (row.forfeit) records.Rounds[row.roundName].forfeit = true;
 
-			console.log(`Round ${row.roundName} bye ${row.bye} tag ${row.scoreTag} value ${row.scoreValue}`);
+			logger.info(`Round ${row.roundName} bye ${row.bye} tag ${row.scoreTag} value ${row.scoreValue}`);
 
 			if ((row.sectionBye || row.bye) && row.scoreTag === 'winloss')  {
 

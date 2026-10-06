@@ -1,4 +1,5 @@
 import { NotFound } from '../../../helpers/problem.js';
+import logger from '../../../helpers/logger.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
 import { summon } from '../../../repos/utils/summon.js';
@@ -596,6 +597,6 @@ export async function placeJudges(req, res) {
 
 	for (const section of sections) {
 		// hush, linter, I am working on it.
-		console.log(section);
+		logger.info('section', { section });
 	}
 };

@@ -71,7 +71,7 @@ export async function updateAccess(req, res) {
 					|| (perm.tag === 'owner' && req.session.perms.tourn[req.params.tournId] !== 'owner')
 				) {
 
-					console.log(`Skipping deletion of ${perm.id} due to it not being tournament wide`);
+					logger.info(`Skipping deletion of ${perm.id} due to it not being tournament wide`);
 
 				} else {
 

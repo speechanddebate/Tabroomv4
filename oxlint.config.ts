@@ -14,6 +14,20 @@ export default defineConfig({
 			},
 		},
 		{
+			// Use the logger instead (api/helpers/logger.js)
+			files: ['indexcards/**'],
+			rules: {
+				'eslint/no-console': 'error',
+			},
+		},
+		{
+			// The logger imports config, so config has to log on its own
+			files: ['indexcards/api/config.ts'],
+			rules: {
+				'eslint/no-console': 'off',
+			},
+		},
+		{
 			// zod's default import emits .d.ts refs (z.z.*) that only resolve
 			// under nodenext, so consumers on bundler resolution infer `unknown`
 			files: ['types/**'],

@@ -1,4 +1,5 @@
 import { NotFound } from '../../helpers/problem.js';
+import logger from '../../helpers/logger.js';
 import roundRepo from '../../repos/roundRepo.js';
 import { entryWins } from '../../services/results/entryWins.js';
 import { getSchematic } from '../pages/invite/schematController.js';
@@ -104,8 +105,8 @@ export async function getPublishedBrackets(req, res) {
 	const records = await entryWins({
 		...req.params,
 	});
-	console.log(records);
-	console.log('end of records');
+	logger.info('records', { records });
+	logger.info('end of records');
 	return res.status(200).json(records);
 }
 

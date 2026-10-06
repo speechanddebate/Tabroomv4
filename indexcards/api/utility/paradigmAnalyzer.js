@@ -4,6 +4,7 @@ import fs, { createWriteStream } from 'fs';
 import path from 'path';
 
 import config from '../config.js';
+import logger from '../helpers/logger.js';
 
 import { db }  from '../data/database.js';
 
@@ -41,7 +42,7 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 		throw new Error('Could not read prompt file, aborting.');
 	}
 
-	console.log(`Starting paradigm analysis of ${paradigms.length} paradigms...\n`);
+	logger.info(`Starting paradigm analysis of ${paradigms.length} paradigms...\n`);
 
 	const metadata = {
 		promptTokenCount: 0,
@@ -80,7 +81,7 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 
 		requestCount++;
 
-		console.log(`Analyzing paradigm for person ${p.person}... (${requestCount}/${MAX_REQUESTS_PER_MINUTE} this minute)`);
+		logger.info(`Analyzing paradigm for person ${p.person}... (${requestCount}/${MAX_REQUESTS_PER_MINUTE} this minute)`);
 
 		try {
 			const response = await ai.models.generateContent({
@@ -108,7 +109,7 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 
 			processed++;
 			if (processed % 1000 === 0) {
-				console.log(`Processed ${processed}/${paradigms.length}`);
+				logger.info(`Processed ${processed}/${paradigms.length}`);
 			}
 
 			if (response.usageMetadata) {
@@ -119,7 +120,7 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 
 			return { ...result, person: p.person };
 		} catch (err) {
-			console.error(`Error analyzing paradigm for person ${p.person}:`, err);
+			logger.error(`Error analyzing paradigm for person ${p.person}`, err);
 			return null;
 		}
 	};
@@ -148,11 +149,11 @@ export const paradigmAnalyzer = async (limit = parseInt(process.argv[1]) || 10) 
 	await processInBatches(paradigms, MAX_CONCURRENT);
 	writeStream.end();
 
-	console.log(`\nDone. CSV file written to: ${outputPath}`);
-	console.log('\nUsage statistics:');
-	console.log(`\nPrompt Tokens: ${metadata.promptTokenCount}`);
-	console.log(`\nOutput Tokens: ${metadata.candidatesTokenCount}`);
-	console.log(`\nTotal Tokens: ${metadata.totalTokenCount}`);
+	logger.info(`\nDone. CSV file written to: ${outputPath}`);
+	logger.info('\nUsage statistics:');
+	logger.info(`\nPrompt Tokens: ${metadata.promptTokenCount}`);
+	logger.info(`\nOutput Tokens: ${metadata.candidatesTokenCount}`);
+	logger.info(`\nTotal Tokens: ${metadata.totalTokenCount}`);
 };
 
 await paradigmAnalyzer();

@@ -1,6 +1,7 @@
 import { sql } from 'kysely';
 import { db } from '../api/data/database.js';
 import config from '../api/config.js';
+import logger from '../api/helpers/logger.js';
 import testData from './testFixtures.js';
 
 const pruneTestData = async () => {
@@ -43,37 +44,34 @@ export const setup = async () => {
 				db.insertInto('person').values(testData.testCampusUsers).execute(),
 			]);
 
-			console.log(`Test data properly loaded and ready to run`);
+			logger.info(`Test data properly loaded and ready to run`);
 			return;
 		}
 
-		console.log(`Database ${config.db.database} is not loaded with the proper test data `);
-		console.log(`Test data should live in a separate database connected via the test env `);
-		console.log(`and loaded from /indexcards/test/test.sql.  Yes this is a lazy way to do it, but `);
-		console.log(`until Tabroom has six developers working with me, that's how it's gonna be.`);
-		console.log(``);
+		logger.error(`Database ${config.db.database} is not loaded with the proper test data `);
+		logger.error(`Test data should live in a separate database connected via the test env `);
+		logger.error(`and loaded from /indexcards/test/test.sql.  Yes this is a lazy way to do it, but `);
+		logger.error(`until Tabroom has six developers working with me, that's how it's gonna be.`);
 
-		console.log(`I expected 10 tournaments and found ${tourncount?.count}`);
+		logger.error(`I expected 10 tournaments and found ${tourncount?.count}`);
 
-		console.log(``);
-		console.log(`Someday I might automate this but node and command line shells don't play well together.`);
-		console.log(``);
+		logger.error(`Someday I might automate this but node and command line shells don't play well together.`);
 
 		throw new Error('No test data found');
 	} catch (error) {
-		console.error('Global test setup failed:', error);
+		logger.error('Global test setup failed', error);
 		throw error;
 	}
 };
 
 export const teardown = async () => {
 
-	console.log(`Cleanup commencing`);
+	logger.info(`Cleanup commencing`);
 
 	await pruneTestData();
 	await db.deleteFrom('ad').where('id', '<', 2).execute();
 
-	console.log(`Cleanup done`);
-	console.log('Closing database connections...');
+	logger.info(`Cleanup done`);
+	logger.info('Closing database connections...');
 	await db.destroy();
 };

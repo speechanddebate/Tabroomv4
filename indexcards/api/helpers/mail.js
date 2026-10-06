@@ -123,9 +123,9 @@ export const emailBlast = async (inputData) => {
 			const result = transporter.sendMail(messageData);
 			promises.push(result);
 		} catch (err) {
-			console.log(`Mail error on sending mail`);
+			logger.info(`Mail error on sending mail`);
 			inlineError(err, 'mail.js line 125');
-			console.log(err);
+			logger.info(err);
 		}
 
 	} else {

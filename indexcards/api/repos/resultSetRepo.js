@@ -1,6 +1,7 @@
 import { sql } from 'kysely';
 import { stripNulls, dbToObject } from '../helpers/text.js';
 import { db as kdb } from '../data/database.js';
+import logger from '../helpers/logger.js';
 
 const buildResultSetQuery = ({opts = {}, scope = {}}) => {
 
@@ -305,11 +306,11 @@ const createResultCache = async (resultSet) => {
 			and rk.result_set = ${resultSet.id}
 	`.execute(kdb);
 
-	console.log(`I should be here`);
+	logger.info(`I should be here`);
 
 	const headersById = {};
 	rawHeaders.forEach( (header) => {
-		console.log(`I have tag ${header.tag} id ${header.id}`);
+		logger.info(`I have tag ${header.tag} id ${header.id}`);
 
 		headersById[header.id] = {
 			tag         : header.tag,

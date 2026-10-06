@@ -733,8 +733,7 @@ export const getProxyStatus = async(existingMachines) => {
 					downtime    : parsedProxyData[masonId]?.downtime || 0,
 				};
 
-				console.log(`machine status for ${tick} is `);
-				console.log(machineStatus);
+				logger.info(`machine status for ${tick}`, { machineStatus });
 			}
 		}
 
