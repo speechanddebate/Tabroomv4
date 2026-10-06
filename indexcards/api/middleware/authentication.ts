@@ -5,7 +5,6 @@ import personRepo from '../repos/personRepo.js';
 import { createActor } from './authorization/authorization.js';
 import { Forbidden } from '../helpers/problem.js';
 
-import { db } from '../data/database.js';
 import sessionRepo from '../repos/sessionRepo.js';
 
 export async function Authenticate(req: Request, res: Response, next: NextFunction) {
@@ -19,7 +18,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 		const cookie = req.cookies[cookieName];
 
 		if (cookie) {
-			let cookieSession = await sessionRepo.findByUserKey(db,cookie);
+			let cookieSession = await sessionRepo.findByUserKey(req.db,cookie);
 			if (!cookieSession) {
 				//must use the same options as when the cookie is set.
 				res.clearCookie(cookieName, authService.getAuthCookieOptions());  //invalid cookie, clear it
@@ -34,7 +33,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 
 		if(session){
 			if(session.Person?.banned == '1') {
-				await sessionRepo.deleteSession(db, session.id);
+				await sessionRepo.deleteSession(req.db, session.id);
 				return Forbidden(req, res, 'User is banned');
 			}
 			req.session = {
@@ -46,10 +45,10 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 			};
 
 			//deprecated, use req.actor for auth and req.session.Person for anything that MUST be done by a person
-			req.person = await personRepo.getPerson(db,req.session.su ?? req.session.person ?? -1);
+			req.person = await personRepo.getPerson(req.db,req.session.su ?? req.session.person ?? -1);
 		}
 		//req.actor is what should be checked for every authorization decision
-		req.actor = createActor(req);
+		req.actor = createActor(req.db, req.session?.Person);
 		next();
 
 	} catch (err) {

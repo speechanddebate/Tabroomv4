@@ -1,8 +1,8 @@
 
 import * as buildTargetModule from './buildTarget.js';
-import { loadTournAuthContext } from './authContext.js';
 import { requireSiteAdmin, requireAccess, checkAccess, createActor } from './authorization.js';
 import { createContext } from '../../../tests/httpMocks.js';
+import { db } from '../../data/database.js';
 
 describe('Authorization Middleware', () => {
 	describe('requireSiteAdmin', () => {
@@ -22,7 +22,7 @@ describe('Authorization Middleware', () => {
 					},
 				},
 			});
-			req.actor = createActor(req);
+			req.actor = createActor(req.db, req.session.Person);
 
 			requireSiteAdmin(req,res,next);
 
@@ -37,7 +37,7 @@ describe('Authorization Middleware', () => {
 					},
 				},
 			});
-			req.actor = createActor(req);
+			req.actor = createActor(req.db, req.session.Person);
 			requireSiteAdmin(req,res,next);
 
 			expect(next).toHaveBeenCalled();
@@ -64,7 +64,6 @@ describe('Authorization Middleware', () => {
 				params: { [`${resource}Id`]: 42 },
 			});
 
-			await loadTournAuthContext(req, res, () => {});
 			await requireAccess(resource, capability)(req, res, next);
 
 			expect(res.status).toHaveBeenCalledWith(401);
@@ -76,10 +75,8 @@ describe('Authorization Middleware', () => {
 			const {req,res,next} = createContext({
 				session: { Person: { id: 1, site_admin: true } },
 				params: { tournId: 1 },
-				auth: { perms: [] },
 			});
-			req.actor = createActor(req);
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
 			await requireAccess(resource, capability)(req, res, next);
 			expect(next).toHaveBeenCalled();
 		});
@@ -87,17 +84,11 @@ describe('Authorization Middleware', () => {
 		it.each(cases)('Allows owner all capabilities for %s',async (resource) => {
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 42, resource, circuitIds: []});
 			const {req,res,next} = createContext({
-				session: { Person: { id: 1, site_admin: false } }	,
+				session: { Person: { id: 1, site_admin: false } },
 				params: { [`${resource}Id`]: 42 },
-				auth: {
-					perms: [
-						{ scope: resource, id: 42, role: 'owner' },
-					],
-				},
 			});
-			req.actor = createActor(req);
-
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: resource, id: 42, role: 'owner' }]);
 
 			for (const capability of capabilities) {
 				await requireAccess(resource, capability)(req, res, next);
@@ -110,14 +101,9 @@ describe('Authorization Middleware', () => {
 			const {req,res,next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42 },
-				auth: {
-					perms: [
-						{ scope: 'tourn', id: 42, role: 'owner' },
-					],
-				},
 			});
-			req.actor = createActor(req);
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).toHaveBeenCalled();
 		});
@@ -126,14 +112,9 @@ describe('Authorization Middleware', () => {
 			let {req, res, next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42 },
-				auth: {
-					perms: [
-						{ scope: 'tourn', id: 99, role: 'owner' },
-					],
-				},
 			});
-			req.actor = createActor(req);
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'tourn', id: 99, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).not.toHaveBeenCalled();
 			expect(res.status).toHaveBeenCalledWith(403);
@@ -144,14 +125,9 @@ describe('Authorization Middleware', () => {
 			const {req, res, next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42, categoryId: 7 },
-				auth: {
-					perms: [
-						{ scope: 'tourn', id: 42, role: 'owner' },
-					],
-				},
 			});
-			req.actor = createActor(req);
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			await requireAccess('category', 'read')(req, res, next);
 			expect(next).toHaveBeenCalled();
 		});
@@ -160,14 +136,9 @@ describe('Authorization Middleware', () => {
 			let {req, res, next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42 },
-				auth: {
-					perms: [
-						{ scope: 'tourn', id: 42, role: 'tabber' },
-					],
-				},
 			});
-			req.actor = createActor(req);
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'tourn', id: 42, role: 'tabber' }]);
 			await requireAccess('tourn', 'owner')(req, res, next);
 			expect(next).not.toHaveBeenCalled();
 			expect(res.json).toHaveBeenCalled();
@@ -177,16 +148,10 @@ describe('Authorization Middleware', () => {
 			let {req, res, next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42, categoryId: 7 },
-				auth: {
-					perms: [
-						{ scope: 'tourn', id: 42, role: 'owner' },
-					],
-				},
 			});
-			req.actor = createActor(req);
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
 			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 42, resource: 'category', tournId: 42});
-
-			await loadTournAuthContext(req, res, () => {});
 
 			await requireAccess('category', 'write')(req, res, next);
 			expect(next).toHaveBeenCalled();
@@ -196,16 +161,25 @@ describe('Authorization Middleware', () => {
 			const {req, res, next} = createContext({
 				session: { Person: { id: 1, site_admin: false } },
 				params: { tournId: 42 },
-				auth: {
-					perms: [
-						{ scope: 'event', id: 99, role: 'owner' },
-					],
-				},
 			});
-			await loadTournAuthContext(req, res, () => {});
+			req.actor = createActor(req.db, req.session.Person);
+			req.actor.grant([{ scope: 'event', id: 99, role: 'owner' }]);
 			await requireAccess('tourn', 'read')(req, res, next);
 			expect(next).not.toHaveBeenCalled();
-			expect(res.json).toHaveBeenCalled();
+			expect(res.status).toHaveBeenCalledWith(403);
+		});
+	});
+	describe('actor.grant', () => {
+		it('re-evaluates cached decisions after new perms are granted', async () => {
+			const actor = createActor(db, { id: 1, site_admin: 0 });
+			expect(await actor.can('tourn', 'read', 42)).toBe(false);
+			actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
+			expect(await actor.can('tourn', 'read', 42)).toBe(true);
+		});
+		it('anonymous actors ignore grants', async () => {
+			const actor = createActor(db, null);
+			actor.grant([{ scope: 'tourn', id: 42, role: 'owner' }]);
+			expect(await actor.can('tourn', 'read', 42)).toBe(false);
 		});
 	});
 	describe('checkAccess', () => {

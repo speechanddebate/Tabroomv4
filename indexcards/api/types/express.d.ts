@@ -1,7 +1,8 @@
 import type { ZodOpenApiOperationObject, ZodOpenApiPathItemObject } from 'zod-openapi';
 import type { Tourn } from '../data/schema.js';
 import type { Selectable } from 'kysely';
-import type { Actor, Perm, SessionPerson } from '../middleware/auth/types.js';
+import type { Actor, SessionPerson } from '../middleware/auth/types.js';
+import type { Database } from '../data/database.js';
 
 export type RouteOpenApiConfig = (ZodOpenApiPathItemObject | ZodOpenApiOperationObject) & {
 	path: string;
@@ -12,6 +13,7 @@ declare module 'express-serve-static-core' {
 		openapi?: RouteOpenApiConfig;
 	}
 	interface Request {
+		db: Database;
 		actor: Actor;
 		authType?: 'cookie';
 		session?: {
@@ -23,9 +25,6 @@ declare module 'express-serve-static-core' {
 		};
 		//deprecated, use req.actor
 		person?: unknown;
-		auth?: {
-			perms: Perm[];
-		};
 		tourn?: Selectable<Tourn>;
 	}
 }

@@ -5,7 +5,7 @@ import panelRepo from '../../repos/panelRepo.js';
 import roundRepo from '../../repos/roundRepo.js';
 import timeslotRepo from '../../repos/timeslotRepo.js';
 
-import { db } from '../../data/database.js';
+import type { Database } from '../../data/database.js';
 
 export type Target = {
 	id: number;
@@ -16,7 +16,7 @@ export type Target = {
 	roundId?: number;
 };
 
-export async function buildTarget(resource: string, resourceId: number, targetCache: Map<string, Target>) {
+export async function buildTarget(db: Database, resource: string, resourceId: number, targetCache: Map<string, Target>) {
 	const key = `${resource}:${resourceId}`;
 	if (targetCache.has(key)) return targetCache.get(key);
 
@@ -34,7 +34,7 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 			if (category && category.tourn) {
 				target.tournId = category.tourn;
 				target ={
-					...await buildTarget('tourn', target.tournId, targetCache),
+					...await buildTarget(db, 'tourn', target.tournId, targetCache),
 					...target,
 				};
 			}
@@ -46,7 +46,7 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 				target.tournId = event.tourn;
 				target.categoryId = event.category;
 				target = {
-					...await buildTarget('tourn', target.tournId, targetCache),
+					...await buildTarget(db, 'tourn', target.tournId, targetCache),
 					...target,
 				};
 			}
@@ -57,7 +57,7 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 			if (round && round.event) {
 				target.eventId = round.event;
 				target ={
-					...await buildTarget('event', target.eventId, targetCache),
+					...await buildTarget(db, 'event', target.eventId, targetCache),
 					...target,
 				};
 			}
@@ -68,7 +68,7 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 			if (panel && panel.round) {
 				target.roundId = panel.round;
 				target ={
-					...await buildTarget('round', target.roundId, targetCache),
+					...await buildTarget(db, 'round', target.roundId, targetCache),
 					...target,
 				};
 			}
@@ -79,7 +79,7 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 			if (timeslot && timeslot.tourn) {
 				target.tournId = timeslot.tourn;
 				target ={
-					...await buildTarget('tourn', target.tournId, targetCache),
+					...await buildTarget(db, 'tourn', target.tournId, targetCache),
 					...target,
 				};
 			}

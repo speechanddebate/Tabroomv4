@@ -27,6 +27,8 @@ type ActorMethods = {
 	can: (resource: string, action: string, resourceId: number) => Promise<boolean>;
 	assert: (resource: string, action: string, resourceId: number) => Promise<void>;
 	allowedIds: (resource: string, action: string, opts?: Record<string, unknown>) => { all: boolean; ids: number[] };
+	/** add perms to the set evaluated by can/assert/allowedIds. no-op for anonymous actors */
+	grant: (perms: Perm[]) => void;
 };
 
 export type PersonActor = ActorMethods & {

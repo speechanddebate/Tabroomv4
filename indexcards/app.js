@@ -50,6 +50,7 @@ app.use(cors(corsOptions));
 // transport
 
 app.use((req, res, next) => {
+	req.db = db;
 	req.uuid   = uuid();
 	req.config = config;
 	return next();

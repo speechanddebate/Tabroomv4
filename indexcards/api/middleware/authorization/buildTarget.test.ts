@@ -1,6 +1,7 @@
 import eventRepo from '../../repos/eventRepo.js';
 import categoryRepo from '../../repos/categoryRepo.js';
 import { buildTarget, type Target } from './buildTarget.js';
+import { db } from '../../data/database.js';
 
 describe('buildTarget', () => {
 	let targetCache: Map<string, Target>;
@@ -14,13 +15,13 @@ describe('buildTarget', () => {
 		const cached: Target = { id: 123, resource: 'foo' };
 		targetCache.set('foo:123', cached);
 
-		const result = await buildTarget('foo', 123, targetCache);
+		const result = await buildTarget(db, 'foo', 123, targetCache);
 		expect(result).toBe(cached);
 	});
 
 	it('target for tourn resource sets circuitIds', async () => {
 
-		const result = await buildTarget('tourn', 456, targetCache);
+		const result = await buildTarget(db, 'tourn', 456, targetCache);
 
 		expect(result).toEqual({
 			id: 456,
@@ -31,7 +32,7 @@ describe('buildTarget', () => {
 	it('target for category resource sets tournId and circuitIds', async () => {
 		vi.spyOn(categoryRepo, 'getCategory').mockResolvedValueOnce({ tourn: 1 } as Awaited<ReturnType<typeof categoryRepo.getCategory>>);
 
-		const result = await buildTarget('category', 456, targetCache);
+		const result = await buildTarget(db, 'category', 456, targetCache);
 
 		expect(result).toEqual({
 			id: 456,
@@ -46,7 +47,7 @@ describe('buildTarget', () => {
 			category: 10,
 		} as Awaited<ReturnType<typeof eventRepo.getEvent>>);
 
-		const result = await buildTarget('event', 456, targetCache);
+		const result = await buildTarget(db, 'event', 456, targetCache);
 
 		expect(result).toEqual({
 			id: 456,

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { ValidatedRequest } from '../api/middleware/validation.js';
 import { createActor } from '../api/middleware/authorization/authorization.js';
+import { db } from '../api/data/database.js';
 import { vi } from 'vitest';
 
 export function createPersonContext(
@@ -24,7 +25,7 @@ export function createPersonContext(
 		...reqOverrides,
 	};
 	let con = createContext(reqOverrides);
-	con.req.actor = createActor(con.req);
+	con.req.actor = createActor(con.req.db, con.req.session?.Person);
 	return con;
 }
 
@@ -46,6 +47,7 @@ export function createReq(overrides: Partial<ValidatedRequest> & Record<string, 
 		headers: {},
 		body: {},
 		cookies: {},
+		db,
 		person: undefined,
 		session: undefined,
 		params: {},

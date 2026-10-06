@@ -1,7 +1,8 @@
 import { buildTarget, type Target } from './buildTarget.js';
 import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
-import type { AuthError, Perm } from '../auth/types.js';
+import type { Actor, AuthError, Perm, SessionPerson } from '../auth/types.js';
+import type { Database } from '../../data/database.js';
 //requires login - use before any route that needs authentication
 export function requireLogin(req: Request, res: Response, next: NextFunction) {
 	if (!req.actor || req.actor.type === 'anonymous') {
@@ -38,23 +39,23 @@ export function requireAccess(resource: string, action: string) {
 		}
 	};
 }
-/** create and attach the actor to the request */
-export function createActor(req: Request) {
+/**
+ * create an actor for the given person, or an anonymous actor if there is none.
+ * the actor holds its own perms, which auth context loaders add with grant()
+ */
+export function createActor(db: Database, person?: SessionPerson | null): Actor {
 	//if the request is scoped to a specific person
-	if(req.session?.Person){
-		const auth = createAuthContext(req);
+	if(person){
 		return {
-			id: req.session?.Person?.id,
-			Person: req.session?.Person,
-			type: 'person' as const,
-			can: auth.can,
-			assert: auth.assert,
-			allowedIds: auth.allowedIds,
+			id: person.id,
+			Person: person,
+			type: 'person',
+			...createAuthContext(db, person),
 		};
 	}
 	// unauthenticated
 	return {
-		type: 'anonymous' as const,
+		type: 'anonymous',
 		can: async () => false,
 		assert: async () => {
 			const err = new Error('Forbidden') as AuthError;
@@ -63,21 +64,28 @@ export function createActor(req: Request) {
 			throw err;
 		},
 		allowedIds: () => ({ all: false, ids: [] }),
-
+		grant: () => {},
 	};
 }
 // this is a misnomer, I should rename it RT
-function createAuthContext(req: Request) {
-	// Per-request cache
+function createAuthContext(db: Database, person: SessionPerson) {
+	// Per-actor cache
 	const targetCache = new Map();
 	const permCache = new Map();
+	const perms: Perm[] = [];
+
+	function grant(newPerms: Perm[]) {
+		perms.push(...newPerms);
+		//cached decisions were made without these perms
+		permCache.clear();
+	}
 
 	async function can(resource: string, action: string, resourceId: number) {
 		if (!resource || !action) {
 			throw new Error('Invalid auth call');
 		}
 
-		if(req.actor?.Person?.site_admin){
+		if(person.site_admin){
 			return true;
 		}
 
@@ -87,7 +95,7 @@ function createAuthContext(req: Request) {
 		let target = targetCache.get(key);
 
 		if (!target) {
-			target = await buildTarget(resource, resourceId, targetCache);
+			target = await buildTarget(db, resource, resourceId, targetCache);
 			targetCache.set(key, target);
 		}
 		const permKey = `${resource}:${action}:${resourceId}`;
@@ -100,7 +108,7 @@ function createAuthContext(req: Request) {
 			resource,
 			action,
 			target,
-			req.auth?.perms ?? [],
+			perms,
 		);
 
 		permCache.set(permKey, result);
@@ -125,15 +133,8 @@ function createAuthContext(req: Request) {
 		if (!resource || !action) {
 			throw new Error('Invalid auth call');
 		}
-		if (!req.actor?.Person) {
-			return { all: false, ids: [] };
-		}
-		if (req.actor.Person?.site_admin) {
+		if (person.site_admin) {
 			return { all: true, ids: [] };
-		}
-		const perms = req.auth?.perms;
-		if (!perms || !Array.isArray(perms)) {
-			return { all: false, ids: [] };
 		}
 
 		return getAllowedResourceIds(resource, action, perms, opts);
@@ -143,6 +144,7 @@ function createAuthContext(req: Request) {
 		can,
 		assert,
 		allowedIds,
+		grant,
 	};
 }
 
