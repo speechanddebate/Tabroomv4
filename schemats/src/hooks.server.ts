@@ -63,7 +63,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 export const handleFetch: HandleFetch = async ({ event, request, fetch }) => {
 	if (request.url.startsWith(`${INDEXCARDS_HOST}${INDEXCARDS_BASE_PATH}`)) {
-		// forward the browser's cookies (auth, browser id) as a header for API requests.
+		// forward the auth cookie as a header for API requests.
 		// This is kind of a hack as svelte wont forward the cookie for sister-origin requests, but our API is on a different
 		// subdomain so it is technically a cross-origin request. RCT
 		request.headers.set('cookie', event.request.headers.get('cookie') || '');

@@ -21,8 +21,6 @@ Examples of defaults currently provided:
 - `CLASSIC_URL` defaults to `https://tabroom.com`
 - `INDEXCARDS_BASE_PATH` defaults to `/v1`
 - `AUTH_COOKIE` defaults to `TabroomToken`
-- `COOKIE_DOMAIN` defaults to `.tabroom.com`. Keep it in line with indexcards' `cookie.domain` so the browser id cookie reaches the API
-- `BROWSER_ID_COOKIE_NAME` defaults to `Browser_Id`
 - `LOG_LEVEL` defaults to `info`
 - `LOGGING_FILE_MAXSIZE` defaults to `2097152`
 - `LOGGING_FILE_MAXFILES` defaults to `5`

@@ -5,7 +5,6 @@ import factories from '../../indexcards/tests/factories/index.js';
 export const API_URL = process.env.API_URL ?? 'https://api.e2e.tabroom.test';
 export const APP_ORIGIN = new URL(process.env.BASE_URL ?? 'https://e2e.tabroom.test').origin;
 export const AUTH_COOKIE = 'TabroomToken';
-export const BROWSER_ID_COOKIE = 'Browser_Id';
 
 export type TestPerson = Awaited<ReturnType<typeof factories.person.create>> & {
 	email: string;

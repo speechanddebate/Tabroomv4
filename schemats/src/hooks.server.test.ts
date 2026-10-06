@@ -175,14 +175,14 @@ describe('HandleFetch Hook', () => {
 	it('forwards cookies for indexcards API requests', async () => {
 		const event = createRequestEvent({
 			request: new Request('https://example.com/some-page', {
-				headers: { cookie: 'session=abc123; Browser_Id=browser-id-123' },
+				headers: { cookie: 'session=abc123; other=value' },
 			}),
 		});
 		const request = new Request('https://api.example.com/v1/user', { method: 'POST' });
 
 		await handleFetch({ event, request, fetch: mockFetch });
 
-		expect(request.headers.get('cookie')).toBe('session=abc123; Browser_Id=browser-id-123');
+		expect(request.headers.get('cookie')).toBe('session=abc123; other=value');
 		expect(mockFetch).toHaveBeenCalledWith(request);
 	});
 

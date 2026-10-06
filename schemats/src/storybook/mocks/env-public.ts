@@ -4,5 +4,3 @@ export const INDEXCARDS_HOST = 'https://api.tabroom.com';
 export const INDEXCARDS_BASE_PATH = '/v1';
 export const CLASSIC_URL = 'https://classic.tabroom.com';
 export const WEB_URL = 'https://tabroom.com';
-export const COOKIE_DOMAIN = '.tabroom.com';
-export const BROWSER_ID_COOKIE_NAME = 'Browser_Id';

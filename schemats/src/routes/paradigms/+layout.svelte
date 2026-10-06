@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createRestParadigmsInfinite } from '$indexcards';
 	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
 	import { setContext } from 'svelte';
 	import { Search } from 'flowbite-svelte';
 	import Button from '$lib/components/Button.svelte';
@@ -20,8 +19,7 @@
 
 	const LIMIT = 25;
 
-	let query = $state('');
-	let searchTerm = $state('');
+	const searchTerm = $derived(page.url.searchParams.get('search')?.trim() ?? '');
 
 	const paradigmsQuery = createRestParadigmsInfinite(
 		() => ({ search: searchTerm, limit: LIMIT }),
@@ -58,54 +56,29 @@
 	};
 
 	setContext('paradigmsSearch', paradigmsSearchContext);
-
-	function updatePathSearch(nextSearch: string) {
-		const target = new URL(page.url);
-		if (!nextSearch) {
-			target.searchParams.delete('search');
-		} else {
-			target.searchParams.set('search', nextSearch);
-		}
-
-		goto(`${target.pathname}${target.search}`, {
-			replaceState: true,
-			keepFocus: true,
-			noScroll: true,
-		});
-	}
-
-	function handleSearch() {
-		const nextSearch = query.trim();
-		updatePathSearch(nextSearch);
-	}
-
-	$effect(() => {
-		const nextSearch = page.url.searchParams.get('search')?.trim() ?? '';
-		if (nextSearch === searchTerm) return;
-		searchTerm = nextSearch;
-		query = nextSearch;
-	});
 </script>
 
 {#snippet searchBox()}
-	<Search
-		id="paradigm-search"
-		aria-label="Search paradigms"
-		onkeydown={(e) => e.key === 'Enter' && handleSearch()}
-		placeholder="ex: Winston Smith"
-		type="search"
-		bind:value={query}
-	>
-		<Button
-			class="me-1"
-			color="primary"
-			disabled={paradigmsQuery.isLoading}
-			onclick={handleSearch}
-			size="sm"
+	<form data-sveltekit-replacestate data-sveltekit-reset="false" method="GET" role="search">
+		<Search
+			id="paradigm-search"
+			name="search"
+			aria-label="Search paradigms"
+			placeholder="ex: Winston Smith"
+			type="search"
+			value={searchTerm}
 		>
-			{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
-		</Button>
-	</Search>
+			<Button
+				class="me-1"
+				color="primary"
+				disabled={paradigmsQuery.isLoading}
+				size="sm"
+				type="submit"
+			>
+				{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
+			</Button>
+		</Search>
+	</form>
 {/snippet}
 
 {#if isDetailPage}

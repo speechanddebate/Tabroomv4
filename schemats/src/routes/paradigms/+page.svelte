@@ -24,6 +24,6 @@
 	</div>
 {:else }
 	<div class="mx-auto max-w-5xl px-1 sm:px-2">
-		<p>{@html paradigmMainText}</p>
+		{@html paradigmMainText}
 	</div>
 {/if}

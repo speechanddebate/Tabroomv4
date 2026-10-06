@@ -31,6 +31,7 @@ test('searches for a judge and views their paradigm', async ({ page, person, log
 	await page.getByRole('link', { name: `View Paradigm for ${name}` }).click();
 
 	await expect(page).toHaveURL(url => url.pathname === `/paradigms/${judge.id}` && url.searchParams.get('search') === name);
-	await expect(page.getByRole('heading', { name })).toBeVisible();
+	// the sidebar results repeat the name as an h3, so match the details h2
+	await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
 	await expect(page.getByText(paradigmText)).toBeVisible();
 });

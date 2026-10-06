@@ -28,16 +28,6 @@ export const variables = defineEnvVars({
 		schema: z.string().default('TabroomToken'),
 		description: 'The name of the authentication cookie. default: TabroomToken',
 	},
-	COOKIE_DOMAIN: {
-		public: true,
-		schema: z.string().default('.tabroom.com'),
-		description: 'The domain for cookies set by schemats. Must cover the indexcards host (match indexcards cookie.domain) or indexcards will not receive them. default: .tabroom.com',
-	},
-	BROWSER_ID_COOKIE_NAME: {
-		public: true,
-		schema: z.string().default('Browser_Id'),
-		description: 'The name of the browser id cookie and localStorage key. default: Browser_Id',
-	},
 	// LOGGING
 	LOG_LEVEL: {
 		schema: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
