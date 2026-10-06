@@ -1,11 +1,13 @@
 import type { Request, Response } from 'express';
+import { getPerson } from '../../../middleware/authorization/authorization.js';
 import type { CurrentBallot } from '@tabroom/types';
 import panelRepo from '../../../repos/panelRepo.js';
 import { db } from '../../../data/database.js';
 
 export async function getCurrent(req: Request,res: Response) {
+	const person = getPerson(req);
 	const { tournId } = req.params;
-	const sections = await panelRepo.getCurrentBallots(db,req.actor?.Person?.id as number,Number(tournId));
+	const sections = await panelRepo.getCurrentBallots(db,person.id,Number(tournId));
 
 	let ballots: CurrentBallot[] = [];
 

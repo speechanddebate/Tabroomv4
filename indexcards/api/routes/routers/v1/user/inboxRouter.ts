@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/user/inbox.js';
-import { requireLogin } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/authorization/authorization.js';
 import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
@@ -8,7 +8,7 @@ import { requireAuth } from '../../../openapi/security.js';
 
 const router = Router();
 
-router.use(requireLogin);
+router.use(requirePerson);
 
 router.route('/').get(controller.inboxList).openapi = {
 	path        : '/user/inbox',

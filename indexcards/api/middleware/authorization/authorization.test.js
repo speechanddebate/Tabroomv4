@@ -1,10 +1,30 @@
 
 import * as buildTargetModule from './buildTarget.js';
-import { requireSiteAdmin, requireAccess, checkAccess, createActor } from './authorization.js';
+import { requireSiteAdmin, requirePerson, requireAccess, checkAccess, createActor } from './authorization.js';
 import { createContext } from '../../../tests/httpMocks.js';
 import { db } from '../../data/database.js';
 
 describe('Authorization Middleware', () => {
+	describe('requirePerson', () => {
+		it('denies anonymous requests', () => {
+			const {req, res, next} = createContext();
+			req.actor = createActor(req.db, null);
+
+			requirePerson(req, res, next);
+
+			expect(res.status).toHaveBeenCalledWith(401);
+			expect(next).not.toHaveBeenCalled();
+		});
+		it('allows a person', () => {
+			const person = { id: 1, site_admin: 0 };
+			const {req, res, next} = createContext({ person });
+			req.actor = createActor(req.db, person);
+
+			requirePerson(req, res, next);
+
+			expect(next).toHaveBeenCalled();
+		});
+	});
 	describe('requireSiteAdmin', () => {
 		it('deny when unauthenticated', () => {
 			const {req, res, next} = createContext();

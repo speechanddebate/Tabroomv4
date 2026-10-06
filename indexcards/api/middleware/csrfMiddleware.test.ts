@@ -3,6 +3,9 @@ import csrfMiddleware from './csrfMiddleware.js';
 import config from '../config.js';
 import { createContext } from '../../tests/httpMocks.js';
 import * as problem from '../helpers/problem.js';
+import type { AuthInfo } from './auth/types.js';
+
+const cookieAuth: AuthInfo = { method: 'cookie', sessionId: 1, su: null };
 
 describe('csrfMiddleware', () => {
 	beforeEach(() => {
@@ -14,6 +17,7 @@ describe('csrfMiddleware', () => {
 	it('skips when the request is not cookie authenticated', async () => {
 		const { req, res, next } = createContext({
 			method: 'POST',
+			auth: { method: 'none', sessionId: null, su: null },
 		});
 
 		await csrfMiddleware(req, res, next);
@@ -25,7 +29,7 @@ describe('csrfMiddleware', () => {
 		'skips CSRF check for safe method %s',
 		async (method) => {
 			const { req, res, next } = createContext({
-				authType: 'cookie',
+				auth: cookieAuth,
 				method,
 			});
 
@@ -37,7 +41,7 @@ describe('csrfMiddleware', () => {
 
 	it('skips CSRF check for /auth/login', async () => {
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/auth/login',
 		});
@@ -50,7 +54,7 @@ describe('csrfMiddleware', () => {
 	it('allows request when Origin is trusted', async () => {
 
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/rest/anything',
 			headers: {
@@ -67,7 +71,7 @@ describe('csrfMiddleware', () => {
 		const spy = vi.spyOn(problem, 'Forbidden');
 
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/rest/anything',
 			headers: {
@@ -85,7 +89,7 @@ describe('csrfMiddleware', () => {
 		const spy = vi.spyOn(problem, 'Forbidden');
 
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/rest/anything',
 			headers: {
@@ -102,7 +106,7 @@ describe('csrfMiddleware', () => {
 		const spy = vi.spyOn(problem, 'Forbidden');
 
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/rest/anything',
 			headers: {
@@ -119,7 +123,7 @@ describe('csrfMiddleware', () => {
 		const spy = vi.spyOn(problem, 'Forbidden');
 
 		const { req, res, next } = createContext({
-			authType: 'cookie',
+			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/rest/anything',
 			headers: {

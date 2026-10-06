@@ -3,9 +3,23 @@ import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
 import type { Actor, AuthError, Perm, SessionPerson } from '../auth/types.js';
 import type { Database } from '../../data/database.js';
-//requires login - use before any route that needs authentication
-export function requireLogin(req: Request, res: Response, next: NextFunction) {
-	if (!req.actor || req.actor.type === 'anonymous') {
+/**
+ * the person making the request. throws a 401 (handled by errorHandler) when there is none,
+ * so handlers can use the result without null checks
+ */
+export function getPerson(req: Pick<Request, 'person'>): SessionPerson {
+	if (!req.person) {
+		const err = new Error('User not Authenticated') as AuthError;
+		err.status = 401;
+		err.code = 'AUTH_UNAUTHENTICATED';
+		throw err;
+	}
+	return req.person;
+}
+
+//requires a logged in person - use before any route that acts as or on behalf of a person
+export function requirePerson(req: Request, res: Response, next: NextFunction) {
+	if (!req.person || req.actor?.type !== 'person') {
 		return Unauthorized(req, res,'User not Authenticated');
 	}
 	next();

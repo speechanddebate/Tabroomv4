@@ -4,13 +4,15 @@ import { db } from '../../data/database.js';
 
 import type { Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
+import { getPerson } from '../../middleware/authorization/authorization.js';
 
 async function unlinkedSearch(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
 	let { first, last, limit, offset } = req.query;
 
 	if (!first || !last) {
-		first = req.actor.Person?.first;
-		last = req.actor.Person?.last;
+		first = person.first;
+		last = person.last;
 	}
 
 	const [unlinkedJudges, unlinkedChapterJudges] = await Promise.all([

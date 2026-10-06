@@ -6,6 +6,7 @@ import { RateLimitExceeded } from '../../helpers/problem.js';
 
 import type { Request, Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
+import { getPerson } from '../../middleware/authorization/authorization.js';
 
 import { db } from '../../data/database.js';
 
@@ -13,15 +14,16 @@ const STUDENT_SEARCH_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const STUDENT_SEARCH_LIMIT_MAX = 9;
 
 export async function unlinkedSearch(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
 	let { first, last, limit, offset } = req.query;
 
-	if(!req.session || !req.actor.Person){
-		throw new Error('Unauthorized: Missing session or actor.Person');
+	if(!req.session){
+		throw new Error('Unauthorized: Missing session');
 	}
 
 	if (!first || !last) {
-		first = req.actor.Person?.first;
-		last = req.actor.Person?.last;
+		first = person.first;
+		last = person.last;
 	}
 	// log access to student search to the change log
 	logStudentSearch(req.session, first, last).catch(err => {
@@ -29,13 +31,13 @@ export async function unlinkedSearch(req: ValidatedRequest, res: Response) {
 	});
 
 	// if person is not site admin, apply rate limiting logic via person settings
-	if (!req.actor.Person?.site_admin) {
-		const person = await personRepo.getPerson(db,req.actor.Person.id, {
+	if (!person.site_admin) {
+		const Person = await personRepo.getPerson(db,person.id, {
 			settings: ['last_student_search', 'student_search_count'],
 		});
 
-		const lastSearch = person?.settings?.last_student_search ? new Date(person.settings.last_student_search) : null;
-		const studentSearchCount = Number(person?.settings?.student_search_count || 0);
+		const lastSearch = Person?.settings?.last_student_search ? new Date(Person.settings.last_student_search) : null;
+		const studentSearchCount = Number(Person?.settings?.student_search_count || 0);
 		const now = new Date();
 		const then = new Date(now.getTime() - STUDENT_SEARCH_LIMIT_WINDOW_MS);
 
@@ -53,7 +55,7 @@ export async function unlinkedSearch(req: ValidatedRequest, res: Response) {
 
 		const nextStudentSearchCount = studentSearchCount + 1
 
-		await personRepo.updatePerson(db, req.actor.Person.id, {
+		await personRepo.updatePerson(db, person.id, {
 			settings: {
 				student_search_count: nextStudentSearchCount,
 				last_student_search: now,

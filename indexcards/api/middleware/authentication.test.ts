@@ -1,12 +1,10 @@
 import config from '../config.js';
 import sessionRepo from '../repos/sessionRepo.js';
-import personRepo from '../repos/personRepo.js';
 import { Authenticate } from './authentication.js';
 import { createContext } from '../../tests/httpMocks.js';
 import authService from '../services/AuthService.js';
 
 type Session = NonNullable<Awaited<ReturnType<typeof sessionRepo.findByUserKey>>>;
-type Person = NonNullable<Awaited<ReturnType<typeof personRepo.getPerson>>>;
 
 const userkey = 'valid-userkey';
 
@@ -31,10 +29,6 @@ function mockSession(Person: Partial<Session['Person']> = {}): Session {
 	};
 }
 
-function mockPerson(): Person {
-	return { id: 69, email: '' } as Person;
-}
-
 describe('Authentication Middleware', () => {
 
 	describe('No Auth', () => {
@@ -46,7 +40,7 @@ describe('Authentication Middleware', () => {
 
 			// Assert
 			expect(next).toHaveBeenCalled();
-			expect(req.person).not.toBeDefined();
+			expect(req.person).toBeNull();
 		});
 		it('attaches an anonymous actor', async () => {
 			// Arrange
@@ -57,6 +51,7 @@ describe('Authentication Middleware', () => {
 			// Assert
 			expect(req.actor).toBeDefined();
 			expect(req.actor?.type).toBe('anonymous');
+			expect(req.auth).toEqual({ method: 'none', sessionId: null, su: null });
 		});
 
 	});
@@ -70,7 +65,6 @@ describe('Authentication Middleware', () => {
 				},
 			});
 			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce(mockSession());
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValueOnce(mockPerson());
 
 			//Act
 			await Authenticate(req, res, next);
@@ -79,7 +73,23 @@ describe('Authentication Middleware', () => {
 			expect(next).toHaveBeenCalled();
 			expect(req.session).toBeDefined();
 			expect(req.person).toMatchObject({ id: 69 });
-			expect(req.authType).toBe('cookie');
+			expect(req.auth).toEqual({ method: 'cookie', sessionId: 1, su: null });
+		});
+		it('records the su admin on req.auth', async () => {
+			const { req, res, next } = createContext({
+				cookies: {
+					[config.cookie.name]: userkey,
+				},
+			});
+			const Su = { id: 1, first: 'Admin', last: 'Person', email: 'admin@example.com', site_admin: 1, tz: null };
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({ ...mockSession(), su: 1, Su });
+
+			await Authenticate(req, res, next);
+
+			expect(req.auth.su).toEqual(Su);
+			// req.person and the actor are the su target, not the admin
+			expect(req.person?.id).toBe(69);
+			expect(req.actor.Person?.id).toBe(69);
 		});
 		it('does not set req.session or req.person when invalid cookie', async () => {
 
@@ -96,7 +106,9 @@ describe('Authentication Middleware', () => {
 			//Assert
 			expect(next).toHaveBeenCalled();
 			expect(req.session).not.toBeDefined();
-			expect(req.person).not.toBeDefined();
+			expect(req.person).toBeNull();
+			expect(req.auth.method).toBe('none');
+			expect(req.actor.type).toBe('anonymous');
 		});
 		it('clears an invalid cookie', async () => {
 			// if the user provides and invalid cookie. we should tell the browser to clear it.
@@ -136,7 +148,6 @@ describe('Authentication Middleware', () => {
 				},
 			});
 			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce(mockSession());
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValueOnce(mockPerson());
 
 			// Act
 			await Authenticate(req, res, next);
@@ -181,7 +192,7 @@ describe('Authentication Middleware', () => {
 			expect(findByUserKey).not.toHaveBeenCalled();
 			expect(next).toHaveBeenCalledWith();
 			expect(req.session).not.toBeDefined();
-			expect(req.person).not.toBeDefined();
+			expect(req.person).toBeNull();
 		});
 	});
 });

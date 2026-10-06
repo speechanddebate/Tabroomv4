@@ -30,7 +30,7 @@ describe('studentsController', () => {
 
 			const { req, res } = createContext({
 				query: { first: 'Te', last: 'St' },
-				actor: { Person: { id: 10, site_admin: false } },
+				person: { id: 10, site_admin: false },
 				session: { id: 88, person: 10, su: null },
 			});
 
@@ -74,7 +74,7 @@ describe('studentsController', () => {
 
 			const { req, res } = createContext({
 				query: { first: 'Te', last: 'St' },
-				actor: { id: 10, Person: { site_admin: false } },
+				person: { id: 10, site_admin: false },
 				session: { id: 90, person: 10, su: null },
 			});
 
@@ -98,7 +98,7 @@ describe('studentsController', () => {
 
 			const { req, res } = createContext({
 				query: { first: 'Ada', last: 'Lovelace' },
-				actor: { id: 11, Person: { site_admin: false } },
+				person: { id: 11, site_admin: false },
 				session: {
 					id: 1234,
 					person: 11,
@@ -125,7 +125,7 @@ describe('studentsController', () => {
 
 			const { req, res } = createContext({
 				query: { first: 'Test', last: 'User' },
-				actor: { id: 12, Person: { site_admin: true } },
+				person: { id: 12, site_admin: true },
 				session: { id: 222, person: 12, su: null },
 			});
 
@@ -161,13 +161,11 @@ describe('studentsController', () => {
 
 			const { req, res } = createContext({
 				query: {},
-				actor: {
-					Person: {
-						id: 10,
-						first: 'Test',
-						last: 'Student',
-						site_admin: false,
-					},
+				person: {
+					id: 10,
+					first: 'Test',
+					last: 'Student',
+					site_admin: false,
 				},
 				session: { id: 88, person: 10, su: null },
 			});

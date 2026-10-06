@@ -85,13 +85,27 @@ export async function getTabroomInstanceCounts(req, res) {
 	}
 };
 
+// who to credit in server messages, which read "<name> <email> has ...".
+// while su'd: "Admin Name admin@email while su'd as Person Name person@email"
+const whoDunnit = (req) => {
+	const { person } = req;
+	const su = req.auth.su;
+	return {
+		name: su
+			? `${su.first} ${su.last} ${su.email} while su'd as ${person.first} ${person.last}`
+			: `${person.first} ${person.last}`,
+		email: person.email,
+	};
+};
+
 // API facing functions that will bring up or destroy machines.
 export async function changeInstanceCount(req, res) {
+	const who = whoDunnit(req);
 	const user = {
 		su    : req.session.su,
 		id    : req.session.person,
-		name  : `${req.person.name}`,
-		email : req.person.email,
+		name  : who.name,
+		email : who.email,
 	};
 
 	const serverCount = parseInt(req.params.target) || parseInt(req.body.target) || 0;
@@ -119,8 +133,9 @@ export async function rebootInstance(req, res) {
 		});
 	}
 
+	const who = whoDunnit(req);
 	const resultMessages = [
-		`${req.person.name} ${req.person.email} has REBOOTED ${machine}:\n`,
+		`${who.name} ${who.email} has REBOOTED ${machine}:\n`,
 		'\n',
 	];
 

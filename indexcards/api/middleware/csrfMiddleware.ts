@@ -3,7 +3,8 @@ import { Forbidden } from '../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
 
 export default async function csrfMiddleware(req: Request, res: Response, next: NextFunction){
-	if(req.authType !== 'cookie'){
+	//only cookies are sent automatically by the browser, so only they need CSRF protection
+	if(req.auth?.method !== 'cookie'){
 		return next();
 	}
 	// Skip safe methods

@@ -26,7 +26,7 @@ describe('judgesController.unlinkedSearch', () => {
 
 		const req = createReq({
 			query: { first: 'Alex', last: 'Smith' },
-			actor: { id: 99, Person: { first: 'Alex', last: 'Smith' } },
+			person: { id: 99, first: 'Alex', last: 'Smith' },
 		});
 		const res = createRes();
 
@@ -49,7 +49,7 @@ describe('judgesController.unlinkedSearch', () => {
 
 		const req = createReq({
 			query: {},
-			actor: { id: 5, Person: { first: 'Jordan', last: 'Lee' } },
+			person: { id: 5, first: 'Jordan', last: 'Lee' },
 		});
 		const res = createRes();
 

@@ -8,7 +8,7 @@ import type { ValidatedRequest } from '../../middleware/validation.js';
 
 async function getQuizzes(req: ValidatedRequest, res: Response) {
 	//if a person is requesting, include their PersonQuiz data to determine if they've taken any quizzes or not
-	const personId = req.actor?.Person?.id;
+	const personId = req.person?.id;
 
 	const [ quizzes, personQuizzes ] = await Promise.all([
 		quizRepo.getQuizzes(db,{

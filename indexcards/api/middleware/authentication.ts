@@ -1,54 +1,57 @@
 import type { Request, Response, NextFunction } from 'express';
 import config from '../config.js';
 import authService from '../services/AuthService.js';
-import personRepo from '../repos/personRepo.js';
 import { createActor } from './authorization/authorization.js';
 import { Forbidden } from '../helpers/problem.js';
+import { cookieStrategy } from './auth/strategies/cookie.js';
+import type { AuthInfo, AuthStrategy, SessionPerson } from './auth/types.js';
 
-import sessionRepo from '../repos/sessionRepo.js';
+// tried in order, the first strategy that finds credentials decides the request.
+// token/api key auth (Authorization header) goes here once keys are issued.
+const strategies: AuthStrategy[] = [cookieStrategy];
+
+const anonymous: AuthInfo = { method: 'none', sessionId: null, su: null };
 
 export async function Authenticate(req: Request, res: Response, next: NextFunction) {
-
-	let session = null;
-
 	try {
+		let auth = anonymous;
+		let person: SessionPerson | null = null;
 
-		// COOKIE AUTHENTICATION
-		const cookieName = config.cookie.name;
-		const cookie = req.cookies[cookieName];
+		for (const strategy of strategies) {
+			const result = await strategy(req.db, { cookies: req.cookies ?? {}, headers: req.headers });
+			if (result.status === 'none') continue;
 
-		if (cookie) {
-			let cookieSession = await sessionRepo.findByUserKey(req.db,cookie);
-			if (!cookieSession) {
-				//must use the same options as when the cookie is set.
-				res.clearCookie(cookieName, authService.getAuthCookieOptions());  //invalid cookie, clear it
-			} else {
-				session = cookieSession;
-				req.authType = 'cookie';
+			if (result.status === 'forbidden') {
+				return Forbidden(req, res, result.detail);
 			}
+			if (result.status === 'invalid') {
+				if (result.clearCookie) {
+					//must use the same options as when the cookie is set.
+					res.clearCookie(config.cookie.name, authService.getAuthCookieOptions());
+				}
+				break;
+			}
+			auth = result.auth;
+			person = result.person;
+			break;
 		}
 
-		// TOKEN/API KEY AUTHENTICATION (Authorization header) goes here once keys are issued.
-		// Until then all access goes through the frontend with the session cookie.
+		req.auth = auth;
+		req.person = person;
 
-		if(session){
-			if(session.Person?.banned == '1') {
-				await sessionRepo.deleteSession(req.db, session.id);
-				return Forbidden(req, res, 'User is banned');
-			}
+		if (person) {
+			//deprecated, use req.auth and req.person
 			req.session = {
-				id       : session.id,
-				person  : session.person,
-				su       : session.su || null,
-				Su: session.Su ?? null,
-				Person   : session.Person ?? undefined
+				id     : auth.sessionId,
+				person : person.id,
+				su     : auth.su?.id ?? null,
+				Su     : auth.su,
+				Person : person,
 			};
-
-			//deprecated, use req.actor for auth and req.session.Person for anything that MUST be done by a person
-			req.person = await personRepo.getPerson(req.db,req.session.su ?? req.session.person ?? -1);
 		}
+
 		//req.actor is what should be checked for every authorization decision
-		req.actor = createActor(req.db, req.session?.Person);
+		req.actor = createActor(req.db, person);
 		next();
 
 	} catch (err) {

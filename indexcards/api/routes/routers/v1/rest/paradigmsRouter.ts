@@ -1,6 +1,6 @@
 import z from 'zod';
 import controller from '../../../../controllers/rest/paradigmsController.js';
-import { requireLogin } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/authorization/authorization.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { JudgeRecordSchema, ParadigmDetailsSchema, ParadigmSearchResultSchema } from '@tabroom/types';
 import { Router } from 'express';
@@ -8,7 +8,7 @@ import { Router } from 'express';
 const router = Router();
 
 //searching paradigms requires a user to be logged in
-router.use(requireLogin);
+router.use(requirePerson);
 
 router.route('/').get(ValidateRequest, controller.getParadigms).openapi = {
 	path: '/rest/paradigms',

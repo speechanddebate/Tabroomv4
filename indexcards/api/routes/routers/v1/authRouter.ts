@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import z from 'zod';
 import { ValidateRequest } from '../../../middleware/validation.js';
-import { requireLogin, requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
+import { requirePerson, requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
 import {
 	LoginRequestSchema,
 	LoginResponseSchema,
@@ -78,7 +78,7 @@ router.route('/su').post(requireSiteAdmin, ValidateRequest, controller.su).opena
 	},
 };
 }
-router.route('/suend').post(requireLogin, controller.suEnd).openapi = {
+router.route('/suend').post(requirePerson, controller.suEnd).openapi = {
 	path: '/auth/suend',
 	summary: 'End Su session',
 	operationId: 'authSuEnd',

@@ -1,3 +1,5 @@
+import type { Database } from '../../data/database.js';
+
 export type AuthError = Error & {
 	status: number;
 	code: string;
@@ -45,3 +47,33 @@ export type AnonymousActor = ActorMethods & {
 
 /** who is acting on a request. check every authorization decision against this */
 export type Actor = PersonActor | AnonymousActor;
+
+/** how a request authenticated. add a member here with each new strategy */
+export type AuthMethod = 'cookie' | 'none';
+
+/** facts about how the request authenticated, as opposed to who is acting (Actor) */
+export type AuthInfo = {
+	method: AuthMethod;
+	/** the session id when authenticated with a session cookie */
+	sessionId: number | null;
+	/** the admin who su'd into this account */
+	su: SessionPerson | null;
+};
+
+/** the framework agnostic parts of a request a strategy can read credentials from */
+export type AuthInput = {
+	cookies: Record<string, string | undefined>;
+	headers: Record<string, string | string[] | undefined>;
+};
+
+export type AuthResult =
+	/** the strategy found no credentials it handles. try the next strategy */
+	| { status: 'none' }
+	/** credentials were present but invalid. the request continues anonymously */
+	| { status: 'invalid'; clearCookie?: boolean }
+	/** credentials were valid but the principal may not use the api */
+	| { status: 'forbidden'; detail: string }
+	| { status: 'success'; auth: AuthInfo; person: SessionPerson };
+
+/** a way of authenticating a request, e.g. session cookie or api key */
+export type AuthStrategy = (db: Database, input: AuthInput) => Promise<AuthResult>;

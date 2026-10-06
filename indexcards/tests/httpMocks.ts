@@ -8,24 +8,27 @@ export function createPersonContext(
 	person: { id: number; first: string | null; last: string | null; email: string; site_admin: number | null },
 	reqOverrides: Partial<ValidatedRequest> = {}
 ) {
+	const Person = {
+		id: person.id,
+		first: person.first,
+		last: person.last,
+		email: person.email,
+		site_admin: person.site_admin
+	};
 	reqOverrides = {
+		auth: { method: 'cookie', sessionId: 1, su: null },
+		person: Person,
 		session: {
 			id: 1,
 			person: person.id,
 			su: null,
-			Person: {
-				id: person.id,
-				first: person.first,
-				last: person.last,
-				email: person.email,
-				site_admin: person.site_admin
-			},
+			Person,
 			Su: null,
 		},
 		...reqOverrides,
 	};
-	let con = createContext(reqOverrides);
-	con.req.actor = createActor(con.req.db, con.req.session?.Person);
+	const con = createContext(reqOverrides);
+	con.req.actor = createActor(con.req.db, con.req.person);
 	return con;
 }
 
@@ -48,7 +51,8 @@ export function createReq(overrides: Partial<ValidatedRequest> & Record<string, 
 		body: {},
 		cookies: {},
 		db,
-		person: undefined,
+		auth: { method: 'none', sessionId: null, su: null },
+		person: null,
 		session: undefined,
 		params: {},
 		query: {},
