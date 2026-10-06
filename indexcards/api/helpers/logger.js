@@ -19,7 +19,7 @@ function attachRequestContext(info) {
 	return info;
 }
 /** helper function to get the caller of a database query for logging */
-function getCallerFrame(options = {}) {
+export function getCallerFrame(options = {}) {
 	const {
 		skipContains = [],
 		preferContains = '/api/',
@@ -41,22 +41,6 @@ function getCallerFrame(options = {}) {
 	const preferred = frames.find((line) => line.includes(preferContains));
 	return preferred ?? frames[0] ?? 'unknown';
 }
-
-export function logDB(sql, timingMs) {
-	//if debug logging is on, log all queries otherwise just log the slow ones
-	if(timingMs >= config.logging.slowQueryLimit){
-		logger.warn('Slow SQL query', {
-			durationMs: timingMs,
-			caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
-		});
-	} else if (logger.isDebugEnabled()) {
-		logger.debug('SQL query', {
-			sql,
-			durationMs: timingMs,
-			caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
-		});
-	}
-};
 
 const requestContextFormat = winston.format((info) => attachRequestContext(info));
 

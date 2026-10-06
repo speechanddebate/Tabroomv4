@@ -85,6 +85,14 @@ export function NotImplemented(req, res, detail, extras = {}){
 		...extras,
 	});
 }
+export function ServiceUnavailable(req, res, detail, extras = {}){
+	return sendProblem(req, res, {
+		title: 'The Server is temporarily unable to handle the request.',
+		status: 503,
+		detail,
+		...extras,
+	});
+}
 export function RateLimitExceeded(req, res, detail, extras = {}){
 	return sendProblem(req, res, {
 		title: 'Rate limit exceeded',

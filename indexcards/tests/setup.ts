@@ -83,6 +83,12 @@ expect.extend({
 					body.status === 429 &&
 					body.detail.length > 0;
 				break;
+			case 503:
+				matchesExpectedCode =
+					body.title === 'The Server is temporarily unable to handle the request.' &&
+					body.status === 503 &&
+					body.detail.length > 0;
+				break;
 			case undefined:
 				break;
 			default:

@@ -60,6 +60,8 @@ export const ConfigSchema = z.object({
 			acquireTimeout: z.int().min(0).default(10000),
 			/** Seconds an idle connection stays open before it is released */
 			idleTimeout: z.int().min(0).default(1800),
+			/** Milliseconds before MariaDB aborts a query (max_statement_time). 0 means no limit */
+			queryTimeout: z.int().min(0).default(30000),
 		}).prefault({}),
 	}),
 	//------------------------------------------------------------------------------

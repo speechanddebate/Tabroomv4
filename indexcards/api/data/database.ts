@@ -3,7 +3,7 @@ import { createPool } from 'mariadb'
 import { Kysely, SafeNullComparisonPlugin } from 'kysely'
 import { MariadbDialect } from "kysely-mariadb";
 import config from '../config.js'
-import logger, { logDB } from '../helpers/logger.js'
+import logger, { getCallerFrame } from '../helpers/logger.js'
 
 const dialect = new MariadbDialect({
   mariadb: createPool({
@@ -28,9 +28,36 @@ export const db = new Kysely<DB>({
 	],
 	log(event){
 		if (event.level === 'error'){
-			logger.error('DB Error Event:', event);
+			const error = event.error as { code?: string; sqlMessage?: string | null; message?: string };
+			const details = {
+				code: error.code,
+				error: error.sqlMessage ?? error.message,
+				sql: event.query.sql,
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			};
+
+			if (error.code === 'ER_STATEMENT_TIMEOUT') {
+				logger.warn('Query timed out', details);
+			} else {
+				logger.error('DB error', details);
+			}
+			return;
 		}
-		logDB(event.query.sql, event.queryDurationMillis);
+
+		if(event.queryDurationMillis >= config.logging.slowQueryLimit){
+			logger.warn('Slow SQL query', {
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			});
+		} else if (logger.isDebugEnabled()) {
+			//need to check if debug to avoid building caller frame on every query
+			logger.debug('SQL query', {
+				sql: event.query.sql,
+				durationMs: event.queryDurationMillis,
+				caller: getCallerFrame({ skipContains: ['/api/data/database.'] }),
+			});
+		}
 	},
 })
 

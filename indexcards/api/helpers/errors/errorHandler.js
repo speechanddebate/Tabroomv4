@@ -1,8 +1,15 @@
 import logger from '../logger.js';
 import { adminBlast } from '../admin.js';
+import { ServiceUnavailable } from '../problem.js';
 import config from '../../config.js';
 
 export const errorHandler = (err, req, res, next) => {
+	// MariaDB aborted a query that ran past db.pool.queryTimeout. Expected under load, so no admin email.
+	// The DB logger already warned with the query, and the request logger records the 503
+	if (err.code === 'ER_STATEMENT_TIMEOUT') {
+		return ServiceUnavailable(req, res, 'The request took too long to process. Please try again later.');
+	}
+
 	logger.error('Error while processing request', {
 		message: err.message,
 		url: req.originalUrl,
