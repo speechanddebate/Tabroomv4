@@ -115,7 +115,7 @@ export async function getSchematic (req,res) {
 		return parsedRound;
 	});
 
-	if (!rounds) {
+	if (!rounds.length) {
 		return NotFound(req, res,
 			`Round ${req.params.roundName} of ${req.params.eventAbbr} either does not exist or is not yet published.`
 		);
@@ -273,11 +273,11 @@ export async function getSchematic (req,res) {
 				};
 			}
 
-			if (round.published === 'full') {
+			if (round.published === 'full' && ballot.judgeId) {
 				if (!round.Sections[ballot.sectionId].Judges[ballot.judgeId]) {
 
 					const judge = {
-						id     : ballot.id,
+						id     : ballot.judgeId,
 						first  : ballot.judgeFirst,
 						last   : ballot.judgeLast,
 					};
@@ -349,7 +349,7 @@ const showFlightTimes = (round, personTz = undefined) => {
 			offset.minutes = tick * parseInt(round.Event.Settings.flight_offset);
 		} else if (tick > 0) {
 			// Do not display flight differentials unless there's an offset;
-			continue;
+			break;
 		}
 
 		flightTimes.start= parseDateTime({
@@ -395,7 +395,7 @@ const showFlightTimes = (round, personTz = undefined) => {
 			}
 		} else {
 			if (round.Event.Settings.elim_decision_deadline) {
-				offset.minutes = round.Event.Settings.elim_decision_deadline;
+				offset.minutes = parseInt(round.Event.Settings.elim_decision_deadline);
 			} else if (round.Event.Settings.prelim_decision_deadline) {
 				offset.minutes = parseInt(round.Event.Settings.prelim_decision_deadline);
 			}

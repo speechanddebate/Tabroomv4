@@ -7157,17 +7157,7 @@
             "maxLength": 31
           },
           "webname": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "integer",
-                "exclusiveMinimum": 0,
-                "maximum": 9007199254740991
-              }
-            ],
-            "description": "The tournament webname, or the tournament id when a newer tournament shares the webname"
+            "type": "string"
           },
           "hidden": {
             "type": "integer",
@@ -9540,6 +9530,424 @@
           "flighted"
         ],
         "additionalProperties": false
+      },
+      "RoundSchematic": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "type": {
+            "type": "string",
+            "description": "Round type in camelCase, e.g. snakedPrelim"
+          },
+          "label": {
+            "type": "string"
+          },
+          "tz": {
+            "type": "string"
+          },
+          "motion": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "published": {
+            "type": "string",
+            "enum": [
+              "full",
+              "noJudges",
+              "entryList",
+              "thisPageIntentionallyLeftBlank",
+              "prelimChambers"
+            ]
+          },
+          "postPrimary": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "flighted": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "Settings": {
+            "type": "object",
+            "properties": {
+              "includeRoomNotes": {
+                "type": "boolean",
+                "const": true
+              },
+              "useNormalRooms": {
+                "type": "boolean",
+                "const": true
+              }
+            },
+            "additionalProperties": false
+          },
+          "Event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "abbr": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "debate",
+                  "speech",
+                  "mock_trial",
+                  "congress",
+                  "wsdc",
+                  "wudc",
+                  "attendee",
+                  "academic"
+                ]
+              },
+              "nsdaCategory": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "Settings": {
+                "type": "object",
+                "properties": {
+                  "anonymous_public": {
+                    "type": "string"
+                  },
+                  "pods": {
+                    "type": "string"
+                  },
+                  "no_side_constraints": {
+                    "type": "string"
+                  },
+                  "not_nats": {
+                    "type": "string"
+                  },
+                  "elim_decision_deadline": {
+                    "type": "string"
+                  },
+                  "prelim_decision_deadline": {
+                    "type": "string"
+                  },
+                  "online_mode": {
+                    "type": "string"
+                  },
+                  "online_hybrid": {
+                    "type": "string"
+                  },
+                  "online_public": {
+                    "type": "string"
+                  },
+                  "flight_offset": {
+                    "type": "string"
+                  },
+                  "aff_label": {
+                    "type": "string"
+                  },
+                  "neg_label": {
+                    "type": "string"
+                  },
+                  "prep_offset": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "abbr",
+              "type",
+              "nsdaCategory",
+              "Settings"
+            ],
+            "additionalProperties": false
+          },
+          "times": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "draw": {
+                  "description": "Prep room draw time, for events with a prep offset",
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "deadline": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "tz": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Timezones to display the times in"
+                }
+              },
+              "required": [
+                "start",
+                "tz"
+              ],
+              "additionalProperties": false
+            },
+            "description": "Start times and deadlines keyed by flight number"
+          },
+          "Entries": {
+            "description": "Present when only the entry list is published",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "code": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "bye": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "chamber": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "code"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "Sections": {
+            "description": "Sections keyed by section id, present when pairings are published",
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^-?\\d+$"
+            },
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "letter": {
+                  "type": "string"
+                },
+                "flight": {
+                  "type": "string"
+                },
+                "bye": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "hybrid": {
+                  "type": "string"
+                },
+                "bracket": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "Room": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "notes": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "Entries": {
+                  "description": "Entries keyed by side or speaker order",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "code": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "speakerorder": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "record": {
+                        "type": "string"
+                      },
+                      "wins": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "pullup": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "code",
+                      "speakerorder"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "Judges": {
+                  "description": "Judges keyed by judge id, present when judges are published",
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string",
+                    "pattern": "^-?\\d+$"
+                  },
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "first": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "last": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "code": {
+                        "type": "string"
+                      },
+                      "chair": {
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      },
+                      "paradigm": {
+                        "description": "Person id of the judge, present when they have a paradigm",
+                        "type": "integer",
+                        "minimum": -9007199254740991,
+                        "maximum": 9007199254740991
+                      }
+                    },
+                    "required": [
+                      "id"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "Room"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "type",
+          "tz",
+          "flighted",
+          "startTime",
+          "Settings",
+          "Event",
+          "times"
+        ],
+        "additionalProperties": false,
+        "description": "A published round schematic, with sections, entries and judges as the publish level allows"
       },
       "SchoolSchema": {
         "type": "object",

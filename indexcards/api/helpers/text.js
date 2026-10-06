@@ -25,7 +25,7 @@ export const eventType = (rawType) => {
 
 export const publishLevel = (keyLevel) => {
 	if (keyLevel == 1) return 'full';
-	if (keyLevel == 1) return 'noJudges';
+	if (keyLevel == 2) return 'noJudges';
 	if (keyLevel == 3) return 'entryList';
 	if (keyLevel == 4) return 'thisPageIntentionallyLeftBlank';
 	if (keyLevel == 5) return 'prelimChambers';
