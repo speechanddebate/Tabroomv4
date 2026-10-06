@@ -41,8 +41,6 @@ export const setup = async () => {
 				db.insertInto('permission').values(testData.testUserTournPerm).execute(),
 				db.insertInto('session').values(testData.testAdminSession).execute(),
 				db.insertInto('person').values(testData.testCampusUsers).execute(),
-				db.insertInto('person_setting').values(testData.testUserAPIKey).execute(),
-				db.insertInto('person_setting').values(testData.testUserAPIPerms).execute(),
 			]);
 
 			console.log(`Test data properly loaded and ready to run`);

@@ -22,10 +22,6 @@ export async function buildTarget(resource: string, resourceId: number, targetCa
 
 	let target: Target = { id: resourceId, resource };
 	//no parents to build
-	if(resource.startsWith('api_auth_')){
-		targetCache.set(key, target);
-		return target;
-	}
 	if(resource === 'chapter'){
 		targetCache.set(key, target);
 		return target;

@@ -1,25 +1,11 @@
 import { buildTarget, type Target } from './buildTarget.js';
-import { Unauthorized, Forbidden, NotImplemented } from '../../helpers/problem.js';
+import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthError, Perm } from './types.js';
 //requires login - use before any route that needs authentication
 export function requireLogin(req: Request, res: Response, next: NextFunction) {
 	if (!req.actor || req.actor.type === 'anonymous') {
 		return Unauthorized(req, res,'User not Authenticated');
-	}
-	next();
-}
-// used for ext routes
-export async function requireAreaAccess(req: Request, res: Response, next: NextFunction) {
-	if (!req.actor) {
-		return Unauthorized(req, res,'User not Authenticated');
-	}
-
-	if(!req.actor.Person){
-		return NotImplemented(req,res,'Area access not implemented for non-person actors');
-	}
-	if(!(await req.actor.can(`api_auth_${req.params.area}`, 'authorized', req.actor.Person.id))) {
-		return Forbidden(req, res,`You do not have permission to access area: ${req.params.area}`);
 	}
 	next();
 }

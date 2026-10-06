@@ -3,7 +3,6 @@ import type {
 	CampusLog,
 	Permission,
 	Person,
-	PersonSetting,
 	Session,
 } from '../api/data/schema.js';
 import type { Insertable } from 'kysely';
@@ -102,20 +101,6 @@ export const testUserTournPerm: Insertable<Permission> = {
 	tag    : 'tabber',
 };
 
-export const testUserAPIKey: Insertable<PersonSetting> = {
-	person : 69,
-	value  : 'OpenSesame',
-	tag    : 'api_key',
-};
-
-export const testUserAPIPerms: Insertable<PersonSetting>[] = [
-	{ person: 69, value: '1', tag: 'api_auth_caselist' },
-	{ person: 69, value: '1', tag: 'api_auth_nsda' },
-	{ person: 69, value: '1', tag: 'api_auth_share' },
-	{ person: 69, value: '1', tag: 'api_auth_iplocation' },
-	{ person: 69, value: '1', tag: 'api_auth_mason' },
-];
-
 export const testCampusUsers: Insertable<Person>[] = [
 	{ id: 10, email: 'test10@tabroom.com', first: 'Test', last: 'Ten' },
 	{ id: 11, email: 'test11@tabroom.com', first: 'Test', last: 'Eleven' },
@@ -168,8 +153,6 @@ export default {
 	testPassword,
 	testCampusUsers,
 	testCampusLogs,
-	testUserAPIKey,
-	testUserAPIPerms,
 	testUserChapterPerm,
 	testUserSchoolContact,
 };

@@ -3,7 +3,6 @@ import type { ZodOpenApiSecuritySchemeObject, ZodOpenApiObject } from 'zod-opena
 import config from '../../config.js';
 
 const schemes: Record<string, ZodOpenApiSecuritySchemeObject> = {
-	extApiKey:  { type: 'http', scheme: 'basic' },
 	bearerAuth: { type: 'http', scheme: 'bearer' },
 	cookieAuth: {
 		type: 'apiKey',
@@ -24,10 +23,6 @@ export const requireAuth: ZodOpenApiObject['security'] = [{ bearerAuth: [] }, { 
  * sets the security to optional auth. should be used for route where you don't need to be logged in, but if you are, something is different.
  */
 export const optionalAuth: ZodOpenApiObject['security'] = [{}, ...requireAuth ];
-/**
- * sets the security to require an Ext API key
- */
-export const requireExtApiKey: ZodOpenApiObject['security'] = [{ extApiKey: [] }];
 
 //this is for some weird TS thing with declarations
 type ApiSecurityConfig = {

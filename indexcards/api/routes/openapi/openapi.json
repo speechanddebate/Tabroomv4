@@ -10089,10 +10089,6 @@
       }
     },
     "securitySchemes": {
-      "extApiKey": {
-        "type": "http",
-        "scheme": "basic"
-      },
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer"

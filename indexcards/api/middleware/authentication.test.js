@@ -191,54 +191,13 @@ describe('Authentication Middleware', () => {
 
 	});
 
-	describe('Basic Auth', () => {
-		it('sets req.person with valid token', async () => {
-			// base64("myuserkey:myapikey")
-			const encoded = Buffer.from('123:myapikey').toString('base64');
-
-			const { req, res, next } = createContext({
-				headers: {
-					authorization: `Basic ${encoded}`,
-				},
-			});
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValue({
-				id: 123,
-				email: 'example@test.com',
-				settings: {
-					api_key: 'myapikey',
-				},
-			});
-
-			await Authenticate(req, res, next);
-
-			// Assertions
-			expect(req.person).toBeDefined();
-			expect(req.person.id).toBe(123);
-			expect(next).toHaveBeenCalledOnce();
-		});
-		it('returns 401 when API key is invalid', async () => {
-			// base64("myuserkey:invalidapikey")
-			const encoded = Buffer.from('123:invalidapikey').toString('base64');
-
-			const { req, res, next } = createContext({
-				headers: {
-					authorization: `Basic ${encoded}`,
-				},
-			});
-
-			vi.spyOn(personRepo, 'getPerson').mockResolvedValue(null);
-
-			await Authenticate(req, res, next);
-
-			// Assertions
-			expect(res.status).toHaveBeenCalledWith(401);
-			expect(next).not.toHaveBeenCalled();
-		});
-		it('returns 400 when Authorization header is malformed', async () => {
+	describe('Authorization header', () => {
+		it('returns 400 for Basic auth, which is no longer supported', async () => {
 			//Arrange
+			const encoded = Buffer.from('123:myapikey').toString('base64');
 			const { req, res, next } = createContext({
 				headers: {
-					authorization: `Basic malformedheader`,
+					authorization: `Basic ${encoded}`,
 				},
 			});
 

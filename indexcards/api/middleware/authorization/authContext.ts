@@ -73,32 +73,6 @@ export async function loadTournAuthContext(req: Request, res: Response, next: Ne
 	}
 	return next();
 }
-export async function loadExtAuthContext(req: Request, res: Response, next: NextFunction) {
-
-	const personId = req.actor?.Person?.id;
-	if (!personId) return next();
-	// Fetch permissions where person matches req.actor.Person and tag is like 'api_auth_%'
-	const perms = await db.selectFrom('person_setting')
-		.where('person', '=', personId)
-		.where('tag', 'like', 'api_auth_%')
-		.selectAll()
-		.execute();
-
-
-		req.auth = {
-			...req.auth,
-			perms: [
-				...(req.auth?.perms ?? []),
-				...perms.map(p => ({
-					scope: p.tag,
-					id: personId,
-					role: 'authorized',
-				})),
-			],
-		};
-
-	return next();
-}
 /** load all the chapter perms for the actor */
 export async function loadChapterAuthContext(req: Request, res: Response, next: NextFunction, chapterId: number) {
 	req.auth = {

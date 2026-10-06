@@ -1,57 +1,10 @@
 
 import * as buildTargetModule from './buildTarget.js';
-import { loadExtAuthContext, loadTournAuthContext } from './authContext.js';
-import {requireAreaAccess, requireSiteAdmin, requireAccess, checkAccess, createActor} from './authorization.js';
+import { loadTournAuthContext } from './authContext.js';
+import { requireSiteAdmin, requireAccess, checkAccess, createActor } from './authorization.js';
 import { createContext } from '../../../tests/httpMocks.js';
 
 describe('Authorization Middleware', () => {
-	describe('requireAreaAccess', () => {
-		it('deny access when no actor', async () => {
-			// Arrange
-			const {req, res, next} = createContext();
-			// Act
-			await loadExtAuthContext(req, res, () => {});
-			await requireAreaAccess(req, res, next);
-			// Assert
-
-			expect(res.status).toHaveBeenCalledWith(401);
-			expect(next).not.toHaveBeenCalled();
-		});
-		it('deny access when no area access', async () => {
-			// Arrange
-			const {req, res, next} = createContext({
-				session: { Person: { id: 1 } },
-				params: {area: 'caselist'},
-			});
-			req.actor = createActor(req);
-			await loadExtAuthContext(req, res, () => {});
-
-			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 2, resource: 'api_auth_caselist' });
-
-			// Act
-			await requireAreaAccess(req, res, next);
-
-			// Assert
-			expect(res.status).toHaveBeenCalledWith(403);
-			expect(next).not.toHaveBeenCalled();
-		});
-		it('allow access when has area access', async () => {
-			// Arrange
-			const {req, res, next} = createContext({
-				session: { Person: { id: 1 } },
-				params: {area: 'caselist'},
-			});
-			req.actor = createActor(req);
-			await loadExtAuthContext(req, res, () => {});
-			vi.spyOn(buildTargetModule, 'buildTarget').mockResolvedValueOnce({ id: 1, resource: 'api_auth_caselist' });
-
-			// Act
-			await requireAreaAccess(req, res, next);
-
-			// Assert
-			expect(next).toHaveBeenCalled();
-		});
-	});
 	describe('requireSiteAdmin', () => {
 		it('deny when unauthenticated', () => {
 			const {req, res, next} = createContext();

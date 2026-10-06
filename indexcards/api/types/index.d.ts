@@ -1,7 +1,7 @@
 declare global {
 	namespace Express {
 		interface Request {
-			authType?: 'basic' | 'bearer' | 'cookie';
+			authType?: 'bearer' | 'cookie';
 			session?: {
 				id?: number;
 				person?: number;

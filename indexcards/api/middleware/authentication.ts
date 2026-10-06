@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express';
-import basic from 'basic-auth';
 import config from '../config.js';
 import authService from '../services/AuthService.js';
 //import sessionRepo from '../repos/sessionRepo.js';
@@ -13,7 +12,6 @@ import sessionRepo from '../repos/sessionRepo.js';
 export async function Authenticate(req: Request, res: Response, next: NextFunction) {
 
 	let session = null;
-	let extPerson = null;
 
 	try {
 
@@ -33,26 +31,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 		}
 
 		if(req.headers?.authorization){
-			if(req.headers.authorization.startsWith('Basic ')){
-
-				//BASIC AUTHENTICATION
-				const credentials = basic.parse(req.headers.authorization);
-
-				if (!credentials || !credentials.name || !credentials.pass || isNaN(parseInt(credentials.name))) {
-					return BadRequest(req, res, 'The Authorization header is malformed. Expected format: Basic base64(user:key).');
-				}
-
-				//req.person is what should be checked for every authorization decision
-				extPerson = await personRepo.getPerson(db, parseInt(credentials.name), {settings: ['api_key']}) ;
-
-				if (!extPerson || extPerson.settings?.api_key !== credentials.pass) {
-					return Unauthorized(req, res,'Invalid API key');
-				}
-
-				req.person = extPerson;
-				req.authType = 'basic';
-
-			} else if (req.headers.authorization.startsWith('Bearer ')) {
+			if (req.headers.authorization.startsWith('Bearer ')) {
 
 				//BEARER AUTHENTICATION. allow the user to send their session token as a bearer token
 				const token = req.headers.authorization.substring(7).trim();
@@ -84,15 +63,6 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 
 			//deprecated, use req.actor for auth and req.session.Person for anything that MUST be done by a person
 			req.person = await personRepo.getPerson(db,req.session.su ?? req.session.person ?? -1);
-		}
-		if(extPerson) {
-			req.session = {
-				id       : null,
-				person  : extPerson.id,
-				su       : null,
-				Su: null,
-				Person   : extPerson
-			};
 		}
 		//req.actor is what should be checked for every authorization decision
 		req.actor = createActor(req);
