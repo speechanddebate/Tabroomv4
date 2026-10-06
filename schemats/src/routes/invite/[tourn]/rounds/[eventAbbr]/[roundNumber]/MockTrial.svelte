@@ -59,19 +59,19 @@
 		const baseColumns:Array<SchematColumn> = [
 			{
 				id       : 'affCode',
-				header   : event.settings?.affLabel || 'Prosecution',
+				header   : event.Settings?.aff_label || 'Prosecution',
 				flexgrow : 2,
 			},{
 				id       : 'negCode',
-				header   : event.settings?.negLabel || 'Defense',
+				header   : event.Settings?.neg_label || 'Defense',
 				flexgrow : 2,
 			},
 		];
 
 		if (
-			schematic.settings.useNormalRooms
-			|| schematic.Event.settings.onlineMode == 'sync'
-			|| !schematic.Event.settings.onlineMode
+			schematic.Settings.useNormalRooms
+			|| schematic.Event.Settings.online_mode == 'sync'
+			|| !schematic.Event.Settings.online_mode
 		) {
 			baseColumns.unshift({
 				id       : 'roomName',

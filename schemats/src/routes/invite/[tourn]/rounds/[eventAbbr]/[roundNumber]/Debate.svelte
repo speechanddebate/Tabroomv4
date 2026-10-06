@@ -125,7 +125,7 @@
 		let affLinkFunction;
 		let negLinkFunction;
 
-		if (!schematic.Event.Settings.anonymousPublic) {
+		if (!schematic.Event.Settings.anonymous_public) {
 			negLinkFunction = (row:typeof schematic) => `/invite/${tourn.webname}/entries/${ row.negId }`;
 			affLinkFunction = (row:typeof schematic) => `/invite/${tourn.webname}/entries/${ row.affId }`;
 		}
@@ -161,8 +161,8 @@
 
 		if (
 			schematic.Settings.useNormalRooms
-			|| schematic.Event.Settings.onlineMode == 'sync'
-			|| !schematic.Event.Settings.onlineMode
+			|| schematic.Event.Settings.online_mode == 'sync'
+			|| !schematic.Event.Settings.online_mode
 		) {
 			baseColumns.push({
 				id       : 'roomName',
@@ -176,14 +176,14 @@
 		baseColumns.push(
 			{
 				id           : 'affCode',
-				header       : event.Settings?.affLabel || 'Aff',
+				header       : event.Settings?.aff_label || 'Aff',
 				flexgrow     : 2,
 				cell         : CellLink,
 				linkFunction : affLinkFunction,
 				cellClass    : cellClass,
 			},{
 				id           : 'negCode',
-				header       : event.Settings?.negLabel || 'Neg',
+				header       : event.Settings?.neg_label || 'Neg',
 				flexgrow     : 2,
 				cell         : CellLink,
 				linkFunction : negLinkFunction,

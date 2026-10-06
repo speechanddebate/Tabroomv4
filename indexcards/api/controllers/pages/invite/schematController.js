@@ -3,7 +3,7 @@ import { db } from '../../../data/database.js';
 import { parseDateTime } from '../../../helpers/dateTime.js';
 import { NotFound } from '../../../helpers/problem.js';
 import { publishLevel, snakeToCamel } from '../../../helpers/text.js';
-import { settingsMapper } from '../../../helpers/settings.js';
+import { selectSettings } from '../../../repos/utils/settings.js';
 import { entryWins } from '../../../services/results/entryWins.js';
 
 export async function getSchematic (req,res) {
@@ -123,33 +123,31 @@ export async function getSchematic (req,res) {
 
 	const round = rounds[0];
 
-	const rawEventSettings = await db
-		.selectFrom('event_setting as es')
-		.innerJoin('round', 'round.event', 'es.event')
-		.select([
-			'es.id', 'es.tag', 'es.value',
-			'es.value_date as valueDate', 'es.value_text as valueText',
-		])
+	const { settings: eventSettings } = await db
+		.selectFrom('event')
+		.innerJoin('round', 'round.event', 'event.id')
+		.select(selectSettings({
+			table: 'event',
+			settings: [
+				'anonymous_public',
+				'pods',
+				'no_side_constraints',
+				'not_nats',
+				'elim_decision_deadline',
+				'prelim_decision_deadline',
+				'online_mode',
+				'online_hybrid',
+				'online_public',
+				'flight_offset',
+				'aff_label',
+				'neg_label',
+				'prep_offset',
+			],
+		}))
 		.where('round.id', '=', round.id)
-		.where('es.tag', 'in', [
-			'anonymous_public',
-			'pods',
-			'no_side_constraints',
-			'not_nats',
-			'elim_decision_deadline',
-			'prelim_decision_deadline',
-			'online_mode',
-			'online_hybrid',
-			'online_public',
-			'flight_offset',
-			'aff_label',
-			'neg_label',
-			'prep_offset',
-		])
-		.execute();
+		.executeTakeFirstOrThrow();
 
-	const sets = settingsMapper(rawEventSettings);
-	round.Event.Settings = sets.settings;
+	round.Event.Settings = eventSettings ?? {};
 
 	// Mapping start times and decision deadlines. Doing it here and not on the
 	// front end because syncing up this logic together with reactivity is a
@@ -288,7 +286,7 @@ export async function getSchematic (req,res) {
 					if (ballot.chair) judge.chair = ballot.chair;
 					if (ballot.judgeCode) judge.code = ballot.judgeCode;
 
-					if (round.Event.Settings.anonymousPublic) {
+					if (round.Event.Settings.anonymous_public) {
 						delete ballot.judgeFirst;
 						delete ballot.judgeLast;
 						delete judge.first;
@@ -347,8 +345,8 @@ const showFlightTimes = (round, personTz = undefined) => {
 
 		// Start Time
 		const offset = {};
-		if (round.Event.Settings?.flightOffset && tick > 0) {
-			offset.minutes = tick * parseInt(round.Event.Settings.flightOffset);
+		if (round.Event.Settings?.flight_offset && tick > 0) {
+			offset.minutes = tick * parseInt(round.Event.Settings.flight_offset);
 		} else if (tick > 0) {
 			// Do not display flight differentials unless there's an offset;
 			continue;
@@ -360,10 +358,10 @@ const showFlightTimes = (round, personTz = undefined) => {
 		});
 
 		// Prep Room Draw time offset for Extemp.
-		if (round.Event.Settings.prepOffset) {
-			offset.minutes = -1 * round.Event.Settings.prepOffset;
-			if (round.Event.Settings.flightOffset && tick > 0) {
-				offset.minutes += tick * parseInt(round.Event.Settings.flightOffset);
+		if (round.Event.Settings.prep_offset) {
+			offset.minutes = -1 * round.Event.Settings.prep_offset;
+			if (round.Event.Settings.flight_offset && tick > 0) {
+				offset.minutes += tick * parseInt(round.Event.Settings.flight_offset);
 			}
 
 			flightTimes.draw = parseDateTime({
@@ -378,7 +376,7 @@ const showFlightTimes = (round, personTz = undefined) => {
 
 		flightTimes.tz = [round.tz];
 
-		if ( round.Event.Settings.onlineMode
+		if ( round.Event.Settings.online_mode
 			&& personTz
 			&& personTz !== round.tz
 		) {
@@ -392,20 +390,20 @@ const showFlightTimes = (round, personTz = undefined) => {
 		offset.minutes = 0;
 
 		if (['prelim', 'highhigh', 'highlow', 'snaked_prelim'].includes(round.type)) {
-			if (round.Event.Settings.prelimDecisionDeadline) {
-				offset.minutes = parseInt(round.Event.Settings.prelimDecisionDeadline);
+			if (round.Event.Settings.prelim_decision_deadline) {
+				offset.minutes = parseInt(round.Event.Settings.prelim_decision_deadline);
 			}
 		} else {
-			if (round.Event.Settings.elimDecisionDeadline) {
-				offset.minutes = round.Event.Settings.elimDecisionDeadline;
-			} else if (round.Event.Settings.prelimDecisionDeadline) {
-				offset.minutes = parseInt(round.Event.Settings.prelimDecisionDeadline);
+			if (round.Event.Settings.elim_decision_deadline) {
+				offset.minutes = round.Event.Settings.elim_decision_deadline;
+			} else if (round.Event.Settings.prelim_decision_deadline) {
+				offset.minutes = parseInt(round.Event.Settings.prelim_decision_deadline);
 			}
 		}
 
 		if (offset.minutes > 0) {
-			if (round.Event.Settings.flightOffset && tick > 0) {
-				offset.minutes += tick * parseInt(round.Event.Settings.flightOffset);
+			if (round.Event.Settings.flight_offset && tick > 0) {
+				offset.minutes += tick * parseInt(round.Event.Settings.flight_offset);
 			}
 
 			flightTimes.deadline = parseDateTime({
