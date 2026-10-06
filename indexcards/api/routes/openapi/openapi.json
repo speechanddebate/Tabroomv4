@@ -1357,9 +1357,6 @@
         "security": [
           {},
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -1416,9 +1413,6 @@
           "Orval"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -1871,9 +1865,6 @@
         ],
         "security": [
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -1912,9 +1903,6 @@
         ],
         "security": [
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -1950,9 +1938,6 @@
         ],
         "security": [
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -1977,9 +1962,6 @@
           "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -2035,9 +2017,6 @@
         ],
         "security": [
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -2090,9 +2069,6 @@
         ],
         "security": [
           {
-            "bearerAuth": []
-          },
-          {
             "cookieAuth": []
           }
         ],
@@ -2141,9 +2117,6 @@
           "User: Inbox"
         ],
         "security": [
-          {
-            "bearerAuth": []
-          },
           {
             "cookieAuth": []
           }
@@ -10089,15 +10062,11 @@
       }
     },
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
-      },
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
         "name": "TabroomToken",
-        "description": "send the session token as a cookie. For direct API access, we recommend using bearerAuth."
+        "description": "send the session token as a cookie."
       }
     }
   }

@@ -3,12 +3,11 @@ import type { ZodOpenApiSecuritySchemeObject, ZodOpenApiObject } from 'zod-opena
 import config from '../../config.js';
 
 const schemes: Record<string, ZodOpenApiSecuritySchemeObject> = {
-	bearerAuth: { type: 'http', scheme: 'bearer' },
 	cookieAuth: {
 		type: 'apiKey',
 		in: 'cookie',
-		name: config.cookie.name, 
-		description: `send the session token as a cookie. For direct API access, we recommend using bearerAuth.`,
+		name: config.cookie.name,
+		description: `send the session token as a cookie.`,
 	},
 };
 
@@ -16,9 +15,9 @@ const schemes: Record<string, ZodOpenApiSecuritySchemeObject> = {
 const defaultSecurity: ZodOpenApiObject['security'] = [];
 
 /**
- * sets the security to require either bearer token or cookie auth. Can be used in individual route definitions to override the default.
+ * sets the security to require one of the auth schemes. Can be used in individual route definitions to override the default.
  */
-export const requireAuth: ZodOpenApiObject['security'] = [{ bearerAuth: [] }, { cookieAuth: [] }];
+export const requireAuth: ZodOpenApiObject['security'] = [{ cookieAuth: [] }];
 /** 
  * sets the security to optional auth. should be used for route where you don't need to be logged in, but if you are, something is different.
  */

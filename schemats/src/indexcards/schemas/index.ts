@@ -49,6 +49,7 @@ export * from './personTournSummary';
 export * from './personTournSummaryLivedocsItem';
 export * from './personTournSummaryRolesItem';
 export * from './problemSchema';
+export * from './problemSchemaIssues';
 export * from './quizBadgeOutput';
 export * from './quizOutput';
 export * from './restCircuit';

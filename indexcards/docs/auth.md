@@ -1,6 +1,6 @@
 # Indexcards Auth
 ## Available Authentication Methods
-Indexcards supports two main ways of authenticating to the API, Cookie auth and bearer token.
+Indexcards currently supports only Cookie auth (the session token in the `TabroomToken` cookie, see `config.cookie.name`). Since API keys aren't issued yet, all access goes through the frontend. Token/API key auth (via the `Authorization` header) will be added later, and `req.authType` and the CSRF middleware are already set up to handle a non-cookie auth type.
 
 All user authentication is handled under `/auth` routes for example `/auth/login` and `/auth/register`.
 

@@ -76,7 +76,6 @@ export const ConfigSchema = z.object({
 		name: z.string().default('TabroomToken'),
 		domain: z.string().default('.tabroom.com'),
 	}).prefault({}),
-	session_header: z.string().min(1).default('tabroom-session'),
 	csrf: z.object({
 		trusted_origins: z.array(z.string()).default(['http://dev.tabroom.com']),
 	}).prefault({}),

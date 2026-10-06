@@ -24,7 +24,6 @@
     "name": "TabroomToken",
     "domain": ".tabroom.com"
   },
-  "session_header": "tabroom-session",
   "csrf": {
     "trusted_origins": [
       "/tabroom.com$/"

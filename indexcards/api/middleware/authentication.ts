@@ -1,10 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import config from '../config.js';
 import authService from '../services/AuthService.js';
-//import sessionRepo from '../repos/sessionRepo.js';
 import personRepo from '../repos/personRepo.js';
 import { createActor } from './authorization/authorization.js';
-import { BadRequest, Forbidden, Unauthorized } from '../helpers/problem.js';
+import { Forbidden } from '../helpers/problem.js';
 
 import { db } from '../data/database.js';
 import sessionRepo from '../repos/sessionRepo.js';
@@ -17,7 +16,7 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 
 		// COOKIE AUTHENTICATION
 		const cookieName = config.cookie.name;
-		const cookie = req.cookies[cookieName] || req.headers[config.session_header];
+		const cookie = req.cookies[cookieName];
 
 		if (cookie) {
 			let cookieSession = await sessionRepo.findByUserKey(db,cookie);
@@ -30,23 +29,8 @@ export async function Authenticate(req: Request, res: Response, next: NextFuncti
 			}
 		}
 
-		if(req.headers?.authorization){
-			if (req.headers.authorization.startsWith('Bearer ')) {
-
-				//BEARER AUTHENTICATION. allow the user to send their session token as a bearer token
-				const token = req.headers.authorization.substring(7).trim();
-				if (!token) {
-					return BadRequest(req, res, 'The Authorization header is malformed. Expected format: Bearer token.');
-				}
-				const bearerSession = await sessionRepo.findByUserKey(db,token);
-				if (!bearerSession) return Unauthorized(req, res,'Invalid Bearer token');
-				session = bearerSession;
-				req.authType = 'bearer';
-
-			} else {
-				return BadRequest(req, res, 'The Authorization header uses an unrecognized authentication scheme.');
-			}
-		}
+		// TOKEN/API KEY AUTHENTICATION (Authorization header) goes here once keys are issued.
+		// Until then all access goes through the frontend with the session cookie.
 
 		if(session){
 			if(session.Person?.banned == '1') {
