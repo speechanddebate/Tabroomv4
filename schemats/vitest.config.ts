@@ -1,5 +1,4 @@
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -7,11 +6,6 @@ import tailwindcss from '@tailwindcss/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 import { playwright } from '@vitest/browser-playwright';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-
-const dirname =
-	typeof __dirname !== 'undefined'
-		? __dirname
-		: path.dirname(fileURLToPath(import.meta.url));
 
 const STORYBOOK_VIEWPORT = process.env.STORYBOOK_VIEWPORT ?? 'desktop';
 const storybookViewport =
@@ -38,7 +32,7 @@ export default defineConfig({
 				extends: true,
 				plugins: [
 					storybookTest({
-						configDir: path.join(dirname, '.storybook'),
+						configDir: path.join(import.meta.dirname, '.storybook'),
 					}),
 				],
 				test: {
