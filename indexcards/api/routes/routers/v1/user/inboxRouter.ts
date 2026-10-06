@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/user/inbox.js';
-import { requirePerson } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';

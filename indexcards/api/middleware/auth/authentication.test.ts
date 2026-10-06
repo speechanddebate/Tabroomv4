@@ -1,8 +1,8 @@
-import config from '../config.js';
-import sessionRepo from '../repos/sessionRepo.js';
+import config from '../../config.js';
+import sessionRepo from '../../repos/sessionRepo.js';
 import { Authenticate } from './authentication.js';
-import { createContext } from '../../tests/httpMocks.js';
-import authService from '../services/AuthService.js';
+import { createContext } from '../../../tests/httpMocks.js';
+import authService from '../../services/AuthService.js';
 
 type Session = NonNullable<Awaited<ReturnType<typeof sessionRepo.findByUserKey>>>;
 

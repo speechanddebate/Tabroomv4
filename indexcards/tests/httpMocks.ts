@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import type { ValidatedRequest } from '../api/middleware/validation.js';
-import { createActor } from '../api/middleware/authorization/authorization.js';
+import { createActor } from '../api/middleware/auth/authorization.js';
 import { db } from '../api/data/database.js';
 import { vi } from 'vitest';
 

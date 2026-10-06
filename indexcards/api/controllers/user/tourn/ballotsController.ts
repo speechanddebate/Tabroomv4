@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { getPerson } from '../../../middleware/authorization/authorization.js';
+import { getPerson } from '../../../middleware/auth/authorization.js';
 import type { CurrentBallot } from '@tabroom/types';
 import panelRepo from '../../../repos/panelRepo.js';
 import { db } from '../../../data/database.js';

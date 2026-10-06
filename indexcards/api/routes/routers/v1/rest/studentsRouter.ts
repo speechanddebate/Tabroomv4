@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as con from '../../../../controllers/rest/studentsController.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { requirePerson } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import z from 'zod';
 import { UnlinkedStudentSearchSchema } from '@tabroom/types';
 import { requireAuth } from '../../../openapi/security.js';

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { requirePerson } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import z from 'zod';
 import judgesController from '../../../../controllers/rest/judgesController.js';
 import { UnlinkedJudgeSchema } from '@tabroom/types';

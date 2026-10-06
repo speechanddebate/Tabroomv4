@@ -1,7 +1,7 @@
 import { buildTarget, type Target } from './buildTarget.js';
 import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
-import type { Actor, AuthError, Perm, SessionPerson } from '../auth/types.js';
+import type { Actor, AuthError, Perm, SessionPerson } from './types.js';
 import type { Database } from '../../data/database.js';
 /**
  * the person making the request. throws a 401 (handled by errorHandler) when there is none,

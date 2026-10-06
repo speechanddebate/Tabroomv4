@@ -7,7 +7,7 @@ import { RateLimitExceeded } from '../../helpers/problem.js';
 import type { Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
 import type { AuthInfo, SessionPerson } from '../../middleware/auth/types.js';
-import { getPerson } from '../../middleware/authorization/authorization.js';
+import { getPerson } from '../../middleware/auth/authorization.js';
 
 import { db } from '../../data/database.js';
 

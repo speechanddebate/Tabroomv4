@@ -2,7 +2,7 @@ import { sql } from 'kysely';
 import { db } from '../../data/database.js';
 import { createContext } from '../../../tests/httpMocks.js';
 import { errorHandler } from './errorHandler.js';
-import { createActor, getPerson } from '../../middleware/authorization/authorization.js';
+import { createActor, getPerson } from '../../middleware/auth/authorization.js';
 
 describe('errorHandler', () => {
 	it('returns a 503 problem when a query times out', async () => {

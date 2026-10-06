@@ -6,8 +6,8 @@ import categoriesRouter from './categoriesRouter.js';
 import schoolsRouter from './schoolsRouter.js';
 import sitesRouter from './sitesRouter.js';
 import timeslotsRouter from './timeslotsRouter.js';
-import { loadTournAuthContext } from '../../../../../middleware/authorization/authContext.js';
-import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
+import { loadTournAuthContext } from '../../../../../middleware/auth/authContext.js';
+import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 
 import legacyAllRouter from './legacy/allRouter.js';
 import legacyRoundRouter from './legacy/roundRouter.js';

@@ -4,7 +4,7 @@ import { db } from '../../data/database.js';
 
 import type { Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
-import { getPerson } from '../../middleware/authorization/authorization.js';
+import { getPerson } from '../../middleware/auth/authorization.js';
 
 async function unlinkedSearch(req: ValidatedRequest, res: Response) {
 	const person = getPerson(req);

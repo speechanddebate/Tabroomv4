@@ -2,7 +2,7 @@ import permissionRepo from '../../repos/permissionRepo.js';
 import eventRepo from '../../repos/eventRepo.js';
 import type { Database } from '../../data/database.js';
 import type { Request, Response, NextFunction } from 'express';
-import type { Perm } from '../auth/types.js';
+import type { Perm } from './types.js';
 
 /** fetch a person's perms for a tourn */
 export async function loadTournPerms(db: Database, personId: number, tournId: number): Promise<Perm[]> {

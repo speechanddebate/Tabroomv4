@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { SiteResponseSchema } from '@tabroom/types';
-import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
+import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 import controller from '../../../../../controllers/tab/siteController.js';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
 import z from 'zod';

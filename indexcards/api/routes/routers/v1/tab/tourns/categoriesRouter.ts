@@ -2,7 +2,7 @@ import { Router } from 'express';
 import z from 'zod';
 import { CategorySchema } from '@tabroom/types';
 import controller from '../../../../../controllers/tab/categoryController.js';
-import { requireAccess } from '../../../../../middleware/authorization/authorization.js';
+import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
 
 const router = Router({ mergeParams: true });

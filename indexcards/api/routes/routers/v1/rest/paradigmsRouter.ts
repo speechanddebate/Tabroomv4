@@ -1,6 +1,6 @@
 import z from 'zod';
 import controller from '../../../../controllers/rest/paradigmsController.js';
-import { requirePerson } from '../../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { JudgeRecordSchema, ParadigmDetailsSchema, ParadigmSearchResultSchema } from '@tabroom/types';
 import { Router } from 'express';

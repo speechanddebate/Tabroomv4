@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import tabRouter from './tab/indexRouter.js';
 import legacyCoachRouter from './legacy/coachRouter.js';
 import adminRouter from './admin/adminRouter.js';
-import { requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
+import { requireSiteAdmin } from '../../../middleware/auth/authorization.js';
 
 import authRouter from './authRouter.js';
 import pagesRouter from './pages/pagesRouter.js';
@@ -16,7 +16,7 @@ import statusRouter from './statusRouter.js';
 import userRouter from './user/indexRouter.js';
 import legacyUserRouter from './legacy/userRouter.js';
 import legacyPublicRouter from './legacy/public/indexRouter.js';
-import { requirePerson } from '../../../middleware/authorization/authorization.js';
+import { requirePerson } from '../../../middleware/auth/authorization.js';
 import config from '../../../config.js';
 
 const router = Router({ mergeParams: true });

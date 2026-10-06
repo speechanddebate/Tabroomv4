@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as controller from '../../../controllers/public/status.js';
 import { SystemStatusSchema } from '@tabroom/types';
-import { requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
+import { requireSiteAdmin } from '../../../middleware/auth/authorization.js';
 const router = Router();
 
 router.route('/').get(controller.systemStatus).openapi = {

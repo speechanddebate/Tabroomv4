@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { updateContact, deleteContact, userProfile } from '../../../../controllers/coach/contacts.js';
-import { loadChapterAuthContext } from '../../../../middleware/authorization/authContext.js';
-import { requireAccess } from '../../../../middleware/authorization/authorization.js';
+import { loadChapterAuthContext } from '../../../../middleware/auth/authContext.js';
+import { requireAccess } from '../../../../middleware/auth/authorization.js';
 
 const router = Router();
 

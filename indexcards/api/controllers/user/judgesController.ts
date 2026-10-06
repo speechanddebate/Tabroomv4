@@ -9,7 +9,7 @@ import { BadRequest, Forbidden, NotFound } from '../../helpers/problem.js';
 import { notify } from '../../helpers/blast.js';
 import logger from '../../helpers/logger.js';
 import { db } from '../../data/database.js';
-import { getPerson } from '../../middleware/authorization/authorization.js';
+import { getPerson } from '../../middleware/auth/authorization.js';
 import type { Request, Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
 import type { SessionPerson } from '../../middleware/auth/types.js';

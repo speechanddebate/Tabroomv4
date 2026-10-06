@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import z from 'zod';
 import { ValidateRequest } from '../../../middleware/validation.js';
-import { requirePerson, requireSiteAdmin } from '../../../middleware/authorization/authorization.js';
+import { requirePerson, requireSiteAdmin } from '../../../middleware/auth/authorization.js';
 import {
 	LoginRequestSchema,
 	LoginResponseSchema,
