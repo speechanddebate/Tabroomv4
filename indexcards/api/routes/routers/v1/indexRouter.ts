@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { fileURLToPath } from 'node:url';
 import tabRouter from './tab/indexRouter.js';
 import legacyCoachRouter from './legacy/coachRouter.js';
 import adminRouter from './admin/adminRouter.js';
@@ -18,6 +17,7 @@ import legacyUserRouter from './legacy/userRouter.js';
 import legacyPublicRouter from './legacy/public/indexRouter.js';
 import { requirePerson } from '../../../middleware/auth/authorization.js';
 import config from '../../../config.js';
+import { createOpenApiSpec } from '../../openapi/createOpenApiSpec.js';
 
 const router = Router({ mergeParams: true });
 
@@ -35,11 +35,8 @@ router.use('/status' , statusRouter);
 router.use('/auth'   , authRouter);
 router.use('/user'   , requirePerson, userRouter);
 
-// Serve pre-built OpenAPI spec
-const openApiPath = fileURLToPath(new URL('../../openapi/openapi.json', import.meta.url));
-
 router.get('/', (req, res) => {
-	res.sendFile(openApiPath);
+	res.json(openApiSpec);
 });
 
 router.use(
@@ -54,5 +51,8 @@ router.use(
 		},
 	}),
 );
+
+// Built from the mounted routes at startup so the served spec always matches this app's config
+export const openApiSpec = createOpenApiSpec(router);
 
 export default router;

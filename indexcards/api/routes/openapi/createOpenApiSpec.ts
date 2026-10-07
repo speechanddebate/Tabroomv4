@@ -3,7 +3,8 @@ import { createDocument } from 'zod-openapi';
 import * as responses from './responses/index.js';
 import { tags as declaredTags, declaredTagGroups } from './tags.js';
 import logger from '../../helpers/logger.js';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import security from './security.js';
 
 import type { ZodOpenApiObject } from 'zod-openapi';
@@ -248,4 +249,14 @@ function buildTagGroups(
 	}
 
 	return finalGroups;
+}
+
+/**
+ * Write the spec to api/routes/openapi/openapi.json (gitignored) for schemats' orval client.
+ * Returns the path written to.
+ */
+export async function writeOpenApiSpec(spec: OpenAPIObject): Promise<string> {
+	const outputPath = fileURLToPath(new URL('./openapi.json', import.meta.url));
+	await writeFile(outputPath, JSON.stringify(spec, null, 2));
+	return outputPath;
 }

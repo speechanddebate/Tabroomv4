@@ -69,7 +69,7 @@ router.route('/:personId').get(controller.getParadigmByPersonId).openapi = {
 };
 ```
 - Shared schemas and response objects live in this `openapi` area.
-- Build the generated OpenAPI document with:
+- The OpenAPI document is built from the router on app startup and served at `/v1`. In development the app also writes it to `api/routes/openapi/openapi.json` (gitignored), which schemats' orval client generates from. To write it without starting the server:
 
 
 ```bash

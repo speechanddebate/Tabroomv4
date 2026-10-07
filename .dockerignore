@@ -9,6 +9,7 @@
 # Indexcards specific
 **/dist
 **/coverage
+indexcards/api/routes/openapi/openapi.json
 # E2E specific
 **/playwright-report
 **/test-results

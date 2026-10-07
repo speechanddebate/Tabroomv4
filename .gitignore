@@ -12,6 +12,8 @@ test-results/
 # Indexcards config
 **/config/config.json
 **/config/config.*.json
+# Built by indexcards on startup (dev) and by build:openapi
+indexcards/api/routes/openapi/openapi.json
 
 # Schemats config
 .env

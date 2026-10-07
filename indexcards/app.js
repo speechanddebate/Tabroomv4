@@ -9,7 +9,8 @@ import config from './api/config.js';
 import errorHandler from './api/helpers/errors/errorHandler.js';
 import { Authenticate } from './api/middleware/auth/authentication.js';
 import csrfMiddleware from './api/middleware/csrfMiddleware.js';
-import v1Router from './api/routes/routers/v1/indexRouter.js';
+import v1Router, { openApiSpec } from './api/routes/routers/v1/indexRouter.js';
+import { writeOpenApiSpec } from './api/routes/openapi/createOpenApiSpec.js';
 import { rateLimiterMiddleware } from './api/middleware/rateLimiter.js';
 import { db } from './api/data/database.js';
 import { sql } from 'kysely';
@@ -89,6 +90,16 @@ app.get('/', (req, res) => {
 });
 
 app.use('/v1',v1Router);
+
+// Write the spec built at startup to disk so schemats' orval client can generate from it
+if (process.env.NODE_ENV === 'development') {
+	try {
+		const outputPath = await writeOpenApiSpec(openApiSpec);
+		logger.info(`Wrote OpenAPI spec to ${outputPath}`);
+	} catch (err) {
+		logger.warn('Failed to write OpenAPI spec', err);
+	}
+}
 
 // Final fallback error handling
 app.use(errorHandler);

@@ -3,8 +3,7 @@
 		"app.js",
 		"config",
 		"api",
-		"tests",
-		"api/routes/openapi/openapi.json"
+		"tests"
 	],
 	"exclude": [
 		"node_modules",
