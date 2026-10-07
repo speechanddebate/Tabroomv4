@@ -222,8 +222,23 @@ describe('PersonRepo', () => {
 
 			// Assert: expect the search results to include the created person
 			expect(Array.isArray(results)).toBe(true);
-			expect(results.length).toBeGreaterThan(0);
-			expect(results[0].id).toBe(Person.id);
+			expect(results.map((p) => p.id)).toContain(Person.id);
+		});
+		it.each([
+			['apostrophes', "O'Brien"],
+			['accented letters', 'Núñez'],
+			['hyphens', 'Smith-Jones'],
+		])('matches last names containing %s', async (_label, last) => {
+			// Arrange
+			const first = `First${Math.random().toString(36).substring(2, 10)}`;
+			const Person = await factories.person.create({ first, last });
+			await factories.judge.create({ person: Person.id });
+
+			// Act
+			const results = await personRepo.personSearch(db, `${first} ${last}`);
+
+			// Assert
+			expect(results.map((p) => p.id)).toContain(Person.id);
 		});
 		it('returns an empty array when no persons match the search query', async () => {
 			// Arrange

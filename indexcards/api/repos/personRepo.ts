@@ -118,7 +118,11 @@ export async function getPerson(db: Database, id: number, opts: queryOpts = {}) 
 export async function personSearch(db: Database, term: string, opts: queryOpts = {},) {
 	const sanitize = (term: string) => {
 		if (!term) return '';
-		return term.replace(/[^a-zA-Z0-9\-\s]/g, '').trim();
+		return term
+			.normalize('NFC')
+			.replace(/[\u2018\u2019]/g, "'")
+			.replace(/[^\p{L}\p{M}0-9\-'\s]/gu, '')
+			.trim();
 	};
 
 	const cleanTerm = sanitize(term);
