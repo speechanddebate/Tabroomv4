@@ -25,17 +25,4 @@ export function barf(req: Request, res: Response) {
 	throw new Error('OMG, we are not happy, because an error has happened!');
 };
 
-systemStatus.apiDoc = {
-	summary     : 'Responds with a 200 if up, with some system data',
-	operationId : 'postStatus',
-	responses: {
-		200: {
-			description: 'Server is up',
-			content: { '*/*': { schema: { type: 'string' } } },
-		},
-		default: { $ref: '#/components/responses/ErrorResponse' },
-	},
-	tags: ['systemStatus'],
-};
-
 export default systemStatus;

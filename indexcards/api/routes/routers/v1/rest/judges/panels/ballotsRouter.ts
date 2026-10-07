@@ -62,7 +62,7 @@ router.route('/').get(requireAccess('ballot', 'read', ballot), ValidateRequest, 
 };
 
 // Validates the submission and writes ballot/score rows
-router.route('/').put(requireAccess('ballot', 'write', ballot), notImplemented).openapi = {
+router.route('/').put(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Save ballot',
 	description: 'Validates the ballot and writes its scores',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots',
@@ -78,7 +78,7 @@ router.route('/').put(requireAccess('ballot', 'write', ballot), notImplemented).
 };
 
 // Sets started_by/judge_started if empty. run when judge opens ballot
-router.route('/start').post(requireAccess('ballot', 'write', ballot), notImplemented).openapi = {
+router.route('/start').post(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Start ballot',
 	description: 'Marks the ballot as started by the judge, if it isn\'t already',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/start',
@@ -95,7 +95,7 @@ router.route('/start').post(requireAccess('ballot', 'write', ballot), notImpleme
 
 // Light poll every 1-2 minutes while on the ballot: access, sides changed by a flip, and whether
 // the ballot was locked or confirmed elsewhere.
-router.route('/status').get(requireAccess('ballot', 'read', ballot), notImplemented).openapi = {
+router.route('/status').get(requireAccess('ballot', 'read', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Get ballot status',
 	description: 'Polled while the ballot is open: access, sides changed by a flip, and whether it was locked or confirmed elsewhere',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/status',
@@ -113,7 +113,7 @@ router.route('/status').get(requireAccess('ballot', 'read', ballot), notImplemen
 // Replaces ballot_confirm.mhtml.
 // Sets audit/audited_by, checks panel completion and runs roundDone
 // (notifications, backups, autoqueue).
-router.route('/confirm').post(requireAccess('ballot', 'write', ballot), notImplemented).openapi = {
+router.route('/confirm').post(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Confirm ballot',
 	description: 'Makes the decision final and runs the round completion steps',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/confirm',
@@ -131,7 +131,7 @@ router.route('/confirm').post(requireAccess('ballot', 'write', ballot), notImple
 // Replaces comment_save, rfd_only_save and legion_comments_save.
 // Editable after confirm until
 // the tournament ends. Resets comments_reviewed.
-router.route('/comments').put(requireAccess('ballot', 'write', ballot), notImplemented).openapi = {
+router.route('/comments').put(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Save ballot comments',
 	description: 'Saves the RFD and per-entry comments. Editable after confirm until the tournament ends',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/comments',

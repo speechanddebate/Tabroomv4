@@ -1,28 +1,25 @@
 import { syncLearnResults } from '../../../helpers/nsda.js';
 import { Forbidden, Unauthorized } from '../../../helpers/problem.js';
 
-export const updateLearnCourses = {
+export async function updateLearnCourses(req, res) {
 
-	GET: async (req, res) => {
+	if (!req.person) {
+		return Unauthorized(req, res, 'You are not logged in');
+	}
 
-		if (!req.person) {
-			return Unauthorized(req, res, 'You are not logged in');
-		}
+	let targetPersonId = 0;
 
-		let targetPersonId = 0;
-
-		if (req.params.personId && req.person.site_admin) {
-			targetPersonId = req.params.personId;
-		} else if (req.person.id) {
-			targetPersonId = req.person.id;
-		} else if (req.params.personId) {
-			return Forbidden(req, res, 'Only a site admin may check other the courses of other users');
-		} else {
-			return Forbidden(req, res, 'Tabroom user account has no NSDA membership');
-		}
-		const response = await syncLearnResults(targetPersonId);
-		return res.status(200).json(response);
-	},
-};
+	if (req.params.personId && req.person.site_admin) {
+		targetPersonId = req.params.personId;
+	} else if (req.person.id) {
+		targetPersonId = req.person.id;
+	} else if (req.params.personId) {
+		return Forbidden(req, res, 'Only a site admin may check other the courses of other users');
+	} else {
+		return Forbidden(req, res, 'Tabroom user account has no NSDA membership');
+	}
+	const response = await syncLearnResults(targetPersonId);
+	return res.status(200).json(response);
+}
 
 export default updateLearnCourses;

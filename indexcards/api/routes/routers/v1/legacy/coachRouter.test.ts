@@ -3,9 +3,9 @@ import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 
 describe('coachRouter', () => {
-	let userkey;
+	let userkey: string;
 	beforeAll(async () => {
-		({ userkey } = await factories.session.create({ Person: {site_admin: true} }));
+		({ userkey } = await factories.session.create({ Person: {site_admin: 1} }));
 	});
 	describe('/:chapterId/school/:schoolId/updateContact', async () => {
 		it('does not explode', async () => {

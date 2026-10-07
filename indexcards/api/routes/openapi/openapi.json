@@ -106,13 +106,16 @@
         "Ads",
         "Auth",
         "Circuits",
+        "Coach",
         "Entries",
         "Events",
         "Invite",
         "Judges",
+        "Learn",
         "Orval",
         "Pairings",
         "Paradigms",
+        "Public Search",
         "Quizzes",
         "Records",
         "Results",
@@ -120,6 +123,8 @@
         "Schematics",
         "Students",
         "Tournaments",
+        "User",
+        "User Profile",
         "Webpages",
         "event",
         "eventAbbr",
@@ -132,6 +137,158 @@
     }
   ],
   "paths": {
+    "/coach/{chapterId}/school/{schoolId}/updateContact": {
+      "post": {
+        "tags": [
+          "legacy",
+          "Coach"
+        ],
+        "summary": "POST /coach/{chapterId}/school/{schoolId}/updateContact",
+        "description": "POST /coach/{chapterId}/school/{schoolId}/updateContact is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chapterId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "schoolId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact updated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/coach/{chapterId}/school/{schoolId}/deleteContact": {
+      "post": {
+        "tags": [
+          "legacy",
+          "Coach"
+        ],
+        "summary": "POST /coach/{chapterId}/school/{schoolId}/deleteContact",
+        "description": "POST /coach/{chapterId}/school/{schoolId}/deleteContact is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "chapterId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "schoolId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/coach/person/{personId}": {
+      "get": {
+        "tags": [
+          "legacy",
+          "Coach"
+        ],
+        "summary": "GET /coach/person/{personId}",
+        "description": "GET /coach/person/{personId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "personId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/coach/person": {
+      "get": {
+        "tags": [
+          "legacy",
+          "Coach"
+        ],
+        "summary": "GET /coach/person",
+        "description": "GET /coach/person is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "User profiles"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/tab/tourns": {
       "post": {
         "summary": "Create tournament",
@@ -1954,6 +2111,246 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/public/search/{time}/{searchString}/circuit/{circuitId}": {
+      "get": {
+        "summary": "Search circuit tournaments",
+        "tags": [
+          "legacy",
+          "Public Search"
+        ],
+        "description": "GET /public/search/{time}/{searchString}/circuit/{circuitId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "time",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "searchString",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "circuitId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Circuit tournaments"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/public/search/{time}/{searchString}": {
+      "get": {
+        "summary": "Search tournaments",
+        "tags": [
+          "legacy",
+          "Public Search"
+        ],
+        "description": "GET /public/search/{time}/{searchString} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "time",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "searchString",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournaments"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/profile": {
+      "get": {
+        "summary": "Load the profile data of the logged in user",
+        "tags": [
+          "legacy",
+          "User Profile"
+        ],
+        "description": "GET /user/profile is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "User profile"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/profile/{personId}": {
+      "get": {
+        "summary": "Load the profile data of another user",
+        "tags": [
+          "legacy",
+          "User Profile"
+        ],
+        "description": "GET /user/profile/{personId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "personId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of user whose profile you wish to access. Site admins only"
+            },
+            "required": true,
+            "description": "ID of user whose profile you wish to access. Site admins only"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/updateLastAccess": {
+      "get": {
+        "tags": [
+          "legacy",
+          "User"
+        ],
+        "summary": "GET /user/updateLastAccess",
+        "description": "GET /user/updateLastAccess is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "Access updated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/updateLearn": {
+      "post": {
+        "tags": [
+          "legacy",
+          "Learn"
+        ],
+        "summary": "POST /user/updateLearn",
+        "description": "POST /user/updateLearn is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "Learn courses updated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/updateLearn/{personId}": {
+      "post": {
+        "tags": [
+          "legacy",
+          "Learn"
+        ],
+        "summary": "POST /user/updateLearn/{personId}",
+        "description": "POST /user/updateLearn/{personId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "personId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Learn courses updated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
             "$ref": "#/components/responses/ErrorResponse"
           }
         }

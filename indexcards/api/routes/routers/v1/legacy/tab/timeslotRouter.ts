@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 import { blastTimeslotMessage, blastTimeslotPairings, messageFreeJudges } from '../../../../../controllers/tab/timeslot/blast.js';
 import { getTournDashboard, getTournAttendance } from '../../../../../controllers/tab/all/dashboard.js';
+import { ValidateRequest } from '../../../../../middleware/validation.js';
 import z from 'zod';
 
 const router = Router();
 
-router.post('/:timeslotId/blast', requireAccess('timeslot', 'write'), blastTimeslotPairings).openapi = {
+router.route('/:timeslotId/blast').post(requireAccess('timeslot', 'write'), ValidateRequest, blastTimeslotPairings).openapi = {
 	path: '/tab/timeslot/{timeslotId}/blast',
 	tags: ['legacy', 'Timeslot'],
 	requestParams: {
@@ -16,7 +17,7 @@ router.post('/:timeslotId/blast', requireAccess('timeslot', 'write'), blastTimes
 	},
 	responses: { 200: { description: 'Blast sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
-router.post('/:timeslotId/message', requireAccess('timeslot', 'write'), blastTimeslotMessage).openapi = {
+router.route('/:timeslotId/message').post(requireAccess('timeslot', 'write'), ValidateRequest, blastTimeslotMessage).openapi = {
 	path: '/tab/timeslot/{timeslotId}/message',
 	tags: ['legacy', 'Timeslot'],
 	requestParams: {
@@ -26,7 +27,7 @@ router.post('/:timeslotId/message', requireAccess('timeslot', 'write'), blastTim
 	},
 	responses: { 200: { description: 'Message sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
-router.post('/:timeslotId/message/free', requireAccess('timeslot', 'write'), messageFreeJudges).openapi = {
+router.route('/:timeslotId/message/free').post(requireAccess('timeslot', 'write'), ValidateRequest, messageFreeJudges).openapi = {
 	path: '/tab/timeslot/{timeslotId}/message/free',
 	tags: ['legacy', 'Timeslot'],
 	requestParams: {
@@ -36,7 +37,7 @@ router.post('/:timeslotId/message/free', requireAccess('timeslot', 'write'), mes
 	},
 	responses: { 200: { description: 'Free judges message sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
-router.get('/:timeslotId/dashboard', requireAccess('timeslot', 'read'), getTournDashboard).openapi = {
+router.route('/:timeslotId/dashboard').get(requireAccess('timeslot', 'read'), ValidateRequest, getTournDashboard).openapi = {
 	path: '/tab/timeslot/{timeslotId}/dashboard',
 	tags: ['legacy', 'Timeslot Dashboard'],
 	requestParams: {
@@ -46,7 +47,7 @@ router.get('/:timeslotId/dashboard', requireAccess('timeslot', 'read'), getTourn
 	},
 	responses: { 200: { description: 'Dashboard data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
-router.get('/:timeslotId/attendance', requireAccess('timeslot', 'read'), getTournAttendance).openapi = {
+router.route('/:timeslotId/attendance').get(requireAccess('timeslot', 'read'), ValidateRequest, getTournAttendance).openapi = {
 	path: '/tab/timeslot/{timeslotId}/attendance',
 	tags: ['legacy', 'Timeslot Attendance'],
 	requestParams: {

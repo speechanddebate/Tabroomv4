@@ -76,22 +76,19 @@ export async function deleteContact(req, res) {
 	});
 }
 
-export const checkContacts = {
+export async function checkContacts(req, res) {
 
-	POST: async (req, res) => {
+	const status = await checkContactStatus(req);
 
-		const status = await checkContactStatus(req);
+	if (status === 'OK') {
+		return res.status(200).json('Contacts are OK');
+	}
 
-		if (status === 'OK') {
-			return res.status(200).json('Contacts are OK');
-		}
-
-		return res.status(200).json({
-			error: true,
-			message: status.join('<br/>'),
-		});
-	},
-};
+	return res.status(200).json({
+		error: true,
+		message: status.join('<br/>'),
+	});
+}
 
 export const checkContactStatus = async (req) => {
 
