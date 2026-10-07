@@ -22,7 +22,7 @@ router.param('tournId', loadTournAuthContext);
 router.route('/').post(ValidateRequest,tournController.createTourn).openapi = {
 	path: '/tab/tourns',
 	summary: 'Create tournament',
-	tags: ['Tournament'],
+	tags: ['tab:tournament'],
 	requestBody: {
 		content: {
 			'application/json': {
@@ -46,7 +46,7 @@ router.route('/').post(ValidateRequest,tournController.createTourn).openapi = {
 router.route('/:tournId').get(requireAccess('tourn', 'read'), ValidateRequest, tournController.getTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Get tournament',
-	tags: ['Tournament'],
+	tags: ['tab:tournament'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
@@ -66,7 +66,7 @@ router.route('/:tournId').get(requireAccess('tourn', 'read'), ValidateRequest, t
 router.route('/:tournId').put(requireAccess('tourn', 'update'), ValidateRequest, tournController.updateTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Update tournament',
-	tags: ['Tournament'],
+	tags: ['tab:tournament'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
@@ -83,7 +83,7 @@ router.route('/:tournId').put(requireAccess('tourn', 'update'), ValidateRequest,
 router.route('/:tournId').delete(requireAccess('tourn', 'owner'), ValidateRequest, tournController.deleteTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Delete tournament',
-	tags: ['Tournament'],
+	tags: ['tab:tournament'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
@@ -93,7 +93,7 @@ if (!config.features.HIDE_DEV_ENDPOINTS)
 	path: '/tab/tourns/{tournId}/backup',
 	summary: 'Tournament Backup',
 	description: 'Creates a backup dump of the tournament data in JSON format',
-	tags: ['Backup and Restore'],
+	tags: ['tab:backup-restore'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},

@@ -93,7 +93,7 @@ describe('createOpenApiSpec', () => {
 
 		shared.openapi = {
 			path: '/spec-items/{id}',
-			tags: ['User: Inbox'],
+			tags: ['user:inbox'],
 			requestParams: { path: z.object({ id: z.coerce.number().int() }) },
 			get: {
 				summary: 'Get item',
@@ -111,10 +111,45 @@ describe('createOpenApiSpec', () => {
 
 		expect(getOp.summary).toBe('Get item');
 		expect(deleteOp.summary).toBe('Delete item');
-		expect(getOp.tags).toContain('User: Inbox');
-		expect(deleteOp.tags).toContain('User: Inbox');
+		expect(getOp.tags).toContain('user:inbox');
+		expect(deleteOp.tags).toContain('user:inbox');
 		expect(getOp.responses['500']).toEqual({ $ref: '#/components/responses/ErrorResponse' });
 		expect(deleteOp.responses['401']).toEqual({ $ref: '#/components/responses/Unauthorized' });
+	});
+
+	describe('tags', () => {
+		const specWithTags = (tags) => {
+			const router = Router();
+			router.route('/spec-tags').get((req, res) => res.send('ok')).openapi = {
+				path: '/spec-tags',
+				tags,
+				responses: { 200: { description: 'ok' } },
+			};
+			return createOpenApiSpec(router);
+		};
+
+		it('is a 3.2 document without x-tagGroups', () => {
+			const spec = specWithTags(['user:inbox']);
+
+			expect(spec.openapi).toBe('3.2.0');
+			expect(spec['x-tagGroups']).toBeUndefined();
+		});
+
+		it('includes the parent of a used tag even though the parent has no operations', () => {
+			const spec = specWithTags(['user:inbox']);
+
+			expect(spec.tags.find(tag => tag.name === 'user:inbox').parent).toBe('User');
+			expect(spec.tags.map(tag => tag.name)).toContain('User');
+			expect(spec.tags.map(tag => tag.name)).not.toContain('Admin');
+		});
+
+		it('nests top level tags without children under Other', () => {
+			const spec = specWithTags(['Ads', 'Undeclared Tag']);
+
+			expect(spec.tags.find(tag => tag.name === 'Ads').parent).toBe('Other');
+			expect(spec.tags.find(tag => tag.name === 'Undeclared Tag').parent).toBe('Other');
+			expect(spec.tags.at(-1)).toEqual({ name: 'Other' });
+		});
 	});
 
 	describe('path params', () => {

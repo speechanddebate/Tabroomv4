@@ -21,7 +21,7 @@ router.route('/').get( requireAccess('tourn', 'read'),  ValidateRequest, control
 	requestParams: { path: tournParams },
 	path: '/tab/tourns/{tournId}/sites',
 	summary: 'Get sites',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 	responses: {
 		200: {
 			description: 'A list of sites for the tourn',
@@ -59,14 +59,14 @@ router.route('/').post(requireAccess('tourn', 'write'), ValidateRequest, control
 	requestParams: { path: tournParams },
 	path: '/tab/tourns/{tournId}/sites',
 	summary: 'Create site',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId').get(   requireAccess('tourn', 'read'),  ValidateRequest, controller.getSite).openapi = {
 	requestParams: { path: siteParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}',
 	summary: 'Get site',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 	responses: {
 		200: {
 			description: 'A site object',
@@ -99,49 +99,49 @@ router.route('/:siteId').put(   requireAccess('tourn', 'write'), ValidateRequest
 	requestParams: { path: siteParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}',
 	summary: 'Update site',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId').delete(requireAccess('tourn', 'write'), ValidateRequest, controller.deleteSite).openapi = {
 	requestParams: { path: siteParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}',
 	summary: 'Delete site',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId/rooms').get( requireAccess('tourn', 'read'),  ValidateRequest, controller.getRooms).openapi = {
 	requestParams: { path: siteParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}/rooms',
 	summary: 'Get rooms',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId/rooms').post(requireAccess('tourn', 'write'), ValidateRequest, controller.createRoom).openapi = {
 	requestParams: { path: siteParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}/rooms',
 	summary: 'Create room',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId/rooms/:roomId').get(   requireAccess('tourn', 'read'),  ValidateRequest, controller.getRoom).openapi = {
 	requestParams: { path: roomParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId}',
 	summary: 'Get room',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId/rooms/:roomId').put(   requireAccess('tourn', 'write'), ValidateRequest, controller.updateRoom).openapi = {
 	requestParams: { path: roomParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId}',
 	summary: 'Update room',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 router.route('/:siteId/rooms/:roomId').delete(requireAccess('tourn', 'write'), ValidateRequest, controller.deleteRoom).openapi = {
 	requestParams: { path: roomParams },
 	path: '/tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId}',
 	summary: 'Delete room',
-	tags: ['Sites & Rooms'],
+	tags: ['tab:sites-rooms'],
 };
 
 export default router;

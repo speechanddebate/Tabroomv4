@@ -15,7 +15,7 @@ router.route('/dashboard').get(requireAccess('tourn', 'read'), getTournDashboard
 	path: '/tab/tourns/{tournId}/all/dashboard',
 	summary: 'Get tournament dashboard',
 	operationId: 'tabTournAllDashboard',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: tournParams },
 	responses: { 200: { description: 'Dashboard data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -25,7 +25,7 @@ router.route('/attendance')
 	.post(requireAccess('tourn', 'write'), postTournAttendance)
 	.openapi = {
 		path: '/tab/tourns/{tournId}/all/attendance',
-		tags: ['legacy', 'Tournament'],
+		tags: ['legacy', 'tab:tournament'],
 		requestParams: { path: tournParams },
 		get: {
 			summary: 'Get tournament attendance',
@@ -43,7 +43,7 @@ router.route('/category/:categoryId/checkin').post(requireAccess('category', 'wr
 	path: '/tab/tourns/{tournId}/all/category/{categoryId}/checkin',
 	summary: 'Check in category',
 	operationId: 'tabTournAllCategoryCheckin',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: {
 		path: tournParams.extend({ categoryId: z.coerce.number().int().positive() }),
 	},
@@ -54,7 +54,7 @@ router.route('/event/:eventId/checkin').post(requireAccess('event', 'write'), ev
 	path: '/tab/tourns/{tournId}/all/event/{eventId}/checkin',
 	summary: 'Check in event',
 	operationId: 'tabTournAllEventCheckin',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: {
 		path: tournParams.extend({ eventId: z.coerce.number().int().positive() }),
 	},
@@ -65,7 +65,7 @@ router.route('/search/:searchString').get(requireAccess('tourn', 'read'), search
 	path: '/tab/tourns/{tournId}/all/search/{searchString}',
 	summary: 'Search tournament attendees',
 	operationId: 'tabTournAllSearch',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: {
 		path: tournParams.extend({ searchString: z.string() }),
 	},

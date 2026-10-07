@@ -25,7 +25,7 @@ router.route('/:roundId/attendance').get(requireAccess('round', 'read'), getTour
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/attendance',
 	summary: 'Get round attendance',
 	operationId: 'tabTournRoundAttendance',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Attendance data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -34,7 +34,7 @@ router.route('/:roundId/blast').post(requireAccess('round', 'write'), blastRound
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/blast',
 	summary: 'Blast round pairing',
 	operationId: 'tabTournRoundBlast',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Blast sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -43,7 +43,7 @@ router.route('/:roundId/blastStatus').get(requireAccess('round', 'read'), roundB
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/blastStatus',
 	summary: 'Get round blast status',
 	operationId: 'tabTournRoundBlastStatus',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Blast status' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -52,7 +52,7 @@ router.route('/:roundId/dashboard').get(requireAccess('round', 'read'), getTourn
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/dashboard',
 	summary: 'Get round dashboard',
 	operationId: 'tabTournRoundDashboard',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Dashboard data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -61,7 +61,7 @@ router.route('/:roundId/log').get(requireAccess('round', 'read'), getRoundChange
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/log',
 	summary: 'Get round change log',
 	operationId: 'tabTournRoundLog',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Change log' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -70,7 +70,7 @@ router.route('/:roundId/makeShareRooms').post(requireAccess('round', 'write'), m
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/makeShareRooms',
 	summary: 'Make share rooms',
 	operationId: 'tabTournRoundMakeShareRooms',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Share rooms created' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -79,7 +79,7 @@ router.route('/:roundId/merge').post(requireAccess('round', 'write'), mergeTimes
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/merge',
 	summary: 'Merge timeslot rounds',
 	operationId: 'tabTournRoundMerge',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Rounds merged' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -88,7 +88,7 @@ router.route('/:roundId/message').post(requireAccess('round', 'write'), blastRou
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/message',
 	summary: 'Blast round message',
 	operationId: 'tabTournRoundMessage',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Message sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -97,7 +97,7 @@ router.route('/:roundId/sidecount').get(requireAccess('round', 'read'), sideCoun
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/sidecount',
 	summary: 'Get round side counts',
 	operationId: 'tabTournRoundSidecount',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Side counts' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -106,7 +106,7 @@ router.route('/:roundId/status').get(requireAccess('round', 'read'), roundDecisi
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/status',
 	summary: 'Get round decision status',
 	operationId: 'tabTournRoundStatus',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Decision status' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
@@ -115,7 +115,7 @@ router.route('/:roundId/unmerge').post(requireAccess('round', 'write'), unmergeT
 	path: '/tab/tourns/{tournId}/rounds/{roundId}/unmerge',
 	summary: 'Unmerge timeslot rounds',
 	operationId: 'tabTournRoundUnmerge',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: { path: roundParams },
 	responses: { 200: { description: 'Rounds unmerged' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };

@@ -1,16 +1,30 @@
-//Try to keep tags in alphabetical order
-type TagObject = {
-	name: string;
-	description?: string;
-};
+import type { TagObject } from 'openapi3-ts/oas32';
 
+//Try to keep tags in alphabetical order
+//Set `parent` to nest a tag under another tag in scalar
 export const tags: TagObject[] = [
 	{
-		name: 'Admin : Servers',
+		name: 'Admin',
+		description: 'Administrative functions',
+	},
+	{
+		name: 'Tournament Management',
+		description: 'Endpoints for running a tournament',
+	},
+	{
+		name: 'User',
+		description: 'Endpoints for the logged in user',
+	},
+	{
+		name: 'admin:servers',
+		summary: 'Servers',
+		parent: 'Admin',
 		description: 'Administrative functions for managing Tabroom servers',
 	},
 	{
-		name: 'Admin : Mail',
+		name: 'admin:mail',
+		summary: 'Mail',
+		parent: 'Admin',
 		description: 'Administrative functions for testing mail and notifications',
 	},
 	{
@@ -22,75 +36,77 @@ export const tags: TagObject[] = [
 		description: 'Authentication related endpoints',
 	},
 	{
-		name: 'Backup and Restore',
+		name: 'tab:backup-restore',
+		summary: 'Backup and Restore',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing tournament backups and restores',
 	},
 	{
-		name: 'User: Inbox',
-		description: 'Endpoints for managing user inbox messages',
+		name: 'user:inbox',
+		summary: 'Inbox',
+		parent: 'User',
+		description: 'Endpoints for managing a user inbox messages',
 	},
 	{
 		name: 'Push Notifications',
 		description: 'Endpoints for managing user push notifications',
 	},
 	{
-		name: 'Tournament',
+		name: 'tab:tournament',
+		summary: 'Tournament',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing tournaments',
 	},
 	{
-		name: 'Category',
+		name: 'tab:category',
+		summary: 'Category',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing categories within tournaments',
 	},
 	{
-		name: 'User: Session',
+		name: 'user:session',
+		summary: 'Session',
+		parent: 'User',
 		description: 'Endpoints related to a users session',
 	},
 	{
-		name: 'Sites & Rooms',
+		name: 'tab:sites-rooms',
+		summary: 'Sites & Rooms',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing sites and rooms within tournaments',
 	},
 	{
-		name: 'Schools',
+		name: 'tab:schools',
+		summary: 'Schools',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing schools within tournaments',
 	},
 	{
-		name: 'Timeslots',
+		name: 'tab:timeslots',
+		summary: 'Timeslots',
+		parent: 'Tournament Management',
 		description: 'Endpoints for managing timeslots within tournaments',
 	},
 	{
 		name: 'Tournaments',
 		description: 'Endpoints for managing tournaments',
 	},
-];
-
-export const declaredTagGroups = [
 	{
-		name: 'Admin',
-		tags: [
-			'Admin : Servers',
-			'Admin : Mail',
-		],
+		name: 'user:chapter',
+		summary: 'Chapter',
+		parent: 'User',
+		description: 'Endpoints for the chapters a user belongs to',
 	},
 	{
-		name: 'Tournament Management',
-		tags: [
-			'Tournament',
-			'Timeslots',
-			'Backup and Restore',
-			'Category',
-			'Sites & Rooms',
-			'Schools',
-		],
+		name: 'user:judge',
+		summary: 'Judge',
+		parent: 'User',
+		description: 'Endpoints for the judges linked to a user',
 	},
 	{
-		name: 'User',
-		tags: [
-			'User: Inbox',
-			'User: Session',
-			'User: Chapter',
-			'User: Tournament',
-			'User: Chapter',
-			'User: Judge'
-		],
+		name: 'user:tournament',
+		summary: 'Tournament',
+		parent: 'User',
+		description: 'Endpoints for the tournaments a user is in',
 	},
 ];

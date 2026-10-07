@@ -18,7 +18,7 @@ router.route('/').get(requireAccess('tourn', 'read'), ValidateRequest, controlle
 	path: '/tab/tourns/{tournId}/timeslots',
 	summary: 'Get all timeslots for a tournament',
 	description: 'Returns an array of timeslot objects for the given tournament.',
-	tags: ['Timeslots'],
+	tags: ['tab:timeslots'],
 	requestParams: { path: tournParams },
 	responses: {
 		200: {
@@ -62,7 +62,7 @@ router.route('/').post(requireAccess('tourn', 'write'),ValidateRequest, controll
 	path: '/tab/tourns/{tournId}/timeslots',
 	summary: 'Create a new timeslot',
 	description: 'Creates a new timeslot with the provided data and returns the created object.',
-	tags: ['Timeslots'],
+	tags: ['tab:timeslots'],
 	requestParams: { path: tournParams },
 	requestBody: {
 		required: true,
@@ -93,7 +93,7 @@ router.route('/:timeslotId').get(requireAccess('timeslot', 'read'), ValidateRequ
 	path: '/tab/tourns/{tournId}/timeslots/{timeslotId}',
 	summary: 'Get a timeslot by ID',
 	description: 'Returns a timeslot object for the given ID.',
-	tags: ['Timeslots'],
+	tags: ['tab:timeslots'],
 	requestParams: { path: timeslotParams },
 	responses: {
 		200: {
@@ -126,7 +126,7 @@ router.route('/:timeslotId').put(requireAccess('timeslot', 'write'),ValidateRequ
 	path: '/tab/tourns/{tournId}/timeslots/{timeslotId}',
 	summary: 'Update an existing timeslot',
 	description: 'Updates the timeslot with the given ID using the provided data and returns the updated object.',
-	tags: ['Timeslots'],
+	tags: ['tab:timeslots'],
 	requestParams: { path: timeslotParams },
 	requestBody: {
 		required: true,
@@ -157,7 +157,7 @@ router.route('/:timeslotId').delete(requireAccess('timeslot', 'write'), Validate
 	path: '/tab/tourns/{tournId}/timeslots/{timeslotId}',
 	summary: 'Delete a timeslot',
 	description: 'Deletes the timeslot with the given ID and returns a success message.',
-	tags: ['Timeslots'],
+	tags: ['tab:timeslots'],
 	requestParams: { path: timeslotParams },
 	responses: {
 		204: { description: 'Timeslot deleted successfully' },

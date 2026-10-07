@@ -13,7 +13,7 @@ const router = Router({ mergeParams: true });
 router.route('/:tournId/restore').post(requireAccess('tourn', 'write'), ValidateRequest, restoreTourn).openapi = {
 	path: '/tab/{tournId}/restore',
 	summary: 'Restore tournament from backup',
-	tags: ['legacy', 'Tournament'],
+	tags: ['legacy', 'tab:tournament'],
 	requestParams: {
 		path: z.object({
 			tournId: z.coerce.number().int().positive(),

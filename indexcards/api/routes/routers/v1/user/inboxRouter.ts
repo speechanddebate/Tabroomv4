@@ -15,7 +15,7 @@ router.route('/').get(controller.inboxList).openapi = {
 	operationId : 'UserInbox',
 	summary     : 'Get messages',
 	description : 'Get the list of messages for the logged-in user',
-	tags: ['Orval','User: Inbox'],
+	tags: ['Orval','user:inbox'],
 	security    : requireAuth,
 	responses: {
 		200: {
@@ -34,7 +34,7 @@ router.route('/unread').get(controller.getUnreadCount).openapi = {
 	summary: 'Unread count',
 	description: 'Get the count of unread messages for the logged-in user',
 	operationId: 'UserInboxUnread',
-	tags: ['User: Inbox','Orval'],
+	tags: ['user:inbox','Orval'],
 	security: requireAuth,
 	responses: {
 		200: {
@@ -53,7 +53,7 @@ router.route('/markAllRead').post(controller.readAllMessages).openapi = {
 	operationId: 'UserInboxMarkAllRead',
 	summary: 'Mark all messages as read',
 	description: 'Mark all visible messages for the logged-in user as read',
-	tags: ['Orval', 'User: Inbox'],
+	tags: ['Orval', 'user:inbox'],
 	security    : requireAuth,
 	responses: { 204: { description: 'All messages marked as read' } },
 };
@@ -62,7 +62,7 @@ router.route('/:messageId')
 	.get(ValidateRequest, controller.getMessage)
 	.delete(ValidateRequest, controller.deleteMessage).openapi = {
 		path: '/user/inbox/{messageId}',
-		tags: ['Orval', 'User: Inbox'],
+		tags: ['Orval', 'user:inbox'],
 		security    : requireAuth,
 		requestParams: {
 			path: z.object({
@@ -97,7 +97,7 @@ router.route('/:messageId/markRead').post(ValidateRequest, controller.readMessag
 	operationId: 'UserInboxMarkRead',
 	summary: 'Mark message as read',
 	description: 'Mark a specific message as read',
-	tags: ['Orval', 'User: Inbox'],
+	tags: ['Orval', 'user:inbox'],
 	security    : requireAuth,
 	requestParams: {
 		path: z.object({
@@ -112,7 +112,7 @@ router.route('/:messageId/markUnread').post(ValidateRequest, controller.unreadMe
 	operationId: 'UserInboxMarkUnread',
 	summary: 'Mark message as unread',
 	description: 'Mark a specific message as unread',
-	tags: ['Orval', 'User: Inbox'],
+	tags: ['Orval', 'user:inbox'],
 	security    : requireAuth,
 	requestParams: {
 		path: z.object({

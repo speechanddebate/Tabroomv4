@@ -10,7 +10,7 @@ router.use('/servers', serversRouter);
 router.route('/mailtest/error').get(controller.throwTestError).openapi = {
 	path: '/admin/mailtest/error',
 	summary: 'Undocumented Endpoint',
-	tags: ['Admin : Mail'],
+	tags: ['admin:mail'],
 	security: requireAuth,
 	responses: {
 		'200': {
@@ -23,7 +23,7 @@ router.route('/mailtest/error').get(controller.throwTestError).openapi = {
 router.route('/mailtest/slack').get(controller.testSlackNotification).openapi = {
 	path: '/admin/mailtest/slack',
 	summary: 'Undocumented Endpoint',
-	tags: ['Admin : Mail'],
+	tags: ['admin:mail'],
 	security: requireAuth,
 	responses: {
 		'200': {

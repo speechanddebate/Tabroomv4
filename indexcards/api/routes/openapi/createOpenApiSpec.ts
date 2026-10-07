@@ -1,14 +1,14 @@
 import * as schemas from '@tabroom/types';
 import { createDocument } from 'zod-openapi';
 import * as responses from './responses/index.js';
-import { tags as declaredTags, declaredTagGroups } from './tags.js';
+import { tags as declaredTags } from './tags.js';
 import logger from '../../helpers/logger.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import security from './security.js';
 
 import type { ZodOpenApiObject } from 'zod-openapi';
-import type { OpenAPIObject } from 'openapi3-ts/oas32';
+import type { OpenAPIObject, TagObject } from 'openapi3-ts/oas32';
 import type { RouteOpenApiConfig, RouteOperation } from '../../types/express.d.js';
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as const;
@@ -28,24 +28,16 @@ const pkg = JSON.parse(
 /**
  * Build the OpenAPI spec from an Express router.
  * - Collects all paths + operations
- * - Collects all tags actually used by operations
+ * - Collects all tags actually used by operations, plus their parent tags
  * - Automatically adds missing tags to `spec.tags`
  */
 export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 	// Collect paths + used tags
 	const { paths, usedTags } = collectOpenApi(apiRouter);
-	const unusedTags = declaredTags.filter(tag => !usedTags.has(tag.name));
-
-	for (const tag of unusedTags) {
-		logger.warn(`Unused OpenAPI tag: ${tag.name}`);
-	}
-
-	const tags = declaredTags.filter(tag => usedTags.has(tag.name));
-
-	const tagGroups = buildTagGroups(declaredTagGroups, usedTags);
+	const tags = buildTags(declaredTags, usedTags);
 
 	const doc: ZodOpenApiObject = {
-		openapi: '3.1.1',
+		openapi: '3.2.0',
 		servers: [{ url: '/v1' }],
 		info: {
 			title: 'IndexCards API',
@@ -59,7 +51,6 @@ export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 		},
 		security: security.defaultSecurity,
 		tags,
-		'x-tagGroups': tagGroups,
 		paths,
 		components: {
 			schemas,
@@ -216,39 +207,54 @@ function assertZodParams(method: HttpMethod, routePath: string, openapi: RouteOp
 	}
 }
 
-function buildTagGroups(
-	tagGroups: Array<{ name: string; tags: string[] }>,
-	usedTags: Set<string>,
-) {
-	const grouped = new Set<string>();
+/**
+ * Keep the declared tags that are used by an operation or are a parent of one, and add
+ * used tags that were never declared. Any top level tag without children is nested
+ * under "Other" so the scalar sidebar stays grouped.
+ */
+function buildTags(declared: TagObject[], usedTags: Set<string>): TagObject[] {
+	const declaredByName = new Map(declared.map(tag => [tag.name, tag]));
+	const keep = new Set<string>();
 
-	const finalGroups = tagGroups
-		.map(group => {
-			const tags = group.tags.filter(tag => usedTags.has(tag));
-
-			for (const tag of tags) {
-				grouped.add(tag);
+	for (const name of usedTags) {
+		let current: string | undefined = name;
+		while (current && !keep.has(current)) {
+			keep.add(current);
+			const parent: string | undefined = declaredByName.get(current)?.parent;
+			if (parent && !declaredByName.has(parent)) {
+				logger.warn(`OpenAPI tag ${current} has undeclared parent ${parent}`);
 			}
-
-			return {
-				...group,
-				tags,
-			};
-		})
-		.filter(group => group.tags.length > 0);
-
-	const otherTags = [...usedTags]
-		.filter(tag => !grouped.has(tag))
-		.sort();
-
-	if (otherTags.length > 0) {
-		finalGroups.push({
-			name: 'Other',
-			tags: otherTags,
-		});
+			current = parent;
+		}
 	}
 
-	return finalGroups;
+	for (const tag of declared) {
+		if (!keep.has(tag.name)) {
+			logger.warn(`Unused OpenAPI tag: ${tag.name}`);
+		}
+	}
+
+	const tags: TagObject[] = [
+		...declared.filter(tag => keep.has(tag.name)),
+		...[...usedTags]
+			.filter(name => !declaredByName.has(name))
+			.sort()
+			.map(name => ({ name })),
+	];
+
+	const parents = new Set(tags.flatMap(tag => tag.parent ?? []));
+	const ungrouped = new Set(
+		tags.filter(tag => !tag.parent && !parents.has(tag.name)).map(tag => tag.name)
+	);
+
+	if (ungrouped.size === 0) {
+		return tags;
+	}
+
+	return [
+		...tags.map(tag => (ungrouped.has(tag.name) ? { ...tag, parent: 'Other' } : tag)),
+		{ name: 'Other' },
+	];
 }
 
 /**
