@@ -25,9 +25,15 @@ export type SessionPerson = {
 	tz?: string | null;
 };
 
+/**
+ * identifies the resource an action is checked against: a number, or named ids for
+ * resources identified by more than one, e.g. a ballot's { judgeId, panelId }
+ */
+export type ResourceId = number | Record<string, number>;
+
 type ActorMethods = {
-	can: (resource: string, action: string, resourceId: number) => Promise<boolean>;
-	assert: (resource: string, action: string, resourceId: number) => Promise<void>;
+	can: (resource: string, action: string, resourceId: ResourceId) => Promise<boolean>;
+	assert: (resource: string, action: string, resourceId: ResourceId) => Promise<void>;
 	allowedIds: (resource: string, action: string, opts?: Record<string, unknown>) => { all: boolean; ids: number[] };
 	/** add perms to the set evaluated by can/assert/allowedIds. no-op for anonymous actors */
 	grant: (perms: Perm[]) => void;
@@ -39,6 +45,13 @@ export type PersonActor = ActorMethods & {
 	Person: SessionPerson;
 };
 
+//Stub for service actors. These actors represent non-person entities that can perform actions in the system.
+export type ServiceActor = ActorMethods & {
+	type: 'service';
+	id: undefined;
+	Person: undefined;
+};
+
 export type AnonymousActor = ActorMethods & {
 	type: 'anonymous';
 	id?: undefined;
@@ -46,7 +59,7 @@ export type AnonymousActor = ActorMethods & {
 };
 
 /** who is acting on a request. check every authorization decision against this */
-export type Actor = PersonActor | AnonymousActor;
+export type Actor = PersonActor | ServiceActor | AnonymousActor;
 
 /** how a request authenticated. add a member here with each new strategy */
 export type AuthMethod = 'cookie' | 'none';

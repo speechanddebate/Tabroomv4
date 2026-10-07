@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import adsRouter from './adsRouter.js';
 import circuitsRouter from './circuitsRouter.js';
-import judgesRouter from './judgesRouter.js';
+import judgesRouter from './judges/judgesRouter.js';
 import pagesRouter from './pagesRouter.js';
 import tournsRouter from './tournsRouter.js';
 import paradigmsRouter from './paradigmsRouter.js';

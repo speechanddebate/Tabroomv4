@@ -1,24 +1,63 @@
 
 import categoryRepo from '../../repos/categoryRepo.js';
 import eventRepo from '../../repos/eventRepo.js';
+import judgeRepo from '../../repos/judgeRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
 import roundRepo from '../../repos/roundRepo.js';
 import timeslotRepo from '../../repos/timeslotRepo.js';
 
 import type { Database } from '../../data/database.js';
+import type { ResourceId } from './types.js';
 
 export type Target = {
-	id: number;
+	/** undefined for resources identified by more than one id (a ballot), which no perm is scoped to directly */
+	id?: number;
 	resource: string;
 	tournId?: number;
 	categoryId?: number;
 	eventId?: number;
 	roundId?: number;
+	panelId?: number;
+	judgeId?: number;
 };
 
-export async function buildTarget(db: Database, resource: string, resourceId: number, targetCache: Map<string, Target>) {
-	const key = `${resource}:${resourceId}`;
-	if (targetCache.has(key)) return targetCache.get(key);
+/** a stable cache key for a resource id: 12, or judgeId=12,panelId=34 */
+export function resourceKey(resource: string, resourceId: ResourceId) {
+	if (typeof resourceId === 'number') return `${resource}:${resourceId}`;
+	const parts = Object.keys(resourceId).sort().map(name => `${name}=${resourceId[name]}`);
+	return `${resource}:${parts.join(',')}`;
+}
+
+export async function buildTarget(db: Database, resource: string, resourceId: ResourceId, targetCache: Map<string, Target>): Promise<Target> {
+	const key = resourceKey(resource, resourceId);
+	const cached = targetCache.get(key);
+	if (cached) return cached;
+
+	// a judge's ballot rows on a panel, as one ballot. its parents are the judge and the panel
+	if (resource === 'ballot') {
+		if (typeof resourceId === 'number' || !resourceId.judgeId || !resourceId.panelId) {
+			throw new Error('A ballot is identified by { judgeId, panelId }');
+		}
+		const { judgeId, panelId } = resourceId;
+		const panelTarget = await buildTarget(db, 'panel', panelId, targetCache);
+		const judgeTarget = await buildTarget(db, 'judge', judgeId, targetCache);
+		const target: Target = {
+			resource,
+			judgeId,
+			panelId,
+			roundId: panelTarget.roundId,
+			eventId: panelTarget.eventId,
+			// category is a parent of the judge only. the panel's chain carries its event's category, which isn't
+			categoryId: judgeTarget.categoryId,
+			tournId: judgeTarget.tournId ?? panelTarget.tournId,
+		};
+		targetCache.set(key, target);
+		return target;
+	}
+
+	if (typeof resourceId !== 'number') {
+		throw new Error(`${resource} is identified by a single id`);
+	}
 
 	let target: Target = { id: resourceId, resource };
 	//no parents to build
@@ -63,7 +102,7 @@ export async function buildTarget(db: Database, resource: string, resourceId: nu
 			}
 			break;
 		}
-		case 'section': {
+		case 'panel': {
 			const panel = await panelRepo.getPanel(db,resourceId);
 			if (panel && panel.round) {
 				target.roundId = panel.round;
@@ -80,6 +119,17 @@ export async function buildTarget(db: Database, resource: string, resourceId: nu
 				target.tournId = timeslot.tourn;
 				target ={
 					...await buildTarget(db, 'tourn', target.tournId, targetCache),
+					...target,
+				};
+			}
+			break;
+		}
+		case 'judge': {
+			const judge = await judgeRepo.getJudge(db, resourceId);
+			if (judge && judge.category) {
+				target.categoryId = judge.category;
+				target = {
+					...await buildTarget(db, 'category', target.categoryId, targetCache),
 					...target,
 				};
 			}

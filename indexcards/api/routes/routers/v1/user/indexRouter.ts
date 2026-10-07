@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import inboxRouter from '../user/inboxRouter.js';
-import tournsRouter from '../user/tournsRouter.js';
-import sessionRouter from '../user/sessionRouter.js';
-import judgesRouter from '../user/judgesRouter.js';
-import studentsRouter from '../user/studentsRouter.js';
-import chaptersRouter from '../user/chaptersRouter.js';
-import sectionsRouter from '../user/sectionsRouter.js';
+import inboxRouter from './inboxRouter.js';
+import tournsRouter from './tournsRouter.js';
+import sessionRouter from './sessionRouter.js';
+import judgesRouter from './judges/judgesRouter.js';
+import studentsRouter from './studentsRouter.js';
+import chaptersRouter from './chaptersRouter.js';
+import sectionsRouter from './sectionsRouter.js';
 
 const router = Router();
 

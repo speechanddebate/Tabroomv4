@@ -1,12 +1,12 @@
-import factories from '../../../../../tests/factories/index.js';
+import factories from '../../../../../../tests/factories/index.js';
 import request from 'supertest';
-import server from '../../../../../app.js';
+import server from '../../../../../../app.js';
 import z from 'zod';
 import { ClaimResponseSchema, JudgeHistorySchema, UnlinkedJudgeSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
-import personRepo from '../../../../repos/personRepo.js';
-import { db } from '../../../../../api/data/database.js';
-import chapterJudgeRepo from '../../../../repos/chapterJudgeRepo.js';
-import judgeRepo from '../../../../repos/judgeRepo.js';
+import personRepo from '../../../../../repos/personRepo.js';
+import { db } from '../../../../../../api/data/database.js';
+import chapterJudgeRepo from '../../../../../repos/chapterJudgeRepo.js';
+import judgeRepo from '../../../../../repos/judgeRepo.js';
 
 describe('judgesRouter', () => {
 	let personId : number;

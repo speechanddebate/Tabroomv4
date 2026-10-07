@@ -4,7 +4,7 @@ import * as controller from '../../../../../controllers/tab/section/blast.js';
 
 const router = Router();
 
-router.post('/:sectionId/blastPairing', requireAccess('section', 'write'), controller.blastSectionPairing);
-router.post('/:sectionId/blastMessage', requireAccess('section', 'write'), controller.blastSectionMessage);
+router.post('/:sectionId/blastPairing', requireAccess('panel', 'write', (req) => Number(req.params.sectionId)), controller.blastSectionPairing);
+router.post('/:sectionId/blastMessage', requireAccess('panel', 'write', (req) => Number(req.params.sectionId)), controller.blastSectionMessage);
 
 export default router;

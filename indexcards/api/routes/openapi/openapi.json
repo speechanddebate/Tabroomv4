@@ -17,6 +17,14 @@
   "security": [],
   "tags": [
     {
+      "name": "Admin : Servers",
+      "description": "Administrative functions for managing Tabroom servers"
+    },
+    {
+      "name": "Admin : Mail",
+      "description": "Administrative functions for testing mail and notifications"
+    },
+    {
       "name": "Ads",
       "description": "Endpoints related to advertisements displayed on Tabroom"
     },
@@ -25,12 +33,36 @@
       "description": "Authentication related endpoints"
     },
     {
+      "name": "Backup and Restore",
+      "description": "Endpoints for managing tournament backups and restores"
+    },
+    {
       "name": "User: Inbox",
       "description": "Endpoints for managing user inbox messages"
     },
     {
+      "name": "Tournament",
+      "description": "Endpoints for managing tournaments"
+    },
+    {
+      "name": "Category",
+      "description": "Endpoints for managing categories within tournaments"
+    },
+    {
       "name": "User: Session",
       "description": "Endpoints related to a users session"
+    },
+    {
+      "name": "Sites & Rooms",
+      "description": "Endpoints for managing sites and rooms within tournaments"
+    },
+    {
+      "name": "Schools",
+      "description": "Endpoints for managing schools within tournaments"
+    },
+    {
+      "name": "Timeslots",
+      "description": "Endpoints for managing timeslots within tournaments"
     },
     {
       "name": "Tournaments",
@@ -38,6 +70,24 @@
     }
   ],
   "x-tagGroups": [
+    {
+      "name": "Admin",
+      "tags": [
+        "Admin : Servers",
+        "Admin : Mail"
+      ]
+    },
+    {
+      "name": "Tournament Management",
+      "tags": [
+        "Tournament",
+        "Timeslots",
+        "Backup and Restore",
+        "Category",
+        "Sites & Rooms",
+        "Schools"
+      ]
+    },
     {
       "name": "User",
       "tags": [
@@ -56,6 +106,7 @@
         "Ads",
         "Auth",
         "Circuits",
+        "Entries",
         "Events",
         "Invite",
         "Judges",
@@ -63,17 +114,1851 @@
         "Pairings",
         "Paradigms",
         "Quizzes",
+        "Records",
         "Results",
         "Rounds",
+        "Schematics",
         "Students",
         "Tournaments",
         "Webpages",
+        "event",
+        "eventAbbr",
         "futureTourns",
-        "legacy"
+        "legacy",
+        "public",
+        "rounds",
+        "schematics"
       ]
     }
   ],
   "paths": {
+    "/tab/tourns": {
+      "post": {
+        "summary": "Create tournament",
+        "tags": [
+          "Tournament"
+        ],
+        "description": "POST /tab/tourns is undocumented. Need to add .openapi to handler",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TournRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tournament created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tourn"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}": {
+      "get": {
+        "summary": "Get tournament",
+        "tags": [
+          "Tournament"
+        ],
+        "description": "GET /tab/tourns/{tournId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tournament information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tourn"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update tournament",
+        "tags": [
+          "Tournament"
+        ],
+        "description": "PUT /tab/tourns/{tournId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 63
+                  },
+                  "city": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 31
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "state": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 6
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "country": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tz": {
+                    "type": "string",
+                    "maxLength": 31
+                  },
+                  "webname": {
+                    "type": "string"
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "reg_start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "reg_end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete tournament",
+        "tags": [
+          "Tournament"
+        ],
+        "description": "DELETE /tab/tourns/{tournId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/backup": {
+      "post": {
+        "summary": "Tournament Backup",
+        "description": "Creates a backup dump of the tournament data in JSON format",
+        "tags": [
+          "Backup and Restore"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "description": "Parameters for the backup request",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BackupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup data"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/categories": {
+      "get": {
+        "summary": "Get categories",
+        "tags": [
+          "Category"
+        ],
+        "description": "GET /tab/tourns/{tournId}/categories is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Category"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create category",
+        "tags": [
+          "Category"
+        ],
+        "description": "POST /tab/tourns/{tournId}/categories is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/categories/{categoryId}": {
+      "get": {
+        "summary": "Get category",
+        "tags": [
+          "Category"
+        ],
+        "description": "GET /tab/tourns/{tournId}/categories/{categoryId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "categoryId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Category"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete category",
+        "tags": [
+          "Category"
+        ],
+        "description": "DELETE /tab/tourns/{tournId}/categories/{categoryId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "categoryId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update category",
+        "tags": [
+          "Category"
+        ],
+        "description": "PUT /tab/tourns/{tournId}/categories/{categoryId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "categoryId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/schools": {
+      "get": {
+        "summary": "Get Schools for Tournament",
+        "description": "Retrieves all schools associated with the specified tournament.",
+        "tags": [
+          "Schools"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schools retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SchoolSchema"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create School",
+        "description": "Creates a new school within the specified tournament.",
+        "tags": [
+          "Schools"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSchoolSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "School created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "ID of the created school"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/schools/{schoolId}": {
+      "get": {
+        "summary": "Get School by ID",
+        "description": "Retrieves a school by its ID within the specified tournament.",
+        "tags": [
+          "Schools"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "schoolId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "School retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolSchema"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update School",
+        "description": "Updates an existing school within the specified tournament.",
+        "tags": [
+          "Schools"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "schoolId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSchoolSchema"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "School updated successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete School",
+        "description": "Deletes a school within the specified tournament.",
+        "tags": [
+          "Schools"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "schoolId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "School deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/sites": {
+      "get": {
+        "summary": "Get sites",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "GET /tab/tourns/{tournId}/sites is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of sites for the tourn",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer",
+                        "readOnly": true
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "online": {
+                        "type": "boolean"
+                      },
+                      "directions": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "dropoff": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "hostId": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "circuitId": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ]
+                      },
+                      "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true
+                      }
+                    }
+                  }
+                },
+                "examples": {
+                  "sites": {
+                    "summary": "Example response",
+                    "value": [
+                      {
+                        "id": 1,
+                        "name": "Lincoln High School",
+                        "online": false,
+                        "directions": "123 Main St, Anytown, USA",
+                        "dropoff": "Use the side entrance on 2nd Ave.",
+                        "hostId": 5,
+                        "circuitId": 2,
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "updatedAt": "2023-01-02T00:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create site",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "POST /tab/tourns/{tournId}/sites is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/sites/{siteId}": {
+      "get": {
+        "summary": "Get site",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "GET /tab/tourns/{tournId}/sites/{siteId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A site object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "readOnly": true
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "online": {
+                      "type": "boolean"
+                    },
+                    "directions": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "dropoff": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "hostId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "circuitId": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "readOnly": true
+                    }
+                  }
+                },
+                "examples": {
+                  "site": {
+                    "summary": "Example response",
+                    "value": {
+                      "id": 1,
+                      "name": "Lincoln High School",
+                      "online": false,
+                      "directions": "123 Main St, Anytown, USA",
+                      "dropoff": "Use the side entrance on 2nd Ave.",
+                      "hostId": 5,
+                      "circuitId": 2,
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "updatedAt": "2023-01-02T00:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update site",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "PUT /tab/tourns/{tournId}/sites/{siteId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete site",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "DELETE /tab/tourns/{tournId}/sites/{siteId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/sites/{siteId}/rooms": {
+      "get": {
+        "summary": "Get rooms",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "GET /tab/tourns/{tournId}/sites/{siteId}/rooms is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create room",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "POST /tab/tourns/{tournId}/sites/{siteId}/rooms is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId}": {
+      "get": {
+        "summary": "Get room",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "GET /tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roomId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update room",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "PUT /tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roomId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete room",
+        "tags": [
+          "Sites & Rooms"
+        ],
+        "description": "DELETE /tab/tourns/{tournId}/sites/{siteId}/rooms/{roomId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "siteId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roomId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/timeslots": {
+      "get": {
+        "summary": "Get all timeslots for a tournament",
+        "description": "Returns an array of timeslot objects for the given tournament.",
+        "tags": [
+          "Timeslots"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "An array of timeslot objects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TimeslotResponseSchema"
+                  }
+                },
+                "examples": {
+                  "timeslotsResponse": {
+                    "summary": "Example response",
+                    "value": [
+                      {
+                        "id": 1,
+                        "name": "Round 1",
+                        "start": "2023-01-01T09:00:00Z",
+                        "end": "2023-01-01T10:00:00Z",
+                        "tournId": 42,
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "updatedAt": "2023-01-02T00:00:00Z"
+                      },
+                      {
+                        "id": 2,
+                        "name": "Round 2",
+                        "start": "2023-01-01T10:30:00Z",
+                        "end": "2023-01-01T11:30:00Z",
+                        "tournId": 42,
+                        "createdAt": "2023-01-01T00:00:00Z",
+                        "updatedAt": "2023-01-02T00:00:00Z"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new timeslot",
+        "description": "Creates a new timeslot with the provided data and returns the created object.",
+        "tags": [
+          "Timeslots"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeslotRequestSchema"
+              },
+              "examples": {
+                "timeslotRequest": {
+                  "summary": "Example request",
+                  "value": {
+                    "name": "Round 1",
+                    "start": "2023-01-01T09:00:00Z",
+                    "end": "2023-01-01T10:00:00Z",
+                    "tournId": 42
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Timeslot created successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/tab/tourns/{tournId}/timeslots/{timeslotId}": {
+      "get": {
+        "summary": "Get a timeslot by ID",
+        "description": "Returns a timeslot object for the given ID.",
+        "tags": [
+          "Timeslots"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "timeslotId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A timeslot object",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TimeslotResponseSchema"
+                },
+                "examples": {
+                  "timeslotResponse": {
+                    "summary": "Example response",
+                    "value": {
+                      "id": 1,
+                      "name": "Round 1",
+                      "start": "2023-01-01T09:00:00Z",
+                      "end": "2023-01-01T10:00:00Z",
+                      "tournId": 42,
+                      "createdAt": "2023-01-01T00:00:00Z",
+                      "updatedAt": "2023-01-02T00:00:00Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update an existing timeslot",
+        "description": "Updates the timeslot with the given ID using the provided data and returns the updated object.",
+        "tags": [
+          "Timeslots"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "timeslotId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TimeslotRequestSchema"
+              },
+              "examples": {
+                "timeslotRequest": {
+                  "summary": "Example request",
+                  "value": {
+                    "name": "Round 1 - Updated",
+                    "start": "2023-01-01T09:30:00Z",
+                    "end": "2023-01-01T10:30:00Z",
+                    "tournId": 42
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Timeslot updated successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a timeslot",
+        "description": "Deletes the timeslot with the given ID and returns a success message.",
+        "tags": [
+          "Timeslots"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "timeslotId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Timeslot deleted successfully"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/usage": {
+      "get": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "GET /admin/servers/usage is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/show": {
+      "get": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "GET /admin/servers/show is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/show/{linodeId}": {
+      "get": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "GET /admin/servers/show/{linodeId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "linodeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/status": {
+      "get": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "GET /admin/servers/status is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/count": {
+      "get": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "GET /admin/servers/count is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/reboot": {
+      "post": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "POST /admin/servers/reboot is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/changeCount": {
+      "post": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "POST /admin/servers/changeCount is undocumented. Need to add .openapi to handler",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "target": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991,
+                    "description": "Number of servers to add"
+                  }
+                },
+                "required": [
+                  "target"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/servers/changeCount/{target}": {
+      "delete": {
+        "summary": "TODO write spec",
+        "tags": [
+          "Admin : Servers"
+        ],
+        "description": "DELETE /admin/servers/changeCount/{target} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "target",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Number of servers to remove"
+            },
+            "required": true,
+            "description": "Number of servers to remove"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/mailtest/error": {
+      "get": {
+        "summary": "Undocumented Endpoint",
+        "tags": [
+          "Admin : Mail"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "description": "GET /admin/mailtest/error is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/admin/mailtest/slack": {
+      "get": {
+        "summary": "Undocumented Endpoint",
+        "tags": [
+          "Admin : Mail"
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "description": "GET /admin/mailtest/slack is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/pages/invite/nsdaCategories": {
       "get": {
         "summary": "Get NSDA Event Categories",
@@ -81,7 +1966,6 @@
         "tags": [
           "Invite"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "List of NSDA event categories",
@@ -176,14 +2060,6 @@
             },
             "required": true,
             "description": "The tournament webname, or a tournament id"
-          },
-          {
-            "name": "webname",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -196,6 +2072,154 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/pages/invite/nextweek": {
+      "get": {
+        "summary": "Returns the public listing of upcoming tournaments in this week",
+        "operationId": "listWeeksTourns",
+        "tags": [
+          "Invite"
+        ],
+        "description": "GET /pages/invite/nextweek is undocumented. Need to add .openapi to handler",
+        "responses": {
+          "200": {
+            "description": "List of this week's tournaments, with some stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tourn"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/pages/tiebreaks/{roundId}": {
+      "get": {
+        "summary": "Get tiebreaks needed for a protocol id.  This is just for Palmer testing and will go poof.",
+        "description": "for testing and dev",
+        "tags": [
+          "Invite",
+          "Schematics",
+          "Rounds"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Round Information"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/pages/protocol/round/{roundId}": {
+      "get": {
+        "summary": "Get tiebreaks needed for a protocol id",
+        "description": "for testing and dev",
+        "tags": [
+          "Invite",
+          "Schematics",
+          "Rounds"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Round Information"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/pages/invite/{tournId}/{eventAbbr}/{roundName}": {
+      "get": {
+        "summary": "Round Schematic",
+        "description": "Gives data for the display of a public round schematic",
+        "tags": [
+          "Invite",
+          "Schematics",
+          "Rounds"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "eventAbbr",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roundName",
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Round Information"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -248,25 +2272,6 @@
             },
             "required": true,
             "description": "Number of the round"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventAbbr",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "roundName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -298,7 +2303,6 @@
           "Ads",
           "Orval"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "An array of Ads to be displayed",
@@ -421,14 +2425,6 @@
               "exclusiveMinimum": 0
             },
             "required": true
-          },
-          {
-            "name": "circuitId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -526,6 +2522,348 @@
         }
       }
     },
+    "/rest/judges/{judgeId}/panels/{panelId}/ballots": {
+      "get": {
+        "summary": "Get ballot context",
+        "description": "Everything needed to render this judge's ballot for this panel",
+        "operationId": "RestJudgesBallotContext",
+        "tags": [
+          "Orval",
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BallotContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      },
+      "put": {
+        "summary": "Save ballot",
+        "description": "Validates the ballot and writes its scores",
+        "operationId": "RestJudgesBallotSave",
+        "tags": [
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ballot saved"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/judges/{judgeId}/panels/{panelId}/ballots/start": {
+      "post": {
+        "summary": "Start ballot",
+        "description": "Marks the ballot as started by the judge, if it isn't already",
+        "operationId": "RestJudgesBallotStart",
+        "tags": [
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ballot started"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/judges/{judgeId}/panels/{panelId}/ballots/status": {
+      "get": {
+        "summary": "Get ballot status",
+        "description": "Polled while the ballot is open: access, sides changed by a flip, and whether it was locked or confirmed elsewhere",
+        "operationId": "RestJudgesBallotStatus",
+        "tags": [
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ballot status"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/judges/{judgeId}/panels/{panelId}/ballots/confirm": {
+      "post": {
+        "summary": "Confirm ballot",
+        "description": "Makes the decision final and runs the round completion steps",
+        "operationId": "RestJudgesBallotConfirm",
+        "tags": [
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ballot confirmed"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/judges/{judgeId}/panels/{panelId}/ballots/comments": {
+      "put": {
+        "summary": "Save ballot comments",
+        "description": "Saves the RFD and per-entry comments. Editable after confirm until the tournament ends",
+        "operationId": "RestJudgesBallotComments",
+        "tags": [
+          "Judges"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "judgeId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the judge"
+            },
+            "required": true,
+            "description": "ID of the judge"
+          },
+          {
+            "in": "path",
+            "name": "panelId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "ID of the panel (section)"
+            },
+            "required": true,
+            "description": "ID of the panel (section)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comments saved"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/rest/pages": {
       "get": {
         "summary": "Get Public Pages",
@@ -534,7 +2872,6 @@
           "Webpages"
         ],
         "security": [],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "List of public webpages",
@@ -580,14 +2917,6 @@
             },
             "required": true,
             "description": "The slug of the page"
-          },
-          {
-            "name": "slug",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -750,9 +3079,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -796,9 +3122,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -814,6 +3137,216 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/rounds/{roundId}": {
+      "get": {
+        "summary": "Returns a single Round object an ID if it is published",
+        "operationId": "getRound",
+        "tags": [
+          "Invite",
+          "public",
+          "schematics",
+          "rounds",
+          "Pairings"
+        ],
+        "description": "GET /rest/tourns/{tournId}/rounds/{roundId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object of Round with public information on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/rounds/{roundId}/schematic": {
+      "get": {
+        "summary": "Returns public round information necessary to create a full schematic",
+        "operationId": "getSchematic",
+        "tags": [
+          "Invite",
+          "public",
+          "schematics",
+          "rounds",
+          "Pairings"
+        ],
+        "description": "GET /rest/tourns/{tournId}/rounds/{roundId}/schematic is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object of Round with public information on it for a schematic,\n\t\t\t \t\twhich includes a list of entries or sections as appropriate.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/rounds/{roundId}/brackets": {
+      "get": {
+        "summary": "Get published primary results data leading up to this round for brackets",
+        "description": "Gets the outcome scores of the present round if published",
+        "tags": [
+          "Events",
+          "Results",
+          "Records",
+          "Entries"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries with Win Loss data attached"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/rounds/{roundId}/results": {
+      "get": {
+        "summary": "Get Published Results for a Round",
+        "description": "Gets the outcome scores of the present round if published",
+        "tags": [
+          "Events",
+          "Results",
+          "Records",
+          "Entries"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "roundId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries with Win Loss data attached"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -850,9 +3383,6 @@
             },
             "required": true,
             "description": "ID of the tournament to get results for"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -926,17 +3456,6 @@
             },
             "required": true,
             "description": "ID of the result set to get"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "resultSetId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -955,6 +3474,145 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/results/event/{eventId}": {
+      "get": {
+        "summary": "Get event results",
+        "description": "Returns public result information for a given event",
+        "operationId": "getEventResultSets",
+        "tags": [
+          "Invite",
+          "Results",
+          "Pairings"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "ID of the tournament to get results for"
+            },
+            "required": true,
+            "description": "ID of the tournament to get results for"
+          },
+          {
+            "in": "path",
+            "name": "eventId",
+            "schema": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991,
+              "description": "ID of the event to get results for"
+            },
+            "required": true,
+            "description": "ID of the event to get results for"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result Sets connected to a given event, with published aggregated result data attached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/events": {
+      "get": {
+        "summary": "Get Tournament Events",
+        "description": "Retrieve a list of events associated with a specific tournament.",
+        "tags": [
+          "Tournaments"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of tournament events"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/events/{eventId}/results": {
+      "get": {
+        "summary": "Get Published Results by Event",
+        "description": "Given an Event ID, get published result records of the entries therein",
+        "tags": [
+          "Events",
+          "Results",
+          "Records",
+          "Entries"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "eventId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries with Win Loss data attached"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "500": {
             "$ref": "#/components/responses/ErrorResponse"
@@ -989,17 +3647,6 @@
             },
             "required": true,
             "description": "Abbreviation of the event"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
-          },
-          {
-            "name": "eventAbbr",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
@@ -1012,6 +3659,108 @@
                 }
               }
             }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/events/byAbbr/{eventAbbr}": {
+      "get": {
+        "summary": "Get Event and Round List by Abbr",
+        "description": "Returns Event object with list of published rounds given an event abbreviation",
+        "operationId": "getEventByAbbr",
+        "tags": [
+          "Invite",
+          "public",
+          "event",
+          "eventAbbr",
+          "rounds"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "eventAbbr",
+            "schema": {
+              "type": "string",
+              "description": "Abbreviation of the event"
+            },
+            "required": true,
+            "description": "Abbreviation of the event"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event and Round List",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/rest/tourns/{tournId}/entries/{entryId}/records": {
+      "get": {
+        "summary": "Entry Tournament Records",
+        "description": "Shows the published available pairings and results data for a given entry",
+        "tags": [
+          "Tournaments",
+          "Entries",
+          "Results",
+          "Schematics"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "path",
+            "name": "entryId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Record of results of a given entry"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1043,9 +3792,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1091,9 +3837,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1139,9 +3882,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1256,14 +3996,6 @@
             },
             "required": true,
             "description": "ID of the person to get paradigm details for"
-          },
-          {
-            "name": "personId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -1312,14 +4044,6 @@
             },
             "required": true,
             "description": "ID of the person to get paradigm details for"
-          },
-          {
-            "name": "personId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -1488,7 +4212,6 @@
         "tags": [
           "Admin"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Server is up",
@@ -1517,7 +4240,6 @@
         "tags": [
           "Admin"
         ],
-        "parameters": [],
         "responses": {
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1538,7 +4260,6 @@
           "Orval"
         ],
         "security": [],
-        "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
@@ -1589,10 +4310,54 @@
           "Auth",
           "Orval"
         ],
-        "parameters": [],
         "responses": {
           "204": {
             "description": "No Content. Successfully logged out."
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/auth/su": {
+      "post": {
+        "summary": "Start Su session",
+        "operationId": "authSu",
+        "tags": [
+          "Auth",
+          "Orval"
+        ],
+        "description": "POST /auth/su is undocumented. Need to add .openapi to handler",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "suId": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "suId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content. Successfully logged out."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1612,13 +4377,45 @@
           "Orval"
         ],
         "description": "POST /auth/suend is undocumented. Need to add .openapi to handler",
-        "parameters": [],
         "responses": {
           "204": {
             "description": "No Content. Successfully ended Su session."
           },
           "400": {
             "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "summary": "Register",
+        "operationId": "authRegister",
+        "description": "Registers a new user.",
+        "tags": [
+          "Auth",
+          "Orval"
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -1692,9 +4489,6 @@
             },
             "required": true,
             "description": "ID of the tournament"
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1736,9 +4530,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1780,9 +4571,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1794,6 +4582,57 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/Fine"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
+    "/user/tourns/{tournId}/ballots": {
+      "get": {
+        "summary": "Get Ballots",
+        "operationId": "UserTournsBallots",
+        "tags": [
+          "User: Tournament",
+          "Orval"
+        ],
+        "description": "Returns an array of Fines for the tourn.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "audited",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ballots",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CurrentBallot"
                   }
                 }
               }
@@ -1826,9 +4665,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -1868,7 +4704,6 @@
             "cookieAuth": []
           }
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Inbox list",
@@ -1906,7 +4741,6 @@
             "cookieAuth": []
           }
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Unread count",
@@ -1941,7 +4775,6 @@
             "cookieAuth": []
           }
         ],
-        "parameters": [],
         "responses": {
           "204": {
             "description": "All messages marked as read"
@@ -1981,14 +4814,6 @@
             },
             "required": true,
             "description": "The ID of the message"
-          },
-          {
-            "name": "messageId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -2035,14 +4860,6 @@
             },
             "required": true,
             "description": "The ID of the message"
-          },
-          {
-            "name": "messageId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -2084,14 +4901,6 @@
             },
             "required": true,
             "description": "The ID of the message to mark as read"
-          },
-          {
-            "name": "messageId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -2133,14 +4942,6 @@
             },
             "required": true,
             "description": "The ID of the message to mark as unread"
-          },
-          {
-            "name": "messageId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -2165,7 +4966,6 @@
           "User: Session",
           "Orval"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "User session",
@@ -2198,7 +4998,6 @@
           "Orval",
           "User: Judge"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2340,7 +5139,6 @@
         "summary": "get paradigm",
         "operationId": "UserJudgesParadigm",
         "description": "GET /user/judges/paradigm is undocumented. Need to add .openapi to handler",
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2368,7 +5166,6 @@
         "summary": "update paradigm",
         "operationId": "PostUserJudgesParadigm",
         "description": "POST /user/judges/paradigm is undocumented. Need to add .openapi to handler",
-        "parameters": [],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2406,7 +5203,6 @@
           "Orval",
           "User: Judge"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2438,7 +5234,6 @@
         "tags": [
           "Orval"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "Successful response",
@@ -2513,7 +5308,6 @@
           "Orval",
           "User: Chapter"
         ],
-        "parameters": [],
         "responses": {
           "200": {
             "description": "User chapters",
@@ -2537,6 +5331,42 @@
         }
       }
     },
+    "/user/chapters/byTourn/{tournId}": {
+      "get": {
+        "tags": [
+          "legacy",
+          "User: Chapter"
+        ],
+        "summary": "GET /user/chapters/byTourn/{tournId}",
+        "description": "GET /user/chapters/byTourn/{tournId} is undocumented. Need to add .openapi to handler",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "tournId",
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chapters by tournament"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "500": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "default": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    },
     "/user/chapters/byTourn/{tournId}/mySchools": {
       "get": {
         "tags": [
@@ -2555,9 +5385,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -2604,9 +5431,6 @@
               "maximum": 9007199254740991
             },
             "required": true
-          },
-          {
-            "$ref": "#/components/parameters/tournId"
           }
         ],
         "responses": {
@@ -2822,6 +5646,260 @@
           }
         }
       },
+      "BackupRequest": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "tournament",
+                  "category",
+                  "event",
+                  "school"
+                ]
+              },
+              "id": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "ignoreComments": {
+                "type": "boolean"
+              },
+              "ignoreBallots": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "scope"
+        ],
+        "additionalProperties": false,
+        "description": "A request to create a backup for a tournament or part of a tournament"
+      },
+      "BallotEntry": {
+        "type": "object",
+        "properties": {
+          "ballotId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "entryId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "side": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "speakerOrder": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "description": "Accommodations note (entry ballot_notes)",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "points": {
+            "description": "Team points, when scoring.points.team",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "comments": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "Students": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BallotStudent"
+            }
+          }
+        },
+        "required": [
+          "ballotId",
+          "entryId",
+          "code",
+          "side",
+          "speakerOrder",
+          "notes",
+          "points",
+          "comments",
+          "Students"
+        ],
+        "additionalProperties": false
+      },
+      "BallotScoring": {
+        "type": "object",
+        "properties": {
+          "winloss": {
+            "type": "object",
+            "properties": {
+              "lpw": {
+                "type": "string",
+                "enum": [
+                  "forbid",
+                  "confirm"
+                ],
+                "description": "forbid: the winner must have higher points (no_lpw). confirm: the judge must confirm a low-point win."
+              }
+            },
+            "required": [
+              "lpw"
+            ],
+            "additionalProperties": false
+          },
+          "points": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number"
+              },
+              "max": {
+                "type": "number"
+              },
+              "step": {
+                "type": "number",
+                "exclusiveMinimum": 0,
+                "description": "From point_increments: 1, 0.5, 0.25 or 0.1"
+              },
+              "ties": {
+                "type": "boolean",
+                "description": "Allow two speakers on this ballot to receive the same points (point_ties)"
+              },
+              "team": {
+                "type": "boolean",
+                "description": "Points per entry (team_points) instead of per speaker"
+              }
+            },
+            "required": [
+              "min",
+              "max",
+              "step",
+              "ties",
+              "team"
+            ],
+            "additionalProperties": false
+          },
+          "ranks": {
+            "description": "Present when the protocol uses ranks. Options get added with speech.",
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "BallotStudent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "readOnly": true,
+            "description": "Unique identifier for the student",
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "first": {
+            "description": "First name of the student",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "middle": {
+            "description": "Middle name of the student",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "description": "Last name of the student",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pronoun": {
+            "description": "null when the tournament sets limit_info",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "points": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "rank": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "pronoun",
+          "points",
+          "rank"
+        ],
+        "additionalProperties": false
+      },
       "ChapterSchema": {
         "type": "object",
         "properties": {
@@ -2962,6 +6040,536 @@
         "required": [
           "id",
           "name"
+        ],
+        "additionalProperties": false
+      },
+      "CreateSchoolSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "onsite": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "chapterId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string"
+          },
+          "regionId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "settings": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "chapterId"
+        ]
+      },
+      "DebateBallotContext": {
+        "type": "object",
+        "properties": {
+          "judgeId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "panelId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tournId": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tz": {
+            "type": "string",
+            "maxLength": 31
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "not_started",
+              "started",
+              "scored",
+              "confirmed"
+            ]
+          },
+          "supported": {
+            "type": "boolean",
+            "description": "false sends the judge to the classic ballot"
+          },
+          "notMe": {
+            "type": "boolean",
+            "description": "Caller is a site admin or tournament owner entering for the judge"
+          },
+          "readOnly": {
+            "type": "boolean",
+            "description": "Confirmed, and the caller is not a site admin"
+          },
+          "Event": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "abbr": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "abbr"
+            ],
+            "additionalProperties": false
+          },
+          "Round": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 31
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 15
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "flight": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "null if not flighted"
+              },
+              "start": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                "description": "Includes flight_offset"
+              },
+              "deadline": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "prelim/elim_decision_deadline after start, plus flight_offset"
+              },
+              "notes": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "label",
+              "type",
+              "flight",
+              "start",
+              "deadline",
+              "notes"
+            ],
+            "additionalProperties": false
+          },
+          "Room": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 127
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "onlineMode": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "none",
+                      "sync",
+                      "async",
+                      "nsda_campus",
+                      "nsda_campus_observers",
+                      "public_jitsi",
+                      "public_jitsi_observers"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "url",
+              "onlineMode"
+            ],
+            "additionalProperties": false
+          },
+          "Judge": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              "code": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 8
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "first": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 63
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "middle": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 63
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "last": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "maxLength": 63
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "chair": {
+                "type": "boolean"
+              },
+              "chairLabel": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "code",
+              "first",
+              "middle",
+              "last",
+              "chair",
+              "chairLabel"
+            ],
+            "additionalProperties": false
+          },
+          "text": {
+            "type": "object",
+            "properties": {
+              "header": {
+                "description": "NSDA district/nationals ballot header (HTML)",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "biasStatement": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "rules": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "In display order: ballot_rules_chair (chair only), then ballot_rules unless the chair has chair_ballot_only (HTML)"
+              },
+              "topic": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "label": {
+                        "type": "string",
+                        "enum": [
+                          "Resolution",
+                          "Topic",
+                          "Motion"
+                        ]
+                      },
+                      "text": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "label",
+                      "text"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "header",
+              "biasStatement",
+              "rules",
+              "topic"
+            ],
+            "additionalProperties": false
+          },
+          "rfd": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "minWords": {
+            "type": "object",
+            "properties": {
+              "rfd": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "rfd_plz"
+              },
+              "comments": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "comments_plz, per entry"
+              }
+            },
+            "required": [
+              "rfd",
+              "comments"
+            ],
+            "additionalProperties": false
+          },
+          "scoring": {
+            "$ref": "#/components/schemas/BallotScoring"
+          },
+          "Entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BallotEntry"
+            }
+          },
+          "eventType": {
+            "type": "string",
+            "const": "debate"
+          },
+          "debate": {
+            "$ref": "#/components/schemas/DebateDetails"
+          }
+        },
+        "required": [
+          "judgeId",
+          "panelId",
+          "tournId",
+          "tz",
+          "status",
+          "supported",
+          "notMe",
+          "readOnly",
+          "Event",
+          "Round",
+          "Room",
+          "Judge",
+          "text",
+          "rfd",
+          "minWords",
+          "scoring",
+          "Entries",
+          "eventType",
+          "debate"
+        ],
+        "additionalProperties": false
+      },
+      "DebateDetails": {
+        "type": "object",
+        "properties": {
+          "affLabel": {
+            "type": "string"
+          },
+          "negLabel": {
+            "type": "string"
+          },
+          "sidesLocked": {
+            "type": "boolean",
+            "description": "Sides set by tab; the judge cannot pick them"
+          },
+          "flipOnline": {
+            "type": "boolean"
+          },
+          "flipStatus": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "done",
+                  "winner",
+                  "second",
+                  "anyone"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "winnerBallotId": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "affLabel",
+          "negLabel",
+          "sidesLocked",
+          "flipOnline",
+          "flipStatus",
+          "winnerBallotId"
         ],
         "additionalProperties": false
       },
@@ -3770,6 +7378,73 @@
           "Badge"
         ]
       },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "description": "The email address of the new user"
+          },
+          "password": {
+            "type": "string",
+            "description": "The password for the new user"
+          },
+          "first": {
+            "type": "string",
+            "description": "The first name of the new user"
+          },
+          "middleName": {
+            "description": "The middle name of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last": {
+            "type": "string",
+            "description": "The last name of the new user"
+          },
+          "phoneNumber": {
+            "description": "The phone number of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "description": "The 2 letter state code of the new user",
+            "example": "IA",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "description": "The 2 letter country code of the new user",
+            "example": "US",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tz": {
+            "description": "The IANA timezone of the new user",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "first",
+          "last"
+        ],
+        "description": "A request to register a new user"
+      },
       "ResultSetEventSchema": {
         "type": "object",
         "properties": {
@@ -3799,6 +7474,35 @@
           "label",
           "entity",
           "createdAt"
+        ]
+      },
+      "TimeslotRequestSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "tourn": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "name",
+          "start",
+          "end",
+          "tourn"
         ]
       },
       "TournContactSchema": {
@@ -3835,6 +7539,127 @@
           "email"
         ],
         "additionalProperties": false
+      },
+      "TournRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 63
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 31
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "country": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tz": {
+            "type": "string",
+            "maxLength": 31
+          },
+          "webname": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "reg_start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "reg_end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "name",
+          "city",
+          "state",
+          "country",
+          "tz",
+          "webname",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateSchoolSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "onsite": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string"
+          },
+          "regionId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "settings": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "onsite",
+          "state",
+          "regionId",
+          "settings"
+        ]
       },
       "UserParadigm": {
         "type": "object",
@@ -4012,6 +7837,156 @@
           ],
           "additionalProperties": false
         }
+      },
+      "BallotContext": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/DebateBallotContext"
+          }
+        ],
+        "type": "object",
+        "discriminator": {
+          "propertyName": "eventType",
+          "mapping": {
+            "debate": "#/components/schemas/DebateBallotContext"
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string"
+          },
+          "abbr": {
+            "type": "string"
+          },
+          "tourn": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pattern": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "abbr",
+          "tourn",
+          "pattern",
+          "created_at",
+          "timestamp"
+        ],
+        "additionalProperties": false
       },
       "ClaimResponse": {
         "type": "object",
@@ -6694,6 +10669,167 @@
         "additionalProperties": false,
         "description": "A round in the tournament schedule with its event and timeslot"
       },
+      "SchoolSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "onsite": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "tournId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "chapterId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string"
+          },
+          "regionId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "districtId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "settings": {
+            "description": "Settings keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    },
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {}
+                    },
+                    {
+                      "type": "array",
+                      "items": {}
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settingsTimestamps": {
+            "description": "Setting created_at and timestamp values keyed by tag",
+            "anyOf": [
+              {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "timestamp": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "metadata": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "onsite",
+          "tournId",
+          "chapterId",
+          "state",
+          "regionId",
+          "districtId",
+          "updatedAt",
+          "createdAt",
+          "metadata"
+        ],
+        "additionalProperties": false
+      },
       "Session": {
         "type": "object",
         "properties": {
@@ -7083,6 +11219,48 @@
           "totalmem",
           "node",
           "database"
+        ],
+        "additionalProperties": false
+      },
+      "TimeslotResponseSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          },
+          "tourn": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "start",
+          "end",
+          "tourn",
+          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -8832,51 +13010,6 @@
         ],
         "additionalProperties": false
       },
-      "BackupRequest": {
-        "type": "object",
-        "properties": {
-          "scope": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": [
-                  "tournament",
-                  "category",
-                  "event",
-                  "school"
-                ]
-              },
-              "id": {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              }
-            },
-            "required": [
-              "type"
-            ],
-            "additionalProperties": false
-          },
-          "options": {
-            "type": "object",
-            "properties": {
-              "ignoreComments": {
-                "type": "boolean"
-              },
-              "ignoreBallots": {
-                "type": "boolean"
-              }
-            },
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "scope"
-        ],
-        "additionalProperties": false,
-        "description": "A request to create a backup for a tournament or part of a tournament"
-      },
       "Ballot": {
         "type": "object",
         "properties": {
@@ -8902,142 +13035,6 @@
           "side",
           "chair",
           "speakerOrder"
-        ],
-        "additionalProperties": false
-      },
-      "Category": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "name": {
-            "type": "string"
-          },
-          "abbr": {
-            "type": "string"
-          },
-          "tourn": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "maximum": 9007199254740991
-          },
-          "pattern": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": -9007199254740991,
-                "maximum": 9007199254740991
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "settings": {
-            "description": "Settings keyed by tag",
-            "anyOf": [
-              {
-                "type": "object",
-                "propertyNames": {
-                  "type": "string"
-                },
-                "additionalProperties": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "boolean"
-                    },
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {}
-                    },
-                    {
-                      "type": "array",
-                      "items": {}
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "settingsTimestamps": {
-            "description": "Setting created_at and timestamp values keyed by tag",
-            "anyOf": [
-              {
-                "type": "object",
-                "propertyNames": {
-                  "type": "string"
-                },
-                "additionalProperties": {
-                  "type": "object",
-                  "properties": {
-                    "created_at": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "timestamp": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "abbr",
-          "tourn",
-          "pattern",
-          "created_at",
-          "timestamp"
         ],
         "additionalProperties": false
       },
@@ -9149,48 +13146,6 @@
           "settings",
           "metadata",
           "Person"
-        ],
-        "additionalProperties": false
-      },
-      "CreateSchoolSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "onsite": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "chapterId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "state": {
-            "type": "string"
-          },
-          "regionId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "settings": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "chapterId"
         ],
         "additionalProperties": false
       },
@@ -9351,74 +13306,6 @@
         ],
         "additionalProperties": false
       },
-      "RegisterRequest": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "format": "email",
-            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
-            "description": "The email address of the new user"
-          },
-          "password": {
-            "type": "string",
-            "description": "The password for the new user"
-          },
-          "first": {
-            "type": "string",
-            "description": "The first name of the new user"
-          },
-          "middleName": {
-            "description": "The middle name of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "last": {
-            "type": "string",
-            "description": "The last name of the new user"
-          },
-          "phoneNumber": {
-            "description": "The phone number of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "state": {
-            "description": "The 2 letter state code of the new user",
-            "example": "IA",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "country": {
-            "description": "The 2 letter country code of the new user",
-            "example": "US",
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "tz": {
-            "description": "The IANA timezone of the new user",
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "email",
-          "password",
-          "first",
-          "last"
-        ],
-        "additionalProperties": false,
-        "description": "A request to register a new user"
-      },
       "Room": {
         "type": "object",
         "properties": {
@@ -9520,235 +13407,6 @@
         ],
         "additionalProperties": false
       },
-      "SchoolSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "onsite": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "tournId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "chapterId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "state": {
-            "type": "string"
-          },
-          "regionId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "districtId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "settings": {
-            "description": "Settings keyed by tag",
-            "anyOf": [
-              {
-                "type": "object",
-                "propertyNames": {
-                  "type": "string"
-                },
-                "additionalProperties": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "boolean"
-                    },
-                    {
-                      "type": "null"
-                    },
-                    {
-                      "type": "object",
-                      "propertyNames": {
-                        "type": "string"
-                      },
-                      "additionalProperties": {}
-                    },
-                    {
-                      "type": "array",
-                      "items": {}
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "settingsTimestamps": {
-            "description": "Setting created_at and timestamp values keyed by tag",
-            "anyOf": [
-              {
-                "type": "object",
-                "propertyNames": {
-                  "type": "string"
-                },
-                "additionalProperties": {
-                  "type": "object",
-                  "properties": {
-                    "created_at": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    },
-                    "timestamp": {
-                      "anyOf": [
-                        {
-                          "type": "string",
-                          "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(\\.\\d+)?$"
-                        },
-                        {
-                          "type": "null"
-                        }
-                      ]
-                    }
-                  },
-                  "additionalProperties": false
-                }
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "metadata": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "code",
-          "onsite",
-          "tournId",
-          "chapterId",
-          "state",
-          "regionId",
-          "districtId",
-          "updatedAt",
-          "createdAt",
-          "metadata"
-        ],
-        "additionalProperties": false
-      },
-      "TimeslotRequestSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "start": {
-            "type": "string"
-          },
-          "end": {
-            "type": "string"
-          },
-          "tourn": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          }
-        },
-        "required": [
-          "name",
-          "start",
-          "end",
-          "tourn"
-        ],
-        "additionalProperties": false
-      },
-      "TimeslotResponseSchema": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "name": {
-            "type": "string"
-          },
-          "start": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "end": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          },
-          "tourn": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time",
-            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "start",
-          "end",
-          "tourn",
-          "timestamp"
-        ],
-        "additionalProperties": false
-      },
       "TopicZodSchema": {
         "type": "object",
         "properties": {
@@ -9812,120 +13470,6 @@
           "createdAt",
           "createdBy",
           "Events"
-        ],
-        "additionalProperties": false
-      },
-      "TournRequest": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "maxLength": 63
-          },
-          "city": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 31
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "state": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 6
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "country": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 4
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "tz": {
-            "type": "string",
-            "maxLength": 31
-          },
-          "webname": {
-            "type": "string"
-          },
-          "start": {
-            "type": "string"
-          },
-          "end": {
-            "type": "string"
-          },
-          "reg_start": {
-            "type": "string"
-          },
-          "reg_end": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "city",
-          "state",
-          "country",
-          "tz",
-          "webname",
-          "start",
-          "end"
-        ],
-        "additionalProperties": false
-      },
-      "UpdateSchoolSchema": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "onsite": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "state": {
-            "type": "string"
-          },
-          "regionId": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "settings": {
-            "type": "object",
-            "propertyNames": {
-              "type": "string"
-            },
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        },
-        "required": [
-          "name",
-          "code",
-          "onsite",
-          "state",
-          "regionId",
-          "settings"
         ],
         "additionalProperties": false
       }
@@ -10038,26 +13582,6 @@
               }
             }
           }
-        }
-      }
-    },
-    "parameters": {
-      "tournId": {
-        "name": "tournId",
-        "in": "path",
-        "description": "The ID or webname of the tournament to retrieve.",
-        "required": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "roundId": {
-        "name": "roundId",
-        "in": "path",
-        "description": "The ID or webname of the round to retrieve.",
-        "required": true,
-        "schema": {
-          "type": "string"
         }
       }
     },

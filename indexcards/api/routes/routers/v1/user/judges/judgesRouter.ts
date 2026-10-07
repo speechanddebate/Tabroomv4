@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { ValidateRequest } from '../../../../middleware/validation.js';
-import judgesController from '../../../../controllers/user/judgesController.js';
+import { ValidateRequest } from '../../../../../middleware/validation.js';
+import judgesController from '../../../../../controllers/user/judgesController.js';
 import { UnlinkedJudgeSchema, JudgeHistorySchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import z from 'zod';
 
 const router = Router();
-
+// /v1/user/judges
 router.route('/linkRequests')
 	.get(ValidateRequest,judgesController.linkRequests).openapi = {
 		summary: 'Get judge link requests',
@@ -138,4 +138,5 @@ router.route('/livedocs')
 			},
 		},
 	};
+
 export default router;

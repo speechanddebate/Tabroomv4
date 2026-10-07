@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
-import { BallotSchema } from './Ballot.js';
+import { BallotSchema } from './Ballot/Ballot.js';
 import { JudgeSchema } from './Judge.js';
 import { EventSchema } from './Event.js';
 import { EntrySchema } from './Entry.js';

@@ -1,7 +1,7 @@
-import { buildTarget, type Target } from './buildTarget.js';
+import { buildTarget, resourceKey, type Target } from './buildTarget.js';
 import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
-import type { Actor, AuthError, Perm, SessionPerson } from './types.js';
+import type { Actor, AuthError, Perm, ResourceId, SessionPerson } from './types.js';
 import type { Database } from '../../data/database.js';
 /**
  * the person making the request. throws a 401 (handled by errorHandler) when there is none,
@@ -35,24 +35,36 @@ export function requireSiteAdmin(req: Request, res: Response, next: NextFunction
 	next();
 }
 
-export function requireAccess(resource: string, action: string) {
+/**
+ * route middleware: 403 unless the actor can perform action on resource.
+ * the resource id comes from the :<resource>Id path param, or from resolveId for
+ * resources identified some other way (e.g. a ballot by its judge and panel)
+ */
+export function requireAccess(resource: string, action: string, resolveId?: (req: Request) => ResourceId) {
 	return async (req: Request, res: Response, next: NextFunction) => {
-		if (!req.actor) {
+		// anonymous actors can't be granted anything, so the answer is "log in", not "forbidden"
+		if (!req.actor || req.actor.type === 'anonymous') {
 			return Unauthorized(req, res,'User not Authenticated');
 		}
-		const resourceId = Number(req.params[resource + 'Id']);
+		const resourceId = resolveId ? resolveId(req) : Number(req.params[resource + 'Id']);
 		try{
 			await req.actor.assert(resource, action, resourceId);
 			next();
 		}
 		catch(err: unknown){
 			if (err instanceof Error && (err as AuthError).code === 'AUTH_FORBIDDEN'){
-				return Forbidden(req, res,`You do not have permission to ${action} on ${resource}: ${resourceId}`);
+				return Forbidden(req, res,`You do not have permission to ${action} on ${resource}: ${formatResourceId(resourceId)}`);
 			}
 			return next(err);
 		}
 	};
 }
+
+function formatResourceId(resourceId: ResourceId) {
+	if (typeof resourceId === 'number') return String(resourceId);
+	return Object.entries(resourceId).map(([key, id]) => `${key} ${id}`).join(', ');
+}
+
 /**
  * create an actor for the given person, or an anonymous actor if there is none.
  * the actor holds its own perms, which auth context loaders add with grant()
@@ -94,7 +106,7 @@ function createAuthContext(db: Database, person: SessionPerson) {
 		permCache.clear();
 	}
 
-	async function can(resource: string, action: string, resourceId: number) {
+	async function can(resource: string, action: string, resourceId: ResourceId) {
 		if (!resource || !action) {
 			throw new Error('Invalid auth call');
 		}
@@ -103,7 +115,10 @@ function createAuthContext(db: Database, person: SessionPerson) {
 			return true;
 		}
 
-		const key = `${resource}:${resourceId}`;
+		// JS callers pass path params straight through, e.g. '12'
+		if (typeof resourceId === 'string') resourceId = Number(resourceId);
+
+		const key = resourceKey(resource, resourceId);
 
 		// Build target once per request
 		let target = targetCache.get(key);
@@ -112,7 +127,7 @@ function createAuthContext(db: Database, person: SessionPerson) {
 			target = await buildTarget(db, resource, resourceId, targetCache);
 			targetCache.set(key, target);
 		}
-		const permKey = `${resource}:${action}:${resourceId}`;
+		const permKey = `${key}:${action}`;
 
 		if (permCache.has(permKey)) {
 			return permCache.get(permKey);
@@ -130,7 +145,7 @@ function createAuthContext(db: Database, person: SessionPerson) {
 		return result;
 	}
 
-	async function assert(resource: string, action: string, resourceId: number) {
+	async function assert(resource: string, action: string, resourceId: ResourceId) {
 		const ok = await can(resource, action, resourceId);
 
 		if (!ok) {
@@ -214,6 +229,15 @@ const ROLES: Record<string, RoleDef> = {
 			},
 		],
 	},
+	//the person a record belongs to (a judge, student, etc). only applies within the scope it's granted on
+	self: {
+		description: 'The person a record belongs to',
+		permissions: [
+			{
+				actions: ['judge/read', 'ballot/*'],
+			},
+		],
+	},
 	//admin of the resource, used for chapters
 	chapterAdmin: {
 		description: 'resource administrator - manage a chapter and its resources',
@@ -242,18 +266,23 @@ const ROLES: Record<string, RoleDef> = {
  */
 const CHILDREN: Record<string, string[]> = {
 	tourn: ['category', 'event', 'timeslot'],   // Tourn has these direct children
-	category: ['jpool'],            // Category has jpools as children
+	category: ['jpool', 'judge'],   // Category has jpools and judges as children
 	event: ['round'],               // Event has these direct children
+	round: ['panel'],
+	judge: ['ballot'],              // a ballot has two parents: its judge and its panel
+	panel: ['ballot'],
 };
 
 /**
  * Action hierarchy - higher actions grant lower actions
- * read > check
+ * write > read > check
  *
  * Example: If a user has 'read' permission, they can also perform 'check' actions.
+ * Note actionMatches only looks one level down: 'write' grants 'read' but not 'check'.
  */
 const ACTION_HIERARCHY: Record<string, string[]> = {
 	read: ['check'],
+	write: ['read'],
 };
 
 /**

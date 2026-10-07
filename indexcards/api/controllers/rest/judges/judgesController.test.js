@@ -1,19 +1,19 @@
 import judgesController from './judgesController.js';
-import { createReq, createRes } from '../../../tests/httpMocks.js';
+import { createReq, createRes } from '../../../../tests/httpMocks.js';
 
-vi.mock('../../repos/judgeRepo.js', () => ({
+vi.mock('../../../repos/judgeRepo.js', () => ({
 	default: {
 		unlinkedSearch: vi.fn(),
 	},
 }));
-vi.mock('../../repos/chapterJudgeRepo.js', () => ({
+vi.mock('../../../repos/chapterJudgeRepo.js', () => ({
 	default: {
 		unlinkedSearch: vi.fn(),
 	},
 }));
 
-import judgeRepo from '../../repos/judgeRepo.js';
-import chapterJudgeRepo from '../../repos/chapterJudgeRepo.js';
+import judgeRepo from '../../../repos/judgeRepo.js';
+import chapterJudgeRepo from '../../../repos/chapterJudgeRepo.js';
 
 describe('judgesController.unlinkedSearch', () => {
 	it('combines judge and chapter_judge results', async () => {

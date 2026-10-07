@@ -4,12 +4,14 @@ import type { Ballot } from '../data/schema.js';
 
 type queryOpts = {
 	winnerBallot?: boolean;
-	panel?: number
+	panel?: number;
+	judge?: number;
 };
 function buildBallotQuery(db: Database, opts: queryOpts = {}){
 	let query  = db.selectFrom('ballot');
 
 	query = opts.panel ? query.where('panel', '=', opts.panel) : query;
+	query = opts.judge ? query.where('judge', '=', opts.judge) : query;
 	if (opts.winnerBallot) {
 		query = query.innerJoin('score', 'ballot.id', 'score.ballot')
 		.where('score.tag', '=', 'winloss')

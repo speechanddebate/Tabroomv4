@@ -1,9 +1,12 @@
 import { Router } from 'express';
-import { ValidateRequest } from '../../../../middleware/validation.js';
-import { requirePerson } from '../../../../middleware/auth/authorization.js';
+import { loadJudgeAuthContext } from '../../../../../middleware/auth/authContext.js';
+import { ValidateRequest } from '../../../../../middleware/validation.js';
+import { requirePerson } from '../../../../../middleware/auth/authorization.js';
 import z from 'zod';
-import judgesController from '../../../../controllers/rest/judgesController.js';
+import judgesController from '../../../../../controllers/rest/judges/judgesController.js';
 import { UnlinkedJudgeSchema } from '@tabroom/types';
+import config from '../../../../../config.js';
+import panelsRouter from './panels/panelsRouter.js';
 
 const router = Router();
 
@@ -33,5 +36,11 @@ router.route('/unlinked/search')
 			},
 		},
 	};
+
+	router.param('judgeId', loadJudgeAuthContext);
+
+if(!config.features.HIDE_DEV_ENDPOINTS) {
+	router.use('/:judgeId/panels', panelsRouter);
+}
 
 export default router;

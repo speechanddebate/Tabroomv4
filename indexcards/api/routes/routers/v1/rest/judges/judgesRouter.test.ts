@@ -1,6 +1,6 @@
 import request from 'supertest';
-import server from '../../../../../app.js';
-import factories from '../../../../../tests/factories/index.js';
+import server from '../../../../../../app.js';
+import factories from '../../../../../../tests/factories/index.js';
 import z from 'zod';
 import { UnlinkedJudgeSchema } from '@tabroom/types';
 
