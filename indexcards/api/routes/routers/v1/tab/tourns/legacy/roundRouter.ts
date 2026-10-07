@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import z from 'zod';
 import { requireAccess } from '../../../../../../middleware/auth/authorization.js';
 import { sideCounts, roundDecisionStatus } from '../../../../../../controllers/tab/round/index.js';
 import { getRoundChangeLog } from '../../../../../../controllers/tab/round/changeLog.js';
@@ -13,30 +14,110 @@ import { mergeTimeslotRounds, unmergeTimeslotRounds } from '../../../../../../co
 
 const router = Router({ mergeParams: true });
 
+const roundParams = z.object({
+	tournId: z.coerce.number().int().positive(),
+	roundId: z.coerce.number().int().positive(),
+});
+
 //LEGACY ROUTES
 
-router.get('/:roundId/attendance', requireAccess('round', 'read'), getTournAttendance);
+router.route('/:roundId/attendance').get(requireAccess('round', 'read'), getTournAttendance).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/attendance',
+	summary: 'Get round attendance',
+	operationId: 'tabTournRoundAttendance',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Attendance data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
 
-router.post('/:roundId/blast', requireAccess('round', 'write'), blastRoundPairing);
+router.route('/:roundId/blast').post(requireAccess('round', 'write'), blastRoundPairing).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/blast',
+	summary: 'Blast round pairing',
+	operationId: 'tabTournRoundBlast',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Blast sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
 
-router.get('/:roundId/blastStatus',
-	requireAccess('round', 'read'), roundBlastStatus);
-router.get('/:roundId/dashboard',
-	requireAccess('round', 'read'), getTournDashboard);
-router.get('/:roundId/log',
-	requireAccess('round', 'read'), getRoundChangeLog);
-router.post('/:roundId/makeShareRooms',
-	requireAccess('round', 'write'), makeShareRooms);
-router.post('/:roundId/merge',
-	requireAccess('round', 'write'), mergeTimeslotRounds);
+router.route('/:roundId/blastStatus').get(requireAccess('round', 'read'), roundBlastStatus).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/blastStatus',
+	summary: 'Get round blast status',
+	operationId: 'tabTournRoundBlastStatus',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Blast status' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
 
-router.post('/:roundId/message',
-	requireAccess('round', 'write'), blastRoundMessage);
+router.route('/:roundId/dashboard').get(requireAccess('round', 'read'), getTournDashboard).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/dashboard',
+	summary: 'Get round dashboard',
+	operationId: 'tabTournRoundDashboard',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Dashboard data' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
 
-router.get('/:roundId/sidecount',
-	requireAccess('round', 'read'), sideCounts);
-router.get('/:roundId/status',
-	requireAccess('round', 'read'), roundDecisionStatus);
-router.post('/:roundId/unmerge',
-	requireAccess('round', 'write'), unmergeTimeslotRounds);
+router.route('/:roundId/log').get(requireAccess('round', 'read'), getRoundChangeLog).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/log',
+	summary: 'Get round change log',
+	operationId: 'tabTournRoundLog',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Change log' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/makeShareRooms').post(requireAccess('round', 'write'), makeShareRooms).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/makeShareRooms',
+	summary: 'Make share rooms',
+	operationId: 'tabTournRoundMakeShareRooms',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Share rooms created' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/merge').post(requireAccess('round', 'write'), mergeTimeslotRounds).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/merge',
+	summary: 'Merge timeslot rounds',
+	operationId: 'tabTournRoundMerge',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Rounds merged' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/message').post(requireAccess('round', 'write'), blastRoundMessage).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/message',
+	summary: 'Blast round message',
+	operationId: 'tabTournRoundMessage',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Message sent' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/sidecount').get(requireAccess('round', 'read'), sideCounts).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/sidecount',
+	summary: 'Get round side counts',
+	operationId: 'tabTournRoundSidecount',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Side counts' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/status').get(requireAccess('round', 'read'), roundDecisionStatus).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/status',
+	summary: 'Get round decision status',
+	operationId: 'tabTournRoundStatus',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Decision status' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
+router.route('/:roundId/unmerge').post(requireAccess('round', 'write'), unmergeTimeslotRounds).openapi = {
+	path: '/tab/tourns/{tournId}/rounds/{roundId}/unmerge',
+	summary: 'Unmerge timeslot rounds',
+	operationId: 'tabTournRoundUnmerge',
+	tags: ['legacy', 'Tournament'],
+	requestParams: { path: roundParams },
+	responses: { 200: { description: 'Rounds unmerged' }, default: { $ref: '#/components/responses/ErrorResponse' } },
+};
+
 export default router;
