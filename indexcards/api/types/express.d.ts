@@ -4,7 +4,15 @@ import type { Selectable } from 'kysely';
 import type { Actor, AuthInfo, SessionPerson } from '../middleware/auth/types.js';
 import type { Database } from '../data/database.js';
 
-export type RouteOpenApiConfig = (ZodOpenApiPathItemObject | ZodOpenApiOperationObject) & {
+type OperationMethod = 'get' | 'put' | 'post' | 'delete' | 'options' | 'head' | 'patch' | 'trace' | 'query';
+
+/** params are only declared with zod (requestParams), never as raw parameter objects */
+export type RouteOperation = Omit<ZodOpenApiOperationObject, 'parameters'>;
+
+type RoutePathItem = Omit<ZodOpenApiPathItemObject, 'parameters' | 'additionalOperations' | OperationMethod>
+	& Partial<Record<OperationMethod, RouteOperation>>;
+
+export type RouteOpenApiConfig = (RoutePathItem | RouteOperation) & {
 	path: string;
 };
 

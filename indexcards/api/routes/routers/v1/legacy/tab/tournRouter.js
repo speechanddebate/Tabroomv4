@@ -4,6 +4,7 @@ import { restoreTourn } from '../../../../../controllers/tab/tourn/backup.js';
 import * as accessController from '../../../../../controllers/tab/tourn/access.js';
 
 import roundRouter from '../../tab/tourns/legacy/roundRouter.js';
+import z from 'zod';
 
 const router = Router({ mergeParams: true });
 
@@ -12,7 +13,11 @@ router.post('/:tournId/restore', requireAccess('tourn', 'write'), restoreTourn).
 	path: '/tab/{tournId}/restore',
 	summary: 'Restore tournament from backup',
 	tags: ['legacy', 'Tournament'],
-	parameters: [{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } }],
+	requestParams: {
+		path: z.object({
+			tournId: z.coerce.number().int().positive(),
+		}),
+	},
 	requestBody: {
 		description: 'Tournament backup data',
 		required: true,
@@ -30,37 +35,45 @@ router.route('/:tournId/access/:personId')
 router.route('/:tournId/access/:personId').get(accessController.getAccess).openapi = {
 	path: '/tab/{tournId}/access/{personId}',
 	tags: ['legacy', 'Tournament Access'],
-	parameters: [
-		{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-		{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-	],
+	requestParams: {
+		path: z.object({
+			tournId: z.coerce.number().int().positive(),
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 200: { description: 'Access info' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 router.route('/:tournId/access/:personId').post(accessController.createAccess).openapi = {
 	path: '/tab/{tournId}/access/{personId}',
 	tags: ['legacy', 'Tournament Access'],
-	parameters: [
-		{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-		{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-	],
+	requestParams: {
+		path: z.object({
+			tournId: z.coerce.number().int().positive(),
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 201: { description: 'Access created' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 router.route('/:tournId/access/:personId').put(accessController.updateAccess).openapi = {
 	path: '/tab/{tournId}/access/{personId}',
 	tags: ['legacy', 'Tournament Access'],
-	parameters: [
-		{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-		{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-	],
+	requestParams: {
+		path: z.object({
+			tournId: z.coerce.number().int().positive(),
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 200: { description: 'Access updated' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 router.route('/:tournId/access/:personId').delete(accessController.deleteAccess).openapi = {
 	path: '/tab/{tournId}/access/{personId}',
 	tags: ['legacy', 'Tournament Access'],
-	parameters: [
-		{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-		{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-	],
+	requestParams: {
+		path: z.object({
+			tournId: z.coerce.number().int().positive(),
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 200: { description: 'Access deleted' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 
@@ -68,19 +81,23 @@ router.route('/:tournId/backupAccess/:personId')
 	.post(requireAccess('tourn', 'write'), accessController.createBackupAccess).openapi = {
 		path: '/tab/{tournId}/backupAccess/{personId}',
 		tags: ['legacy', 'Tournament Access'],
-		parameters: [
-			{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-			{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-		],
+		requestParams: {
+			path: z.object({
+				tournId: z.coerce.number().int().positive(),
+				personId: z.coerce.number().int().positive(),
+			}),
+		},
 		responses: { 201: { description: 'Backup access created' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 	}
 	.delete(requireAccess('tourn', 'write'), accessController.deleteBackupAccess).openapi = {
 		path: '/tab/{tournId}/backupAccess/{personId}',
 		tags: ['legacy', 'Tournament Access'],
-		parameters: [
-			{ in: 'path', name: 'tournId', required: true, schema: { type: 'integer' } },
-			{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } },
-		],
+		requestParams: {
+			path: z.object({
+				tournId: z.coerce.number().int().positive(),
+				personId: z.coerce.number().int().positive(),
+			}),
+		},
 		responses: { 200: { description: 'Backup access deleted' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 	};
 

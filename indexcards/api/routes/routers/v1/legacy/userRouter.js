@@ -2,6 +2,7 @@ import { Router } from 'express';
 import getProfileMod from '../../../../controllers/user/person/getProfile.js';
 import updateLastAccess from '../../../../controllers/user/person/access.js';
 import updateLearnCoursesMod from '../../../../controllers/user/person/learnCourse.js';
+import z from 'zod';
 
 const router = Router();
 
@@ -21,7 +22,11 @@ router.get('/profile', extractHandler(getProfileMod, 'GET')).openapi = {
 router.get('/profile/:personId', extractHandler(getProfileMod, 'GET')).openapi = {
 	path: '/user/profile/{personId}',
 	tags: ['legacy', 'User Profile'],
-	parameters: [{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } }],
+	requestParams: {
+		path: z.object({
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 200: { description: 'User profile' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 
@@ -40,7 +45,11 @@ router.post('/updateLearn', extractHandler(updateLearnCoursesMod, 'GET')).openap
 router.post('/updateLearn/:personId', extractHandler(updateLearnCoursesMod, 'GET')).openapi = {
 	path: '/user/updateLearn/{personId}',
 	tags: ['legacy', 'Learn'],
-	parameters: [{ in: 'path', name: 'personId', required: true, schema: { type: 'integer' } }],
+	requestParams: {
+		path: z.object({
+			personId: z.coerce.number().int().positive(),
+		}),
+	},
 	responses: { 200: { description: 'Learn courses updated' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 

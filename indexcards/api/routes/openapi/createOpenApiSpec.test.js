@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import z from 'zod';
 import { collectOpenApi, createOpenApiSpec } from './createOpenApiSpec.js';
 describe('collectOpenApi', () => {
 	it('should collect OpenAPI metadata from .route form', () => {
@@ -43,7 +44,7 @@ describe('collectOpenApi', () => {
 		shared.openapi = {
 			path: '/item/{id}',
 			requestParams: {
-				path: {},
+				path: z.object({ id: z.coerce.number().int() }),
 			},
 			get: {
 				operationId: 'GetItem',
@@ -93,6 +94,7 @@ describe('createOpenApiSpec', () => {
 		shared.openapi = {
 			path: '/spec-items/{id}',
 			tags: ['User: Inbox'],
+			requestParams: { path: z.object({ id: z.coerce.number().int() }) },
 			get: {
 				summary: 'Get item',
 				responses: { 200: { description: 'get ok' } },
@@ -113,5 +115,30 @@ describe('createOpenApiSpec', () => {
 		expect(deleteOp.tags).toContain('User: Inbox');
 		expect(getOp.responses['500']).toEqual({ $ref: '#/components/responses/ErrorResponse' });
 		expect(deleteOp.responses['401']).toEqual({ $ref: '#/components/responses/Unauthorized' });
+	});
+
+	describe('path params', () => {
+		const specFor = (openapi) => {
+			const router = Router();
+			router.route('/spec-params/:itemId').get((req, res) => res.send('ok')).openapi = {
+				path: '/spec-params/{itemId}',
+				responses: { 200: { description: 'ok' } },
+				...openapi,
+			};
+			return createOpenApiSpec(router);
+		};
+
+		it('documents params declared with zod once', () => {
+			const spec = specFor({ requestParams: { path: z.object({ itemId: z.coerce.number().int() }) } });
+			const params = spec.paths['/spec-params/{itemId}'].get.parameters;
+
+			expect(params.filter(param => param.name === 'itemId')).toHaveLength(1);
+			expect(params[0]).toMatchObject({ in: 'path', name: 'itemId', required: true });
+		});
+
+		it('rejects a path param that is not declared with zod', () => {
+			expect(() => specFor({})).toThrow('GET /spec-params/{itemId}: path params itemId must be declared in requestParams.path');
+		});
+
 	});
 });

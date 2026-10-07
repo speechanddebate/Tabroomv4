@@ -2,18 +2,17 @@ import * as schemas from '@tabroom/types';
 import { createDocument } from 'zod-openapi';
 import * as responses from './responses/index.js';
 import { tags as declaredTags, declaredTagGroups } from './tags.js';
-import { parameters } from './parameters.js';
 import logger from '../../helpers/logger.js';
 import { readFile } from 'node:fs/promises';
 import security from './security.js';
 
-import type { ZodOpenApiObject, ZodOpenApiOperationObject } from 'zod-openapi';
+import type { ZodOpenApiObject } from 'zod-openapi';
 import type { OpenAPIObject } from 'openapi3-ts/oas32';
-import type { RouteOpenApiConfig } from '../../types/express.d.js';
+import type { RouteOpenApiConfig, RouteOperation } from '../../types/express.d.js';
 
 const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'] as const;
 type HttpMethod = (typeof HTTP_METHODS)[number];
-type RouteOperationConfig = ZodOpenApiOperationObject & { path: string };
+type RouteOperationConfig = RouteOperation & { path: string };
 
 type RouterLike = {
 	stack?: unknown[];
@@ -64,7 +63,6 @@ export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 		components: {
 			schemas,
 			responses,
-			parameters,
 			securitySchemes: security.schemes,
 		},
 	};
@@ -162,7 +160,7 @@ function isHttpMethodKey(key: string): key is HttpMethod {
 }
 
 function normalizeOperation(method: HttpMethod, routePath: string, openapi: RouteOperationConfig) {
-	const params = extractPathParams(routePath);
+	assertZodParams(method, routePath, openapi);
 
 	// Exclude path property (used for routing, not OpenAPI)
 	const opWithoutPath = Object.fromEntries(
@@ -186,7 +184,6 @@ function normalizeOperation(method: HttpMethod, routePath: string, openapi: Rout
 		tags:
 			Array.isArray(openapi.tags) ? openapi.tags : [],
 
-		parameters: [...(Array.isArray(openapi.parameters) ? openapi.parameters : []), ...params],
 		//add a 401 and 500 error to every endpoint and a 200 if nothing was defined
 		responses: {
 			...existingResponses,
@@ -201,25 +198,21 @@ function normalizeOperation(method: HttpMethod, routePath: string, openapi: Rout
 	};
 }
 
-function extractPathParams(path: string) {
-	const knownParameters = parameters as Record<string, unknown>;
+/**
+ * all params are declared with zod (requestParams; the route config type has no raw parameters),
+ * which zod-openapi turns into parameters. fail the build for a {param} in the path that isn't declared
+ */
+function assertZodParams(method: HttpMethod, routePath: string, openapi: RouteOperationConfig) {
+	const route = `${method.toUpperCase()} ${routePath}`;
+	const pathSchema = openapi.requestParams?.path as { shape?: Record<string, unknown> } | undefined;
+	const declared = new Set(Object.keys(pathSchema?.shape ?? {}));
+	const undeclared = [...routePath.matchAll(/\{([^}]+)\}/g)]
+		.map(m => m[1])
+		.filter(name => !declared.has(name));
 
-	return [...path.matchAll(/\{([^}]+)\}/g)].map(m => {
-		const name = m[1];
-
-		// If a named parameter exists in components, reference it
-		if (knownParameters[name]) {
-			return { $ref: `#/components/parameters/${name}` };
-		}
-
-		// Otherwise generate a default path param
-		return {
-			name,
-			in: 'path',
-			required: true,
-			schema: { type: name.endsWith('Id') ? 'integer' : 'string' },
-		};
-	});
+	if (undeclared.length) {
+		throw new Error(`${route}: path params ${undeclared.join(', ')} must be declared in requestParams.path`);
+	}
 }
 
 function buildTagGroups(
