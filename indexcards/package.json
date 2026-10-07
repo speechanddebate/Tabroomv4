@@ -27,7 +27,6 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.397.0",
-		"@google/genai": "^1.28.0",
 		"@maxmind/geoip2-node": "^3.2.0",
 		"@scalar/express-api-reference": "^0.10.1",
 		"@speechanddebate/nsda-js-utils": "^1.0.15",
