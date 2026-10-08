@@ -5,7 +5,8 @@ import { tags as declaredTags } from './tags.js';
 import logger from '../../helpers/logger.js';
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import security from './security.js';
+import security, { requireAuth } from './security.js';
+import { authMiddleware } from '../../middleware/auth/authorization.js';
 
 import type { ZodOpenApiObject } from 'zod-openapi';
 import type { OpenAPIObject, TagObject } from 'openapi3-ts/oas32';
@@ -34,6 +35,7 @@ const pkg = JSON.parse(
 export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 	// Collect paths + used tags
 	const { paths, usedTags } = collectOpenApi(apiRouter);
+	applyAuthSecurity(apiRouter, paths);
 	const tags = buildTags(declaredTags, usedTags);
 
 	const doc: ZodOpenApiObject = {
@@ -118,6 +120,67 @@ export function collectOpenApi(router: RouterLike) {
 	}
 
 	return { paths, usedTags };
+}
+
+type LayerLike = {
+	name?: string;
+	path?: string;
+	handle?: RouterLike & Function;
+	match(path: string): boolean;
+	route?: { stack: Array<{ method?: string; handle: Function }> };
+};
+
+/**
+ * set security to requireAuth on operations that are reached through an auth middleware
+ * (requirePerson, requireSiteAdmin, requireAccess), either on the route itself or on a router.use() above it.
+ * Operations that declare their own security keep it.
+ */
+function applyAuthSecurity(apiRouter: RouterLike, paths: Record<string, Record<string, unknown>>) {
+	for (const [path, operations] of Object.entries(paths)) {
+		// any value matches an express :param
+		const samplePath = path.replace(/\{[^}]+\}/g, '1');
+
+		for (const [method, op] of Object.entries(operations) as Array<[string, Record<string, unknown>]>) {
+			if (op.security !== undefined) {
+				continue;
+			}
+			const auth = findAuth((apiRouter.stack ?? []) as LayerLike[], samplePath, method);
+
+			if (auth === undefined) {
+				logger.warn(`OpenAPI path ${method.toUpperCase()} ${path} doesn't match a mounted route, can't tell if it requires auth`);
+			} else if (auth) {
+				op.security = requireAuth;
+			}
+		}
+	}
+}
+
+/**
+ * walk the router stack the way express dispatches a request.
+ * true if an auth middleware runs before the handler, false if not, undefined if no route matches
+ */
+function findAuth(stack: LayerLike[], path: string, method: string): boolean | undefined {
+	for (const layer of stack) {
+		if (!layer.match(path)) {
+			continue;
+		}
+
+		if (layer.route) {
+			const handlers = layer.route.stack.filter(l => !l.method || l.method === method);
+			if (handlers.length) {
+				return handlers.some(l => authMiddleware.has(l.handle));
+			}
+		} else if (layer.handle && authMiddleware.has(layer.handle)) {
+			return true;
+		} else if (layer.name === 'router' && layer.handle?.stack) {
+			// layer.path is the mount path match() just consumed
+			const auth = findAuth(layer.handle.stack as LayerLike[], path.slice(layer.path?.length ?? 0) || '/', method);
+			if (auth !== undefined) {
+				return auth;
+			}
+		}
+	}
+	return undefined;
 }
 
 function isRouteOperationConfig(openapi: RouteOpenApiConfig): openapi is RouteOperationConfig {
