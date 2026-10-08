@@ -10,7 +10,8 @@ import { db } from '../../data/database.js';
 import { getRound } from '../../repos/roundRepo.js';
 import { getProtocol, getProtocols } from '../../repos/protocolRepo.js';
 
-type Counted = {
+export type Counted = {
+	tv?: boolean,
 	rank?: boolean,
 	entryWinloss?: boolean,
 	entryRank?: boolean,
@@ -25,7 +26,8 @@ export const tiebreakTypes = async ({roundId, protocolId = false}: {
 	protocolId?: number | false,
 }) => {
 
-	const round = await getRound(db, roundId);
+	// Ballots and results can be entered before a round is published
+	const round = await getRound(db, roundId, { unpublished: true });
 
 	if(!round){
 		throw new Error(`Round with ID ${roundId} not found`);
@@ -161,5 +163,9 @@ export const tiebreakTypes = async ({roundId, protocolId = false}: {
 			}
 		}
 	}
+
+	// TODO: port tv (time violations) from tiebreak_types.mas. Stubbed off until then
+	counted.tv = false;
+
 	return counted;
 };

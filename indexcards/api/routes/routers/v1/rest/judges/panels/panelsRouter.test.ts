@@ -3,7 +3,7 @@ import server from '../../../../../../../app.js';
 import factories from '../../../../../../../tests/factories/index.js';
 
 // Protection for everything under /v1/rest/judges/:judgeId/panels/:panelId.
-// The ballot routes are 501 stubs, so a 501 means every guard passed
+// GET /ballots returns 200 and the rest are 501 stubs, so either means every guard passed
 describe('/rest/judges/:judgeId/panels/:panelId', () => {
 	let judgeUserkey: string;
 	let otherUserkey: string;
@@ -15,11 +15,12 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		({ userkey: judgeUserkey } = await factories.session.create({ person: person.id }));
 		({ userkey: otherUserkey } = await factories.session.create());
 
-		const category = await factories.category.create({ tourn: (await factories.tourn.create()).id });
-		const judge = await factories.judge.create({ person: person.id, category: category.id });
-		const ballot = await factories.ballot.create({ judge: judge.id });
+		const { Category, Round } = await factories.tourn.createFull();
+		const judge = await factories.judge.create({ person: person.id, category: Category.id });
+		const panel = await factories.panel.create({ round: Round.id });
+		await factories.ballot.create({ judge: judge.id, panel: panel.id });
 		judgeId = judge.id;
-		panelId = ballot.panel;
+		panelId = panel.id;
 	});
 
 	const url = (judge: number | string, panel: number | string) => `/v1/rest/judges/${judge}/panels/${panel}/ballots`;
@@ -27,7 +28,7 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 	it('reaches the route for the judge on their own panel', async () => {
 		const res = await request(server).get(url(judgeId, panelId)).asPerson(judgeUserkey);
 
-		expect(res.status).toBe(501);
+		expect(res.status).toBe(200);
 	});
 
 	it('returns 400 for a malformed judge id', async () => {
@@ -69,20 +70,20 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		expect(missing.status).toBe(existing.status);
 	});
 
-	// every route under /ballots, with the action it checks
-	const routes: ['get' | 'put' | 'post', string][] = [
-		['get', ''],
-		['get', '/status'],
-		['put', ''],
-		['post', '/start'],
-		['post', '/confirm'],
-		['put', '/comments'],
+	// every route under /ballots, with the status it returns once every guard passes
+	const routes: ['get' | 'put' | 'post', string, number][] = [
+		['get', '', 200],
+		['get', '/status', 501],
+		['put', '', 501],
+		['post', '/start', 501],
+		['post', '/confirm', 501],
+		['put', '/comments', 501],
 	];
 
-	it.each(routes)('lets the judge through %s /ballots%s', async (method, path) => {
+	it.each(routes)('lets the judge through %s /ballots%s', async (method, path, status) => {
 		const res = await request(server)[method](url(judgeId, panelId) + path).asPerson(judgeUserkey);
 
-		expect(res.status).toBe(501);
+		expect(res.status).toBe(status);
 	});
 
 	it.each(routes)('returns 403 on %s /ballots%s for a person who is not the judge', async (method, path) => {

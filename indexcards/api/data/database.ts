@@ -1,6 +1,6 @@
 import type { DB } from './schema.js'
 import { createPool } from 'mariadb'
-import { Kysely, SafeNullComparisonPlugin } from 'kysely'
+import { HandleEmptyInListsPlugin, Kysely, replaceWithNoncontingentExpression, SafeNullComparisonPlugin } from 'kysely'
 import { MariadbDialect } from "kysely-mariadb";
 import config from '../config.js'
 import logger, { getCallerFrame } from '../helpers/logger.js'
@@ -25,6 +25,7 @@ export const db = new Kysely<DB>({
 	dialect,
 	plugins: [
 		new SafeNullComparisonPlugin(),
+		new HandleEmptyInListsPlugin({ strategy: replaceWithNoncontingentExpression }),
 	],
 	log(event){
 		if (event.level === 'error'){

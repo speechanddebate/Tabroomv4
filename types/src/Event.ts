@@ -4,7 +4,7 @@ import * as utils from './utils.js';
 
 export const EventSchema = z.object({
 	id: utils.id,
-	abbr: z.string(),
+	abbr: z.string().nullable(),
 	name: z.string(),
 	fee: z.number(),
 	type: z.enum(['debate', 'speech', 'mock_trial', 'congress', 'wsdc', 'wudc', 'attendee', 'academic']),

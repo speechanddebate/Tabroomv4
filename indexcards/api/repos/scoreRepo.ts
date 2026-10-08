@@ -8,10 +8,12 @@ type queryOpts = {
 	limit?: number;
 	offset?: number;
 	ballot?: number;
+	ballots?: number[];
 };
 function buildScoreQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('score');
 	query = opts.ballot ? query.where('ballot', '=', opts.ballot) : query;
+	query = opts.ballots ? query.where('ballot', 'in', opts.ballots) : query;
 	query = opts.winloss ? query.where('tag', '=', 'winloss') : query;
 	query = opts.limit ? query.limit(opts.limit) : query;
 	query = opts.offset ? query.offset(opts.offset) : query;

@@ -28,6 +28,21 @@ describe('getScores', async () => {
 		expect(found?.ballot).toBe(Ballot.id);
 	});
 
+	it('returns scores for several ballots', async () => {
+		const other = await factories.ballot.create();
+		const first = await scoreRepo.createScore(db, { ballot: Ballot.id });
+		const second = await scoreRepo.createScore(db, { ballot: other.id });
+
+		const scores = await scoreRepo.getScores(db, { ballots: [Ballot.id, other.id] });
+
+		expect(scores.map(s => s.id)).toEqual(expect.arrayContaining([first!.id, second!.id]));
+		expect(scores.every(s => s.ballot === Ballot.id || s.ballot === other.id)).toBe(true);
+	});
+
+	it('returns no scores for an empty list of ballots', async () => {
+		expect(await scoreRepo.getScores(db, { ballots: [] })).toEqual([]);
+	});
+
 	it('should return all scores when no scope is provided', async () => {
 		// Create at least one score to ensure there is data
 		await scoreRepo.createScore(db, { ballot: Ballot.id });

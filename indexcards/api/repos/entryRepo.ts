@@ -8,7 +8,8 @@ import type { Database } from '../data/database.js';
 type entryOpts = {
 	limit?: number,
 	offset?: number,
-	settings?: boolean | string[]
+	settings?: boolean | string[],
+	ids?: number[],
 }
 function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 	let query = db.selectFrom('entry')
@@ -17,6 +18,10 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 			settings: opts.settings ?? false,
 		}
 	)))
+
+	query = opts.ids
+		? query.where('entry.id', 'in', opts.ids)
+		: query;
 
 	query = opts.limit
 		? query.limit(opts.limit)
@@ -43,6 +48,30 @@ async function getEntry(db: Database,id: number, opts: entryOpts = {}) {
 	return row;
 }
 
+async function getEntries(db: Database, opts: entryOpts = {}) {
+	return await buildEntryQuery(db, opts)
+		.selectAll('entry')
+		.execute();
+}
+
+/**
+ * Returns the students on these entries, with each student's pronoun from their person
+ * (null when the student has no person). */
+async function getEntryStudents(db: Database, entryIds: number[]) {
+	return await db.selectFrom('entry_student')
+		.innerJoin('student', 'student.id', 'entry_student.student')
+		.leftJoin('person', 'person.id', 'student.person')
+		.select([
+			'entry_student.entry',
+			'student.id',
+			'student.first',
+			'student.last',
+			'person.pronoun',
+		])
+		.where('entry_student.entry', 'in', entryIds)
+		.execute();
+}
+
 async function createEntry(db: Database, data: Insertable<Entry> & { settings?: Settings }) {
 	const { settings, ...entryData } = data;
 	const res =  await db.insertInto('entry')
@@ -63,5 +92,7 @@ async function createEntry(db: Database, data: Insertable<Entry> & { settings?: 
 
 export default {
 	getEntry,
+	getEntries,
+	getEntryStudents,
 	createEntry,
 };

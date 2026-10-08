@@ -14,6 +14,7 @@ import fine from './fine.js';
 import judge from './judge.js';
 import message from './message.js';
 import permission from './permission.js';
+import protocol from './protocol.js';
 import resultSet from './result_set.js';
 import room from './room.js';
 import round from './round.js';
@@ -46,6 +47,7 @@ const factories = {
 	judge,
 	message,
 	permission,
+	protocol,
 	resultSet,
 	room,
 	round,
