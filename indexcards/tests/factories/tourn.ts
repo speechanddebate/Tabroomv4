@@ -5,7 +5,7 @@ import { db } from '../../api/data/database.js';
 import factories from './index.js';
 import type { Tourn, Event, Timeslot } from '../../api/data/schema.js';
 import type { Settings } from '../../api/repos/utils/settings.js';
-import type { Insertable } from 'kysely';
+import type { Insertable, Selectable } from 'kysely';
 
 export function createTournData(overrides: Partial<Insertable<Tourn>> & { settings?: Settings } = {}) {
 	const name = overrides.name ?? fakeTournName();
@@ -28,6 +28,17 @@ export function createTournData(overrides: Partial<Insertable<Tourn>> & { settin
 		end: noMs(faker.date.future()),
 		reg_start: noMs(faker.date.recent()),
 		reg_end: noMs(faker.date.future()),
+		...overrides,
+	};
+}
+
+// A tourn row as a repo returns it with settings, without touching the DB
+export function mock(overrides: Partial<Selectable<Tourn>> & { settings?: Settings | null } = {}): Selectable<Tourn> & { settings: Settings | null } {
+	return {
+		id: faker.number.int({ min: 1, max: 1_000_000 }),
+		timestamp: noMs(new Date()),
+		...createTournData(),
+		settings: {},
 		...overrides,
 	};
 }
@@ -78,6 +89,7 @@ export async function createFull(overrides: FullTournOverrides = {}){
 };
 export default {
 	createTournData,
+	mock,
 	create,
 	createFull,
 };

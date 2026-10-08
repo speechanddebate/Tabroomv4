@@ -1,6 +1,10 @@
 import { db } from '../../api/data/database.js';
 import eventRepo from '../../api/repos/eventRepo.js';
 import { faker } from '@faker-js/faker';
+import { noMs } from './factoryUtils.js';
+import type { Event } from '../../api/data/schema.js';
+import type { Settings } from '../../api/repos/utils/settings.js';
+import type { Selectable } from 'kysely';
 
 
 enum EventType {
@@ -37,11 +41,31 @@ export function createEventData(overrides = {}) {
 	};
 }
 
+// An event row as a repo returns it with settings, without touching the DB
+export function mock(overrides: Partial<Selectable<Event>> & { settings?: Settings | null } = {}): Selectable<Event> & { settings: Settings | null } {
+	return {
+		id: faker.number.int({ min: 1, max: 1_000_000 }),
+		tourn: null,
+		category: null,
+		code_style: 'numbers',
+		fee: null,
+		nsda_category: null,
+		pattern: null,
+		rating_subset: null,
+		created_at: noMs(new Date()),
+		timestamp: noMs(new Date()),
+		...createEventData(),
+		settings: {},
+		...overrides,
+	};
+}
+
 export async function create(overrides = {}) {
 	const data = createEventData(overrides);
 	return await eventRepo.createEvent(db,data);
 }
 export default {
 	createEventData,
+	mock,
 	create,
 };

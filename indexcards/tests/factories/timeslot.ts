@@ -2,6 +2,8 @@ import timeslotRepo from '../../api/repos/timeslotRepo.js';
 import { fakeRoundName, noMs} from './factoryUtils.js';
 import { faker } from '@faker-js/faker';
 import { db } from '../../api/data/database.js';
+import type { Timeslot } from '../../api/data/schema.js';
+import type { Selectable } from 'kysely';
 
 export function createTimeslotData(overrides = {}) {
 	const start = faker.date.future();
@@ -16,6 +18,17 @@ export function createTimeslotData(overrides = {}) {
 	};
 }
 
+// A timeslot row as a repo returns it, without touching the DB
+export function mock(overrides: Partial<Selectable<Timeslot>> = {}): Selectable<Timeslot> {
+	return {
+		id: faker.number.int({ min: 1, max: 1_000_000 }),
+		tourn: null,
+		timestamp: noMs(new Date()),
+		...createTimeslotData(),
+		...overrides,
+	};
+}
+
 export async function create(overrides = {}) {
 	const data = createTimeslotData(overrides);
 
@@ -23,5 +36,6 @@ export async function create(overrides = {}) {
 }
 export default {
 	createTimeslotData,
+	mock,
 	create
 };
