@@ -3,6 +3,9 @@ import { Unauthorized, Forbidden } from '../../helpers/problem.js';
 import type { Request, Response, NextFunction } from 'express';
 import type { Actor, AuthError, Perm, ResourceId, SessionPerson } from './types.js';
 import type { Database } from '../../data/database.js';
+
+/** middleware that rejects anonymous requests. the OpenAPI spec marks routes behind one of these as requiring auth */
+export const authMiddleware = new WeakSet<Function>();
 /**
  * the person making the request. throws a 401 (handled by errorHandler) when there is none,
  * so handlers can use the result without null checks
@@ -24,6 +27,8 @@ export function requirePerson(req: Request, res: Response, next: NextFunction) {
 	}
 	next();
 }
+authMiddleware.add(requirePerson);
+
 // should be rolled into the RBAC scheme at some point
 export function requireSiteAdmin(req: Request, res: Response, next: NextFunction) {
 	if (!req.actor) {
@@ -34,6 +39,7 @@ export function requireSiteAdmin(req: Request, res: Response, next: NextFunction
 	}
 	next();
 }
+authMiddleware.add(requireSiteAdmin);
 
 /**
  * route middleware: 403 unless the actor can perform action on resource.
@@ -41,7 +47,7 @@ export function requireSiteAdmin(req: Request, res: Response, next: NextFunction
  * resources identified some other way (e.g. a ballot by its judge and panel)
  */
 export function requireAccess(resource: string, action: string, resolveId?: (req: Request) => ResourceId) {
-	return async (req: Request, res: Response, next: NextFunction) => {
+	const middleware = async (req: Request, res: Response, next: NextFunction) => {
 		// anonymous actors can't be granted anything, so the answer is "log in", not "forbidden"
 		if (!req.actor || req.actor.type === 'anonymous') {
 			return Unauthorized(req, res,'User not Authenticated');
@@ -58,6 +64,8 @@ export function requireAccess(resource: string, action: string, resolveId?: (req
 			return next(err);
 		}
 	};
+	authMiddleware.add(middleware);
+	return middleware;
 }
 
 function formatResourceId(resourceId: ResourceId) {

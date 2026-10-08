@@ -28,7 +28,7 @@ router.route('/:categoryId/access/:personId')
 
 router.route('/:categoryId/updateLearn').post(requireAccess('category', 'write'), ValidateRequest, updateCategoryLearn).openapi = {
 	path: '/tab/category/{categoryId}/updateLearn',
-	tags: ['legacy', 'Category'],
+	tags: ['legacy', 'tab:category'],
 	requestParams: {
 		path: z.object({
 			categoryId: z.coerce.number().int().positive(),

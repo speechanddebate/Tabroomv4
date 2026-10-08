@@ -8,7 +8,7 @@ const router = Router();
 router.route('/usage').get(controller.getTabroomUsage).openapi = {
 	path: '/admin/servers/usage',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	responses: {
 		'200': {
 			description: 'OK',
@@ -20,7 +20,7 @@ router.route('/usage').get(controller.getTabroomUsage).openapi = {
 router.route('/show').get(controller.getInstances).openapi = {
 	path: '/admin/servers/show',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	responses: {
 		'200': {
 			description: 'OK',
@@ -32,7 +32,7 @@ router.route('/show').get(controller.getInstances).openapi = {
 router.route('/show/:linodeId').get(ValidateRequest, controller.getTabroomInstance).openapi = {
 	path: '/admin/servers/show/{linodeId}',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	requestParams: {
 		path: z.object({ linodeId: z.coerce.number().int().positive() }),
 	},
@@ -47,7 +47,7 @@ router.route('/show/:linodeId').get(ValidateRequest, controller.getTabroomInstan
 router.route('/status').get(controller.getInstanceStatus).openapi = {
 	path: '/admin/servers/status',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	responses: {
 		'200': {
 			description: 'OK',
@@ -59,7 +59,7 @@ router.route('/status').get(controller.getInstanceStatus).openapi = {
 router.route('/count').get(controller.getTabroomInstanceCounts).openapi = {
 	path: '/admin/servers/count',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	responses: {
 		'200': {
 			description: 'OK',
@@ -71,7 +71,7 @@ router.route('/count').get(controller.getTabroomInstanceCounts).openapi = {
 router.route('/reboot').post(controller.rebootInstance).openapi = {
 	path: '/admin/servers/reboot',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	responses: {
 		'200': {
 			description: 'OK',
@@ -83,7 +83,7 @@ router.route('/reboot').post(controller.rebootInstance).openapi = {
 router.route('/changeCount').post(ValidateRequest, controller.changeInstanceCount).openapi = {
 	path: '/admin/servers/changeCount',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	requestBody: {
 		required: true,
 		content: {
@@ -105,7 +105,7 @@ router.route('/changeCount').post(ValidateRequest, controller.changeInstanceCoun
 router.route('/changeCount/:target').delete(ValidateRequest, controller.changeInstanceCount).openapi = {
 	path: '/admin/servers/changeCount/{target}',
 	summary: 'TODO write spec',
-	tags: ['Admin : Servers'],
+	tags: ['admin:servers'],
 	requestParams: {
 		path: z.object({
 			target: z.coerce.number().int().nonnegative().meta({ description: 'Number of servers to remove' }),

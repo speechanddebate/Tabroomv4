@@ -18,7 +18,7 @@ router.route('/').get( requireAccess('tourn', 'read'), ValidateRequest, controll
 	path: '/tab/tourns/{tournId}/schools',
 	summary: 'Get Schools for Tournament',
 	description: 'Retrieves all schools associated with the specified tournament.',
-	tags: ['Schools'],
+	tags: ['tab:schools'],
 	requestParams: { path: tournParams },
 	responses: {
 		200: {
@@ -37,7 +37,7 @@ router.route('/').post(requireAccess('tourn', 'write'), ValidateRequest, control
 	path: '/tab/tourns/{tournId}/schools',
 	summary: 'Create School',
 	description: 'Creates a new school within the specified tournament.',
-	tags: ['Schools'],
+	tags: ['tab:schools'],
 	requestParams: { path: tournParams },
 	requestBody: {
 		required: true,
@@ -68,7 +68,7 @@ router.route('/:schoolId').get(   requireAccess('tourn', 'read'), ValidateReques
 	path: '/tab/tourns/{tournId}/schools/{schoolId}',
 	summary: 'Get School by ID',
 	description: 'Retrieves a school by its ID within the specified tournament.',
-	tags: ['Schools'],
+	tags: ['tab:schools'],
 	requestParams: { path: schoolParams },
 	responses: {
 		200: {
@@ -87,7 +87,7 @@ router.route('/:schoolId').put(   requireAccess('tourn', 'write'), ValidateReque
 	path: '/tab/tourns/{tournId}/schools/{schoolId}',
 	summary: 'Update School',
 	description: 'Updates an existing school within the specified tournament.',
-	tags: ['Schools'],
+	tags: ['tab:schools'],
 	requestParams: { path: schoolParams },
 	requestBody: {
 		required: true,
@@ -109,7 +109,7 @@ router.route('/:schoolId').delete(requireAccess('tourn', 'write'), ValidateReque
 	path: '/tab/tourns/{tournId}/schools/{schoolId}',
 	summary: 'Delete School',
 	description: 'Deletes a school within the specified tournament.',
-	tags: ['Schools'],
+	tags: ['tab:schools'],
 	requestParams: { path: schoolParams },
 	responses: {
 		204: {

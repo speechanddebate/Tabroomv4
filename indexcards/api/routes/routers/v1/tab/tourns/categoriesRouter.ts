@@ -17,7 +17,7 @@ const categoryParams = tournParams.extend({
 router.route('/').get(requireAccess('tourn', 'read'), ValidateRequest, controller.getCategories).openapi = {
 	path: '/tab/tourns/{tournId}/categories',
 	summary: 'Get categories',
-	tags: ['Category'],
+	tags: ['tab:category'],
 	requestParams: { path: tournParams },
 	responses: {
 		200: {
@@ -34,14 +34,14 @@ router.route('/').get(requireAccess('tourn', 'read'), ValidateRequest, controlle
 router.route('/').post(requireAccess('tourn', 'write'), ValidateRequest, controller.createCategory).openapi = {
 	path: '/tab/tourns/{tournId}/categories',
 	summary: 'Create category',
-	tags: ['Category'],
+	tags: ['tab:category'],
 	requestParams: { path: tournParams },
 };
 
 router.route('/:categoryId').get(requireAccess('category', 'read'), ValidateRequest, controller.getCategory).openapi = {
 	path: '/tab/tourns/{tournId}/categories/{categoryId}',
 	summary: 'Get category',
-	tags: ['Category'],
+	tags: ['tab:category'],
 	requestParams: { path: categoryParams },
 	responses: {
 		200: {
@@ -59,14 +59,14 @@ router.route('/:categoryId').get(requireAccess('category', 'read'), ValidateRequ
 router.route('/:categoryId').delete(requireAccess('category', 'write'), ValidateRequest, controller.deleteCategory).openapi = {
 	path: '/tab/tourns/{tournId}/categories/{categoryId}',
 	summary: 'Delete category',
-	tags: ['Category'],
+	tags: ['tab:category'],
 	requestParams: { path: categoryParams },
 };
 
 router.route('/:categoryId').put(requireAccess('category', 'write'), ValidateRequest, controller.updateCategory).openapi = {
 	path: '/tab/tourns/{tournId}/categories/{categoryId}',
 	summary: 'Update category',
-	tags: ['Category'],
+	tags: ['tab:category'],
 	requestParams: { path: categoryParams },
 };
 

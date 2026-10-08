@@ -4,7 +4,6 @@ import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { requireAuth } from '../../../openapi/security.js';
 
 const router = Router();
 
@@ -15,8 +14,7 @@ router.route('/').get(controller.inboxList).openapi = {
 	operationId : 'UserInbox',
 	summary     : 'Get messages',
 	description : 'Get the list of messages for the logged-in user',
-	tags: ['Orval','User: Inbox'],
-	security    : requireAuth,
+	tags: ['Orval','user:inbox'],
 	responses: {
 		200: {
 			description: 'Inbox list',
@@ -34,8 +32,7 @@ router.route('/unread').get(controller.getUnreadCount).openapi = {
 	summary: 'Unread count',
 	description: 'Get the count of unread messages for the logged-in user',
 	operationId: 'UserInboxUnread',
-	tags: ['User: Inbox','Orval'],
-	security: requireAuth,
+	tags: ['user:inbox','Orval'],
 	responses: {
 		200: {
 			description: 'Unread count',
@@ -53,8 +50,7 @@ router.route('/markAllRead').post(controller.readAllMessages).openapi = {
 	operationId: 'UserInboxMarkAllRead',
 	summary: 'Mark all messages as read',
 	description: 'Mark all visible messages for the logged-in user as read',
-	tags: ['Orval', 'User: Inbox'],
-	security    : requireAuth,
+	tags: ['Orval', 'user:inbox'],
 	responses: { 204: { description: 'All messages marked as read' } },
 };
 
@@ -62,8 +58,7 @@ router.route('/:messageId')
 	.get(ValidateRequest, controller.getMessage)
 	.delete(ValidateRequest, controller.deleteMessage).openapi = {
 		path: '/user/inbox/{messageId}',
-		tags: ['Orval', 'User: Inbox'],
-		security    : requireAuth,
+		tags: ['Orval', 'user:inbox'],
 		requestParams: {
 			path: z.object({
 				messageId: z.coerce.number().int().meta({ description: 'The ID of the message' }),
@@ -97,8 +92,7 @@ router.route('/:messageId/markRead').post(ValidateRequest, controller.readMessag
 	operationId: 'UserInboxMarkRead',
 	summary: 'Mark message as read',
 	description: 'Mark a specific message as read',
-	tags: ['Orval', 'User: Inbox'],
-	security    : requireAuth,
+	tags: ['Orval', 'user:inbox'],
 	requestParams: {
 		path: z.object({
 			messageId: z.coerce.number().int().meta({ description: 'The ID of the message to mark as read' }),
@@ -112,8 +106,7 @@ router.route('/:messageId/markUnread').post(ValidateRequest, controller.unreadMe
 	operationId: 'UserInboxMarkUnread',
 	summary: 'Mark message as unread',
 	description: 'Mark a specific message as unread',
-	tags: ['Orval', 'User: Inbox'],
-	security    : requireAuth,
+	tags: ['Orval', 'user:inbox'],
 	requestParams: {
 		path: z.object({
 			messageId: z.coerce.number().int().meta({ description: 'The ID of the message to mark as unread' }),

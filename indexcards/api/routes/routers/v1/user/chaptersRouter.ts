@@ -13,7 +13,7 @@ router.route('/')
 		summary: 'GET User Chapters',
 		description: 'returns a list of chapters a person has permissions in.',
 		operationId: 'UserChapters',
-		tags: ['Orval', 'User: Chapter'],
+		tags: ['Orval', 'user:chapter'],
 		responses: {
 			200: {
 				description: 'User chapters',
@@ -30,7 +30,7 @@ if(!config.features.HIDE_DEV_ENDPOINTS) {
 router.route('/byTourn/:tournId')
 	.get(ValidateRequest, controller.userChaptersByTourn).openapi = {
 	path: '/user/chapters/byTourn/{tournId}',
-	tags: ['legacy', 'User: Chapter'],
+	tags: ['legacy', 'user:chapter'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
@@ -40,7 +40,7 @@ router.route('/byTourn/:tournId')
 router.route('/byTourn/:tournId/mySchools')
 	.get(ValidateRequest, controller.getMySchoolsByTourn).openapi = {
 	path: '/user/chapters/byTourn/{tournId}/mySchools',
-	tags: ['legacy', 'User: Chapter'],
+	tags: ['legacy', 'user:chapter'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
@@ -55,7 +55,7 @@ router.route('/byTourn/:tournId/mySchools')
 router.route('/byTourn/:tournId/nonSchools')
 	.get(ValidateRequest, controller.getMyChaptersNonTourn).openapi = {
 	path: '/user/chapters/byTourn/{tournId}/nonSchools',
-	tags: ['legacy', 'User: Chapter'],
+	tags: ['legacy', 'user:chapter'],
 	requestParams: {
 		path: z.object({ tournId: z.coerce.number().int().positive() }),
 	},
