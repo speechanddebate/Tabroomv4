@@ -90,6 +90,18 @@ expect.extend({
 					body.status === 404 &&
 					body.detail.length > 0;
 				break;
+			case 409:
+				matchesExpectedCode =
+					body.title === 'The request conflicts with the current state of the resource.' &&
+					body.status === 409 &&
+					body.detail.length > 0;
+				break;
+			case 422:
+				matchesExpectedCode =
+					body.title === 'The request could not be processed.' &&
+					body.status === 422 &&
+					Array.isArray(body.errors);
+				break;
 			case 429:
 				matchesExpectedCode =
 					body.title === 'Rate limit exceeded' &&

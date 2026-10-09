@@ -7,7 +7,7 @@ export function sendProblem(req: Request, res: Response, {
 	detail,
 	instance = req.originalUrl ?? '',
 	...extras
-}: Partial<Problem>) {
+}: Partial<Problem> & Record<string, unknown>) {
 	return res
 	.status(status ?? 500)
 	.type('application/problem+json')
@@ -51,6 +51,24 @@ export function NotFound(req: Request, res: Response, detail?: string, extras = 
 		title: 'The specified resource was not found.',
 		status: 404,
 		detail,
+		...extras,
+	});
+}
+export function Conflict(req: Request, res: Response, detail?: string, extras = {}){
+	return sendProblem(req, res, {
+		title: 'The request conflicts with the current state of the resource.',
+		status: 409,
+		detail,
+		...extras,
+	});
+}
+// The request was well-formed but breaks the resource's rules. errors says how, e.g. BallotError[]
+export function UnprocessableEntity(req: Request, res: Response, detail?: string, errors: unknown[] = [], extras = {}){
+	return sendProblem(req, res, {
+		title: 'The request could not be processed.',
+		status: 422,
+		detail,
+		errors,
 		...extras,
 	});
 }

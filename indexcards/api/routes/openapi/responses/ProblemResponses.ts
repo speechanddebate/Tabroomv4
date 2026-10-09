@@ -103,6 +103,26 @@ export const Forbidden = {
 		},
 	},
 } satisfies ProblemResponse;
+export const Conflict = {
+	description: 'Conflict - the request conflicts with the current state of the resource.',
+	content: {
+		'application/problem+json': {
+			schema: ProblemSchema,
+			examples:{
+				conflict: {
+					summary: '409 Conflict',
+					value: {
+						type: 'about:blank',
+						title: 'Conflict',
+						status: 409,
+						detail: 'This ballot has already been confirmed.',
+						instance: '/api/v1/example',
+					},
+				},
+			},
+		},
+	},
+} satisfies ProblemResponse;
 export const BadRequest = {
 	description: 'BadRequest - the request was invalid or cannot be otherwise served.',
 	content: {
