@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import type { Insertable, Updateable } from 'kysely';
 import type { Database } from '../data/database.js';
 import type { School } from '../data/schema.js';
@@ -48,7 +48,7 @@ async function getSchools(db: Database, opts: queryOpts = {}) {
 async function createSchool(db: Database, data: Insertable<School> & { settings?: Settings }) {
 	const { settings, ...schoolData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		const school = await trx
 			.insertInto('school')
 			.values(schoolData)
@@ -71,7 +71,7 @@ async function createSchool(db: Database, data: Insertable<School> & { settings?
 async function updateSchool(db: Database, id: number, data: Updateable<School> & { settings?: Settings }) {
 	const { settings, ...schoolData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(schoolData).length > 0) {
 			await trx
 				.updateTable('school')

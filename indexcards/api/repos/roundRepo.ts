@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
 import type { Round } from '../data/schema.js';
@@ -65,7 +65,7 @@ export async function getRounds(
 export async function createRound(db: Database, data: Insertable<Round> & { settings?: Settings }) {
 	const { settings, ...roundData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(roundData).length === 0) {
 			throw new Error('createRound requires round data');
 		}

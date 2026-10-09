@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import type { Database } from '../data/database.js';
 import type { Insertable, Updateable } from 'kysely';
 import type { Tourn } from '../data/schema.js';
@@ -84,7 +84,7 @@ async function getTourns(db: Database, opts: queryOpts = {}) {
 async function createTourn(db: Database, data: Insertable<Tourn> & { settings?: Settings } = {}) {
 	const { settings, ...tournData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(tournData).length === 0) {
 			throw new Error('createTourn requires tourn data');
 		}
@@ -111,7 +111,7 @@ async function createTourn(db: Database, data: Insertable<Tourn> & { settings?: 
 			async function updateTourn(db: Database, id: number, data: Updateable<Tourn> & { settings?: Settings }) {
 				const { settings, ...tournData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(tournData).length > 0) {
 			await trx
 				.updateTable('tourn')

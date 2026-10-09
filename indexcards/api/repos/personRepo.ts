@@ -1,5 +1,5 @@
 import type { DBSchema, Database } from '../data/database.js';
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import type { Person } from '../data/schema.js';
 import type { Insertable, ExpressionBuilder } from 'kysely';
 
@@ -158,7 +158,7 @@ type CreatePersonData = Insertable<Person> & {
 export async function updatePerson(db: Database, personId: number, data: Partial<CreatePersonData>) {
 	const { settings, ...personData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(personData).length > 0) {
 			await trx
 				.updateTable('person')
@@ -182,7 +182,7 @@ export async function updatePerson(db: Database, personId: number, data: Partial
 export async function createPerson(db: Database, data: CreatePersonData) {
 	const { settings, ...personData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		const person = await trx
 			.insertInto('person')
 			.values(personData)

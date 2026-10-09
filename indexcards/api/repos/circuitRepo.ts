@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import { sql } from 'kysely';
 import type { Database } from '../data/database.js';
 import type { Insertable } from 'kysely';
@@ -49,7 +49,7 @@ async function getCircuits(db: Database, opts: queryOpts = {}){
 export async function createCircuit(db: Database, data: Insertable<Circuit> & { settings?: Settings }) {
 	const { settings, ...circuitData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		const circuit = await trx
 			.insertInto('circuit')
 			.values(circuitData)

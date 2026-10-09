@@ -1,5 +1,5 @@
 
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
 import type { Category } from '../data/schema.js';
@@ -32,7 +32,7 @@ async function getCategories(db: Database, opts: CategoryOpts = {}) {
 }
 async function createCategory(db: Database, data: Insertable<Category> & { settings?: Settings }) {
 	const { settings, ...categoryData } = data;
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		const category = await trx
 			.insertInto('category')
 			.values(categoryData)
@@ -54,7 +54,7 @@ async function createCategory(db: Database, data: Insertable<Category> & { setti
 async function updateCategory(db: Database, id: number, data: Updateable<Category> & { settings?: Settings }) {
 	const { settings, ...categoryData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(categoryData).length > 0) {
 			await trx
 				.updateTable('category')

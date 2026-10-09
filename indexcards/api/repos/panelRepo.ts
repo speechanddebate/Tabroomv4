@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
 import type { Insertable, Updateable } from 'kysely';
@@ -139,7 +139,7 @@ async function getPanels(db: Database, opts: queryOpts = {}) {
 async function createPanel(db: Database, data: Insertable<Panel> & { settings?: Settings }){
 	const { settings, ...panelData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(panelData).length === 0) {
 			throw new Error('createPanel requires panel data');
 		}
@@ -166,7 +166,7 @@ async function createPanel(db: Database, data: Insertable<Panel> & { settings?: 
 async function updatePanel(db: Database, id: number, data: Updateable<Panel> & { settings?: Settings }){
 	const { settings, ...panelData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(panelData).length > 0) {
 			await trx
 				.updateTable('panel')

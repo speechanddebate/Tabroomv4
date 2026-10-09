@@ -4,7 +4,7 @@ import { sql } from 'kysely';
 import { snakeToCamel } from '../helpers/text.js';
 import type { Database } from '../data/database.js';
 import type { Event } from '../data/schema.js';
-import { saveSettings, selectSettings, type Settings } from './utils/index.js';
+import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 type queryOpts = {
 	ids?: number[];
@@ -187,7 +187,7 @@ export async function getEvents(db: Database, opts: queryOpts = {}){
 async function createEvent(db: Database, data: Insertable<Event> & { settings?: Settings }) {
 	const { settings, ...categoryData } = data;
 
-	return await db.transaction().execute(async (trx) => {
+	return await withTransaction(db, async (trx) => {
 		if (Object.keys(categoryData).length === 0) {
 			throw new Error('createEvent requires event data');
 		}
