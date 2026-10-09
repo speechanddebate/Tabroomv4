@@ -5,7 +5,7 @@ import { blastRoundPairing } from '../round/blast.js';
 import { BadRequest, Forbidden } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Refactor this so that it will allow an event/category only user to blast only those

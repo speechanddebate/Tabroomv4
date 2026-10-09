@@ -1,6 +1,6 @@
 import { NotImplemented } from '../../../helpers/problem.js';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 // General CRUD for the section itself
 
 export async function updateSectionGET(req, res) {

@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/settings.js';
+import { saveSettings, selectSettings, type Settings } from './utils/index.js';
 import type { Insertable, Updateable } from 'kysely';
 import type { Database } from '../data/database.js';
 import type { School } from '../data/schema.js';

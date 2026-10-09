@@ -1,4 +1,4 @@
-import { saveSettings, selectSettings, type Settings } from './utils/settings.js';
+import { saveSettings, selectSettings, type Settings } from './utils/index.js';
 import type { Database } from '../data/database.js';
 import type { Insertable, Updateable } from 'kysely';
 import type { Tourn } from '../data/schema.js';

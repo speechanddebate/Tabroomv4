@@ -2,7 +2,7 @@ import { NotFound } from '../../../helpers/problem.js';
 import logger from '../../../helpers/logger.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 export async function getRoundAvailableJudges (req, res) {
 
 	// Returns a list of judges who can judge this round, filtering out any

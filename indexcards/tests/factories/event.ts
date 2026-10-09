@@ -3,7 +3,7 @@ import eventRepo from '../../api/repos/eventRepo.js';
 import { faker } from '@faker-js/faker';
 import { noMs } from './factoryUtils.js';
 import type { Event } from '../../api/data/schema.js';
-import type { Settings } from '../../api/repos/utils/settings.js';
+import type { Settings } from '../../api/repos/utils/index.js';
 import type { Selectable } from 'kysely';
 
 

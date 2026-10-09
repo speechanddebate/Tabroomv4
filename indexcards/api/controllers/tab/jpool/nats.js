@@ -1,6 +1,6 @@
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 // NSDA Nationals Specific code to create judge pools with according weights via auto assignment.
 
 export async function placeJudgesNats(req, res) {

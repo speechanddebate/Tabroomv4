@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { sql } from 'kysely';
 import { db } from '../data/database.js';
-import { summon } from '../repos/utils/summon.js';
+import { summon } from '../repos/utils/index.js';
 import changeLogRepo from '../repos/changeLogRepo.js';
 import config from '../config.js';
 import notify from './blast.js';

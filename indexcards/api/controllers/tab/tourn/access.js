@@ -1,7 +1,7 @@
 import logger from '../../../helpers/logger.js';
 import { BadRequest, Forbidden, NotFound, NotImplemented } from '../../../helpers/problem.js';
 import { db } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Functions that manage overall tournament access.

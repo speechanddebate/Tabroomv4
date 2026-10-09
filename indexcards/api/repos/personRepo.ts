@@ -1,5 +1,5 @@
 import type { DBSchema, Database } from '../data/database.js';
-import { saveSettings, selectSettings, type Settings } from './utils/settings.js';
+import { saveSettings, selectSettings, type Settings } from './utils/index.js';
 import type { Person } from '../data/schema.js';
 import type { Insertable, ExpressionBuilder } from 'kysely';
 

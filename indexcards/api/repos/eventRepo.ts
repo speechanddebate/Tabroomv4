@@ -4,7 +4,7 @@ import { sql } from 'kysely';
 import { snakeToCamel } from '../helpers/text.js';
 import type { Database } from '../data/database.js';
 import type { Event } from '../data/schema.js';
-import { saveSettings, selectSettings, type Settings } from './utils/settings.js';
+import { saveSettings, selectSettings, type Settings } from './utils/index.js';
 
 type queryOpts = {
 	ids?: number[];

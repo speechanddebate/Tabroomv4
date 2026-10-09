@@ -4,7 +4,7 @@ import logger from '../../../helpers/logger.js';
 import { notify } from '../../../helpers/blast.js';
 import { sendPairingBlast, formatPairingBlast } from '../../../helpers/pairing.js';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 export async function blastSectionMessage(req, res) {

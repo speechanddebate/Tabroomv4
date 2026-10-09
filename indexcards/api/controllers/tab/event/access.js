@@ -2,7 +2,7 @@
 
 import { BadRequest, Forbidden, NotFound, NotImplemented } from '../../../helpers/problem.js';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 // Add permissions that are not there already (create)

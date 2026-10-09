@@ -1,7 +1,7 @@
 import type { MockInstance } from 'vitest';
 import factories from '../../../tests/factories/index.js';
 import logger from '../../helpers/logger.js';
-import type { Settings } from '../../repos/utils/settings.js';
+import type { Settings } from '../../repos/utils/index.js';
 import { ballotEntries, ballotTimers, otherJudges, settingLines, feedbackScoring, ballotHeader, ballotRules, ballotStatus, ballotTopic, chairLabel, decisionDeadline, isOn, pointsScoring, roundName, roundStart, rulesText, savedWinner, sideLock, winlossScoring, type BallotRulesInput } from './ballotRules.js';
 
 const recent = new Date('2026-10-01T00:00:00Z');

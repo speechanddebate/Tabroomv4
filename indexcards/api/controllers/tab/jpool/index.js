@@ -3,7 +3,7 @@
 import { NotImplemented, UnexpectedError } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 
 // General CRUD for the jpool itself
 // Get jpool (read)

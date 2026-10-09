@@ -1,7 +1,7 @@
 import { NotFound, NotImplemented, UnexpectedError } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 
 export async function getRPool(req, res) {
 	const rpool = await summon(kdb, 'rpool',req.params.rpoolId);

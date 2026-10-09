@@ -4,7 +4,7 @@ import tournRepo from '../../api/repos/tournRepo.js';
 import { db } from '../../api/data/database.js';
 import factories from './index.js';
 import type { Tourn, Event, Timeslot } from '../../api/data/schema.js';
-import type { Settings } from '../../api/repos/utils/settings.js';
+import type { Settings } from '../../api/repos/utils/index.js';
 import type { Insertable, Selectable } from 'kysely';
 
 export function createTournData(overrides: Partial<Insertable<Tourn>> & { settings?: Settings } = {}) {

@@ -1,4 +1,4 @@
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import logger from '../../../helpers/logger.js';
 import { db } from '../../../data/database.js';
 import { ballotRepo } from '../../../repos/ballotRepo.js';

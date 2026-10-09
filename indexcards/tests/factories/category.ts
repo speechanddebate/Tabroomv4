@@ -3,7 +3,7 @@ import { fakeCategory, noMs } from './factoryUtils.js';
 import { db } from '../../api/data/database.js';
 import { faker } from '@faker-js/faker';
 import type { Category } from '../../api/data/schema.js';
-import type { Settings } from '../../api/repos/utils/settings.js';
+import type { Settings } from '../../api/repos/utils/index.js';
 import type { Selectable } from 'kysely';
 
 export function createCategoryData(overrides = {}) {

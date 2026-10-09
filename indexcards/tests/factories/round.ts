@@ -3,7 +3,7 @@ import { db } from '../../api/data/database.js';
 import { faker } from '@faker-js/faker';
 import { noMs } from './factoryUtils.js';
 import type { Round } from '../../api/data/schema.js';
-import type { Settings } from '../../api/repos/utils/settings.js';
+import type { Settings } from '../../api/repos/utils/index.js';
 import type { Selectable } from 'kysely';
 
 const ROUND_TYPES = ['prelim', 'highlow', 'highhigh', 'snaked_prelim', 'elim', 'final', 'runoff'];

@@ -2,7 +2,7 @@ import { sql } from 'kysely';
 import { addZero } from '../../../helpers/text.js';
 import { NotImplemented } from '../../../helpers/problem.js';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 
 export async function getRound(req,res) {
 	const round = await summon(kdb, 'round',req.params.roundId);

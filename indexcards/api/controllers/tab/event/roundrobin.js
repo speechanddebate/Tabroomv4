@@ -3,7 +3,7 @@
 import { BadRequest } from '../../../helpers/problem.js';
 import { writeRound } from '../../../helpers/round.js';
 import { db } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 
 export async function sectionTemplateRobin(req, res) {
 	const division = await summon(db, 'event',req.params.eventId);

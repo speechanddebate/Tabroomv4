@@ -8,7 +8,7 @@ import type { Selectable } from 'kysely';
 import type { Ballot, Category, Entry, Event, Judge, Panel, Round, Score, Timeslot, Topic, Tourn } from '../../data/schema.js';
 import type entryRepo from '../../repos/entryRepo.js';
 import type panelRepo from '../../repos/panelRepo.js';
-import type { Settings } from '../../repos/utils/settings.js';
+import type { Settings } from '../../repos/utils/index.js';
 import type { Counted } from '../results/tiebreakTypes.js';
 import { convert } from 'html-to-text';
 import config from '../../config.js';

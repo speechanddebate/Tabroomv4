@@ -2,7 +2,7 @@ import { getRoundAvailableJudges, getRoundJudgeConflicts } from '../round/judges
 import { getSectionEntries } from './entries.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 
 export async function getSectionCleanJudges(req, res) {
 	const section = await summon(kdb, 'panel',req.params.sectionId);

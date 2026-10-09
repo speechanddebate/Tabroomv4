@@ -1,10 +1,9 @@
 
-import { saveSettings, selectSettings } from './utils/settings.js';
+import { saveSettings, selectSettings, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
 import type { Category } from '../data/schema.js';
 import type { Updateable, Insertable } from 'kysely';
-import type { Settings } from './utils/settings.js';
 
 type CategoryOpts = {
 	tourn?: number;

@@ -2,7 +2,7 @@ import { notify } from '../../../helpers/blast.js';
 import { BadRequest, UnexpectedError } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-import { summon } from '../../../repos/utils/summon.js';
+import { summon } from '../../../repos/utils/index.js';
 import changeLogRepo from '../../../repos/changeLogRepo.js';
 
 export async function blastJudges(req, res) {

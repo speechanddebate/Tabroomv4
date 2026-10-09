@@ -3,7 +3,7 @@ import { db } from '../../../data/database.js';
 import { parseDateTime } from '../../../helpers/dateTime.js';
 import { NotFound } from '../../../helpers/problem.js';
 import { publishLevel, snakeToCamel } from '../../../helpers/text.js';
-import { selectSettings } from '../../../repos/utils/settings.js';
+import { selectSettings } from '../../../repos/utils/index.js';
 import { entryWins } from '../../../services/results/entryWins.js';
 
 export async function getSchematic (req,res) {
