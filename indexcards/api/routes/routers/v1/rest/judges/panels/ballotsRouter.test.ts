@@ -1,12 +1,13 @@
 import request from 'supertest';
-import { BallotContextSchema } from '@tabroom/types';
+import { BallotContextSchema, BallotFeedbackSchema, BallotProgressSchema, BallotReviewSchema, BallotValidationProblemSchema } from '@tabroom/types';
+import { db } from '../../../../../../data/database.js';
 import server from '../../../../../../../app.js';
 import factories from '../../../../../../../tests/factories/index.js';
 
 // A judge's ballot on LD Round 3 at 14:00, counting wins and points, flight 2 in room 101,
 // with a 90 minute deadline and 45 minute flight offset. AFF1 (Ana Adams) is on Aff
 // with a saved 28 and the win; NEG2 (Ben Brown) is on Neg
-const createBallot = async (eventType: 'debate' | 'speech') => {
+const createBallot = async (eventType: 'debate' | 'speech', eventSettings: Record<string, string> = {}) => {
 	const person = await factories.person.create();
 	const { userkey } = await factories.session.create({ person: person.id });
 
@@ -24,6 +25,7 @@ const createBallot = async (eventType: 'debate' | 'speech') => {
 			ballot_rules: 'No tied points.',
 			rfd_plz: '50',
 			comments_plz: '25',
+			...eventSettings,
 		},
 	});
 	const timeslot = await factories.timeslot.create({ tourn: tourn.id });
@@ -131,5 +133,213 @@ describe('GET /rest/judges/:judgeId/panels/:panelId/ballots', () => {
 			tourn: tourn.id,
 			supported: false,
 		});
+	});
+});
+
+describe('PUT /rest/judges/:judgeId/panels/:panelId/ballots', () => {
+	// The fixture requires 50 words of RFD and 25 of comments; these tests turn them off
+	const noMinimums = { rfd_plz: '0', comments_plz: '0' };
+
+	const body = (ballot: Awaited<ReturnType<typeof createBallot>>, overrides = {}) => ({
+		eventType: 'debate',
+		winner: ballot.negBallot.id,
+		lowPointWin: false,
+		points: [
+			{ student: ballot.ana.id, points: 27 },
+			{ student: ballot.ben.id, points: 29 },
+		],
+		feedback: { rfd: null, Entries: [] },
+		...overrides,
+	});
+
+	const scores = async (ballot: Awaited<ReturnType<typeof createBallot>>) => await db.selectFrom('score')
+		.select(['ballot', 'tag', 'value'])
+		.where('ballot', 'in', [ballot.affBallot.id, ballot.negBallot.id])
+		.where('tag', 'in', ['winloss', 'point'])
+		.orderBy('tag').orderBy('ballot')
+		.execute();
+
+	it('saves the ballot and returns it for review', async () => {
+		const ballot = await createBallot('debate', noMinimums);
+
+		const res = await request(server).put(url(ballot.judge.id, ballot.panel.id)).send(body(ballot)).asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(BallotReviewSchema);
+		expect(res.body).toMatchObject({ eventType: 'debate', saved: true, winner: ballot.negBallot.id, lowPointWin: false });
+		expect(await scores(ballot)).toEqual([
+			{ ballot: ballot.affBallot.id, tag: 'point', value: 27 },
+			{ ballot: ballot.negBallot.id, tag: 'point', value: 29 },
+			{ ballot: ballot.affBallot.id, tag: 'winloss', value: 0 },
+			{ ballot: ballot.negBallot.id, tag: 'winloss', value: 1 },
+		]);
+	});
+
+	it('only validates with dryRun', async () => {
+		const ballot = await createBallot('debate', noMinimums);
+
+		const res = await request(server).put(`${url(ballot.judge.id, ballot.panel.id)}?dryRun=true`).send(body(ballot)).asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchObject({ saved: false });
+		// The fixture's saved scores are untouched: Aff's win and 28
+		expect(await scores(ballot)).toEqual([
+			{ ballot: ballot.affBallot.id, tag: 'point', value: 28 },
+			{ ballot: ballot.affBallot.id, tag: 'winloss', value: 1 },
+		]);
+	});
+
+	it('returns every ballot error as a 422', async () => {
+		const ballot = await createBallot('debate');
+
+		const res = await request(server).put(url(ballot.judge.id, ballot.panel.id)).send(body(ballot, { winner: null })).asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(422);
+		expect(res.body).toMatchSchema(BallotValidationProblemSchema);
+		expect(res.body.errors.map((error: { field: string }) => error.field)).toEqual(['winner', 'rfd', 'comments', 'comments']);
+	});
+
+	it('rejects a body that doesn\'t match the schema', async () => {
+		const ballot = await createBallot('debate', noMinimums);
+
+		const res = await request(server).put(url(ballot.judge.id, ballot.panel.id)).send(body(ballot, { points: 'lots' })).asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(400);
+	});
+
+	it('refuses a confirmed ballot', async () => {
+		const ballot = await createBallot('debate', noMinimums);
+		await db.updateTable('ballot').set({ audit: 1 }).where('panel', '=', ballot.panel.id).execute();
+
+		const res = await request(server).put(url(ballot.judge.id, ballot.panel.id)).send(body(ballot)).asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(409);
+	});
+
+	it('refuses a ballot the beta can\'t handle', async () => {
+		const ballot = await createBallot('debate', { ...noMinimums, ballot_rubric: '1' });
+
+		const res = await request(server).put(url(ballot.judge.id, ballot.panel.id)).send(body(ballot)).asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(409);
+		expect(res.body.reasons).toEqual(['event setting ballot_rubric']);
+	});
+});
+
+describe('POST /rest/judges/:judgeId/panels/:panelId/ballots/start', () => {
+	const started = async (panel: number) => await db.selectFrom('ballot')
+		.select(['started_by', 'judge_started'])
+		.where('panel', '=', panel)
+		.execute();
+
+	it('marks every one of the judge\'s ballot rows started by the judge', async () => {
+		const ballot = await createBallot('debate');
+		await db.deleteFrom('score').where('ballot', 'in', [ballot.affBallot.id, ballot.negBallot.id]).execute();
+
+		const res = await request(server).post(`${url(ballot.judge.id, ballot.panel.id)}/start`).asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(BallotProgressSchema);
+		expect(res.body).toEqual({ status: 'started' });
+
+		const rows = await started(ballot.panel.id);
+		expect(rows.map(row => row.started_by)).toEqual([ballot.judge.person, ballot.judge.person]);
+		expect(rows.every(row => row.judge_started instanceof Date)).toBe(true);
+	});
+
+	it('keeps the first start', async () => {
+		const ballot = await createBallot('debate');
+		const first = new Date('2026-10-03T14:00:00Z');
+		await db.updateTable('ballot').set({ judge_started: first, started_by: ballot.judge.person }).where('panel', '=', ballot.panel.id).execute();
+
+		const res = await request(server).post(`${url(ballot.judge.id, ballot.panel.id)}/start`).asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect((await started(ballot.panel.id)).map(row => row.judge_started)).toEqual([first, first]);
+	});
+
+	it('does nothing for someone entering the ballot for the judge', async () => {
+		const ballot = await createBallot('debate');
+		const owner = await factories.person.create();
+		await factories.permission.create({ person: owner.id, tourn: ballot.tourn.id, tag: 'owner' });
+		const { userkey } = await factories.session.create({ person: owner.id });
+
+		const res = await request(server).post(`${url(ballot.judge.id, ballot.panel.id)}/start`).asPerson(userkey);
+
+		expect(res.status).toBe(200);
+		expect(await started(ballot.panel.id)).toEqual([
+			{ started_by: null, judge_started: null },
+			{ started_by: null, judge_started: null },
+		]);
+	});
+});
+
+describe('GET /rest/judges/:judgeId/panels/:panelId/ballots/status', () => {
+	it('returns where the judge is with the ballot', async () => {
+		const ballot = await createBallot('debate');
+
+		const res = await request(server).get(`${url(ballot.judge.id, ballot.panel.id)}/status`).asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(BallotProgressSchema);
+		expect(res.body).toEqual({ status: 'scored' });
+	});
+
+	it('notices a ballot confirmed elsewhere', async () => {
+		const ballot = await createBallot('debate');
+		await db.updateTable('ballot').set({ audit: 1 }).where('panel', '=', ballot.panel.id).execute();
+
+		const res = await request(server).get(`${url(ballot.judge.id, ballot.panel.id)}/status`).asPerson(ballot.userkey);
+
+		expect(res.body).toEqual({ status: 'confirmed' });
+	});
+});
+
+describe('PUT /rest/judges/:judgeId/panels/:panelId/ballots/feedback', () => {
+	// The fixture's tournament ended on 2026-10-04, after which feedback can't change
+	const openTourn = async (ballot: Awaited<ReturnType<typeof createBallot>>) => {
+		await db.updateTable('tourn').set({ end: new Date('2099-01-01T00:00:00Z') }).where('id', '=', ballot.tourn.id).execute();
+	};
+
+	it('saves the feedback and returns it', async () => {
+		const ballot = await createBallot('debate');
+		await openTourn(ballot);
+
+		const res = await request(server).put(`${url(ballot.judge.id, ballot.panel.id)}/feedback`)
+			.send({ rfd: '<p>Neg won the weighing.</p>', Entries: [{ ballot: ballot.affBallot.id, comments: '<p>Extend your cards.</p>' }] })
+			.asPerson(ballot.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(BallotFeedbackSchema);
+		expect(res.body).toEqual({
+			rfd: '<p>Neg won the weighing.</p>',
+			Entries: [
+				{ ballot: ballot.affBallot.id, comments: '<p>Extend your cards.</p>' },
+				{ ballot: ballot.negBallot.id, comments: '<p>Slow down.</p>' },
+			],
+		});
+	});
+
+	it('returns a 422 for comments on another judge\'s ballot', async () => {
+		const ballot = await createBallot('debate');
+		await openTourn(ballot);
+		const other = await factories.ballot.create();
+
+		const res = await request(server).put(`${url(ballot.judge.id, ballot.panel.id)}/feedback`)
+			.send({ Entries: [{ ballot: other.id, comments: '<p>Hi</p>' }] })
+			.asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(422);
+		expect(res.body).toMatchSchema(BallotValidationProblemSchema);
+	});
+
+	it('returns a 409 after the tournament ends', async () => {
+		const ballot = await createBallot('debate');
+
+		const res = await request(server).put(`${url(ballot.judge.id, ballot.panel.id)}/feedback`)
+			.send({ rfd: '<p>Late</p>' })
+			.asPerson(ballot.userkey);
+
+		expect(res).toBeProblemResponse(409);
 	});
 });

@@ -3,8 +3,8 @@ import type { Request, Response } from 'express';
 import { NotImplemented } from '../../../../../../helpers/problem.js';
 import { ValidateRequest } from '../../../../../../middleware/validation.js';
 import { requireAccess } from '../../../../../../middleware/auth/authorization.js';
-import { getBallotContext } from '../../../../../../controllers/rest/judges/panels/ballotController.js';
-import { BallotContextSchema } from '@tabroom/types';
+import { getBallotContext, getBallotStatus, saveFeedback, startBallot, submitBallot } from '../../../../../../controllers/rest/judges/panels/ballotController.js';
+import { BallotContextSchema, BallotFeedbackSchema, BallotProgressSchema, BallotReviewSchema, BallotSubmissionSchema, BallotValidationProblemSchema } from '@tabroom/types';
 import z from 'zod';
 
 // /v1/rest/judges/:judgeId/panels/:panelId/ballots
@@ -62,60 +62,100 @@ router.route('/').get(requireAccess('ballot', 'read', ballot), ValidateRequest, 
 };
 
 // Validates the submission and writes ballot/score rows
-router.route('/').put(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
+router.route('/').put(requireAccess('ballot', 'write', ballot), ValidateRequest, submitBallot).openapi = {
 	summary: 'Save ballot',
-	description: 'Validates the ballot and writes its scores',
+	description: 'Validates the ballot and writes its scores, which the judge then reviews and confirms. With dryRun, only validates',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots',
 	operationId: 'RestJudgesBallotSave',
-	tags: ['Judges'],
+	tags: ['Orval', 'Judges'],
 	requestParams: {
 		path: ballotParams,
+		query: z.object({
+			dryRun: z.stringbool().default(false).meta({ description: 'Validate without saving' }),
+		}),
+	},
+	requestBody: {
+		content: {
+			'application/json': {
+				schema: BallotSubmissionSchema,
+			},
+		},
 	},
 	responses: {
-		200: { description: 'Ballot saved' },
+		200: {
+			description: 'The ballot as saved, for the judge to review',
+			content: {
+				'application/json': {
+					schema: BallotReviewSchema,
+				},
+			},
+		},
+		409: { $ref: '#/components/responses/Conflict' },
+		422: {
+			description: 'The ballot breaks its rules. errors lists every problem',
+			content: {
+				'application/problem+json': {
+					schema: BallotValidationProblemSchema,
+				},
+			},
+		},
 		...ballotErrors,
 	},
 };
 
 // Sets started_by/judge_started if empty. run when judge opens ballot
-router.route('/start').post(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
+router.route('/start').post(requireAccess('ballot', 'write', ballot), ValidateRequest, startBallot).openapi = {
 	summary: 'Start ballot',
-	description: 'Marks the ballot as started by the judge, if it isn\'t already',
+	description: 'Marks the ballot as started by the judge, if it isn\'t already. Does nothing for someone entering it for the judge',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/start',
 	operationId: 'RestJudgesBallotStart',
-	tags: ['Judges'],
+	tags: ['Orval', 'Judges'],
 	requestParams: {
 		path: ballotParams,
 	},
 	responses: {
-		200: { description: 'Ballot started' },
+		200: {
+			description: 'The ballot\'s status after starting it',
+			content: {
+				'application/json': {
+					schema: BallotProgressSchema,
+				},
+			},
+		},
 		...ballotErrors,
 	},
 };
 
-// Light poll every 1-2 minutes while on the ballot: access, sides changed by a flip, and whether
-// the ballot was locked or confirmed elsewhere.
-router.route('/status').get(requireAccess('ballot', 'read', ballot), ValidateRequest, notImplemented).openapi = {
+// Light poll every 1-2 minutes while on the ballot, to notice it was confirmed elsewhere.
+// Losing access shows up as a 403 or 404 from the guards
+router.route('/status').get(requireAccess('ballot', 'read', ballot), ValidateRequest, getBallotStatus).openapi = {
 	summary: 'Get ballot status',
-	description: 'Polled while the ballot is open: access, sides changed by a flip, and whether it was locked or confirmed elsewhere',
+	description: 'Polled while the ballot is open, to notice it was confirmed elsewhere. Lost access returns 403 or 404',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/status',
 	operationId: 'RestJudgesBallotStatus',
-	tags: ['Judges'],
+	tags: ['Orval', 'Judges'],
 	requestParams: {
 		path: ballotParams,
 	},
 	responses: {
-		200: { description: 'Ballot status' },
+		200: {
+			description: 'Where the judge is with the ballot',
+			content: {
+				'application/json': {
+					schema: BallotProgressSchema,
+				},
+			},
+		},
 		...ballotErrors,
 	},
 };
 
-// Replaces ballot_confirm.mhtml.
-// Sets audit/audited_by, checks panel completion and runs roundDone
-// (notifications, backups, autoqueue).
+// Replaces ballot_confirm.mhtml. Not built yet: after PUT / saves the ballot, the page sends
+// the judge to classic's user/judge/ballot_confirm.mhtml, which audits the ballots and runs
+// round_done.mas (notifications, backups, autoqueue). This comes with porting those.
 router.route('/confirm').post(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
 	summary: 'Confirm ballot',
-	description: 'Makes the decision final and runs the round completion steps',
+	description: 'Makes the decision final and runs the round completion steps. Not built yet; confirm on classic',
 	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/confirm',
 	operationId: 'RestJudgesBallotConfirm',
 	tags: ['Judges'],
@@ -129,19 +169,42 @@ router.route('/confirm').post(requireAccess('ballot', 'write', ballot), Validate
 };
 
 // Replaces comment_save, rfd_only_save and legion_comments_save.
-// Editable after confirm until
-// the tournament ends. Resets comments_reviewed.
-router.route('/comments').put(requireAccess('ballot', 'write', ballot), ValidateRequest, notImplemented).openapi = {
-	summary: 'Save ballot comments',
-	description: 'Saves the RFD and per-entry comments. Editable after confirm until the tournament ends',
-	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/comments',
-	operationId: 'RestJudgesBallotComments',
-	tags: ['Judges'],
+// Autosaved drafts, so the judge doesn't lose work; PUT / saves the final feedback.
+// Editable after confirm until the tournament ends. Resets comments_reviewed.
+router.route('/feedback').put(requireAccess('ballot', 'write', ballot), ValidateRequest, saveFeedback).openapi = {
+	summary: 'Save ballot feedback',
+	description: 'Saves the RFD and per-entry comments as drafts. A field left out stays as it is, and null or empty text deletes it. Editable after confirm until the tournament ends',
+	path: '/rest/judges/{judgeId}/panels/{panelId}/ballots/feedback',
+	operationId: 'RestJudgesBallotFeedback',
+	tags: ['Orval', 'Judges'],
 	requestParams: {
 		path: ballotParams,
 	},
+	requestBody: {
+		content: {
+			'application/json': {
+				schema: BallotFeedbackSchema,
+			},
+		},
+	},
 	responses: {
-		200: { description: 'Comments saved' },
+		200: {
+			description: 'The RFD and every entry\'s comments as saved',
+			content: {
+				'application/json': {
+					schema: BallotFeedbackSchema,
+				},
+			},
+		},
+		409: { $ref: '#/components/responses/Conflict' },
+		422: {
+			description: 'The comments are for entries that aren\'t on the ballot',
+			content: {
+				'application/problem+json': {
+					schema: BallotValidationProblemSchema,
+				},
+			},
+		},
 		...ballotErrors,
 	},
 };

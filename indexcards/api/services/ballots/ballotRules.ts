@@ -132,6 +132,8 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 		'show_async_links',
 		// Prep breakout room links, which need online_room.mas ported
 		'online_prep',
+		// One score per entry, which the submission doesn't take yet
+		'team_points',
 	];
 
 	// Category settings that add entry columns the beta doesn't show yet
@@ -198,6 +200,11 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 	}
 
 	const lock = sideLock(input);
+
+	// The judge picks sides, which needs side swaps and the side disagreement check from ballot_save.mhtml
+	if (lock === 'pick') {
+		unsupported.push('side choice');
+	}
 
 	// Pairing puts the due Aff entry on side 1, so a mismatch means tab moved the sides by hand
 	const dueAffBallot = input.ballots.find(ballot => ballot.entry === input.dueAff);

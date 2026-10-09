@@ -65,10 +65,24 @@ export const BallotEntrySchema = z.object({
 }) satisfies ZodOpenApiSchemaObject;
 export type BallotEntry = z.infer<typeof BallotEntrySchema>;
 
+export const BallotStatusSchema = z.enum(['not_started', 'started', 'scored', 'confirmed']).meta({
+	id: 'BallotStatus',
+	description: 'Where the judge is with this ballot',
+}) satisfies ZodOpenApiSchemaObject;
+export type BallotStatus = z.infer<typeof BallotStatusSchema>;
+
+// What the ballot page polls while it's open
+export const BallotProgressSchema = z.object({
+	status: BallotStatusSchema,
+}).strict().meta({
+	id: 'BallotProgress',
+}) satisfies ZodOpenApiSchemaObject;
+export type BallotProgress = z.infer<typeof BallotProgressSchema>;
+
 // Shared by every event type's context
 const BallotBaseSchema = z.object({
 	eventType: EventSchema.shape.type.meta({ description: 'The type of event for this ballot' }),
-	status: z.enum(['not_started', 'started', 'scored', 'confirmed']).meta({ description: 'Where the judge is with this ballot' }),
+	status: BallotStatusSchema,
 	chairLabel: z.string().nullable().meta({ description: 'Shown when the judge chairs the panel. null when they don\'t' }),
 	tz: TournSchema.shape.tz.meta({ description: 'The tournament time zone, for showing times' }),
 	Tourn: z.object({

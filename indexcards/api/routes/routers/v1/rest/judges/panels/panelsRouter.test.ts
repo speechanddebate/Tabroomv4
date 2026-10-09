@@ -73,11 +73,11 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 	// every route under /ballots, with the status it returns once every guard passes
 	const routes: ['get' | 'put' | 'post', string, number][] = [
 		['get', '', 200],
-		['get', '/status', 501],
-		['put', '', 501],
-		['post', '/start', 501],
+		['get', '/status', 200],
+		['put', '', 400],
+		['post', '/start', 200],
 		['post', '/confirm', 501],
-		['put', '/comments', 501],
+		['put', '/feedback', 400],
 	];
 
 	it.each(routes)('lets the judge through %s /ballots%s', async (method, path, status) => {

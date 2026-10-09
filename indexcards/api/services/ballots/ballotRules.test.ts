@@ -139,11 +139,26 @@ describe('ballotRules', () => {
 		'dumb_signature_line',
 		'team_total_line',
 		'flip_online',
-		'no_side_constraints',
 		'show_async_links',
 		'online_prep',
+		'team_points',
 	])('flags events with %s', (tag) => {
 		expect(ballotRules(input({ event: event({ [tag]: '1' }) })).unsupported).toEqual([`event setting ${tag}`]);
+	});
+
+	it('flags events with no_side_constraints, where the judge also picks sides', () => {
+		expect(ballotRules(input({ event: event({ no_side_constraints: '1' }) })).unsupported).toEqual([
+			'event setting no_side_constraints',
+			'side choice',
+		]);
+	});
+
+	it('flags elims where the judge picks sides', () => {
+		expect(ballotRules(input({ round: round({ type: 'elim' }) })).unsupported).toEqual(['side choice']);
+	});
+
+	it('supports elims where the sides are locked', () => {
+		expect(ballotRules(input({ round: round({ type: 'elim' }), dueAff: 1 })).unsupported).toEqual([]);
 	});
 
 	it.each([
