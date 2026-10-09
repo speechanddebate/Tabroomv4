@@ -1,4 +1,4 @@
-import type { Insertable } from 'kysely';
+import type { Insertable, Updateable } from 'kysely';
 import type { Database } from '../data/database.js';
 import type { Score } from '../data/schema.js';
 
@@ -39,8 +39,35 @@ async function createScore(db: Database, data: Insertable<Score>) {
 	.executeTakeFirst();
 }
 
+async function updateScore(db: Database, id: number, data: Updateable<Score>) {
+	await db.updateTable('score')
+	.set(data)
+	.where('id', '=', id)
+	.execute();
+	return id;
+}
+async function createScores(db: Database, data: Insertable<Score>[]) {
+	if (data.length === 0) return [];
+	const rows = await db.insertInto('score')
+	.values(data)
+	.returning('id')
+	.execute();
+	return rows.map(row => row.id);
+}
+async function deleteScores(db: Database, opts: { ballots: number[], tags: string[] }) {
+	if (opts.ballots.length === 0 || opts.tags.length === 0) return false;
+	const result = await db.deleteFrom('score')
+	.where('ballot', 'in', opts.ballots)
+	.where('tag', 'in', opts.tags)
+	.executeTakeFirst();
+	return result.numDeletedRows > 0;
+}
+
 export default {
 	getScore,
 	getScores,
 	createScore,
+	createScores,
+	updateScore,
+	deleteScores,
 };

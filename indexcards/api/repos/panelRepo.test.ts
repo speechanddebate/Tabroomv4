@@ -176,6 +176,28 @@ describe('panelRepo', () => {
 			expect(updated?.letter).toBe('Z');
 		});
 	});
+	describe('getPanelTourn', () => {
+		it('returns the tournament the panel belongs to', async () => {
+			const tourn = await factories.tourn.create();
+			const event = await factories.event.create({ tourn: tourn.id });
+			const round = await factories.round.create({ event: event.id });
+			const panel = await factories.panel.create({ round: round.id });
+
+			const result = await panelRepo.getPanelTourn(db, panel.id);
+
+			expect(result).toEqual(await db.selectFrom('tourn').selectAll().where('id', '=', tourn.id).executeTakeFirst());
+		});
+
+		it('returns undefined for a panel without a round', async () => {
+			const panel = await factories.panel.create();
+
+			expect(await panelRepo.getPanelTourn(db, panel.id)).toBeUndefined();
+		});
+
+		it('returns undefined for a panel that does not exist', async () => {
+			expect(await panelRepo.getPanelTourn(db, 999999999)).toBeUndefined();
+		});
+	});
 	describe('deletePanel', () => {
 		it('deletes a panel and returns true', async () => {
 			// Arrange

@@ -188,6 +188,17 @@ async function updatePanel(db: Database, id: number, data: Updateable<Panel> & {
 	});
 }
 
+// Returns the tournament the panel's round belongs to
+async function getPanelTourn(db: Database, id: number) {
+	return await db.selectFrom('panel')
+		.innerJoin('round', 'round.id', 'panel.round')
+		.innerJoin('event', 'event.id', 'round.event')
+		.innerJoin('tourn', 'tourn.id', 'event.tourn')
+		.selectAll('tourn')
+		.where('panel.id', '=', id)
+		.executeTakeFirst();
+}
+
 async function deletePanel(db: Database, id: number){
 	return await db.deleteFrom('panel')
 		.where('id', '=', id)
@@ -474,6 +485,7 @@ export default {
 	getDoubledEntries,
 	getPanelJudges,
 	updatePanel,
+	getPanelTourn,
 	createPanel,
 	deletePanel,
 	getCurrentBallots,
