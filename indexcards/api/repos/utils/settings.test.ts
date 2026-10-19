@@ -24,6 +24,17 @@ describe('selectSettings', () => {
 		expect(res?.settings).toBeDefined();
 		expect(Object.keys(res?.settings || {})).toEqual(expect.arrayContaining(['foo', 'bar']));
 	});
+	it('selects timestamps only with withTimestamps', async () => {
+		const without = await db.selectFrom('school').where('id', '=', schoolId)
+			.select(selectSettings({ table: 'school', settings: ['foo'] }))
+			.executeTakeFirst();
+		const withTimestamps = await db.selectFrom('school').where('id', '=', schoolId)
+			.select(selectSettings({ table: 'school', settings: ['foo'], withTimestamps: true }))
+			.executeTakeFirst();
+
+		expect(without).not.toHaveProperty('settingsTimestamps');
+		expect(withTimestamps?.settingsTimestamps?.foo).toHaveProperty('timestamp');
+	});
 	it('selects specific settings correctly', async () => {
 		const sqlSnippet = selectSettings({
 			table: 'school',
