@@ -58,7 +58,8 @@ export async function create(overrides: Partial<Insertable<Tourn>> & { circuit?:
 }
 
 type FullTournOverrides = Partial<Insertable<Tourn>> & {
-	Event?: Partial<Insertable<Event>>;
+	settings?: Settings;
+	Event?: Partial<Insertable<Event>> & { settings?: Settings };
 	Timeslot?: Partial<Insertable<Timeslot>>;
 	Round?: Parameters<typeof factories.round.create>[0];
 };

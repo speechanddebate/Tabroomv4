@@ -129,7 +129,7 @@ async function getPanelJudges(db: Database, id: number) {
 			eb.fn.max('ballot.chair').as('chair'),
 		])
 		.where('ballot.panel', '=', id)
-		.groupBy(['judge.id', 'person.pronoun'])
+		.groupBy(['judge.id', 'judge.person', 'person.pronoun'])
 		.execute();
 }
 
