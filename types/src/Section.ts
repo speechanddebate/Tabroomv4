@@ -6,7 +6,7 @@ import { EventSchema } from './Event.js';
 import { EntrySchema } from './Entry.js';
 import { RoundSchema } from './Round.js';
 import { TournSchema } from './Tourn.js';
-import { RoomSchema } from './Room.js';
+import { RoomSchema } from './Room/Room.js';
 import * as utils from './utils.js';
 
 export const CurrentBallotSchema = z.object({

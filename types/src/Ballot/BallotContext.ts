@@ -4,7 +4,7 @@ import * as utils from '../utils.js';
 import { JudgeSchema } from '../Judge.js';
 import { TournSchema } from '../Tourn.js';
 import { EventSchema } from '../Event.js';
-import { RoomSchema } from '../Room.js';
+import { RoomSchema } from '../Room/Room.js';
 import { RoundSchema } from '../Round.js';
 import { EntrySchema } from '../Entry.js';
 import { StudentSchema } from '../Student.js';

@@ -66,6 +66,11 @@
     "region": "us-east-1",
     "Bucket": "tabroom-files"
   },
+  "campus": {
+    "key": "",
+    "uri": "https://campus.speechanddebate.org",
+    "defaultServer": "us-east-2"
+  },
   "classic": {
     "url": "https://www.tabroom.com",
     "timeout": 30000
