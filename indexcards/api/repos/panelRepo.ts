@@ -1,7 +1,7 @@
 import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
-import type { Insertable, Updateable } from 'kysely';
+import { sql, type Insertable, type Updateable } from 'kysely';
 import type { Panel } from '../data/schema.js';
 
 type queryOpts = {
@@ -113,7 +113,7 @@ async function getDoubledEntries(db: Database, id: number) {
 }
 
 /**
- * Returns the judges on a panel with their person's pronoun, one row per judge. chair is 1 when
+ * Returns the judges on a panel with their person and its pronoun, one row per judge. chair is 1 when
  * any of the judge's ballots on the panel is the chair's. */
 async function getPanelJudges(db: Database, id: number) {
 	return await db.selectFrom('ballot')
@@ -125,11 +125,36 @@ async function getPanelJudges(db: Database, id: number) {
 			'judge.first',
 			'judge.middle',
 			'judge.last',
+			'judge.person',
 			'person.pronoun',
 			eb.fn.max('ballot.chair').as('chair'),
 		])
 		.where('ballot.panel', '=', id)
 		.groupBy(['judge.id', 'judge.person', 'person.pronoun'])
+		.execute();
+}
+
+/**
+ * Returns the students on a panel's entries, one row per entry student, with the entry and its school's chapter.
+ * An entry with no students has one row with null student fields */
+async function getPanelEntryStudents(db: Database, id: number) {
+	return await db.selectFrom('ballot')
+		.innerJoin('entry', 'entry.id', 'ballot.entry')
+		.leftJoin('entry_student', 'entry_student.entry', 'entry.id')
+		.leftJoin('student', 'student.id', 'entry_student.student')
+		.leftJoin('school', 'school.id', 'entry.school')
+		.select([
+			'entry.id as entryId',
+			'entry.code as entryCode',
+			'entry.name as entryName',
+			'school.chapter',
+			'student.id as studentId',
+			'student.first',
+			'student.last',
+			'student.person',
+		])
+		.where('ballot.panel', '=', id)
+		.distinct()
 		.execute();
 }
 
@@ -195,6 +220,75 @@ async function getPanelTourn(db: Database, id: number) {
 		.innerJoin('event', 'event.id', 'round.event')
 		.innerJoin('tourn', 'tourn.id', 'event.tourn')
 		.selectAll('tourn')
+		.where('panel.id', '=', id)
+		.executeTakeFirst();
+}
+
+/**
+ * Everything needed to work out a section's online room (classic's funclib/online_room.mas).
+ * match* is the section with the same round name and letter in the event online_event_match points to,
+ * for events that share rooms. live is whether any ballot is unconfirmed or was confirmed in the last hour;
+ * rooms close an hour after the round is done
+ */
+async function getSectionRoomContext(db: Database, id: number) {
+	return await db.selectFrom('panel')
+		.innerJoin('round', 'round.id', 'panel.round')
+		.innerJoin('event', 'event.id', 'round.event')
+		.innerJoin('tourn', 'tourn.id', 'event.tourn')
+		.leftJoin('room', 'room.id', 'panel.room')
+		.leftJoin('event_setting as online_event_match', (join) => join
+			.onRef('online_event_match.event', '=', 'event.id')
+			.on('online_event_match.tag', '=', 'online_event_match')
+		)
+		.leftJoin('event as match_event', 'match_event.id', 'online_event_match.value')
+		.leftJoin('round as match_round', (join) => join
+			.onRef('match_round.event', '=', 'match_event.id')
+			.onRef('match_round.name', '=', 'round.name')
+		)
+		.leftJoin('panel as match_panel', (join) => join
+			.onRef('match_panel.round', '=', 'match_round.id')
+			.onRef('match_panel.letter', '=', 'panel.letter')
+		)
+		.select((eb) => [
+			'panel.id as panelId',
+			'panel.letter as panelLetter',
+			'event.id as eventId',
+			'event.abbr as eventAbbr',
+			'tourn.id as tournId',
+			'tourn.tz as tournTz',
+			'room.name as roomName',
+			'room.url as roomUrl',
+			'room.password as roomPassword',
+			'room.judge_url as roomJudgeUrl',
+			'room.judge_password as roomJudgePassword',
+			'match_panel.id as matchPanelId',
+			'match_event.id as matchEventId',
+			'match_event.abbr as matchEventAbbr',
+			...selectSettings({ table: 'panel', settings: ['online_hybrid'], as: 'panelSettings' }),
+			...selectSettings({ table: 'round', settings: ['override_link', 'use_normal_rooms'], as: 'roundSettings' }),
+			...selectSettings({
+				table: 'event',
+				settings: [
+					'online_mode',
+					'online_hybrid',
+					'online_support',
+					'online_instructions',
+					'online_judge_display',
+					'online_entry_display',
+					'online_prepend_role',
+				],
+				as: 'eventSettings',
+			}),
+			...selectSettings({ table: 'tourn', settings: ['campus_zone'], as: 'tournSettings' }),
+			eb.exists(eb.selectFrom('ballot')
+				.select('ballot.id')
+				.whereRef('ballot.panel', '=', 'panel.id')
+				.where((b) => b.or([
+					b('ballot.audit', '!=', 1),
+					b('ballot.timestamp', '>', sql<Date>`NOW() - INTERVAL 1 HOUR`),
+				]))
+			).as('live'),
+		])
 		.where('panel.id', '=', id)
 		.executeTakeFirst();
 }
@@ -487,6 +581,8 @@ export default {
 	getPanelJudges,
 	updatePanel,
 	getPanelTourn,
+	getSectionRoomContext,
+	getPanelEntryStudents,
 	createPanel,
 	deletePanel,
 	getCurrentBallots,
