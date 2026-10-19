@@ -970,8 +970,8 @@ describe('online mode support', () => {
 		'nsda_campus_observers',
 		'public_jitsi',
 		'public_jitsi_observers',
-	])('flags %s, whose join links need online_room ported', (mode) => {
-		expect(ballotRules(input({ event: event({ online_mode: mode }) })).unsupported).toEqual([`online mode ${mode}`]);
+	])('supports %s', (mode) => {
+		expect(ballotRules(input({ event: event({ online_mode: mode }) })).unsupported).toEqual([]);
 	});
 
 	it('flags async, whose entries have video links', () => {

@@ -143,12 +143,8 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 		'show_async',
 	];
 
+	// public_jitsi rooms have no join button, as in classic, so their ballots show the room as text
 	const UNSUPPORTED_ONLINE_MODES = [
-		// Join links come from online_room.mas, which isn't ported yet
-		'nsda_campus',
-		'nsda_campus_observers',
-		'public_jitsi',
-		'public_jitsi_observers',
 		// Performance video links on each entry
 		'async',
 	];

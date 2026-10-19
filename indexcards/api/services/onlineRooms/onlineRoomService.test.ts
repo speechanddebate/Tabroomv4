@@ -253,7 +253,7 @@ describe('getSectionRoom', () => {
 		expect(room?.launch).toBeNull();
 	});
 
-	it.each(['async', 'public_jitsi', null])('is not joinable in online mode %s', async (mode) => {
+	it.each(['async', 'public_jitsi', 'public_jitsi_observers', null])('is not joinable in online mode %s', async (mode) => {
 		const { panel, judgePerson } = await createSection({ eventSettings: { online_mode: mode } });
 
 		const room = await getSectionRoom(db, panel.id, asPerson(judgePerson), { isStaff: false });

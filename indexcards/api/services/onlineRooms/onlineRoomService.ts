@@ -1,13 +1,14 @@
 // Works out which online room a person joins and how, ported from classic's funclib/online_room.mas.
 // Knows nothing about the request: callers pass in whether the person is tab staff.
 
-import type { OnlineRoom } from '@tabroom/types';
+import type { OnlineRoom, OnlineRoomJoin } from '@tabroom/types';
 import type { Database } from '../../data/database.js';
 import config from '../../config.js';
+import campusLogRepo from '../../repos/campusLogRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
 import permissionRepo from '../../repos/permissionRepo.js';
 import { isOn } from '../ballots/ballotRules.js';
-import { campusServer, campusUuid } from './campus.js';
+import { campusServer, campusUuid, signCampusToken } from './campus.js';
 
 /** The person joining a room */
 export type RoomPerson = {
@@ -38,6 +39,15 @@ export type RoomLog = {
 	entry: number | null;
 	description: string;
 };
+
+export type JoinRoomResult =
+	// The section doesn't exist or the person has no part in it
+	| { result: 'notFound' }
+	// The room can't be joined online (in person, closed, no link)
+	| { result: 'notJoinable' }
+	// It's a Campus room but no Campus key is configured. Logged where it's detected
+	| { result: 'unavailable' }
+	| { result: 'joined', join: OnlineRoomJoin };
 
 export type ResolvedRoom = {
 	display: OnlineRoom;
@@ -221,4 +231,24 @@ export async function getSectionRoom(db: Database, sectionId: number, person: Ro
 		},
 		log,
 	};
+}
+
+/** Join a section's room: logs the join to campus_log and returns what to open. Campus rooms get a signed token */
+export async function joinSectionRoom(db: Database, sectionId: number, person: RoomPerson, opts: SectionRoomOpts): Promise<JoinRoomResult> {
+	const room = await getSectionRoom(db, sectionId, person, opts);
+	if (!room) return { result: 'notFound' };
+	if (!room.launch) return { result: 'notJoinable' };
+
+	const { url, password, campus } = room.launch;
+
+	// sign before logging, so a join that can't open isn't logged
+	let token: string | null = null;
+	if (campus) {
+		token = await signCampusToken(campus);
+		if (!token) return { result: 'unavailable' };
+	}
+
+	await campusLogRepo.createCampusLog(db, { ...room.log, person: person.id });
+
+	return { result: 'joined', join: { url, token, password } };
 }
