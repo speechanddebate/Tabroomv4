@@ -302,7 +302,7 @@ describe('getSectionRoom', () => {
 
 		const room = await sectionRoom(panel.id, asPerson(judgePerson), { isStaff: false });
 
-		expect(room?.display).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: 'https://zoom.test/room' });
+		expect(room?.display).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
 		expect(room?.launch).toBeNull();
 	});
 

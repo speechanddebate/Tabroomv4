@@ -82,7 +82,7 @@ describe('GET /rest/judges/:judgeId/panels/:panelId/ballots', () => {
 			Event: { abbr: 'LD' },
 			Round: { id: round.id, name: 3, label: null, notes: 'Bring timers' },
 			flight: 2,
-			Room: { name: '101', url: null },
+			Room: { name: '101', joinable: false, hybrid: false, mapUrl: null },
 			Judge: { code: 'A1', first: 'Jane', middle: null, last: 'Doe' },
 			ballotHeader: '<p>Own</p>',
 			roundStart: '2026-10-03T14:45:00.000Z',
@@ -120,6 +120,17 @@ describe('GET /rest/judges/:judgeId/panels/:panelId/ballots', () => {
 			logo: null,
 			debate: { affLabel: 'Aff', negLabel: 'Neg', sides: 'locked', flipStatus: null, winner: affBallot.id },
 		});
+	});
+
+	it('includes the room to join for an online round', async () => {
+		const { userkey, judge, panel } = await createBallot('debate', { online_mode: 'sync' });
+		await db.updateTable('room').set({ url: 'https://zoom.test/101' }).where('id', '=', panel.room).execute();
+
+		const res = await request(server).get(url(judge.id, panel.id)).asPerson(userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(BallotContextSchema);
+		expect(res.body.Room).toEqual({ name: '101', joinable: true, hybrid: false, mapUrl: null });
 	});
 
 	it('sends ballots the beta can\'t render to classic', async () => {

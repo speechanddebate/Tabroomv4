@@ -421,8 +421,6 @@ async function getCurrentBallots(db: Database, personId: number, tournId: number
 			'entry.id as entryId',
 			'entry.code as entryCode',
 			'room.id as roomId',
-			'room.name as roomName',
-			'room.url as roomUrl',
 			'room.notes as roomNotes',
 			'online_mode.value as onlineMode',
 			'use_normal_rooms.value as useNormalRooms',
@@ -548,9 +546,7 @@ async function getCurrentBallots(db: Database, personId: number, tournId: number
 				},
 				Room: {
 					id: row.roomId,
-					name: row.roomName,
 					notes: row.roomNotes,
-					url: row.roomUrl,
 				},
 				Ballots: [],
 				Entries: [],

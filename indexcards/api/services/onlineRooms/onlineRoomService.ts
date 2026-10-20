@@ -183,9 +183,10 @@ export async function getSectionRoom(db: Database, tournId: number, sectionId: n
 	// Rooms close an hour after the round is done
 	if (!room.live) return offline();
 
-	// A hybrid event meets in person, except in the sections marked hybrid
+	// A hybrid event meets in person, except in the sections marked hybrid. Like classic, only the
+	// hybrid sections get a map
 	if (isOn(eventSettings?.online_hybrid) && panelSettings?.online_hybrid === undefined) {
-		return offline({ mapUrl: room.roomUrl || null });
+		return offline();
 	}
 
 	if (mode === 'sync') {

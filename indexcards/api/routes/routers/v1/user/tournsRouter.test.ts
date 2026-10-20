@@ -92,6 +92,22 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect(200);
 
 		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: null, joinable: false, hybrid: false, mapUrl: null });
+	});
+	it('Returns the room to join for an online round', async () => {
+		const { Tourn } = await factories.person.createBallot({
+			person: personId,
+			Event: { settings: { online_mode: 'sync' } },
+			Round: { settings: { override_link: 'https://zoom.test/room' } },
+		});
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
+			.asPerson(userkey)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: null, joinable: true, hybrid: false, mapUrl: null });
 	});
 	// Classic's rule: published, or released to judges only (judges_ballots_visible, "Publish ballots but not schematic")
 	it.each([
