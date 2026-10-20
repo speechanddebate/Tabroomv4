@@ -15,3 +15,20 @@ export async function requirePublicTourn(req: Request, res: Response, next: Next
 	req.tourn = tourn;
 	next();
 }
+
+/**
+ * requirePublicTourn for attendees: a hidden tourn is still found by its tab staff (checker or higher)
+ * and site admins. The tourn's auth context must be loaded first
+ */
+export async function requirePublicForAttn(req: Request, res: Response, next: NextFunction) {
+
+	if (!req.params.tournId) return BadRequest(req,res,'you must provide a tourn ID');
+
+	const tourn = await tournRepo.getTourn(db, req.params.tournId as string, { unpublished: true });
+
+	if (!tourn?.id || (tourn.hidden && !await req.actor.can('tourn', 'check', tourn.id))) {
+		return NotFound(req, res, 'No such tournament found');
+	}
+	req.tourn = tourn;
+	next();
+}

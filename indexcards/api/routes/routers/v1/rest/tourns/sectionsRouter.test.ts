@@ -1,15 +1,15 @@
 import request from 'supertest';
 import { jwtVerify } from 'jose';
 import { OnlineRoomJoinSchema, OnlineRoomSchema } from '@tabroom/types';
-import server from '../../../../../app.js';
-import config from '../../../../config.js';
-import logger from '../../../../helpers/logger.js';
-import { db } from '../../../../data/database.js';
-import { campusUuid } from '../../../../services/onlineRooms/campus.js';
-import type { Settings } from '../../../../repos/utils/index.js';
-import factories from '../../../../../tests/factories/index.js';
+import server from '../../../../../../app.js';
+import config from '../../../../../config.js';
+import logger from '../../../../../helpers/logger.js';
+import { db } from '../../../../../data/database.js';
+import { campusUuid } from '../../../../../services/onlineRooms/campus.js';
+import type { Settings } from '../../../../../repos/utils/index.js';
+import factories from '../../../../../../tests/factories/index.js';
 
-describe('GET /user/sections/:sectionId/room', () => {
+describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 	let panelId: number;
 	let tournId: number;
 	let eventId: number;
@@ -18,7 +18,7 @@ describe('GET /user/sections/:sectionId/room', () => {
 	let studentUserkey: string;
 	let otherUserkey: string;
 
-	const url = (section: number | string) => `/v1/user/sections/${section}/room`;
+	const url = (section: number | string, tourn: number = tournId) => `/v1/rest/tourns/${tourn}/sections/${section}/room`;
 
 	// a person with a checker perm on the tourn, event or category
 	async function checker(perm: { tourn: number, event?: number, category?: number }, tag = 'checker') {
@@ -102,6 +102,14 @@ describe('GET /user/sections/:sectionId/room', () => {
 		expect(res).toBeProblemResponse(404);
 	});
 
+	it('returns 404 for a section under another tourn', async () => {
+		const other = await factories.tourn.createFull();
+
+		const res = await request(server).get(url(panelId, other.Tourn.id)).asPerson(judgeUserkey);
+
+		expect(res).toBeProblemResponse(404);
+	});
+
 	it('returns 400 for a malformed section id', async () => {
 		const res = await request(server).get(url('abc')).asPerson(judgeUserkey);
 
@@ -115,8 +123,8 @@ describe('GET /user/sections/:sectionId/room', () => {
 	});
 });
 
-describe('POST /user/sections/:sectionId/room/join', () => {
-	const url = (section: number) => `/v1/user/sections/${section}/room/join`;
+describe('POST /rest/tourns/:tournId/sections/:sectionId/room/join', () => {
+	const url = (tourn: number, section: number) => `/v1/rest/tourns/${tourn}/sections/${section}/room/join`;
 	const originalKey = config.campus.key;
 
 	afterEach(() => {
@@ -157,7 +165,7 @@ describe('POST /user/sections/:sectionId/room/join', () => {
 	it('gives a judge the host link and logs the join', async () => {
 		const { Tourn, panel, judge, judgePerson, judgeUserkey } = await createSection({ online_mode: 'sync' });
 
-		const res = await request(server).post(url(panel.id)).asPerson(judgeUserkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(judgeUserkey);
 
 		expect(res.status).toBe(201);
 		expect(res.body).toMatchSchema(OnlineRoomJoinSchema);
@@ -169,9 +177,9 @@ describe('POST /user/sections/:sectionId/room/join', () => {
 	});
 
 	it('gives a competitor the room link', async () => {
-		const { panel, entry, studentPerson, studentUserkey } = await createSection({ online_mode: 'sync' });
+		const { Tourn, panel, entry, studentPerson, studentUserkey } = await createSection({ online_mode: 'sync' });
 
-		const res = await request(server).post(url(panel.id)).asPerson(studentUserkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(studentUserkey);
 
 		expect(res.status).toBe(201);
 		expect(res.body).toEqual({ url: 'https://zoom.test/room', token: null, password: 'roompass' });
@@ -184,17 +192,28 @@ describe('POST /user/sections/:sectionId/room/join', () => {
 		await factories.permission.create({ person: person.id, tourn: Tourn.id, tag: 'checker' });
 		const { userkey } = await factories.session.create({ person: person.id });
 
-		const res = await request(server).post(url(panel.id)).asPerson(userkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(userkey);
 
 		expect(res.status).toBe(201);
 		expect(res.body.url).toBe('https://zoom.test/host');
 	});
 
+	it('lets tab staff, but not the judge, into a hidden tourn\'s room', async () => {
+		const { Tourn, panel, judgeUserkey } = await createSection({ online_mode: 'sync' });
+		await db.updateTable('tourn').set({ hidden: 1 }).where('id', '=', Tourn.id).execute();
+		const person = await factories.person.create();
+		await factories.permission.create({ person: person.id, tourn: Tourn.id, tag: 'checker' });
+		const { userkey } = await factories.session.create({ person: person.id });
+
+		expect(await request(server).post(url(Tourn.id, panel.id)).asPerson(judgeUserkey)).toBeProblemResponse(404);
+		expect((await request(server).post(url(Tourn.id, panel.id)).asPerson(userkey)).status).toBe(201);
+	});
+
 	it('returns a signed Campus token for a Campus room', async () => {
 		config.campus.key = 'test-campus-key';
-		const { panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'nsda_campus' });
+		const { Tourn, panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'nsda_campus' });
 
-		const res = await request(server).post(url(panel.id)).asPerson(judgeUserkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(judgeUserkey);
 
 		expect(res.status).toBe(201);
 		expect(res.body).toMatchSchema(OnlineRoomJoinSchema);
@@ -208,9 +227,9 @@ describe('POST /user/sections/:sectionId/room/join', () => {
 	it('returns 503 and logs nothing when Campus has no key configured', async () => {
 		config.campus.key = undefined;
 		const error = vi.spyOn(logger, 'error');
-		const { panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'nsda_campus' });
+		const { Tourn, panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'nsda_campus' });
 
-		const res = await request(server).post(url(panel.id)).asPerson(judgeUserkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(judgeUserkey);
 
 		expect(res).toBeProblemResponse(503);
 		expect(error).toHaveBeenCalledWith('Cannot join an NSDA Campus room: config.campus.key is not set');
@@ -219,19 +238,19 @@ describe('POST /user/sections/:sectionId/room/join', () => {
 	});
 
 	it('returns 409 and logs nothing for a room that can\'t be joined online', async () => {
-		const { panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'async' });
+		const { Tourn, panel, judgePerson, judgeUserkey } = await createSection({ online_mode: 'async' });
 
-		const res = await request(server).post(url(panel.id)).asPerson(judgeUserkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(judgeUserkey);
 
 		expect(res).toBeProblemResponse(409);
 		expect(await joinLogs(panel.id, judgePerson.id)).toHaveLength(0);
 	});
 
 	it('returns 404 to a person with no part in the section', async () => {
-		const { panel } = await createSection({ online_mode: 'sync' });
+		const { Tourn, panel } = await createSection({ online_mode: 'sync' });
 		const { userkey } = await factories.session.create();
 
-		const res = await request(server).post(url(panel.id)).asPerson(userkey);
+		const res = await request(server).post(url(Tourn.id, panel.id)).asPerson(userkey);
 
 		expect(res).toBeProblemResponse(404);
 	});

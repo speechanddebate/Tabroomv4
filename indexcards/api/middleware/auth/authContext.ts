@@ -172,29 +172,6 @@ export async function loadJudgeAuthContext(req: Request, res: Response, next: Ne
 }
 
 /**
- * router.param adapter for /user routes about a section: 404 if the :sectionId section doesn't exist,
- * then grant the actor its perms for the section's tourn. Whether the person is in the section
- * (judging or competing) isn't a perm; the route works that out
- */
-export async function loadSectionAuthContext(req: Request, res: Response, next: NextFunction, sectionId: string) {
-	const id = paramId(sectionId);
-	if (!id) return BadRequest(req, res, 'sectionId must be a positive integer');
-	if(req.actor.type === 'anonymous') return next();
-	if(req.actor.type !== 'person') return NotImplemented(req, res, `Auth context for ${req.actor.type} actors is not implemented`);
-
-	try {
-		const tourn = await panelRepo.getPanelTourn(req.db, id);
-		if (!tourn) {
-			return NotFound(req, res, `Section ${sectionId} not found`);
-		}
-		req.actor.grant(await loadTournPerms(req.db, req.actor.Person.id, tourn.id));
-		next();
-	} catch (err) {
-		next(err);
-	}
-}
-
-/**
  * router.param adapter: 404 if the :panelId panel doesn't exist.
  * grants nothing yet; panel-scoped grants (e.g. ballot entry for a room) will load here.
  * how the panel relates to the rest of the path (a judge's ballot, a round) is checked by policy middleware on each router
