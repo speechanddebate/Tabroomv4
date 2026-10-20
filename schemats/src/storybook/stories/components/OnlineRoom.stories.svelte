@@ -3,25 +3,8 @@
 	import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
 	import type { OnlineRoom } from '@tabroom/types';
-	import {
-		getRestTournsRoomJoinMockHandler,
-		getRestTournsSectionsRoomGetMockHandler,
-		getRestTournsSectionsRoomJoinMockHandler,
-	} from '$indexcards/index.msw';
+	import { getRestTournsRoomJoinMockHandler, getRestTournsSectionsRoomJoinMockHandler } from '$indexcards/index.msw';
 	import OnlineRoomComponent from '$lib/components/OnlineRoom.svelte';
-
-	// The join button for an online room
-	const { Story } = defineMeta({
-		title: 'Components/OnlineRoom',
-		component: OnlineRoomComponent,
-		args: {
-			target: { type: 'section', tournId: 1, sectionId: 2 },
-			variant: 'icon',
-		},
-		argTypes: {
-			variant: { control: 'select', options: ['icon', 'text'] },
-		},
-	});
 
 	const sectionRoom = (overrides: Partial<OnlineRoom> = {}): OnlineRoom => ({
 		name: 'PF A',
@@ -29,6 +12,22 @@
 		hybrid: false,
 		mapUrl: null,
 		...overrides,
+	});
+
+	// The join button for an online room
+	const { Story } = defineMeta({
+		title: 'Components/OnlineRoom',
+		component: OnlineRoomComponent,
+		args: {
+			room: sectionRoom(),
+			target: { type: 'section', tournId: 1, sectionId: 2 },
+			variant: 'icon',
+			size: 'sm',
+		},
+		argTypes: {
+			variant: { control: 'select', options: ['icon', 'text'] },
+			size: { control: 'select', options: ['sm', 'md'] },
+		},
 	});
 
 	// Stands in for the window a join opens, so the story doesn't leave the page
@@ -41,10 +40,10 @@
 
 <Story
 	name="Sync Room"
+	args={{ room: sectionRoom({ name: 'Room 101' }) }}
 	parameters={{
 		msw: {
 			handlers: [
-				getRestTournsSectionsRoomGetMockHandler(sectionRoom({ name: 'Room 101' })),
 				getRestTournsSectionsRoomJoinMockHandler({ url: 'https://zoom.test/room', token: null, password: 'roompass' }),
 			],
 		},
@@ -63,11 +62,10 @@
 
 <Story
 	name="Text Button"
-	args={{ variant: 'text' }}
+	args={{ room: sectionRoom({ name: 'Room 101' }), variant: 'text' }}
 	parameters={{
 		msw: {
 			handlers: [
-				getRestTournsSectionsRoomGetMockHandler(sectionRoom({ name: 'Room 101' })),
 				getRestTournsSectionsRoomJoinMockHandler({ url: 'https://zoom.test/room', token: null, password: null }),
 			],
 		},
@@ -91,7 +89,6 @@
 	parameters={{
 		msw: {
 			handlers: [
-				getRestTournsSectionsRoomGetMockHandler(sectionRoom()),
 				getRestTournsSectionsRoomJoinMockHandler({ url: 'https://campus.test', token: 'signed.campus.token', password: null }),
 			],
 		},
@@ -118,7 +115,6 @@
 	parameters={{
 		msw: {
 			handlers: [
-				getRestTournsSectionsRoomGetMockHandler(sectionRoom()),
 				http.post('*/rest/tourns/:tournId/sections/:sectionId/room/join', () => HttpResponse.json(
 					{ type: 'about:blank', title: 'Service Unavailable', status: 503, detail: 'NSDA Campus rooms are unavailable right now' },
 					{ status: 503 },
@@ -140,7 +136,8 @@
 <Story
 	name="Utility Room"
 	args={{
-		target: { type: 'utility', tournId: 1, room: { id: 3, name: 'Judge Lounge', joinable: true, hybrid: false, mapUrl: null } },
+		room: sectionRoom({ name: 'Judge Lounge' }),
+		target: { type: 'utility', tournId: 1, roomId: 3 },
 	}}
 	parameters={{
 		msw: { handlers: [getRestTournsRoomJoinMockHandler({ url: 'https://zoom.test/lounge', token: null, password: null })] },

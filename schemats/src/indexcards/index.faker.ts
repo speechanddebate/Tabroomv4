@@ -219,9 +219,14 @@ export const getRestJudgesBallotContextResponseDebateBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -546,9 +551,14 @@ export const getRestJudgesBallotContextResponseMockTrialBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -851,9 +861,14 @@ export const getRestJudgesBallotContextResponseCongressBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -2008,15 +2023,19 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
 		]),
-		roomName: faker.helpers.arrayElement([
-			faker.string.alpha({ length: { min: 10, max: 127 } }),
-			null,
-		]),
-		roomUrl: faker.helpers.arrayElement([
-			faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 255 } }),
-				null,
-			]),
+		Room: faker.helpers.arrayElement([
+			{
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		roomNotes: faker.helpers.arrayElement([
@@ -2119,15 +2138,19 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
 		]),
-		roomName: faker.helpers.arrayElement([
-			faker.string.alpha({ length: { min: 10, max: 127 } }),
-			null,
-		]),
-		roomUrl: faker.helpers.arrayElement([
-			faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 255 } }),
-				null,
-			]),
+		Room: faker.helpers.arrayElement([
+			{
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		roomNotes: faker.helpers.arrayElement([

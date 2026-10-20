@@ -30,7 +30,7 @@ export function baseContext(): BallotBase {
 		Event: { abbr: 'CX' },
 		Round: { id: 1, name: 3, label: null, notes: null },
 		flight: null,
-		Room: { name: '204', url: null },
+		Room: { name: '204', joinable: false, hybrid: false, mapUrl: null },
 		Judge: { code: 'Code', first: 'First', middle: null, last: 'Last' },
 		topic: null,
 		rules: [
@@ -149,7 +149,7 @@ export function mockTrialContext(overrides: Partial<MockTrialBallotContext> = {}
 		eventType: 'mock_trial',
 		Event: { abbr: 'MT' },
 		Round: { id: 2, name: 2, label: null, notes: null },
-		Room: { name: 'Courtroom 3B', url: null },
+		Room: { name: 'Courtroom 3B', joinable: false, hybrid: false, mapUrl: null },
 		timers: null,
 		// As with mock_trial_feedback set
 		scoring: {
@@ -188,7 +188,7 @@ export function congressContext(overrides: Partial<CongressBallotContext> = {}):
 		eventType: 'congress',
 		Event: { abbr: 'HSE' },
 		Round: { id: 3, name: 2, label: null, notes: null },
-		Room: { name: 'Auditorium', url: null },
+		Room: { name: 'Auditorium', joinable: false, hybrid: false, mapUrl: null },
 		timers: { speech: 3, prep: null },
 		scoring: {
 			points: { min: 1, max: 6, step: 1, ties: true, team: false, ranksAgree: true },

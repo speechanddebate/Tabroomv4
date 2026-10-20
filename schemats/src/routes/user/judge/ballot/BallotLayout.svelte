@@ -5,6 +5,7 @@
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { createRestJudgesBallotSave, getRestJudgesBallotContextQueryKey } from '$indexcards';
 	import { handleMutation } from '$lib/helpers/query';
+	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
 	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
 	import BallotSidebar from './BallotSidebar.svelte';
 	import ConfirmBallot from './ConfirmBallot.svelte';
@@ -88,9 +89,6 @@
 			.join(' ')
 	);
 
-	// Classic only links the room for online rounds other than async
-	const onlineRoom = $derived(context.onlineMode !== null && context.onlineMode !== 'async');
-
 	// A rubric has its own rules for each row
 	const pointsRules = $derived(context.scoring.points?.rubric ? undefined : context.scoring.points);
 
@@ -114,20 +112,17 @@
 		<!-- lg:pe-4 keeps the judge name clear of the sidebar toggle, which sits over the page's right edge -->
 		<header class='flex flex-col gap-1 border-b border-border pb-2 sm:flex-row sm:items-start lg:pe-4'>
 			<span class='sm:w-1/3'>
-				{#if onlineRoom}
-					{#if context.Room?.url}
-						<a
-							class='text-lg font-semibold text-primary-strong underline'
-							href={context.Room.url}
-							rel='noopener noreferrer'
-							target='_blank'
-						>{context.Room.name ? `Room ${context.Room.name}` : 'Room Link'}</a>
-					{:else if context.Room}
-						<p class='text-lg font-semibold text-primary-strong'>Room {context.Room.name}</p>
-					{/if}
+				{#if context.Room?.joinable}
+					<OnlineRoom
+						room    = {context.Room}
+						size    = 'md'
+						target  = {{ type: 'section', tournId: context.Tourn.id, sectionId: panelId }}
+						text    = {context.Room.name ? `Room ${context.Room.name}` : undefined}
+						variant = 'text'
+					/>
 				{:else}
 					<p class='text-lg font-semibold text-primary-strong'>
-						{context.Room ? `Room: ${context.Room.name}` : 'NO ROOM ASSIGNED'}
+						{context.Room?.name ? `Room: ${context.Room.name}` : 'NO ROOM ASSIGNED'}
 					</p>
 				{/if}
 			</span>

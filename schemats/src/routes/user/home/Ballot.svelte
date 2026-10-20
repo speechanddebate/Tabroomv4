@@ -2,10 +2,12 @@
 	import type { CurrentBallot } from '$indexcards/schemas';
 	import { resolve } from '$app/paths';
 	import { showTime } from '$lib/helpers/dt';
-	import { Clock, MapPin, Hourglass, ExternalLink } from '@lucide/svelte';
+	import { Clock, MapPin, Hourglass } from '@lucide/svelte';
+	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
 
-	const { ballot }: {
+	const { ballot, tournId }: {
 		ballot: CurrentBallot,
+		tournId: number,
 	} = $props();
 
 	const buttonColor = $derived.by(() => {
@@ -94,13 +96,16 @@
 					<Clock class="text-muted" size="14" />{time(ballot.start)}
 				</span>
 				<span class="flex items-center gap-1">
-					<MapPin class="text-muted" size="14" />
-					{#if ballot.roomUrl}
-						<a class="flex items-center gap-1 text-primary-strong hover:underline" href={ballot.roomUrl} rel="noopener noreferrer" target="_blank">
-							{ballot.roomName ?? 'Online room'}<ExternalLink size="12" />
-						</a>
+					<!-- The join button has its own icon, so the pin is only for a room shown as text -->
+					{#if ballot.Room?.joinable}
+						<OnlineRoom
+							room    = {ballot.Room}
+							target  = {{ type: 'section', tournId, sectionId: ballot.id }}
+							text    = {ballot.Room.name ?? 'Online room'}
+							variant = 'text'
+						/>
 					{:else}
-						{ballot.roomName ?? 'No room'}
+						<MapPin class="text-muted" size="14" />{ballot.Room?.name ?? 'No room'}
 					{/if}
 				</span>
 				<span class="flex items-center gap-1 text-muted">
