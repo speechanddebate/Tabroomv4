@@ -1,6 +1,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
+import { requestLogger } from '../../../../helpers/logger.js';
 import { NSDACategorySchema, RoundResultsSchema, TournByWebnameSchema, UpcomingSchema } from '@tabroom/types';
 import { faker } from '@faker-js/faker';
 import z from 'zod';
@@ -98,6 +99,20 @@ describe('GET /pages/invite/webname/:webname', () => {
 
 		expect(res.body).toMatchSchema(TournByWebnameSchema);
 		expect(res.body.id).toBe(Tourn.id);
+	});
+	it('Logs the route template, not the webname', async () => {
+		const info = vi.spyOn(requestLogger, 'info');
+		const Tourn = await factories.tourn.create({ webname: faker.string.alpha(16) });
+
+		await request(server)
+			.get(`/v1/pages/invite/webname/${Tourn.webname}`)
+			.expect(200);
+
+		await vi.waitFor(() => expect(info).toHaveBeenCalledWith('Request handled', expect.objectContaining({
+			url: `/v1/pages/invite/webname/${Tourn.webname}`,
+			route: '/pages/invite/webname/{webname}',
+		})));
+		info.mockRestore();
 	});
 	it('Returns an older tournament by id with its id as the webname', async () => {
 		const webname = faker.string.alpha(16);

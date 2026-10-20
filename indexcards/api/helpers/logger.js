@@ -1,6 +1,8 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import os from 'os';
 import winston from 'winston';
+import { context } from '@opentelemetry/api';
+import { getRPCMetadata } from '@opentelemetry/core';
 import config from '../config.js';
 
 const requestContext = new AsyncLocalStorage();
@@ -132,7 +134,8 @@ logger.progressEnd = (msg) => {
 	}
 };
 
-const requestLogger = winston.createLogger({
+/** Writes the "Request handled" line for every request. Exported for tests */
+export const requestLogger = winston.createLogger({
 	level: config.logging.level,
 	format: winston.format.combine(
 		requestContextFormat(),
@@ -156,14 +159,25 @@ function normalizePath(urlPath) {
 
 export const setupRequest = (req, res, next) => {
 	req.received = Date.now();
+	// Set by the OpenTelemetry http instrumentation. Its request duration metric takes http.route from here
+	const rpcMetadata = getRPCMetadata(context.active());
 
 	res.on('finish', () => {
 		const duration = Date.now() - req.received;
+		// The documented template of the matched route (/tab/{tournId}/rounds), relative to /v1. Unlike req.baseUrl,
+		// which holds the real ids under routers mounted on params, it can't vary per request. undefined when no route matched
+		const route = req.route?.openapi?.path;
+
+		// the http instrumentation reads this on 'close', which comes after 'finish'
+		if (rpcMetadata && route) {
+			rpcMetadata.route = route;
+		}
 
 		requestLogger.info('Request handled', {
 			method: req.method,
 			url: req.originalUrl ?? '',
 			path: normalizePath(req.originalUrl ?? ''),
+			route: route ?? null,
 			ip: req.ip,
 			session: req.auth?.sessionId ?? null,
 			statusCode: `${res.statusCode ?? ''}`,
