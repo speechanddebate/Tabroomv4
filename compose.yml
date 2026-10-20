@@ -51,6 +51,11 @@ services:
         ports:
             - '9000:9000'
             - '6006:6006'
+        environment:
+            # standard OpenTelemetry variables, read by src/instrumentation.server.ts. No endpoint, no telemetry
+            OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://prometheus:9090/api/v1/otlp/v1/metrics
+            OTEL_METRIC_EXPORT_INTERVAL: '15000'
+            OTEL_RESOURCE_ATTRIBUTES: host.name=dev,container.name=schemats-dev,service.instance.id=dev-schemats-dev
         logging:
             driver: loki
             options:

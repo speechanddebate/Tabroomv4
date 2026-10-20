@@ -7,9 +7,27 @@ import {
 } from '$app/env/private';
 import type { Handle, HandleFetch, HandleServerError } from '@sveltejs/kit';
 import logger from '$lib/helpers/logging/logging.server';
+import { recordRequestDuration } from '$lib/helpers/telemetry/metrics.server';
 import { userSession } from '$indexcards';
 
+// Times the whole request, session bootstrap included, labelled with the SvelteKit route
 export const handle: Handle = async ({ event, resolve }) => {
+	const start = performance.now();
+	let status = 500;
+	try {
+		const response = await handleRequest({ event, resolve });
+		status = response.status;
+		return response;
+	} finally {
+		recordRequestDuration(performance.now() - start, {
+			route: event.route.id,
+			method: event.request.method,
+			status,
+		});
+	}
+};
+
+const handleRequest: Handle = async ({ event, resolve }) => {
 	event.locals.requestId = crypto.randomUUID();
 	const sessionId = event.cookies.get(AUTH_COOKIE);
 	event.locals.Session = null;

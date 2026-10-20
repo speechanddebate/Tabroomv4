@@ -28,6 +28,12 @@ const { logger } = vi.hoisted(() => ({
 
 vi.mock('$lib/helpers/logging/logging.server', () => ({ default: logger }));
 
+const { mockRecordRequestDuration } = vi.hoisted(() => ({
+	mockRecordRequestDuration: vi.fn(),
+}));
+
+vi.mock('$lib/helpers/telemetry/metrics.server', () => ({ recordRequestDuration: mockRecordRequestDuration }));
+
 import { handle, handleError, handleFetch } from './hooks.server';
 
 type RequestEventOverrides = Omit<Partial<RequestEvent>, 'cookies' | 'locals'> & {
@@ -162,6 +168,36 @@ describe('Handle Hook', () => {
 			})
 		);
 		expect(response).toEqual(new Response('ok'));
+	});
+});
+
+describe('Handle Hook request duration', () => {
+	it('records the duration with the route id, method and status', async () => {
+		const event = createRequestEvent({
+			cookies: { get: vi.fn().mockReturnValue(undefined) },
+			request: new Request('https://schemats.test/invite/123', { method: 'GET' }),
+			route: { id: '/invite/[tourn]' },
+		});
+		const resolve = vi.fn().mockResolvedValue(new Response('missing', { status: 404 }));
+
+		await handle({ event, resolve });
+
+		expect(mockRecordRequestDuration).toHaveBeenCalledWith(expect.any(Number), {
+			route: '/invite/[tourn]',
+			method: 'GET',
+			status: 404,
+		});
+	});
+
+	it('records a 500 when resolve throws', async () => {
+		const event = createRequestEvent({
+			cookies: { get: vi.fn().mockReturnValue(undefined) },
+		});
+		const resolve = vi.fn().mockRejectedValue(new Error('render failed'));
+
+		await expect(handle({ event, resolve })).rejects.toThrow('render failed');
+
+		expect(mockRecordRequestDuration).toHaveBeenCalledWith(expect.any(Number), expect.objectContaining({ status: 500 }));
 	});
 });
 

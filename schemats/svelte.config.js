@@ -14,6 +14,9 @@ const config = {
 		},
 		experimental: {
 			explicitEnvironmentVariables: true,
+			instrumentation: {
+				server: true,
+			},
 		},
 		// exposed as `version` from $app/env. Falls back to kit's default (build timestamp) outside CI
 		version: {
