@@ -106,6 +106,21 @@ export const ConfigSchema = z.object({
 			path: z.string().min(1),
 		}).optional(),
 	}).strict().prefault({}),
+	/** OpenTelemetry traces and metrics, pushed over OTLP/HTTP */
+	telemetry: z.object({
+		/** Start the OpenTelemetry SDK and export traces and metrics */
+		enabled: z.boolean().default(false),
+		/** The service name reported on every span and metric */
+		serviceName: z.string().min(1).default('indexcards'),
+		/** The deployment environment reported on every span and metric */
+		environment: z.string().min(1).default(process.env.NODE_ENV ?? 'development'),
+		/** The OTLP/HTTP URL traces are sent to, e.g. http://tempo:4318/v1/traces. Traces are not exported when unset */
+		tracesEndpoint: z.url().optional(),
+		/** The OTLP/HTTP URL metrics are sent to, e.g. http://prometheus:9090/api/v1/otlp/v1/metrics. Metrics are not exported when unset */
+		metricsEndpoint: z.url().optional(),
+		/** Milliseconds between metric exports */
+		metricsInterval: z.int().min(1000).default(60000),
+	}).strict().prefault({}),
 	ERROR_DESTINATION: z.array(z.string().min(1)).optional(), // only used in errorHandler
 	//--------------------------------------------------------------------
 	// EXTERNAL SERVICES

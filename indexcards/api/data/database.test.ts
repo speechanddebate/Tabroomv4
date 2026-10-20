@@ -1,4 +1,7 @@
 import { sql } from 'kysely';
+import { context, trace, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { db } from './database.js';
 import logger from '../helpers/logger.js';
 import config from '../config.js';
@@ -98,5 +101,59 @@ describe('db query logging', () => {
 		await sql`SELECT 1`.execute(db);
 
 		expect(debug).not.toHaveBeenCalled();
+	});
+});
+
+describe('db query spans', () => {
+	const exporter = new InMemorySpanExporter();
+	const tracer = trace.getTracer('test');
+
+	beforeAll(() => {
+		context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
+		trace.setGlobalTracerProvider(new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] }));
+	});
+
+	afterEach(() => {
+		exporter.reset();
+	});
+
+	afterAll(() => {
+		trace.disable();
+		context.disable();
+	});
+
+	it('records a query as a child span of the active span without its parameters', async () => {
+		const request = tracer.startSpan('request');
+		await context.with(trace.setSpan(context.active(), request), () => db
+			.selectFrom('person')
+			.select('id')
+			.where('email', '=', 'jane.doe@example.com')
+			.execute()
+		);
+		request.end();
+
+		const [span] = exporter.getFinishedSpans().filter(s => s.name !== 'request');
+		expect(span.name).toBe('SELECT');
+		expect(span.kind).toBe(SpanKind.CLIENT);
+		expect(span.parentSpanContext?.spanId).toBe(request.spanContext().spanId);
+		expect(span.attributes).toMatchObject({
+			'db.system.name': 'mariadb',
+			'db.namespace': config.db.database,
+			'db.operation.name': 'SELECT',
+			'db.query.text': 'select `id` from `person` where `email` = ?',
+		});
+		expect(JSON.stringify(span.attributes)).not.toContain('jane.doe@example.com');
+	});
+
+	it('records a failed query as an error span', async () => {
+		await db
+		.selectFrom('person')
+		.select(sql.ref('no_such_column').as('x'))
+		.execute()
+		.catch(() => {});
+
+		const [span] = exporter.getFinishedSpans();
+		expect(span.status).toEqual({ code: SpanStatusCode.ERROR, message: "Unknown column 'no_such_column' in 'SELECT'" });
+		expect(span.attributes['error.type']).toBe('ER_BAD_FIELD_ERROR');
 	});
 });

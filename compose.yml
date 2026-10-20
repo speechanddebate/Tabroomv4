@@ -21,8 +21,26 @@ services:
             target: dev
         ports:
             - '8001:8001'
+        environment:
+            # where the app runs, for telemetry. deathstar sets the same keys per host and container
+            OTEL_RESOURCE_ATTRIBUTES: host.name=dev,container.name=indexcards-dev,service.instance.id=dev-indexcards-dev
+        # loki labels job and container. The driver always sets host to the machine's hostname itself.
+        # Needs the driver plugin once per machine:
+        #   docker plugin install grafana/loki-docker-driver:3.7.8-amd64 --alias loki --grant-all-permissions
+        logging:
+            driver: loki
+            options:
+                loki-url: http://localhost:3100/loki/api/v1/push
+                loki-external-labels: job=indexcards,container=indexcards-dev
+                # don't block the app when the nsda stack (and loki) isn't running
+                mode: non-blocking
+                loki-retries: '2'
+                max-size: 100m
+                max-file: '3'
         volumes:
-            - ./indexcards/api:/app/indexcards/api 
+            - ./indexcards/api:/app/indexcards/api
+            # mounted so config edits (e.g. telemetry endpoints) only need a restart, not a rebuild
+            - ./indexcards/config:/app/indexcards/config:ro
     schemats:
         container_name: schemats-dev
         build:
@@ -33,6 +51,15 @@ services:
         ports:
             - '9000:9000'
             - '6006:6006'
+        logging:
+            driver: loki
+            options:
+                loki-url: http://localhost:3100/loki/api/v1/push
+                loki-external-labels: job=schemats,container=schemats-dev
+                mode: non-blocking
+                loki-retries: '2'
+                max-size: 100m
+                max-file: '3'
         volumes:
             - ./schemats/src:/app/schemats/src
 

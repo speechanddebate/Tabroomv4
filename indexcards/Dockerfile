@@ -61,4 +61,4 @@ ENV CONFIG_DIR="/config"
 ARG GIT_COMMIT
 ENV GIT_COMMIT=$GIT_COMMIT
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "--import", "./dist/api/instrumentation.js", "dist/app.js"]

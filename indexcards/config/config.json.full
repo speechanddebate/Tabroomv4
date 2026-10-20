@@ -48,6 +48,14 @@
     "slowQueryLimit": 5000,
     "usePrettyConsole": false
   },
+  "telemetry": {
+    "enabled": true,
+    "serviceName": "indexcards",
+    "environment": "production",
+    "tracesEndpoint": "http://tempo:4318/v1/traces",
+    "metricsEndpoint": "http://prometheus:9090/api/v1/otlp/v1/metrics",
+    "metricsInterval": 60000
+  },
   "nsda": {
     "path": "/v2",
     "product_codes": {}
