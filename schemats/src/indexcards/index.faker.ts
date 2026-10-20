@@ -29,6 +29,8 @@ import type {
 	JudgeRecord,
 	LoginResponse,
 	MockTrialBallotContext,
+	OnlineRoom,
+	OnlineRoomJoin,
 	OtherBallotContext,
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
@@ -43,6 +45,7 @@ import type {
 	UnlinkedStudentSearchSchema,
 	UserChapter,
 	UserParadigmOutput,
+	UtilityRoom,
 } from './schemas';
 
 export const getRestAdsResponseMock = (): HomepageAd[] =>
@@ -1373,6 +1376,132 @@ export const getRestTournsResponseMock = (): Tourn[] =>
 			undefined,
 		]),
 	}));
+
+export const getRestTournsSectionsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSectionsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsRoomsListResponseMock = (): UtilityRoom[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		name: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		joinable: faker.datatype.boolean(),
+		hybrid: faker.datatype.boolean(),
+		mapUrl: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	}));
+
+export const getRestTournsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
 
 export const getGetTournResultSetsResponseMock = (): GetTournResultSets200 => ({
 	[faker.string.alphanumeric(5)]: {

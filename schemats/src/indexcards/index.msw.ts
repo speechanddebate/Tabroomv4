@@ -32,6 +32,8 @@ import type {
 	JudgeRecord,
 	LoginResponse,
 	MockTrialBallotContext,
+	OnlineRoom,
+	OnlineRoomJoin,
 	OtherBallotContext,
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
@@ -46,6 +48,7 @@ import type {
 	UnlinkedStudentSearchSchema,
 	UserChapter,
 	UserParadigmOutput,
+	UtilityRoom,
 } from './schemas';
 
 export const getRestAdsResponseMock = (): HomepageAd[] =>
@@ -1376,6 +1379,132 @@ export const getRestTournsResponseMock = (): Tourn[] =>
 			undefined,
 		]),
 	}));
+
+export const getRestTournsSectionsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSectionsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsRoomsListResponseMock = (): UtilityRoom[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		name: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		joinable: faker.datatype.boolean(),
+		hybrid: faker.datatype.boolean(),
+		mapUrl: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	}));
+
+export const getRestTournsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
 
 export const getGetTournResultSetsResponseMock = (): GetTournResultSets200 => ({
 	[faker.string.alphanumeric(5)]: {
@@ -3105,6 +3234,198 @@ export const getRestTournsMockHandler = (
 	);
 };
 
+export const getRestTournsSectionsRoomGetMockHandler = (
+	overrideResponse?:
+		| OnlineRoom
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<OnlineRoom> | OnlineRoom),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/tourns/:tournId/sections/:sectionId/room',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsSectionsRoomGetResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsSectionsRoomJoinMockHandler = (
+	overrideResponse?:
+		| OnlineRoomJoin
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<OnlineRoomJoin> | OnlineRoomJoin),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/tourns/:tournId/sections/:sectionId/room/join',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsSectionsRoomJoinResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsSchoolsRoomGetMockHandler = (
+	overrideResponse?:
+		| OnlineRoom
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<OnlineRoom> | OnlineRoom),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/tourns/:tournId/schools/:schoolId/room',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsSchoolsRoomGetResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsSchoolsRoomJoinMockHandler = (
+	overrideResponse?:
+		| OnlineRoomJoin
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<OnlineRoomJoin> | OnlineRoomJoin),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/tourns/:tournId/schools/:schoolId/room/join',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsSchoolsRoomJoinResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsPrepRoomsGetMockHandler = (
+	overrideResponse?:
+		| OnlineRoom
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<OnlineRoom> | OnlineRoom),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/tourns/:tournId/prep-rooms/:entryId',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsPrepRoomsGetResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsPrepRoomsJoinMockHandler = (
+	overrideResponse?:
+		| OnlineRoomJoin
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<OnlineRoomJoin> | OnlineRoomJoin),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/tourns/:tournId/prep-rooms/:entryId/join',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsPrepRoomsJoinResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsRoomsListMockHandler = (
+	overrideResponse?:
+		| UtilityRoom[]
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<UtilityRoom[]> | UtilityRoom[]),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/tourns/:tournId/rooms',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsRoomsListResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestTournsRoomJoinMockHandler = (
+	overrideResponse?:
+		| OnlineRoomJoin
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<OnlineRoomJoin> | OnlineRoomJoin),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/tourns/:tournId/rooms/:roomId/join',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestTournsRoomJoinResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
 export const getGetTournResultSetsMockHandler = (
 	overrideResponse?:
 		| GetTournResultSets200
@@ -3907,6 +4228,14 @@ export const getIndexCardsAPIMock = () => [
 	getRestJudgesBallotConfirmMockHandler(),
 	getRestJudgesBallotFeedbackMockHandler(),
 	getRestTournsMockHandler(),
+	getRestTournsSectionsRoomGetMockHandler(),
+	getRestTournsSectionsRoomJoinMockHandler(),
+	getRestTournsSchoolsRoomGetMockHandler(),
+	getRestTournsSchoolsRoomJoinMockHandler(),
+	getRestTournsPrepRoomsGetMockHandler(),
+	getRestTournsPrepRoomsJoinMockHandler(),
+	getRestTournsRoomsListMockHandler(),
+	getRestTournsRoomJoinMockHandler(),
 	getGetTournResultSetsMockHandler(),
 	getGetResultSetMockHandler(),
 	getRestParadigmsMockHandler(),
