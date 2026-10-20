@@ -5,9 +5,8 @@
 	import { Clock, MapPin, Hourglass } from '@lucide/svelte';
 	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
 
-	const { ballot, tournId }: {
+	const { ballot }: {
 		ballot: CurrentBallot,
-		tournId: number,
 	} = $props();
 
 	const buttonColor = $derived.by(() => {
@@ -100,7 +99,7 @@
 					{#if ballot.Room?.joinable}
 						<OnlineRoom
 							room    = {ballot.Room}
-							target  = {{ type: 'section', tournId, sectionId: ballot.id }}
+							target  = {{ type: 'section', tournId: ballot.tourn, sectionId: ballot.id }}
 							text    = {ballot.Room.name ?? 'Online room'}
 							variant = 'text'
 						/>

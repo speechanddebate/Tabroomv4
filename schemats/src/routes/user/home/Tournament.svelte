@@ -123,7 +123,7 @@ const { dateOutput, timeOutput } = $derived(showDateRange({
 			{#if currBallots && currBallots.length > 0}
 				<div class="flex flex-col gap-2">
 					{#each currBallots as ballot (ballot.id)}
-						<Ballot ballot={ballot} tournId={tourn.id} />
+						<Ballot ballot={ballot} />
 					{/each}
 				</div>
 			{:else}

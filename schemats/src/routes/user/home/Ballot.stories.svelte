@@ -6,7 +6,6 @@
 
 	const { Story } = defineMeta({
 		component: Ballot,
-		args: { tournId: 1 },
 		parameters: {
 			layout: 'padded',
 		},
@@ -36,6 +35,7 @@
 			ballotText: 'Please hit start right away so blah blah blah you know',
 			chair: true,
 			audited: false,
+			tourn: 1,
 			TournTz: 'America/Chicago',
 			eventName: 'Lincoln-Douglas Debate',
 			eventAbbr: 'LD',
@@ -266,18 +266,18 @@
 <Story name="Several Ballots">
 	{#snippet template()}
 		<div class="mx-auto flex w-full max-w-6xl flex-col gap-2">
-			<Ballot tournId={1} ballot={debateBallot()} />
-			<Ballot tournId={1} ballot={{ ...debateBallot(), id: 2, flight: 2, flipStatus: 'loser', ballotText: null,
+			<Ballot ballot={debateBallot()} />
+			<Ballot ballot={{ ...debateBallot(), id: 2, flight: 2, flipStatus: 'loser', ballotText: null,
 				Room: room('PF Zoom 4', true), onlineMode: 'sync', roomNotes: 'Password is 1234',
 				eventName: 'Public Forum Debate', eventAbbr: 'PF',
 				Entries: [
 					{ id: 3, side: null, speakerOrder: null, code: 'Lakeside AB' },
 					{ id: 4, side: null, speakerOrder: null, code: 'Riverdale Prep CD' },
 				] }} />
-			<Ballot tournId={1} ballot={{ ...debateBallot(), id: 3, name: 2, status: 'started', ballotText: null,
+			<Ballot ballot={{ ...debateBallot(), id: 3, name: 2, status: 'started', ballotText: null,
 				Room: room('Room 214'), eventName: 'Original Oratory', eventAbbr: 'OO', eventType: 'speech',
 				Entries: [1, 2, 3, 4, 5, 6].map(n => ({ id: 10 + n, side: null, speakerOrder: n, code: `${100 + n}` })) }} />
-			<Ballot tournId={1} ballot={{ ...debateBallot(), id: 4, name: 1, label: 'Session 1', ballotText: null,
+			<Ballot ballot={{ ...debateBallot(), id: 4, name: 1, label: 'Session 1', ballotText: null,
 				Room: room('Senate Chamber'), eventName: 'Congressional Debate', eventAbbr: 'CON', eventType: 'congress',
 				Entries: [] }} />
 		</div>

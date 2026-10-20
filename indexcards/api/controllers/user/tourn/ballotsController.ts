@@ -71,6 +71,7 @@ export async function getCurrent(req: Request,res: Response) {
 			roomNotes: s.Round.settings.judges_ballots_visible ? s.Room.notes : null,
 			chair: s.Ballots.some((b: { chair: number }) => b.chair),
 			audited: s.Ballots.some((b: { audit: number }) => b.audit),
+			tourn: s.Judge.Category.Tourn.id,
 			TournTz: s.Judge.Category.Tourn.tz,
 			eventName: s.Judge.Category.Event.name,
 			eventAbbr: s.Judge.Category.Event.abbr,
@@ -104,7 +105,7 @@ export async function getCurrent(req: Request,res: Response) {
 
 	// Each ballot's room as this person sees it, so the join button needs no request of its own
 	await Promise.all(ballots.map(async (ballot) => {
-		ballot.Room = (await getSectionRoom(db, Number(tournId), ballot.id, req.actor))?.display ?? null;
+		ballot.Room = (await getSectionRoom(db, ballot.tourn, ballot.id, req.actor))?.display ?? null;
 	}));
 
 	return res.json(ballots);

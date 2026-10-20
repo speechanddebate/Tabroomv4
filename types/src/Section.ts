@@ -31,6 +31,7 @@ export const CurrentBallotSchema = z.object({
 	ballotText: z.string().max(127).nullable(),
 	chair: z.boolean(),
 	audited: z.boolean(),
+	tourn: TournSchema.shape.id,
 	TournTz: TournSchema.shape.tz,
 	eventName: EventSchema.shape.name.meta({ description: 'The name of the event' }),
 	eventAbbr: EventSchema.shape.abbr.meta({ description: 'The abbreviation of the event' }),

@@ -49,6 +49,11 @@ export interface CurrentBallot {
 	ballotText: string | null;
 	chair: boolean;
 	audited: boolean;
+	/**
+	 * @maximum 9007199254740991
+	 * @exclusiveMinimum 0
+	 */
+	tourn: number;
 	/** @maxLength 31 */
 	TournTz: string;
 	/** The name of the event */
