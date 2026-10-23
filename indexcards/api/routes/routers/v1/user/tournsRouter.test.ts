@@ -25,6 +25,29 @@ describe('GET /user/tourns', () => {
 		expect(res.body).toMatchSchema(z.array(TournSchema));
 		expect(res.body.some((tourn: { id: number }) => tourn.id === Tourn.id)).toBe(true);
 	});
+	it('returns the most recent tournaments first', async () => {
+		// Create the newer tourn first so the order can't come from insertion order
+		const { Tourn: Newer, Category: NewerCategory } = await factories.tourn.createFull({
+			start: new Date('2026-03-01T00:00:00Z'),
+			end: new Date('2026-03-02T00:00:00Z'),
+		});
+		await factories.person.createJudge({ person: personId, Judge: { category: NewerCategory.id } });
+		const { Tourn: Older, Category: OlderCategory } = await factories.tourn.createFull({
+			start: new Date('2026-01-01T00:00:00Z'),
+			end: new Date('2026-01-02T00:00:00Z'),
+		});
+		await factories.person.createJudge({ person: personId, Judge: { category: OlderCategory.id } });
+
+		const res = await request(server)
+			.get(`/v1/user/tourns`)
+			.set('Accept', 'application/json')
+			.asPerson(userkey)
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(TournSchema));
+		expect(res.body.map((tourn: { id: number }) => tourn.id)).toEqual([Newer.id, Older.id]);
+	});
 });
 
 describe('GET /user/tourns/{tournId}', () => {

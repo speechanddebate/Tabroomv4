@@ -288,7 +288,7 @@ async function getPersonTourns(db: Database, personId: number, opts: queryOpts =
 					.whereRef('school.tourn', '=', 'tourn.id')
 			),
 		]))
-		.orderBy('tourn.start')
+		.orderBy('tourn.start', 'desc')
 		.execute();
 
 	return data;
