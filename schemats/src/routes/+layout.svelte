@@ -22,8 +22,14 @@
 	initSessionContext(() => data.sessionData ?? null);
 
 	const persister = createAsyncStoragePersister({
-		storage: browser ? window.localStorage : null,
+		storage: browser ? window.localStorage : undefined,
 	});
+
+	// Drop the cache and its persisted copy so the next user on this computer can't read it
+	const clearCache = async () => {
+		data.queryClient.clear();
+		await persister.removeClient();
+	};
 
 	const logoutMutation = createAuthLogout(undefined,() => data.queryClient);
 	const logout = async () => {
@@ -32,7 +38,7 @@
 		} finally {
 			// reload even when the request fails, e.g. the session already expired,
 			// so requireLogin in the server loads redirects off protected pages
-			data.queryClient.invalidateQueries();
+			await clearCache();
 			await invalidateAll();
 		}
 	};
@@ -40,7 +46,7 @@
 	const suEndMutation = createAuthSuEnd(undefined, () => data.queryClient);
 	const suEnd = async () => {
 		await suEndMutation.mutateAsync();
-		data.queryClient.invalidateQueries();
+		await clearCache();
 		await invalidateAll(); // Force reload +layout.server.ts
 	};
 
