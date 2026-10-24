@@ -2,6 +2,7 @@ import { render, waitFor } from '@testing-library/svelte';
 import { QueryClient, dehydrate } from '@tanstack/svelte-query';
 
 import Layout from './+layout.svelte';
+import { load } from './+layout';
 
 const PERSISTED_CACHE_KEY = 'REACT_QUERY_OFFLINE_CACHE';
 const profileKey = ['/v1/user/profile'];
@@ -22,14 +23,19 @@ type AppShellProps = {
 	suEndFn  : () => Promise<void>;
 };
 
-const { appShellProps, mockInvalidateAll, mockLogoutMutateAsync, mockSuEndMutateAsync } = vi.hoisted(() => ({
+const { appShellProps, env, mockInvalidateAll, mockLogoutMutateAsync, mockSuEndMutateAsync } = vi.hoisted(() => ({
 	appShellProps: { current: null as null | AppShellProps },
+	env: { browser: true },
 	mockInvalidateAll: vi.fn(),
 	mockLogoutMutateAsync: vi.fn(),
 	mockSuEndMutateAsync: vi.fn(),
 }));
 
-vi.mock('$app/env', () => ({ browser: true }));
+vi.mock('$app/env', () => ({
+	get browser() {
+		return env.browser;
+	},
+}));
 vi.mock('$app/navigation', () => ({ invalidateAll: mockInvalidateAll }));
 vi.mock('@tanstack/svelte-query-devtools', () => ({ SvelteQueryDevtools: () => {} }));
 vi.mock('$lib/components/ToastProvider.svelte', () => ({ default: () => {} }));
@@ -74,5 +80,27 @@ describe('root layout session teardown', () => {
 
 		expect(localStorage.getItem(PERSISTED_CACHE_KEY) ?? '').not.toContain('alice@example.com');
 		expect(queryClient.getQueryData(profileKey)).toBeUndefined();
+	});
+});
+
+describe('root layout load', () => {
+	const runLoad = async () => {
+		const result = await load({ data: { sessionData: null } } as never);
+		return (result as { queryClient: QueryClient }).queryClient;
+	};
+
+	afterEach(() => {
+		env.browser = true;
+	});
+
+	// invalidateAll reruns this load on login, logout and su end; a new client there splits
+	// QueryClientProvider (keeps the first) from PersistQueryClientProvider (follows data)
+	it('reuses one query client in the browser across reruns', async () => {
+		expect(await runLoad()).toBe(await runLoad());
+	});
+
+	it('creates a query client per request on the server', async () => {
+		env.browser = false;
+		expect(await runLoad()).not.toBe(await runLoad());
 	});
 });
