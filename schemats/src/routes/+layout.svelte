@@ -6,6 +6,7 @@
 
 	import { browser } from '$app/env';
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
+	import { defaultShouldDehydrateQuery } from '@tanstack/svelte-query';
 	import { PersistQueryClientProvider } from '@tanstack/svelte-query-persist-client';
 	import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
@@ -64,7 +65,14 @@
 
 <PersistQueryClientProvider
 	client         = {data.queryClient}
-	persistOptions = {{ persister }}
+	persistOptions = {{
+		persister,
+		dehydrateOptions: {
+			// A query whose data can change on the server under the page opts out with meta.persist,
+			// so a reload loads it fresh instead of showing a stale copy first
+			shouldDehydrateQuery: (query) => defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
+		},
+	}}
 >
 
 	<AppShell logoutFn={logout} notificationCount={notificationCount} suEndFn={suEnd}>

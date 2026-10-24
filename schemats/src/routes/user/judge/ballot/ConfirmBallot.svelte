@@ -1,10 +1,12 @@
 <script lang='ts'>
 	import { Modal } from 'flowbite-svelte';
 	import type { BallotReview } from '@tabroom/types';
+	import { useQueryClient } from '@tanstack/svelte-query';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { createRestJudgesBallotConfirm } from '$indexcards';
+	import { createRestJudgesBallotConfirm, getRestJudgesBallotContextQueryKey } from '$indexcards';
 	import Button from '$lib/components/Button.svelte';
 	import { handleMutation } from '$lib/helpers/query';
+	import { toast } from '$lib/helpers/toasts';
 	import { studentName } from './scoring/scoringGrid';
 
 	type Props = {
@@ -13,12 +15,12 @@
 		judgeId: number;
 		panelId: number;
 		open?: boolean;
-		onconfirmed: () => void;
 	};
 
-	let { review, judgeId, panelId, open = $bindable(false), onconfirmed }: Props = $props();
+	let { review, judgeId, panelId, open = $bindable(false) }: Props = $props();
 
 	const id = $props.id();
+	const queryClient = useQueryClient();
 	const mutation = createRestJudgesBallotConfirm();
 	let confirming = $state(false);
 	// Set when the API couldn't confirm; the scores are saved, so classic can still confirm them
@@ -40,17 +42,21 @@
 				}
 			},
 		});
-		confirming = false;
 
 		if (confirmed) {
+			// The page shows the ballot as confirmed from its context, so wait for the refetched one
+			// before closing. The ballot is confirmed either way; only the page is out of date
+			try {
+				await queryClient.invalidateQueries({ queryKey: getRestJudgesBallotContextQueryKey(judgeId, panelId) }, { throwOnError: true });
+			} catch {
+				toast.error({ message: 'Your ballot was confirmed, but this page couldn\'t refresh', detail: 'Reload the page to see it.' });
+			}
 			open = false;
-			onconfirmed();
 		}
+		confirming = false;
 	}
 </script>
 
-<!-- ballot_save.mhtml 1950-2292: classic's "Is this correct?" page, before ballot_confirm.mhtml -->
-<!-- The heading is an h4 rather than Modal's h3 title: the dialog sits in the page above the Feedback h5 -->
 <Modal aria-labelledby='{id}-title' onclose={() => (failed = null)} size='md' bind:open>
 	{#snippet header()}
 		<h4 id='{id}-title' class='my-0 text-lg font-semibold'>Is this correct?</h4>

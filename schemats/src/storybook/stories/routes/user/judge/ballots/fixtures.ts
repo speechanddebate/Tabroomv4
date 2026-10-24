@@ -1,4 +1,5 @@
-import type { CongressBallotContext, DebateBallotContext, MockTrialBallotContext } from '@tabroom/types';
+import { userEvent, within } from 'storybook/test';
+import type { CongressBallotContext, DebateBallotContext, DebateBallotReview, MockTrialBallotContext } from '@tabroom/types';
 
 // Shared ballot context fixtures. Each event type builds on baseContext and
 // overrides what differs, so a story only spells out what it's showing.
@@ -112,6 +113,42 @@ export function debateContext(overrides: Partial<DebateBallotContext> = {}): Deb
 		debate: { affLabel: 'Aff', negLabel: 'Neg', sides: 'locked', flipStatus: null, winner: null },
 		...overrides,
 	};
+}
+
+// The ballot submitDebateBallot enters, as the server saves it
+export const savedDebateBallot: DebateBallotReview = {
+	eventType: 'debate',
+	saved: true,
+	winner: 11,
+	lowPointWin: false,
+	bestPO: null,
+	Entries: [
+		{
+			ballot: 11, entry: 101, code: 'Northview AB', sideLabel: 'Aff',
+			Students: [{ id: 1001, first: 'Avery', last: 'Brooks', points: 29 }, { id: 1002, first: 'Sam', last: 'Delgado', points: 28.5 }],
+		},
+		{
+			ballot: 12, entry: 102, code: 'Central CD', sideLabel: 'Neg',
+			Students: [{ id: 1003, first: 'Jordan', last: 'Chen', points: 28 }, { id: 1004, first: 'Riley', last: 'Nakamura', points: 27.5 }],
+		},
+	],
+};
+
+// Fills in a valid debateContext ballot, Northview AB winning on the Aff, and submits it
+export async function submitDebateBallot(canvasElement: HTMLElement) {
+	const canvas = within(canvasElement);
+	const points: [string, string][] = [
+		['Avery Brooks', '29'],
+		['Sam Delgado', '28.5'],
+		['Jordan Chen', '28'],
+		['Riley Nakamura', '27.5'],
+	];
+	for (const [name, value] of points) {
+		await userEvent.type(await canvas.findByRole('spinbutton', { name: `Points for ${name}` }), value);
+	}
+	await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Winner' }), 'Northview AB');
+	await userEvent.click(canvas.getByRole('radio', { name: 'Aff' }));
+	await userEvent.click(canvas.getByRole('button', { name: 'Submit Ballot' }));
 }
 
 export function mockTrialContext(overrides: Partial<MockTrialBallotContext> = {}): MockTrialBallotContext {

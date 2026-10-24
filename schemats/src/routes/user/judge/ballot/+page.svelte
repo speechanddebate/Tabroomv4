@@ -9,7 +9,10 @@
 
 	const { data }: PageProps = $props();
 
-	const contextQuery = createRestJudgesBallotContext(() => data.judgeId, () => data.panelId);
+	// Not persisted: a reload restoring it would show the ballot as it was, e.g. unconfirmed
+	const contextQuery = createRestJudgesBallotContext(() => data.judgeId, () => data.panelId, () => ({
+		query: { meta: { persist: false } },
+	}));
 	// The components take the shared type. Orval types the empty placeholder blocks (ranks: {},
 	// points.rubric: {}) as open objects while zod makes them closed; the same once they get fields
 	const context = $derived(handleOrval(contextQuery) as BallotContext | null);

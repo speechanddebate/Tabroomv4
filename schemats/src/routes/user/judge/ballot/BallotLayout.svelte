@@ -2,8 +2,7 @@
 	import type { Attachment } from 'svelte/attachments';
 	import type { BallotContext, BallotError, BallotReview, BallotValidationProblem, OtherBallotContext } from '@tabroom/types';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { useQueryClient } from '@tanstack/svelte-query';
-	import { createRestJudgesBallotSave, getRestJudgesBallotContextQueryKey } from '$indexcards';
+	import { createRestJudgesBallotSave } from '$indexcards';
 	import { handleMutation } from '$lib/helpers/query';
 	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
 	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
@@ -38,17 +37,9 @@
 	let review = $state<BallotReview | null>(null);
 	let confirmOpen = $state(false);
 	let submitting = $state(false);
-	// Confirmed scores are final (ballot.mhtml 1535-1567); feedback stays editable. Follows the
-	// context too: a reload first shows the persisted context from before confirming, then refetches
-	let justConfirmed = $state(false);
-	const confirmed = $derived(justConfirmed || context.status === 'confirmed');
-
-	const queryClient = useQueryClient();
-	function onconfirmed() {
-		justConfirmed = true;
-		// Refresh the stored context, so it isn't the unconfirmed one next time
-		queryClient.invalidateQueries({ queryKey: getRestJudgesBallotContextQueryKey(judgeId, panelId) });
-	}
+	// Confirmed scores are final (ballot.mhtml 1535-1567); feedback stays editable. Confirming
+	// refetches the context before the popup closes
+	const confirmed = $derived(context.status === 'confirmed');
 
 	const save = createRestJudgesBallotSave();
 
@@ -208,7 +199,7 @@
 
 				{#if notedEntries.length > 0}
 					<div class='flex flex-col gap-1 text-center'>
-						<span class='font-semibold text-danger'>Accomodation Notes</span>
+						<span class='font-semibold text-danger'>Accommodation Notes</span>
 						{#each notedEntries as entry (entry.ballot)}
 							<!-- Notes come from a textarea, so keep their line breaks -->
 							<p class='whitespace-pre-line'><span class='font-semibold'>{entry.code}:</span> {entry.notes}</p>
@@ -234,7 +225,7 @@
 		</section>
 
 		{#if review}
-			<ConfirmBallot {judgeId} {onconfirmed} {panelId} {review} bind:open={confirmOpen} />
+			<ConfirmBallot {judgeId} {panelId} {review} bind:open={confirmOpen} />
 		{/if}
 
 		<!-- Classic shows nothing here for Congress judges who aren't the chair, or mock trial without mock_trial_feedback -->

@@ -2,10 +2,10 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
-	import type { BallotValidationProblem, DebateBallotReview } from '@tabroom/types';
-	import { getRestJudgesBallotConfirmMockHandler, getRestJudgesBallotSaveMockHandler } from '$indexcards/index.msw';
+	import type { BallotValidationProblem } from '@tabroom/types';
+	import { getRestJudgesBallotSaveMockHandler } from '$indexcards/index.msw';
 	import BallotLayout from '../../../../../../routes/user/judge/ballot/BallotLayout.svelte';
-	import { debateContext } from './fixtures';
+	import { debateContext, savedDebateBallot, submitDebateBallot } from './fixtures';
 
 	const { Story } = defineMeta({
 		title: 'Routes/User/Judge/Ballot/Debate',
@@ -22,23 +22,6 @@
 		debate: { affLabel: 'Aff', negLabel: 'Neg', sides: 'flip', flipStatus, winner: null },
 	});
 
-	// Fills in a valid ballot, Northview AB winning on the Aff, and submits it
-	async function submitBallot(canvasElement: HTMLElement) {
-		const canvas = within(canvasElement);
-		const points: [string, string][] = [
-			['Avery Brooks', '29'],
-			['Sam Delgado', '28.5'],
-			['Jordan Chen', '28'],
-			['Riley Nakamura', '27.5'],
-		];
-		for (const [name, value] of points) {
-			await userEvent.type(canvas.getByRole('spinbutton', { name: `Points for ${name}` }), value);
-		}
-		await userEvent.selectOptions(canvas.getByRole('combobox', { name: 'Winner' }), 'Northview AB');
-		await userEvent.click(canvas.getByRole('radio', { name: 'Aff' }));
-		await userEvent.click(canvas.getByRole('button', { name: 'Submit Ballot' }));
-	}
-
 	// The server's 422 for a ballot whose RFD is too short
 	const refused: BallotValidationProblem = {
 		type: 'about:blank',
@@ -46,24 +29,6 @@
 		status: 422,
 		errors: [
 			{ field: 'rfd', message: 'This tournament requires a Reason for Decision. Please leave at least 50 words. (You left 0)' },
-		],
-	};
-
-	const saved: DebateBallotReview = {
-		eventType: 'debate',
-		saved: true,
-		winner: 11,
-		lowPointWin: false,
-		bestPO: null,
-		Entries: [
-			{
-				ballot: 11, entry: 101, code: 'Northview AB', sideLabel: 'Aff',
-				Students: [{ id: 1001, first: 'Avery', last: 'Brooks', points: 29 }, { id: 1002, first: 'Sam', last: 'Delgado', points: 28.5 }],
-			},
-			{
-				ballot: 12, entry: 102, code: 'Central CD', sideLabel: 'Neg',
-				Students: [{ id: 1003, first: 'Jordan', last: 'Chen', points: 28 }, { id: 1004, first: 'Riley', last: 'Nakamura', points: 27.5 }],
-			},
 		],
 	};
 </script>
@@ -84,7 +49,7 @@
 		},
 	}}
 	play={async ({ canvasElement }) => {
-		await submitBallot(canvasElement);
+		await submitDebateBallot(canvasElement);
 
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByText('Oh, drat. Your ballot had errors.')).toBeInTheDocument();
@@ -102,37 +67,13 @@
 		},
 	}}
 	play={async ({ canvasElement }) => {
-		await submitBallot(canvasElement);
+		await submitDebateBallot(canvasElement);
 
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByText('Oh, drat. Your ballot had errors.')).toBeInTheDocument();
 
 		await userEvent.type(canvas.getByRole('spinbutton', { name: 'Points for Avery Brooks' }), '5');
 		await expect(canvas.queryByText('Oh, drat. Your ballot had errors.')).not.toBeInTheDocument();
-	}}
-/>
-
-<!-- A saved ballot opens "Is this correct?"; confirming it (through classic for now) locks the scores -->
-<Story
-	name="Confirm"
-	args={{ context: debateContext() }}
-	parameters={{
-		msw: {
-			handlers: [
-				getRestJudgesBallotSaveMockHandler(saved),
-				getRestJudgesBallotConfirmMockHandler({ status: 'confirmed', Entries: [], flipStatus: null }),
-			],
-		},
-	}}
-	play={async ({ canvasElement }) => {
-		await submitBallot(canvasElement);
-
-		// The popup renders outside the story's canvas
-		const page = within(canvasElement.ownerDocument.body);
-		await expect(await page.findByText('Is this correct?')).toBeInTheDocument();
-		await userEvent.click(page.getByRole('button', { name: 'Yes, confirm' }));
-
-		await expect(await within(canvasElement).findByText(/This ballot has been entered and confirmed already/)).toBeInTheDocument();
 	}}
 />
 
@@ -143,7 +84,7 @@
 	parameters={{
 		msw: {
 			handlers: [
-				getRestJudgesBallotSaveMockHandler(saved),
+				getRestJudgesBallotSaveMockHandler(savedDebateBallot),
 				http.post('*/rest/judges/:judgeId/panels/:panelId/ballots/confirm', () => HttpResponse.json({
 					type: 'about:blank',
 					title: 'The Server is temporarily unable to handle the request.',
@@ -154,7 +95,7 @@
 		},
 	}}
 	play={async ({ canvasElement }) => {
-		await submitBallot(canvasElement);
+		await submitDebateBallot(canvasElement);
 
 		const page = within(canvasElement.ownerDocument.body);
 		await userEvent.click(await page.findByRole('button', { name: 'Yes, confirm' }));

@@ -1,11 +1,15 @@
 <script lang="ts" module>
 	import type { ComponentProps } from 'svelte';
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { expect, within } from 'storybook/test';
+	import { expect, userEvent, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
-	import { getRestJudgesBallotContextMockHandler } from '$indexcards/index.msw';
+	import {
+		getRestJudgesBallotConfirmMockHandler,
+		getRestJudgesBallotContextMockHandler,
+		getRestJudgesBallotSaveMockHandler,
+	} from '$indexcards/index.msw';
 	import BallotPage from '../../../../../../routes/user/judge/ballot/+page.svelte';
-	import { debateContext } from './fixtures';
+	import { debateContext, savedDebateBallot, submitDebateBallot } from './fixtures';
 
 	// The ballot page: the beta notice and ballot, or the way to classic when the beta can't render it
 	const { Story } = defineMeta({
@@ -19,6 +23,9 @@
 	});
 
 	const classicHref = /\/user\/judge\/ballot\.mhtml\?panel_id=2&judge_id=1$/;
+
+	// Like the API, the context says confirmed once the confirm has gone through
+	let confirmed = false;
 </script>
 
 <Story
@@ -61,5 +68,37 @@
 	play={async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByText('This ballot couldn\'t be loaded')).toBeInTheDocument();
+	}}
+/>
+
+<!-- A saved ballot opens "Is this correct?"; confirming it (through classic for now) locks the
+scores once the refetched context says so -->
+<Story
+	name="Confirm"
+	beforeEach={() => {
+		confirmed = false;
+	}}
+	parameters={{
+		msw: {
+			handlers: [
+				http.get('*/rest/judges/:judgeId/panels/:panelId/ballots', () =>
+					HttpResponse.json(debateContext(confirmed ? { status: 'confirmed' } : {}))),
+				getRestJudgesBallotSaveMockHandler(savedDebateBallot),
+				getRestJudgesBallotConfirmMockHandler(() => {
+					confirmed = true;
+					return { status: 'confirmed', Entries: [], flipStatus: null };
+				}),
+			],
+		},
+	}}
+	play={async ({ canvasElement }) => {
+		await submitDebateBallot(canvasElement);
+
+		// The popup renders outside the story's canvas
+		const page = within(canvasElement.ownerDocument.body);
+		await expect(await page.findByText('Is this correct?')).toBeInTheDocument();
+		await userEvent.click(page.getByRole('button', { name: 'Yes, confirm' }));
+
+		await expect(await within(canvasElement).findByText(/This ballot has been entered and confirmed already/)).toBeInTheDocument();
 	}}
 />
