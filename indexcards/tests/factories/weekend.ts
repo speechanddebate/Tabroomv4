@@ -13,7 +13,6 @@ export function createWeekendData(overrides: Partial<Insertable<Weekend>> = {}) 
 		name: `${faker.location.city()} Weekend`,
 		city: faker.location.city(),
 		state: faker.location.state({ abbreviated: true }),
-		start: noMs(start),
 		end: noMs(new Date(start.getTime() + 2 * DAY)),
 		reg_start: before(30),
 		reg_end: before(7),
@@ -22,6 +21,8 @@ export function createWeekendData(overrides: Partial<Insertable<Weekend>> = {}) 
 		freeze_deadline: before(2),
 		judge_deadline: before(5),
 		...overrides,
+		// After the spread so a caller's start is stored without milliseconds, as MySQL would
+		start: noMs(start),
 	};
 }
 

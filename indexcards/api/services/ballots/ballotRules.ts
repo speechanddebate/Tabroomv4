@@ -13,6 +13,7 @@ import type { Counted } from '../results/tiebreakTypes.js';
 import { convert } from 'html-to-text';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
+import { flightStart } from '../../helpers/flight.js';
 
 // Site-wide tabroom_setting tags the rules read. The caller loads all of
 // them in one query and passes value_text for each.
@@ -632,9 +633,7 @@ export function winlossScoring({ event, tbTypes }: Pick<BallotRulesInput, 'event
 export function roundStart({ round, timeslot, panel, event }: Pick<BallotRulesInput, 'round' | 'timeslot' | 'panel' | 'event'>): Date {
 	const start = round.start_time ?? timeslot.start;
 	if (!start) throw new Error('Round has no start_time and its timeslot has no start');
-
-	const offset = (Number(event.settings?.flight_offset) || 0) * Math.max(Number(panel.flight) - 1, 0);
-	return new Date(start.getTime() + offset * 60_000);
+	return flightStart(start, panel.flight, event.settings?.flight_offset);
 }
 
 /**

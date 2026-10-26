@@ -103,11 +103,11 @@ export function panelWinner(
 
 	for (const score of scores) {
 		if (score.tag !== 'winloss' || score.student !== 0 || score.entry === null) continue;
+		if (score.forfeit || score.bye) continue;
 		if (score.value === 1) {
 			if (score.side === 1) affWins++;
 			else if (score.side === 2) negWins++;
 		}
-		if (score.forfeit || score.bye) continue;
 		const tally = score.value === 1 ? wins : losses;
 		if (!tally.has(score.entry)) tally.set(score.entry, new Set());
 		tally.get(score.entry)?.add(score.ballot);

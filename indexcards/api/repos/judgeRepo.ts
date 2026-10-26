@@ -176,7 +176,9 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 		sql<number>`COUNT(DISTINCT round.id)`.as('round_count'),
 	])
 	.groupBy('judge.id')
-	.orderBy('tourn.start', 'desc');
+	.orderBy('tourn.start', 'desc')
+	.orderBy('category.name')
+	.orderBy('judge.id');
 	const result = await query.execute();
 	return result.map(row => ({
 		id: row.id,
@@ -209,11 +211,10 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 	}));
 }
 
-// A person's judge rows at one finished tournament, with how much they judged
+// A person's judge rows at one tournament that counts as history, with how much they
+// judged in published rounds
 async function getJudgeTournHistory(db: Database, personId: number, tournId: number) {
-	const rows = await db.selectFrom('judge')
-	.innerJoin('category', 'judge.category', 'category.id')
-	.innerJoin('tourn', 'category.tourn', 'tourn.id')
+	const rows = await buildJudgeHistoryBase(db, personId)
 	.leftJoin('school', 'judge.school', 'school.id')
 	.leftJoin('category_setting as no_codes', (join) =>
 		join
@@ -222,6 +223,11 @@ async function getJudgeTournHistory(db: Database, personId: number, tournId: num
 	)
 	.leftJoin('ballot', 'ballot.judge', 'judge.id')
 	.leftJoin('panel', 'ballot.panel', 'panel.id')
+	.leftJoin('round', (join) =>
+		join
+			.onRef('round.id', '=', 'panel.round')
+			.on('round.published', '=', 1),
+	)
 	.select([
 		'judge.id',
 		'judge.code',
@@ -243,13 +249,11 @@ async function getJudgeTournHistory(db: Database, personId: number, tournId: num
 		'tourn.end as tourn_end',
 		'tourn.tz as tourn_tz',
 
-		sql<number>`COUNT(DISTINCT ballot.panel)`.as('ballot_count'),
-		sql<number>`COUNT(DISTINCT panel.round)`.as('round_count'),
+		// Only panels in published rounds count, so a panel whose round did not join is skipped
+		sql<number>`COUNT(DISTINCT CASE WHEN round.id IS NOT NULL THEN panel.id END)`.as('ballot_count'),
+		sql<number>`COUNT(DISTINCT round.id)`.as('round_count'),
 	])
-	.where('judge.person', '=', personId)
 	.where('tourn.id', '=', tournId)
-	.where('tourn.end', '<', new Date())
-	.where('tourn.hidden', '!=', 1)
 	.groupBy('judge.id')
 	.orderBy('category.name')
 	.execute();

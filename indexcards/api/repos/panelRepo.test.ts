@@ -208,9 +208,10 @@ describe('panelRepo', () => {
 		});
 	});
 	describe('getJudgeHistoryPanels', () => {
-		// A judge with ballots on three rounds: assigned, unpublished, and with results posted
+		// A judge with ballots on four rounds: assigned (two flights), unpublished, with results
+		// posted, and with results posted but the round unpublished
 		async function judgeWithRounds() {
-			const { Tourn, Category, Event } = await factories.tourn.createFull({ Event: { type: 'debate' } });
+			const { Tourn, Category, Event } = await factories.tourn.createFull({ Event: { type: 'debate', settings: { flight_offset: 90 } } });
 			const Judge = await factories.judge.create({ category: Category.id });
 			const Timeslot = await factories.timeslot.create({ tourn: Tourn.id, start: new Date('2025-03-08T15:00:00Z') });
 			const Room = await factories.room.create();
@@ -219,11 +220,14 @@ describe('panelRepo', () => {
 				assigned: await factories.round.create({ event: Event.id, timeslot: Timeslot.id, name: 1, published: 1, post_primary: 0, flighted: 2 }),
 				unpublished: await factories.round.create({ event: Event.id, name: 2, published: 0 }),
 				posted: await factories.round.create({ event: Event.id, name: 3, published: 1, post_primary: 3 }),
+				postedUnpublished: await factories.round.create({ event: Event.id, name: 4, published: 0, post_primary: 3 }),
 			};
 			const panels = {
+				assignedFlight1: await factories.panel.create({ round: rounds.assigned.id, room: Room.id, flight: '1' }),
 				assigned: await factories.panel.create({ round: rounds.assigned.id, room: Room.id, flight: '2' }),
 				unpublished: await factories.panel.create({ round: rounds.unpublished.id }),
 				posted: await factories.panel.create({ round: rounds.posted.id }),
+				postedUnpublished: await factories.panel.create({ round: rounds.postedUnpublished.id }),
 			};
 			for (const panel of Object.values(panels)) {
 				for (const side of [1, 2]) {
@@ -234,29 +238,38 @@ describe('panelRepo', () => {
 			return { Judge, Timeslot, Room, rounds, panels };
 		}
 
-		it('lists assigned sections with their room, start, and sided entries', async () => {
-			const { Judge, Timeslot, Room, rounds, panels } = await judgeWithRounds();
-
-			const result = await panelRepo.getJudgeHistoryPanels(db, Judge.id, { stage: 'assigned' });
-
-			expect(result).toHaveLength(1);
-			expect(result[0]).toMatchObject({
-				id: panels.assigned.id,
-				flight: 2,
-				Round: { id: rounds.assigned.id, name: 1, flighted: 2 },
-				Room: { id: Room.id, name: Room.name },
-			});
-			expect(result[0].start?.getTime()).toBe(Timeslot.start?.getTime());
-			expect(result[0].Entries.map(e => e.side)).toEqual([1, 2]);
-		});
-
-		it('lists sections with posted results', async () => {
+		it('lists sections in published rounds, staged by whether results are posted', async () => {
 			const { Judge, panels } = await judgeWithRounds();
 
-			const result = await panelRepo.getJudgeHistoryPanels(db, Judge.id, { stage: 'results' });
+			const result = await panelRepo.getJudgeHistoryPanels(db, Judge.id);
 
-			expect(result.map(p => p.id)).toEqual([panels.posted.id]);
-			expect(result[0].Room).toBeNull();
+			expect(result.map(p => [p.id, p.stage])).toEqual([
+				[panels.assignedFlight1.id, 'assigned'],
+				[panels.assigned.id, 'assigned'],
+				[panels.posted.id, 'results'],
+			]);
+		});
+
+		it('returns the room, flight start, side labels, and sided entries', async () => {
+			const { Judge, Timeslot, Room, rounds, panels } = await judgeWithRounds();
+
+			const [flight1, flight2, posted] = await panelRepo.getJudgeHistoryPanels(db, Judge.id);
+
+			expect(flight2).toMatchObject({
+				id: panels.assigned.id,
+				flight: 2,
+				Round: { id: rounds.assigned.id, name: 1 },
+				Room: { id: Room.id, name: Room.name },
+				SideLabels: { aff: null, neg: null },
+			});
+			// Flight 2 starts flight_offset minutes after the timeslot
+			const timeslotStart = Timeslot.start?.getTime() ?? 0;
+			expect(flight1.start?.getTime()).toBe(timeslotStart);
+			expect(flight2.start?.getTime()).toBe(timeslotStart + 90 * 60_000);
+			expect(flight2.Entries.map(e => e.side)).toEqual([1, 2]);
+			// An unflighted round has no flight number or room here
+			expect(posted.flight).toBeNull();
+			expect(posted.Room).toBeNull();
 		});
 	});
 	describe('getCurrentBallots', async () => {

@@ -1,8 +1,9 @@
 import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 
 import type { Database } from '../data/database.js';
-import { sql, type Insertable, type Updateable } from 'kysely';
+import type { Insertable, Updateable } from 'kysely';
 import type { Panel } from '../data/schema.js';
+import { flightStart } from '../helpers/flight.js';
 
 type queryOpts = {
 	settings?: boolean | string[];
@@ -569,13 +570,11 @@ async function getCurrentBallots(db: Database, personId: number, tournId: number
 	});
 	return [...panels.values()];
 }
-type JudgeHistoryPanelOpts = {
-	// assigned: published sections not yet past primary results; results: sections with results posted
-	stage: 'assigned' | 'results';
-};
-
-// A judge's sections at a tournament for their history page, one row per entry on the section
-async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeHistoryPanelOpts) {
+/**
+ * A judge's sections in published rounds for their history page. A section is 'assigned'
+ * until the round's primary results are posted, then it is 'results'.
+ */
+async function getJudgeHistoryPanels(db: Database, judgeId: number) {
 	const rows = await db.selectFrom('ballot')
 		.innerJoin('panel', 'ballot.panel', 'panel.id')
 		.innerJoin('round', 'panel.round', 'round.id')
@@ -591,6 +590,10 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeH
 			.onRef('neg_label.event', '=', 'event.id')
 			.on('neg_label.tag', '=', 'neg_label')
 		)
+		.leftJoin('event_setting as flight_offset', (join) => join
+			.onRef('flight_offset.event', '=', 'event.id')
+			.on('flight_offset.tag', '=', 'flight_offset')
+		)
 		.select([
 			'panel.id as panel_id',
 			'panel.flight as panel_flight',
@@ -601,12 +604,15 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeH
 			'round.label as round_label',
 			'round.type as round_type',
 			'round.flighted as round_flighted',
+			'round.start_time as round_start_time',
+			'round.post_primary as round_post_primary',
 
 			'event.id as event_id',
 			'event.abbr as event_abbr',
 			'event.type as event_type',
 			'aff_label.value as aff_label',
 			'neg_label.value as neg_label',
+			'flight_offset.value as flight_offset',
 
 			'room.id as room_id',
 			'room.name as room_name',
@@ -618,11 +624,7 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeH
 			'ballot.speakerorder as ballot_speakerorder',
 		])
 		.where('ballot.judge', '=', judgeId)
-		.$if(opts.stage === 'assigned', (q) => q
-			.where('round.published', '=', 1)
-			.where(sql`COALESCE(round.post_primary, 0)`, '<', 3)
-		)
-		.$if(opts.stage === 'results', (q) => q.where('round.post_primary', '>', 2))
+		.where('round.published', '=', 1)
 		.orderBy('round.name')
 		.orderBy('panel.flight')
 		.orderBy('ballot.side')
@@ -632,10 +634,14 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeH
 	type Entry = { id: number; code: string | null; name: string | null; side: number | null; speakerorder: number | null };
 	const panels = new Map<number, {
 		id: number;
+		stage: 'assigned' | 'results';
+		// The flight number, only when the round is flighted
 		flight: number | null;
 		start: Date | null;
-		Round: { id: number; name: number | null; label: string | null; type: string | null; flighted: number | null };
-		Event: { id: number; abbr: string | null; type: string | null; affLabel: string | null; negLabel: string | null };
+		Round: { id: number; name: number | null; label: string | null; type: string | null };
+		Event: { id: number; abbr: string | null; type: string | null };
+		// The event's side names shown next to each entry
+		SideLabels: { aff: string | null; neg: string | null };
 		Room: { id: number; name: string } | null;
 		Entries: Entry[];
 	}>();
@@ -643,24 +649,25 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeH
 	for (const row of rows) {
 		let panel = panels.get(row.panel_id);
 		if (!panel) {
+			const start = row.round_start_time ?? row.timeslot_start;
+			const flighted = (row.round_flighted ?? 0) > 1;
 			panel = {
 				id: row.panel_id,
-				flight: row.panel_flight ? Number(row.panel_flight) : null,
-				start: row.timeslot_start,
+				stage: (row.round_post_primary ?? 0) >= 3 ? 'results' : 'assigned',
+				flight: flighted && row.panel_flight ? Number(row.panel_flight) : null,
+				start: start ? flightStart(start, row.panel_flight, row.flight_offset) : null,
 				Round: {
 					id: row.round_id,
 					name: row.round_name,
 					label: row.round_label,
 					type: row.round_type,
-					flighted: row.round_flighted,
 				},
 				Event: {
 					id: row.event_id,
 					abbr: row.event_abbr,
 					type: row.event_type,
-					affLabel: row.aff_label,
-					negLabel: row.neg_label,
 				},
+				SideLabels: { aff: row.aff_label, neg: row.neg_label },
 				Room: row.room_id ? { id: row.room_id, name: row.room_name ?? '' } : null,
 				Entries: [],
 			};

@@ -256,32 +256,23 @@ export const showDateRange = (rangeProps:DtRangeProps): FormattedRanges => {
 
 		if (diffPoint === 'month' || diffPoint === 'year') {
 
-			switch (rangeProps.format) {
-				case 'short':
-					dateOutput = ` ${ startDtProps.dateTime.toLocaleString({ month: 'numeric', day: 'numeric' }) }`;
-					dateOutput += ` - ${ endDtProps.dateTime.toLocaleString({ month: 'numeric', day: 'numeric' }) }`;
-					break;
+			const month = rangeProps.format === 'short' ? 'numeric'
+				: rangeProps.format === 'long' || rangeProps.format === 'full' ? 'long'
+				: 'short';
 
-				case 'long' :
-					dateOutput = ` ${ startDtProps.dateTime.toLocaleString({ month: 'long' , day: 'numeric' }) }`;
-					dateOutput += ` - ${ endDtProps.dateTime.toLocaleString({ month: 'long'  , day: 'numeric' }) }`;
-					break;
+			// Outside the short format a range within one year ends with that year, and a
+			// range across years gives each date its own
+			const eachYear = diffPoint === 'year' && rangeProps.format !== 'short';
+			const date = (dt: DateTime) => dt.toLocaleString({ month, day: 'numeric', ...(eachYear ? { year: 'numeric' } : {}) });
 
-				case 'full' :
-					dateOutput = ` ${ startDtProps.dateTime.toLocaleString({ month: 'long' , day: 'numeric' }) }`;
-					dateOutput += ` - ${ endDtProps.dateTime.toLocaleString({ month: 'long'  , day: 'numeric' }) }`;
-					dateOutput += ` (
-						${endDtProps.dateTime.toLocaleString({ weekday: 'short' })} — ${startDtProps.dateTime.toLocaleString({ weekday: 'short' })}
-					)`;
-					break;
+			dateOutput = ` ${date(startDtProps.dateTime)} - ${date(endDtProps.dateTime)}`;
 
-				default:
-					dateOutput = ` ${ startDtProps.dateTime.toLocaleString({ month: 'short' , day: 'numeric' }) }`;
-					dateOutput += ` - ${ endDtProps.dateTime.toLocaleString({ month: 'short'  , day: 'numeric' }) }`;
+			if (rangeProps.format !== 'short' && !eachYear) {
+				dateOutput += `, ${startDtProps.dateTime.toLocaleString({ year : 'numeric' })}`;
 			}
 
-			if (rangeProps.format !== 'short') {
-				dateOutput += `, ${startDtProps.dateTime.toLocaleString({ year : 'numeric' })}`;
+			if (rangeProps.format === 'full') {
+				dateOutput += ` (${startDtProps.dateTime.toLocaleString({ weekday: 'short' })} — ${endDtProps.dateTime.toLocaleString({ weekday: 'short' })})`;
 			}
 
 		} else if (diffPoint === 'day') {

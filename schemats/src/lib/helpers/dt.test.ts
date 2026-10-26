@@ -32,6 +32,31 @@ describe('showDateRange', () => {
 			endISO: '2025-03-15T22:00:00Z',
 			mode: 'date',
 		}).dateOutput?.trim()).toBe('Mar 13 - 15, 2025');
+		expect(showDateRange({
+			startISO: '2025-01-30T14:00:00Z',
+			endISO: '2025-02-01T22:00:00Z',
+			mode: 'date',
+		}).dateOutput?.trim()).toBe('Jan 30 - Feb 1, 2025');
+	});
+
+	it('gives each date its own year when the range crosses a year', () => {
+		const range = (format?: string) => showDateRange({
+			startISO: '2024-12-30T14:00:00Z',
+			endISO: '2025-01-02T22:00:00Z',
+			mode: 'date',
+			format,
+		}).dateOutput?.trim();
+		expect(range()).toBe('Dec 30, 2024 - Jan 2, 2025');
+		expect(range('long')).toBe('December 30, 2024 - January 2, 2025');
+	});
+
+	it('lists the weekdays start first in the full format', () => {
+		expect(showDateRange({
+			startISO: '2025-01-30T14:00:00Z',
+			endISO: '2025-02-01T22:00:00Z',
+			mode: 'date',
+			format: 'full',
+		}).dateOutput?.trim()).toBe('January 30 - February 1, 2025 (Thu — Sat)');
 	});
 });
 

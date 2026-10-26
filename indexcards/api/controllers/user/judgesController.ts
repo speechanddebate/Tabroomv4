@@ -158,11 +158,20 @@ async function historyTourn(req: ValidatedRequest, res: Response) {
 		return NotFound(req, res, 'No judging record at this tournament');
 	}
 
+	type HistoryPanel = Awaited<ReturnType<typeof panelRepo.getJudgeHistoryPanels>>[number];
+	// An entry as both the assigned and results lists show it
+	const historyEntry = (panel: HistoryPanel, entry: HistoryPanel['Entries'][number]) => ({
+		id: entry.id,
+		code: entry.code,
+		name: entry.name,
+		side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.SideLabels.aff, panel.SideLabels.neg),
+		speakerOrder: entry.speakerorder,
+	});
+
 	const Judges = await Promise.all(records.map(async (judge) => {
-		const [panels, posted] = await Promise.all([
-			panelRepo.getJudgeHistoryPanels(db, judge.id, { stage: 'assigned' }),
-			panelRepo.getJudgeHistoryPanels(db, judge.id, { stage: 'results' }),
-		]);
+		const sections = await panelRepo.getJudgeHistoryPanels(db, judge.id);
+		const panels = sections.filter(panel => panel.stage === 'assigned');
+		const posted = sections.filter(panel => panel.stage === 'results');
 		const [scores, students] = await Promise.all([
 			scoreRepo.getPanelScores(db, posted.map(p => p.id)),
 			entryRepo.getEntryStudents(db, posted.flatMap(p => p.Entries.map(e => e.id))),
@@ -171,11 +180,7 @@ async function historyTourn(req: ValidatedRequest, res: Response) {
 		const Results = posted.map(panel => {
 			const panelScores = scores.filter(s => s.panel === panel.id);
 			const Entries = panel.Entries.map(entry => ({
-				id: entry.id,
-				code: entry.code,
-				name: entry.name,
-				side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.Event.affLabel, panel.Event.negLabel),
-				speakerOrder: entry.speakerorder,
+				...historyEntry(panel, entry),
 				Scores: entryScores(panelScores, entry.id, judge.id, panel.Event.type),
 				Students: students
 					.filter(student => student.entry === entry.id)
@@ -186,18 +191,9 @@ async function historyTourn(req: ValidatedRequest, res: Response) {
 			const hasStudentScores = Entries.some(entry => entry.Students.length > 0);
 			return {
 				id: panel.id,
-				flight: panel.Round.flighted && panel.Round.flighted > 1 ? panel.flight : null,
-				Round: {
-					id: panel.Round.id,
-					name: panel.Round.name,
-					label: panel.Round.label,
-					type: panel.Round.type,
-				},
-				Event: {
-					id: panel.Event.id,
-					abbr: panel.Event.abbr,
-					type: panel.Event.type,
-				},
+				flight: panel.flight,
+				Round: panel.Round,
+				Event: panel.Event,
 				Entries,
 				Winner: panelWinner(panelScores, panel.Entries, panel.Round.type, panel.Event.type, hasStudentScores),
 			};
@@ -215,27 +211,12 @@ async function historyTourn(req: ValidatedRequest, res: Response) {
 			Category: judge.Category,
 			Panels: panels.map(panel => ({
 				id: panel.id,
-				flight: panel.Round.flighted && panel.Round.flighted > 1 ? panel.flight : null,
+				flight: panel.flight,
 				start: panel.start,
-				Round: {
-					id: panel.Round.id,
-					name: panel.Round.name,
-					label: panel.Round.label,
-					type: panel.Round.type,
-				},
-				Event: {
-					id: panel.Event.id,
-					abbr: panel.Event.abbr,
-					type: panel.Event.type,
-				},
+				Round: panel.Round,
+				Event: panel.Event,
 				Room: panel.Room,
-				Entries: panel.Entries.map(entry => ({
-					id: entry.id,
-					code: entry.code,
-					name: entry.name,
-					side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.Event.affLabel, panel.Event.negLabel),
-					speakerOrder: entry.speakerorder,
-				})),
+				Entries: panel.Entries.map(entry => historyEntry(panel, entry)),
 			})),
 		};
 	}));

@@ -88,9 +88,10 @@ describe('panelWinner', () => {
 		expect(panelWinner(scores, [aff, neg], 'final', 'debate', false)?.record).toBe('2-1');
 		expect(panelWinner(scores, [aff, neg], 'final', 'debate', false)?.entry).toBe(20);
 	});
-	it('ignores forfeit and bye ballots when picking the winner', () => {
+	it('ignores forfeit and bye ballots for both the winner and the record', () => {
 		const scores = splitPanel().map(s => s.ballot <= 4 ? { ...s, forfeit: 1 } : s);
-		expect(panelWinner(scores, [aff, neg], 'elim', 'debate', false)?.entry).toBe(20);
+		expect(panelWinner(scores, [aff, neg], 'elim', 'debate', false))
+			.toEqual({ entry: 20, code: '202', name: 'Southview CD', record: '1-0' });
 	});
 	it('is null on a tie, outside elims, for speech, or when speakers were scored', () => {
 		const tied = splitPanel().slice(0, 4).map(s => s.judge === 2 ? { ...s, value: s.value ? 0 : 1 } : s);

@@ -65,7 +65,6 @@ async function deleteScores(db: Database, opts: { ballots: number[], tags: strin
 
 // Every judge's decision, rank, and point scores on the sections, with the ballot they came from
 async function getPanelScores(db: Database, panelIds: number[]) {
-	if (panelIds.length === 0) return [];
 	const rows = await db.selectFrom('score')
 	.innerJoin('ballot', 'ballot.id', 'score.ballot')
 	.select([

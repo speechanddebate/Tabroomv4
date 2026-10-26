@@ -142,11 +142,16 @@ describe('judgeRepo', () => {
 			const Round = await factories.round.create({ event: Event.id, published: 1 });
 			const Panel = await factories.panel.create({ round: Round.id });
 			await factories.ballot.create({ panel: Panel.id, judge: Judge.id });
+			// An unpublished round does not count as judged
+			const Unpublished = await factories.round.create({ event: Event.id, published: 0 });
+			const UnpublishedPanel = await factories.panel.create({ round: Unpublished.id });
+			await factories.ballot.create({ panel: UnpublishedPanel.id, judge: Judge.id });
 			const history = await judgeRepo.getJudgeHistory(db,Person.id, {limit: 10, offset: 0 });
 
-			expect(history.length).toBeGreaterThan(0);
+			expect(history).toHaveLength(1);
 			expect(history[0].id).toBe(Judge.id);
 			expect(history[0].Category.id).toBe(category.id);
+			expect(Number(history[0].roundCount)).toBe(1);
 		});
 
 		it('returns tournament dates as the stored UTC instants with the tourn tz', async () => {
@@ -223,13 +228,17 @@ describe('judgeRepo', () => {
 			const Judge = await factories.judge.create({
 				person: Person.id, category: Category.id, school: School.id, code: '42A', obligation: 4, hired: 2,
 			});
-			// One round, two flights, so the judge has 2 ballots but 1 round
+			// One published round with two flights, so the judge has 2 ballots but 1 round;
+			// an unpublished round counts for neither
 			const Event = await factories.event.create({ category: Category.id });
-			const Round = await factories.round.create({ event: Event.id, flighted: 2 });
+			const Round = await factories.round.create({ event: Event.id, flighted: 2, published: 1 });
 			for (const flight of ['1', '2']) {
 				const Panel = await factories.panel.create({ round: Round.id, flight });
 				await factories.ballot.create({ panel: Panel.id, judge: Judge.id });
 			}
+			const Unpublished = await factories.round.create({ event: Event.id, published: 0 });
+			const UnpublishedPanel = await factories.panel.create({ round: Unpublished.id });
+			await factories.ballot.create({ panel: UnpublishedPanel.id, judge: Judge.id });
 
 			const records = await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id);
 
@@ -262,13 +271,31 @@ describe('judgeRepo', () => {
 			expect(records[0].School).toBeNull();
 		});
 
-		it('returns nothing for a tournament that has not ended', async () => {
+		it('returns a tournament in progress, like the history list does', async () => {
 			const Person = await factories.person.create();
-			const Tourn = await factories.tourn.create(); // ends in the future by default
+			const Tourn = await factories.tourn.create({
+				start: new Date(Date.now() - DAY),
+				end: new Date(Date.now() + DAY),
+			});
 			const Category = await factories.category.create({ tourn: Tourn.id });
-			await factories.judge.create({ person: Person.id, category: Category.id });
+			const Judge = await factories.judge.create({ person: Person.id, category: Category.id });
 
-			expect(await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id)).toEqual([]);
+			const records = await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id);
+
+			expect(records.map(r => r.id)).toEqual([Judge.id]);
+		});
+
+		it('returns nothing for a tournament that has not started or is hidden', async () => {
+			const Person = await factories.person.create();
+			const Upcoming = await factories.tourn.create({ start: new Date(Date.now() + DAY) });
+			const Hidden = await factories.tourn.create({ start: new Date(Date.now() - DAY), hidden: 1 });
+			for (const Tourn of [Upcoming, Hidden]) {
+				const Category = await factories.category.create({ tourn: Tourn.id });
+				await factories.judge.create({ person: Person.id, category: Category.id });
+			}
+
+			expect(await judgeRepo.getJudgeTournHistory(db, Person.id, Upcoming.id)).toEqual([]);
+			expect(await judgeRepo.getJudgeTournHistory(db, Person.id, Hidden.id)).toEqual([]);
 		});
 	});
 	describe('getLiveDocs', () => {
