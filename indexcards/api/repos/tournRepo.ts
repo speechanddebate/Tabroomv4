@@ -1,6 +1,6 @@
 import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import type { Database } from '../data/database.js';
-import type { Insertable, Updateable } from 'kysely';
+import { sql, type Insertable, type Updateable } from 'kysely';
 import type { Tourn } from '../data/schema.js';
 
 type queryOpts = {
@@ -296,7 +296,7 @@ async function getPersonTourns(db: Database, personId: number, opts: queryOpts =
 
 async function getPersonTournSummary(db: Database, person: number, tourn: number){
 	// Fetch all judges for this person at this tournament
-	const judges = await db
+	const judgesQuery = db
 		.selectFrom('judge')
 		.innerJoin('category', 'category.id', 'judge.category')
 		.select([
@@ -324,12 +324,15 @@ async function getPersonTournSummary(db: Database, person: number, tourn: number
 		.where('category.tourn', '=', tourn)
 		.execute();
 
-	// Fetch all entries for this person at this tournament
-	const entries = await db
+	// Fetch all entries for this person at this tournament. straight_join keeps
+	// the optimizer starting from the person's students; left alone it can start
+	// from every entry in the tournament instead
+	const entriesQuery = db
 		.selectFrom('student')
 		.innerJoin('entry_student', 'entry_student.student', 'student.id')
 		.innerJoin('entry', 'entry.id', 'entry_student.entry')
 		.innerJoin('event', 'event.id', 'entry.event')
+		.modifyFront(sql`straight_join`)
 		.select('entry.id as id')
 		.where('student.person', '=', person)
 		.where('student.retired', '!=', 1)
@@ -337,7 +340,7 @@ async function getPersonTournSummary(db: Database, person: number, tourn: number
 		.execute();
 
 	// Fetch all schools/coaching roles for this person at this tournament
-	const coaches = await db
+	const coachesQuery = db
 		.selectFrom('permission')
 		.innerJoin('chapter', 'chapter.id', 'permission.chapter')
 		.innerJoin('school', 'school.chapter', 'chapter.id')
@@ -348,6 +351,8 @@ async function getPersonTournSummary(db: Database, person: number, tourn: number
 		.where('permission.person', '=', person)
 		.where('school.tourn', '=', tourn)
 		.execute();
+
+	const [judges, entries, coaches] = await Promise.all([judgesQuery, entriesQuery, coachesQuery]);
 
 	const result = {
 		tourn_id: tourn,

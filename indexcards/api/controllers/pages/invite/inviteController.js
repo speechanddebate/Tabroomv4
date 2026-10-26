@@ -220,7 +220,7 @@ export async function getFutureTourns(req,res){
 		endLimit = sql` limit ${queryLimit} `;
 	}
 
-	const { rows: futureTourns } = await sql`
+	const futureTournsQuery = sql`
 		SELECT
 			CONCAT(tourn.id, '-', '0') as id,
 			tourn.id tournId, tourn.webname, tourn.name, tourn.tz,
@@ -333,13 +333,18 @@ export async function getFutureTourns(req,res){
 				and esh.tag = 'online_hybrid'
 			) as hybrid
 
-		from (tourn, event)
+		from tourn
 
 		where 1=1
 
 			and tourn.hidden = 0
 			and tourn.end > ${timeScope}
-			and tourn.id = event.tourn
+
+			and exists (
+				select event.id
+				from event
+				where event.tourn = tourn.id
+			)
 
 			${limit}
 
@@ -357,12 +362,11 @@ export async function getFutureTourns(req,res){
 					and timeslot.end > ${timeScope}
 			)
 
-			group by tourn.id
 			order by special DESC, week, tourn.end, schoolCount DESC
 			${ endLimit }
 	`.execute(db);
 
-	const { rows: futureDistricts } = await sql`
+	const futureDistrictsQuery = sql`
 		SELECT
 			CONCAT(tourn.id, '-', weekend.id) as id,
 			tourn.id tournId, tourn.webname, tourn.name, tourn.tz,
@@ -504,6 +508,11 @@ export async function getFutureTourns(req,res){
 		order by week, weekend.end
 		${ endLimit }
 	`.execute(db);
+
+	const [
+		{ rows: futureTourns },
+		{ rows: futureDistricts },
+	] = await Promise.all([futureTournsQuery, futureDistrictsQuery]);
 
 	futureTourns.push(...futureDistricts);
 
