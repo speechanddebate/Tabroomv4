@@ -113,6 +113,7 @@ describe('ballotRules', () => {
 		'rank',
 		'refute',
 		'tv',
+		'speech',
 	] as const)('flags protocols that count %s', (type) => {
 		const rules = ballotRules(input({ tbTypes: { winloss: true, point: true, [type]: true } }));
 

@@ -110,7 +110,17 @@ describe('loadBallotInputs', () => {
 
 		const inputs = await loadBallotInputs(db, judge.id, panel.id);
 
-		expect(inputs?.tbTypes).toEqual({ winloss: true, point: true, tv: false });
+		expect(inputs?.tbTypes).toEqual({
+			speech: false,
+			tv: false,
+			rank: false,
+			entryWinloss: false,
+			entryRank: false,
+			bestPO: false,
+			winloss: true,
+			point: true,
+			refute: false,
+		});
 	});
 
 	it('loads the event\'s topic', async () => {

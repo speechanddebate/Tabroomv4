@@ -8,8 +8,10 @@ type queryOpts = {
 
 type scopeOpts = {
 	protocolId?: number;
+	protocolIds?: number[];
 	roundId?: number;
 	tiebreakId?: number;
+	tourn?: number;
 };
 
 const buildProtocolQuery = (db: Database,opts = {}) => {
@@ -46,6 +48,9 @@ export async function getProtocols(db: Database, scope: scopeOpts = {}, opts: qu
 	if(scope.protocolId) {
 		query = query.where('protocol.id', '=', scope.protocolId);
 	}
+	if(scope.protocolIds) {
+		query = query.where('protocol.id', 'in', scope.protocolIds);
+	}
 	if(scope.roundId) {
 		query = query
 			.innerJoin('round', 'round.protocol', 'protocol.id')
@@ -55,6 +60,9 @@ export async function getProtocols(db: Database, scope: scopeOpts = {}, opts: qu
 		query = query
 			.innerJoin('tiebreak', 'tiebreak.protocol', 'protocol.id')
 			.where('tiebreak.id', '=', scope.tiebreakId);
+	}
+	if(scope.tourn) {
+		query = query.where('protocol.tourn', '=', scope.tourn);
 	}
 
 	const protocols = await query
@@ -69,6 +77,9 @@ export async function getProtocols(db: Database, scope: scopeOpts = {}, opts: qu
 		if(scope.protocolId) {
 			query = query.where('protocol.id', '=', scope.protocolId);
 		}
+		if(scope.protocolIds) {
+			query = query.where('protocol.id', 'in', scope.protocolIds);
+		}
 		if(scope.roundId) {
 			query = query
 				.innerJoin('round', 'round.protocol', 'protocol.id')
@@ -78,6 +89,9 @@ export async function getProtocols(db: Database, scope: scopeOpts = {}, opts: qu
 			query = query
 				.innerJoin('tiebreak', 'tiebreak.protocol', 'protocol.id')
 				.where('tiebreak.id', '=', scope.tiebreakId);
+		}
+		if(scope.tourn) {
+			query = query.where('protocol.tourn', '=', scope.tourn);
 		}
 
 		const tiebreaks = await query

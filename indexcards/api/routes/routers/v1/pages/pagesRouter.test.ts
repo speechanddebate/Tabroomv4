@@ -87,6 +87,61 @@ describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
 	});
 });
 
+describe.each([
+	'/v1/pages/tiebreaks',
+	'/v1/pages/protocol/round',
+])('GET %s/:roundId', (path) => {
+	it('Returns what the round\'s tiebreaks need', async () => {
+		const tourn = await factories.tourn.create();
+		const protocol = await factories.protocol.create({ tourn: tourn.id, tiebreaks: ['winloss', 'points'] });
+		const event = await factories.event.create({ tourn: tourn.id, type: 'debate' });
+		const round = await factories.round.create({ event: event.id, protocol: protocol.id, type: 'prelim', published: 1 });
+
+		const res = await request(server)
+			.get(`${path}/${round.id}`)
+			.set('Accept', 'application/json')
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		expect(res.body).toEqual({
+			speech: false,
+			tv: false,
+			rank: false,
+			entryWinloss: false,
+			entryRank: false,
+			bestPO: false,
+			winloss: true,
+			point: true,
+			refute: false,
+		});
+	});
+	it('Returns 404 for a round that doesn\'t exist', async () => {
+		const res = await request(server)
+			.get(`${path}/999999999`)
+			.set('Accept', 'application/json');
+
+		expect(res).toBeProblemResponse(404);
+	});
+	it('Returns 404 for an unpublished round', async () => {
+		const tourn = await factories.tourn.create();
+		const event = await factories.event.create({ tourn: tourn.id, type: 'debate' });
+		const round = await factories.round.create({ event: event.id, type: 'prelim', published: 0 });
+
+		const res = await request(server)
+			.get(`${path}/${round.id}`)
+			.set('Accept', 'application/json');
+
+		expect(res).toBeProblemResponse(404);
+	});
+	it('Rejects a round id that is not valid', async () => {
+		const res = await request(server)
+			.get(`${path}/abc`)
+			.set('Accept', 'application/json');
+
+		expect(res).toBeProblemResponse(400);
+	});
+});
+
 describe('GET /pages/invite/webname/:webname', () => {
 	it('Returns a tournament by webname', async () => {
 		const Tourn = await factories.tourn.create({ webname: faker.string.alpha(16) });

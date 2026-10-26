@@ -1,5 +1,7 @@
+import { db } from '../../data/database.js';
 import { NotFound } from '../../helpers/problem.js';
 import resultSetRepo from '../../repos/resultSetRepo.js';
+import { getRound } from '../../repos/roundRepo.js';
 import { tiebreakTypes } from '../../services/results/tiebreakTypes.js';
 
 export async function getResultSet(req,res) {
@@ -40,6 +42,12 @@ export async function getResultSets(req,res) {
 }
 
 export async function getTiebreaks(req, res) {
-	const answer = await tiebreakTypes({...req.params});
+	const round = await getRound(db, req.params.roundId, { unpublished: false });
+
+	if (!round) {
+		return NotFound(req, res, 'No such round found');
+	}
+
+	const answer = await tiebreakTypes({ roundId: round.id });
 	return res.status(200).json(answer);
 }

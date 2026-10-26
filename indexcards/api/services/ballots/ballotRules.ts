@@ -47,7 +47,9 @@ export type BallotRulesInput = {
 	// The topic the event's topic setting points to, if any
 	topic: Pick<Selectable<Topic>, 'topic_text'> | null;
 	site: SiteSettings;
-	// What the round's tiebreak protocol counts, which decides what the judge scores
+	// What the round's protocols count (its own, its leadership setting, the event's award
+	// protocols and their children), which decides what the judge scores. Student vote
+	// flags are entered on the students' page, so the judge ballot ignores them
 	tbTypes: Counted;
 	// Every judge on the panel, this one included
 	panelJudges: Awaited<ReturnType<typeof panelRepo.getPanelJudges>>;
@@ -97,6 +99,7 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 		'rank',
 		'refute',
 		'tv',
+		'speech',
 	];
 
 	// Tourn settings that send every ballot to a different classic page

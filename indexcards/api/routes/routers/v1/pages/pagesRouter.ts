@@ -83,6 +83,9 @@ router.route('/tiebreaks/:roundId').get(ValidateRequest, resultSetController.get
 		200: {
 			description: 'Round Information',
 		},
+		404: {
+			$ref: '#/components/responses/NotFound',
+		},
 	},
 };
 
@@ -97,6 +100,9 @@ router.route('/protocol/round/:roundId').get(ValidateRequest, resultSetControlle
 	responses: {
 		200: {
 			description: 'Round Information',
+		},
+		404: {
+			$ref: '#/components/responses/NotFound',
 		},
 	},
 };
