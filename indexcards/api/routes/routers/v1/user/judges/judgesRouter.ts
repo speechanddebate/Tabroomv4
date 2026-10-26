@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
 import judgesController from '../../../../../controllers/user/judgesController.js';
-import { UnlinkedJudgeSchema, JudgeHistoryPageSchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
+import { UnlinkedJudgeSchema, JudgeHistoryPageSchema, JudgeTournHistorySchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import z from 'zod';
 
 const router = Router();
@@ -78,6 +78,31 @@ router.route('/history')
 					},
 				},
 			},
+		},
+	}
+
+router.route('/history/:tournId')
+	.get(ValidateRequest, judgesController.historyTourn).openapi = {
+		summary: 'get judging history at a tournament',
+		description: "Gets a person's judge records at one tournament they judged, with the sections they were assigned",
+		path: '/user/judges/history/{tournId}',
+		operationId: 'UserJudgesHistoryTourn',
+		tags: ['Orval', 'user:judge', 'Judges'],
+		requestParams: {
+			path: z.object({
+				tournId: z.coerce.number().int().positive().meta({ description: 'ID of the tournament' }),
+			}),
+		},
+		responses: {
+			200: {
+				description: 'Successful response',
+				content: {
+					'application/json': {
+						schema: JudgeTournHistorySchema,
+					},
+				},
+			},
+			404: { $ref: '#/components/responses/NotFound' },
 		},
 	}
 

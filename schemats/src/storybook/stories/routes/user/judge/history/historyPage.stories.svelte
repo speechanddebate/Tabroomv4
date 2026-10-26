@@ -33,6 +33,7 @@
 			// The weekend's dates, not the month-long tournament's
 			await expect(canvas.getByText('2/20 - 21')).toBeInTheDocument();
 			await expect(canvas.getAllByTitle('Rounds judged/Rounds obligated')).toHaveLength(50);
+			await expect(canvas.getByRole('link', { name: 'Same Month Classic' })).toHaveAttribute('href', '/user/judge/history/1120');
 		});
 
 		await step('fetches the next page from the server', async () => {

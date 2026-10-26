@@ -209,6 +209,79 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 	}));
 }
 
+// A person's judge rows at one finished tournament, with how much they judged
+async function getJudgeTournHistory(db: Database, personId: number, tournId: number) {
+	const rows = await db.selectFrom('judge')
+	.innerJoin('category', 'judge.category', 'category.id')
+	.innerJoin('tourn', 'category.tourn', 'tourn.id')
+	.leftJoin('school', 'judge.school', 'school.id')
+	.leftJoin('category_setting as no_codes', (join) =>
+		join
+			.onRef('no_codes.category', '=', 'category.id')
+			.on('no_codes.tag', '=', 'no_codes'),
+	)
+	.leftJoin('ballot', 'ballot.judge', 'judge.id')
+	.leftJoin('panel', 'ballot.panel', 'panel.id')
+	.select([
+		'judge.id',
+		'judge.code',
+		'judge.obligation',
+		'judge.hired',
+
+		'school.id as school_id',
+		'school.name as school_name',
+		'no_codes.value as no_codes',
+
+		'category.id as category_id',
+		'category.name as category_name',
+		'category.abbr as category_abbr',
+
+		'tourn.id as tourn_id',
+		'tourn.name as tourn_name',
+		'tourn.webname as tourn_webname',
+		'tourn.start as tourn_start',
+		'tourn.end as tourn_end',
+		'tourn.tz as tourn_tz',
+
+		sql<number>`COUNT(DISTINCT ballot.panel)`.as('ballot_count'),
+		sql<number>`COUNT(DISTINCT panel.round)`.as('round_count'),
+	])
+	.where('judge.person', '=', personId)
+	.where('tourn.id', '=', tournId)
+	.where('tourn.end', '<', new Date())
+	.where('tourn.hidden', '!=', 1)
+	.groupBy('judge.id')
+	.orderBy('category.name')
+	.execute();
+
+	return rows.map(row => ({
+		id: row.id,
+		code: row.code,
+		obligation: row.obligation,
+		hired: row.hired,
+		noCodes: Boolean(row.no_codes),
+		School: row.school_id ? {
+			id: row.school_id,
+			name: row.school_name,
+		} : null,
+		Category: {
+			id: row.category_id,
+			name: row.category_name,
+			abbr: row.category_abbr,
+		},
+		Tourn: {
+			id: row.tourn_id,
+			name: row.tourn_name,
+			webname: row.tourn_webname,
+			start: row.tourn_start,
+			end: row.tourn_end,
+			tz: row.tourn_tz,
+		},
+		roundCount: Number(row.round_count),
+		ballotCount: Number(row.ballot_count),
+	}));
+}
+
 async function getLiveDocs(db: Database, personId: number){
 	return db
 		.selectFrom('judge')
@@ -287,5 +360,6 @@ export default {
 	unlinkedSearch,
 	getJudgeHistory,
 	countJudgeHistory,
+	getJudgeTournHistory,
 	getLiveDocs,
 };

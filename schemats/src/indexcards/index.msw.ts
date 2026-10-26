@@ -30,6 +30,7 @@ import type {
 	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
+	JudgeTournHistory,
 	LoginResponse,
 	MockTrialBallotContext,
 	OnlineRoom,
@@ -2490,6 +2491,136 @@ export const getUserJudgesHistoryResponseMock = (
 	...overrideResponse,
 });
 
+export const getUserJudgesHistoryTournResponseMock = (
+	overrideResponse: Partial<Extract<JudgeTournHistory, object>> = {},
+): JudgeTournHistory => ({
+	Tourn: {
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		name: faker.string.alpha({ length: { min: 10, max: 63 } }),
+		webname: faker.string.alpha({ length: { min: 10, max: 20 } }),
+		start: faker.date.past().toISOString().slice(0, 19) + 'Z',
+		end: faker.date.past().toISOString().slice(0, 19) + 'Z',
+		tz: faker.string.alpha({ length: { min: 10, max: 31 } }),
+	},
+	Judges: Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		code: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		obligation: faker.number.int({ min: 0, max: 9007199254740991 }),
+		hired: faker.number.int({ min: 0, max: 9007199254740991 }),
+		roundsJudged: faker.number.int({ min: 0, max: 9007199254740991 }),
+		flightsJudged: faker.number.int({ min: 0, max: 9007199254740991 }),
+		School: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		Category: {
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			abbr: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		Panels: Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			flight: faker.helpers.arrayElement([
+				faker.number.int({ min: 0, max: 9007199254740991 }),
+				null,
+			]),
+			start: faker.helpers.arrayElement([
+				faker.date.past().toISOString().slice(0, 19) + 'Z',
+				null,
+			]),
+			Round: {
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.number.int({
+						min: -9007199254740991,
+						max: 9007199254740991,
+					}),
+					null,
+				]),
+				label: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 31 } }),
+					null,
+				]),
+				type: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 15 } }),
+					null,
+				]),
+			},
+			Event: {
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				abbr: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				type: faker.helpers.arrayElement([
+					'debate',
+					'speech',
+					'mock_trial',
+					'congress',
+					'wsdc',
+					'wudc',
+					'attendee',
+					'academic',
+				] as const),
+			},
+			Room: faker.helpers.arrayElement([
+				{
+					id: faker.number.int({ min: 0, max: 9007199254740991 }),
+					name: faker.string.alpha({ length: { min: 10, max: 127 } }),
+				},
+				null,
+			]),
+			Entries: Array.from(
+				{ length: faker.number.int({ min: 1, max: 10 }) },
+				(_, i) => i + 1,
+			).map(() => ({
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				code: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				side: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				speakerOrder: faker.helpers.arrayElement([
+					faker.number.int({
+						min: -9007199254740991,
+						max: 9007199254740991,
+					}),
+					null,
+				]),
+			})),
+		})),
+	})),
+	...overrideResponse,
+});
+
 export const getUserJudgesParadigmResponseMock = (
 	overrideResponse: Partial<Extract<UserParadigmOutput, object>> = {},
 ): UserParadigmOutput => ({
@@ -4117,6 +4248,30 @@ export const getUserJudgesHistoryMockHandler = (
 	);
 };
 
+export const getUserJudgesHistoryTournMockHandler = (
+	overrideResponse?:
+		| JudgeTournHistory
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<JudgeTournHistory> | JudgeTournHistory),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/judges/history/:tournId',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserJudgesHistoryTournResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
 export const getUserJudgesParadigmMockHandler = (
 	overrideResponse?:
 		| UserParadigmOutput
@@ -4305,6 +4460,7 @@ export const getIndexCardsAPIMock = () => [
 	getUserJudgesLinkRequestsMockHandler(),
 	getUserJudgesClaimMockHandler(),
 	getUserJudgesHistoryMockHandler(),
+	getUserJudgesHistoryTournMockHandler(),
 	getUserJudgesParadigmMockHandler(),
 	getPostUserJudgesParadigmMockHandler(),
 	getUserJudgesLiveDocsMockHandler(),

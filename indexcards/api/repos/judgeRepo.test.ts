@@ -208,6 +208,69 @@ describe('judgeRepo', () => {
 			expect(await judgeRepo.countJudgeHistory(db, Person.id)).toBe(3);
 		});
 	});
+	describe('getJudgeTournHistory', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+		const finishedTourn = () => factories.tourn.create({
+			start: new Date(Date.now() - 10 * DAY),
+			end: new Date(Date.now() - 8 * DAY),
+		});
+
+		it("returns the judge's school, code, and how much they judged", async () => {
+			const Person = await factories.person.create();
+			const Tourn = await finishedTourn();
+			const Category = await factories.category.create({ tourn: Tourn.id });
+			const School = await factories.school.create({ tourn: Tourn.id });
+			const Judge = await factories.judge.create({
+				person: Person.id, category: Category.id, school: School.id, code: '42A', obligation: 4, hired: 2,
+			});
+			// One round, two flights, so the judge has 2 ballots but 1 round
+			const Event = await factories.event.create({ category: Category.id });
+			const Round = await factories.round.create({ event: Event.id, flighted: 2 });
+			for (const flight of ['1', '2']) {
+				const Panel = await factories.panel.create({ round: Round.id, flight });
+				await factories.ballot.create({ panel: Panel.id, judge: Judge.id });
+			}
+
+			const records = await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id);
+
+			expect(records).toHaveLength(1);
+			expect(records[0]).toMatchObject({
+				id: Judge.id,
+				code: '42A',
+				obligation: 4,
+				hired: 2,
+				noCodes: false,
+				School: { id: School.id, name: School.name },
+				Category: { id: Category.id },
+				Tourn: { id: Tourn.id, webname: Tourn.webname, tz: Tourn.tz },
+				roundCount: 1,
+				ballotCount: 2,
+			});
+		});
+
+		it('flags hidden codes and returns one record per category', async () => {
+			const Person = await factories.person.create();
+			const Tourn = await finishedTourn();
+			const Open = await factories.category.create({ tourn: Tourn.id, name: 'Open', settings: { no_codes: 1 } });
+			const Novice = await factories.category.create({ tourn: Tourn.id, name: 'Novice' });
+			await factories.judge.create({ person: Person.id, category: Open.id });
+			await factories.judge.create({ person: Person.id, category: Novice.id });
+
+			const records = await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id);
+
+			expect(records.map(r => [r.Category.name, r.noCodes])).toEqual([['Novice', false], ['Open', true]]);
+			expect(records[0].School).toBeNull();
+		});
+
+		it('returns nothing for a tournament that has not ended', async () => {
+			const Person = await factories.person.create();
+			const Tourn = await factories.tourn.create(); // ends in the future by default
+			const Category = await factories.category.create({ tourn: Tourn.id });
+			await factories.judge.create({ person: Person.id, category: Category.id });
+
+			expect(await judgeRepo.getJudgeTournHistory(db, Person.id, Tourn.id)).toEqual([]);
+		});
+	});
 	describe('getLiveDocs', () => {
 		it('returns the correct shape for livedocs', async () => {
 			const tourn = await factories.tourn.create();

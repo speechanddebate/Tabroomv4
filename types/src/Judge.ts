@@ -3,6 +3,10 @@ import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 import { TournSchema } from './Tourn.js';
 import { WeekendSchema } from './Weekend.js';
+import { RoundSchema } from './Round.js';
+import { EventSchema } from './Event.js';
+import { RoomSchema } from './Room.js';
+import { EntrySchema } from './Entry.js';
 
 export const JudgeSchema = z.object({
 	id: utils.id,
@@ -120,6 +124,80 @@ export const JudgeHistoryPageSchema = utils.paginated(JudgeHistorySchema).meta({
 }) satisfies ZodOpenApiSchemaObject;
 
 export type JudgeHistoryPage = z.infer<typeof JudgeHistoryPageSchema>;
+
+export const JudgeHistoryPanelSchema = z.object({
+	id: utils.id.meta({ description: 'Section id' }),
+	flight: z.int().positive().nullable().meta({ description: 'Flight number; null when the round is not flighted' }),
+	start: z.iso.datetime().nullable().meta({ description: 'Scheduled start of the round (UTC)' }),
+	Round: z.object({
+		id: RoundSchema.shape.id,
+		name: RoundSchema.shape.name,
+		label: RoundSchema.shape.label,
+		type: RoundSchema.shape.type,
+	}).strict(),
+	Event: z.object({
+		id: utils.id,
+		abbr: EventSchema.shape.abbr,
+		type: EventSchema.shape.type,
+	}).strict(),
+	Room: z.object({
+		id: RoomSchema.shape.id,
+		name: RoomSchema.shape.name,
+	}).strict().nullable().meta({ description: 'null when no room is assigned' }),
+	Entries: z.array(z.object({
+		id: EntrySchema.shape.id,
+		code: EntrySchema.shape.code,
+		name: z.string().nullable(),
+		side: z.string().nullable().meta({ description: 'Side or position label for the entry (e.g., Aff, Con, 1G)' }),
+		speakerOrder: z.int().nullable(),
+	}).strict()),
+}).strict().meta({
+	id: 'JudgeHistoryPanel',
+	description: 'A section a judge was assigned to',
+}) satisfies ZodOpenApiSchemaObject;
+
+export type JudgeHistoryPanel = z.infer<typeof JudgeHistoryPanelSchema>;
+
+export const JudgeTournRecordSchema = z.object({
+	id: JudgeSchema.shape.id,
+	code: z.string().nullable().meta({ description: 'Judge code; null when the category hides codes' }),
+	obligation: z.int().nonnegative().meta({ description: 'Rounds owed for the school' }),
+	hired: z.int().nonnegative().meta({ description: 'Rounds hired' }),
+	roundsJudged: z.int().nonnegative().meta({ description: 'Number of distinct rounds with a ballot for this judge' }),
+	flightsJudged: z.int().nonnegative().meta({ description: 'Number of distinct sections with a ballot for this judge' }),
+	School: z.object({
+		id: utils.id,
+		name: z.string().nullable(),
+	}).strict().nullable().meta({ description: 'School the judge was entered by; null for volunteers and hires' }),
+	Category: z.object({
+		id: utils.id,
+		name: z.string().nullable(),
+		abbr: z.string().nullable(),
+	}).strict(),
+	Panels: z.array(JudgeHistoryPanelSchema).meta({ description: 'Published sections not yet past primary results' }),
+}).strict().meta({
+	id: 'JudgeTournRecord',
+	description: "A person's judge record at one tournament",
+}) satisfies ZodOpenApiSchemaObject;
+
+export type JudgeTournRecord = z.infer<typeof JudgeTournRecordSchema>;
+
+export const JudgeTournHistorySchema = z.object({
+	Tourn: z.object({
+		id: TournSchema.shape.id,
+		name: TournSchema.shape.name,
+		webname: TournSchema.shape.webname,
+		start: z.iso.datetime().meta({ description: 'Tournament start (UTC)' }),
+		end: z.iso.datetime().meta({ description: 'Tournament end (UTC)' }),
+		tz: TournSchema.shape.tz,
+	}).strict(),
+	Judges: z.array(JudgeTournRecordSchema).meta({ description: "The person's judge records at the tournament, one per category" }),
+}).strict().meta({
+	id: 'JudgeTournHistory',
+	description: "A person's judging history at one tournament",
+}) satisfies ZodOpenApiSchemaObject;
+
+export type JudgeTournHistory = z.infer<typeof JudgeTournHistorySchema>;
 
 export const JudgeLiveDocSchema = z.object({
 	judgeId: z.coerce.number().int(),

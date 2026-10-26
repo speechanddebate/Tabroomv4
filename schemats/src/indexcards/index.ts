@@ -51,6 +51,7 @@ import type {
 	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
+	JudgeTournHistory,
 	LoginRequest,
 	LoginResponse,
 	NotFoundResponse,
@@ -9878,6 +9879,198 @@ export const prefetchUserJudgesHistoryQuery = async <
 	},
 ): Promise<QueryClient> => {
 	const queryOptions = getUserJudgesHistoryQueryOptions(params, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userJudgesHistoryTournResponse200 = {
+	data: JudgeTournHistory;
+	status: 200;
+};
+
+export type userJudgesHistoryTournResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userJudgesHistoryTournResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userJudgesHistoryTournResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userJudgesHistoryTournResponseSuccess =
+	userJudgesHistoryTournResponse200 & {
+		headers: Headers;
+	};
+export type userJudgesHistoryTournResponseError = (
+	| userJudgesHistoryTournResponse401
+	| userJudgesHistoryTournResponse404
+	| userJudgesHistoryTournResponse500
+) & {
+	headers: Headers;
+};
+
+export type userJudgesHistoryTournResponse =
+	| userJudgesHistoryTournResponseSuccess
+	| userJudgesHistoryTournResponseError;
+
+export const getUserJudgesHistoryTournUrl = (tournId: number) => {
+	return `${indexcardsApiBaseUrl()}/user/judges/history/${tournId}`;
+};
+
+/**
+ * Gets a person's judge records at one tournament they judged, with the sections they were assigned
+ * @summary get judging history at a tournament
+ */
+export const userJudgesHistoryTourn = async (
+	tournId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userJudgesHistoryTournResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getUserJudgesHistoryTournUrl(tournId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'GET',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userJudgesHistoryTournResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userJudgesHistoryTournResponse;
+};
+
+export const getUserJudgesHistoryTournQueryKey = (tournId: number) => {
+	return [
+		`${indexcardsApiBaseUrl()}/user/judges/history/${tournId}`,
+	] as const;
+};
+
+export const getUserJudgesHistoryTournQueryOptions = <
+	TData = Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(
+	tournId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getUserJudgesHistoryTournQueryKey(tournId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof userJudgesHistoryTourn>>
+	> = ({ signal }) =>
+		userJudgesHistoryTourn(tournId, { signal, ...fetchOptions }, fetcherFn);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: tournId !== null && tournId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserJudgesHistoryTournQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userJudgesHistoryTourn>>
+>;
+export type UserJudgesHistoryTournQueryError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary get judging history at a tournament
+ */
+
+export function createUserJudgesHistoryTourn<
+	TData = Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(
+	tournId: () => number,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserJudgesHistoryTournQueryOptions(tournId(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary get judging history at a tournament
+ */
+export const prefetchUserJudgesHistoryTournQuery = async <
+	TData = Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	tournId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userJudgesHistoryTourn>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserJudgesHistoryTournQueryOptions(
+		tournId,
+		options,
+	);
 
 	await queryClient.prefetchQuery(queryOptions);
 

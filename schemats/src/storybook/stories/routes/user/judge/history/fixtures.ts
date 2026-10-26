@@ -1,4 +1,4 @@
-import type { JudgeHistory, JudgeHistoryPage } from '$indexcards/schemas';
+import type { JudgeHistory, JudgeHistoryPage, JudgeHistoryPanel, JudgeTournHistory, JudgeTournRecord } from '$indexcards/schemas';
 
 const divisions = ['Open', 'JV', 'Novice', 'Varsity'];
 
@@ -34,6 +34,68 @@ export const createHistory = (count = 120): JudgeHistory[] =>
 		});
 		return row(id);
 	});
+
+export const tourn: JudgeTournHistory['Tourn'] = {
+	id: 1001,
+	name: 'Same Month Classic',
+	webname: 'samemonth',
+	start: '2026-03-14T04:00:00.000Z',
+	end: '2026-03-16T04:00:00.000Z',
+	tz: 'America/Chicago',
+};
+
+const debatePanel = (id: number, overrides: Partial<JudgeHistoryPanel> = {}): JudgeHistoryPanel => ({
+	id,
+	flight: null,
+	// 15:00Z is 10:00 AM in Chicago
+	start: '2026-03-14T15:00:00.000Z',
+	Round: { id: 100 + id, name: id, label: null, type: 'prelim' },
+	Event: { id: 7, abbr: 'LD', type: 'debate' },
+	Room: { id: 50 + id, name: `Room ${200 + id}` },
+	Entries: [
+		{ id: id * 10 + 1, code: `${id}01`, name: 'Northview AB', side: 'Aff', speakerOrder: null },
+		{ id: id * 10 + 2, code: `${id}02`, name: 'Southview CD', side: 'Neg', speakerOrder: null },
+	],
+	...overrides,
+});
+
+export const schoolJudge: JudgeTournRecord = {
+	id: 501,
+	code: '42A',
+	obligation: 4,
+	hired: 2,
+	roundsJudged: 5,
+	flightsJudged: 7,
+	School: { id: 9, name: 'Northview High School' },
+	Category: { id: 3, name: 'Lincoln-Douglas', abbr: 'LD' },
+	Panels: [
+		debatePanel(1),
+		debatePanel(2, { flight: 2, Round: { id: 102, name: 2, label: null, type: 'prelim' } }),
+		debatePanel(3, { Room: null, Round: { id: 103, name: 3, label: 'Quarterfinals', type: 'elim' } }),
+	],
+};
+
+export const volunteerJudge: JudgeTournRecord = {
+	id: 502,
+	code: null,
+	obligation: 0,
+	hired: 0,
+	roundsJudged: 2,
+	flightsJudged: 2,
+	School: null,
+	Category: { id: 4, name: 'Speech', abbr: 'SP' },
+	Panels: [
+		debatePanel(4, {
+			Event: { id: 8, abbr: 'OO', type: 'speech' },
+			Entries: [
+				{ id: 41, code: '401', name: 'Alex Jordan', side: null, speakerOrder: 1 },
+				{ id: 42, code: '402', name: 'Sam Lee', side: null, speakerOrder: 2 },
+			],
+		}),
+	],
+};
+
+export const createTournHistory = (Judges: JudgeTournRecord[] = [schoolJudge]): JudgeTournHistory => ({ Tourn: tourn, Judges });
 
 /** Slices a history the way the API does for a request's limit/offset */
 export const pageOf = (all: JudgeHistory[], url: string): JudgeHistoryPage => {

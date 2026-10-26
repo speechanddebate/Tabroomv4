@@ -569,6 +569,118 @@ async function getCurrentBallots(db: Database, personId: number, tournId: number
 	});
 	return [...panels.values()];
 }
+type JudgeHistoryPanelOpts = {
+	// assigned: published sections not yet past primary results; results: sections with results posted
+	stage: 'assigned' | 'results';
+};
+
+// A judge's sections at a tournament for their history page, one row per entry on the section
+async function getJudgeHistoryPanels(db: Database, judgeId: number, opts: JudgeHistoryPanelOpts) {
+	const rows = await db.selectFrom('ballot')
+		.innerJoin('panel', 'ballot.panel', 'panel.id')
+		.innerJoin('round', 'panel.round', 'round.id')
+		.innerJoin('event', 'round.event', 'event.id')
+		.innerJoin('entry', 'ballot.entry', 'entry.id')
+		.leftJoin('timeslot', 'round.timeslot', 'timeslot.id')
+		.leftJoin('room', 'panel.room', 'room.id')
+		.leftJoin('event_setting as aff_label', (join) => join
+			.onRef('aff_label.event', '=', 'event.id')
+			.on('aff_label.tag', '=', 'aff_label')
+		)
+		.leftJoin('event_setting as neg_label', (join) => join
+			.onRef('neg_label.event', '=', 'event.id')
+			.on('neg_label.tag', '=', 'neg_label')
+		)
+		.select([
+			'panel.id as panel_id',
+			'panel.flight as panel_flight',
+			'timeslot.start as timeslot_start',
+
+			'round.id as round_id',
+			'round.name as round_name',
+			'round.label as round_label',
+			'round.type as round_type',
+			'round.flighted as round_flighted',
+
+			'event.id as event_id',
+			'event.abbr as event_abbr',
+			'event.type as event_type',
+			'aff_label.value as aff_label',
+			'neg_label.value as neg_label',
+
+			'room.id as room_id',
+			'room.name as room_name',
+
+			'entry.id as entry_id',
+			'entry.code as entry_code',
+			'entry.name as entry_name',
+			'ballot.side as ballot_side',
+			'ballot.speakerorder as ballot_speakerorder',
+		])
+		.where('ballot.judge', '=', judgeId)
+		.$if(opts.stage === 'assigned', (q) => q
+			.where('round.published', '=', 1)
+			.where(sql`COALESCE(round.post_primary, 0)`, '<', 3)
+		)
+		.$if(opts.stage === 'results', (q) => q.where('round.post_primary', '>', 2))
+		.orderBy('round.name')
+		.orderBy('panel.flight')
+		.orderBy('ballot.side')
+		.orderBy('ballot.speakerorder')
+		.execute();
+
+	type Entry = { id: number; code: string | null; name: string | null; side: number | null; speakerorder: number | null };
+	const panels = new Map<number, {
+		id: number;
+		flight: number | null;
+		start: Date | null;
+		Round: { id: number; name: number | null; label: string | null; type: string | null; flighted: number | null };
+		Event: { id: number; abbr: string | null; type: string | null; affLabel: string | null; negLabel: string | null };
+		Room: { id: number; name: string } | null;
+		Entries: Entry[];
+	}>();
+
+	for (const row of rows) {
+		let panel = panels.get(row.panel_id);
+		if (!panel) {
+			panel = {
+				id: row.panel_id,
+				flight: row.panel_flight ? Number(row.panel_flight) : null,
+				start: row.timeslot_start,
+				Round: {
+					id: row.round_id,
+					name: row.round_name,
+					label: row.round_label,
+					type: row.round_type,
+					flighted: row.round_flighted,
+				},
+				Event: {
+					id: row.event_id,
+					abbr: row.event_abbr,
+					type: row.event_type,
+					affLabel: row.aff_label,
+					negLabel: row.neg_label,
+				},
+				Room: row.room_id ? { id: row.room_id, name: row.room_name ?? '' } : null,
+				Entries: [],
+			};
+			panels.set(row.panel_id, panel);
+		}
+		// One ballot per entry for this judge, but guard against duplicates anyway
+		if (!panel.Entries.some(e => e.id === row.entry_id)) {
+			panel.Entries.push({
+				id: row.entry_id,
+				code: row.entry_code,
+				name: row.entry_name,
+				side: row.ballot_side,
+				speakerorder: row.ballot_speakerorder,
+			});
+		}
+	}
+
+	return [...panels.values()];
+}
+
 export default {
 	getPanel,
 	getPanels,
@@ -582,4 +694,5 @@ export default {
 	createPanel,
 	deletePanel,
 	getCurrentBallots,
+	getJudgeHistoryPanels,
 };

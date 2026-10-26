@@ -2,7 +2,7 @@ import factories from '../../../../../../tests/factories/index.js';
 import request from 'supertest';
 import server from '../../../../../../app.js';
 import z from 'zod';
-import { ClaimResponseSchema, JudgeHistoryPageSchema, UnlinkedJudgeSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
+import { ClaimResponseSchema, JudgeHistoryPageSchema, JudgeTournHistorySchema, UnlinkedJudgeSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import personRepo from '../../../../../repos/personRepo.js';
 import { db } from '../../../../../../api/data/database.js';
 import chapterJudgeRepo from '../../../../../repos/chapterJudgeRepo.js';
@@ -184,7 +184,57 @@ describe('judgesRouter', () => {
 				.set('Accept', 'application/json')
 				.asPerson(userkey)
 				.expect(400);
-			expect(res.body).toBeProblemResponse(400);
+			expect(res).toBeProblemResponse(400);
+		});
+	});
+	describe("GET /user/judges/history/:tournId", () => {
+		const DAY = 24 * 60 * 60 * 1000;
+		const finishedTourn = () => factories.tourn.create({
+			start: new Date(Date.now() - 10 * DAY),
+			end: new Date(Date.now() - 8 * DAY),
+		});
+
+		it("returns the judge's records with their assigned sections", async () => {
+			const Tourn = await finishedTourn();
+			const Category = await factories.category.create({ tourn: Tourn.id, settings: { no_codes: 1 } });
+			const Judge = await factories.judge.create({ person: personId, category: Category.id, code: '7B' });
+			const Event = await factories.event.create({ category: Category.id, type: 'debate', settings: { aff_label: 'Pro', neg_label: 'Con' } });
+			const Round = await factories.round.create({ event: Event.id, published: 1, post_primary: 0 });
+			const Panel = await factories.panel.create({ round: Round.id });
+			const Entry = await factories.entry.create({ event: Event.id, tourn: Tourn.id, code: '101' });
+			await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: Entry.id, side: 1 });
+
+			const res = await request(server)
+				.get(`/v1/user/judges/history/${Tourn.id}`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(200);
+
+			expect(res.body).toMatchSchema(JudgeTournHistorySchema);
+			expect(res.body.Tourn).toMatchObject({ id: Tourn.id, start: Tourn.start?.toISOString(), tz: Tourn.tz });
+			expect(res.body.Judges).toHaveLength(1);
+			expect(res.body.Judges[0]).toMatchObject({ id: Judge.id, code: null, roundsJudged: 1, flightsJudged: 1 });
+			expect(res.body.Judges[0].Panels).toHaveLength(1);
+			expect(res.body.Judges[0].Panels[0].Entries[0]).toMatchObject({ id: Entry.id, code: '101', side: 'Pro' });
+		});
+
+		it('is not found for a tournament the person did not judge', async () => {
+			const Tourn = await finishedTourn();
+			const res = await request(server)
+				.get(`/v1/user/judges/history/${Tourn.id}`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(404);
+				expect(res).toBeProblemResponse(404);
+		});
+
+		it('rejects a tournament id that is not a number', async () => {
+			const res = await request(server)
+				.get('/v1/user/judges/history/abc')
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(400);
+			expect(res).toBeProblemResponse(400);
 		});
 	});
 	describe("GET /user/judges/paradigm", () => {

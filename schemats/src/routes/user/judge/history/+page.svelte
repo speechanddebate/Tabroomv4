@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+	import { renderSnippet } from '@tanstack/svelte-table';
 	import { createUserJudgesHistory } from '$indexcards';
 	import type { JudgeHistory } from '$indexcards/schemas/judgeHistory';
 	import QueryTable from '$lib/components/utils/QueryTable.svelte';
@@ -15,6 +17,7 @@
 			columnHelper.accessor('Tourn.name', {
 				id: 'name',
 				header: 'Tournament',
+				cell: (info) => renderSnippet(tournLink, info.row.original.Tourn),
 			}),
 			columnHelper.accessor((row) => parseDateTime({ dtISO: row.Tourn.start, tz: row.Tourn.tz }).year, {
 				id: 'year',
@@ -51,6 +54,14 @@
 			}),
 		]);
 </script>
+
+{#snippet tournLink(tourn: JudgeHistory['Tourn'])}
+	<a
+		class="text-primary-strong hover:underline"
+		href={resolve('/user/judge/history/[tournId]', { tournId: String(tourn.id) })}
+	>{tourn.name}</a>
+{/snippet}
+
 <h2>Judging History</h2>
 <QueryTable
 	caption="Judging history"

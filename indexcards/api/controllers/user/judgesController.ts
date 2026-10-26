@@ -1,4 +1,6 @@
 import  judgeRepo from '../../repos/judgeRepo.js';
+import panelRepo from '../../repos/panelRepo.js';
+import { sideLabel } from '../../services/judges/judgeHistory.js';
 import chapterJudgeRepo from '../../repos/chapterJudgeRepo.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import personRepo from '../../repos/personRepo.js';
@@ -144,6 +146,57 @@ async function history(req: ValidatedRequest, res: Response) {
 	return res.status(200).json({ items, total });
 };
 
+// the judge's record at one tournament for /user/judge/history/[tournId]
+async function historyTourn(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
+	const { tournId } = req.params;
+
+	const records = await judgeRepo.getJudgeTournHistory(db, person.id, tournId);
+	if (records.length === 0) {
+		return NotFound(req, res, 'No judging record at this tournament');
+	}
+
+	const Judges = await Promise.all(records.map(async (judge) => {
+		const panels = await panelRepo.getJudgeHistoryPanels(db, judge.id, { stage: 'assigned' });
+		return {
+			id: judge.id,
+			code: judge.noCodes ? null : judge.code,
+			obligation: judge.obligation ?? 0,
+			hired: judge.hired ?? 0,
+			roundsJudged: judge.roundCount,
+			flightsJudged: judge.ballotCount,
+			School: judge.School,
+			Category: judge.Category,
+			Panels: panels.map(panel => ({
+				id: panel.id,
+				flight: panel.Round.flighted && panel.Round.flighted > 1 ? panel.flight : null,
+				start: panel.start,
+				Round: {
+					id: panel.Round.id,
+					name: panel.Round.name,
+					label: panel.Round.label,
+					type: panel.Round.type,
+				},
+				Event: {
+					id: panel.Event.id,
+					abbr: panel.Event.abbr,
+					type: panel.Event.type,
+				},
+				Room: panel.Room,
+				Entries: panel.Entries.map(entry => ({
+					id: entry.id,
+					code: entry.code,
+					name: entry.name,
+					side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.Event.affLabel, panel.Event.negLabel),
+					speakerOrder: entry.speakerorder,
+				})),
+			})),
+		};
+	}));
+
+	return res.status(200).json({ Tourn: records[0].Tourn, Judges });
+};
+
 async function getParadigm(req: Request, res: Response) {
 	const person = getPerson(req);
 	const paradigm = await personRepo.getPerson(db,person.id, {
@@ -217,6 +270,7 @@ export default {
 	linkRequests,
 	claimRequest,
 	history,
+	historyTourn,
 	getParadigm,
 	updateParadigm,
 	getLiveDocs,
