@@ -7,7 +7,6 @@
 	import { renderSnippet, type RowSpanContext } from '@tanstack/svelte-table';
 	import Table from '../../../lib/components/utils/Table.svelte';
 	import TableSearch from '../../../lib/components/utils/TableSearch.svelte';
-	import TablePager from '../../../lib/components/utils/TablePager.svelte';
 	import { appFeatures, createAppColumnHelper } from '../../../lib/components/utils/table.hook';
 	import type { AppColumnMeta } from '../../../lib/components/utils/table.types';
 
@@ -104,6 +103,11 @@
 		tournHelper.accessor('districts', { header: 'District Tournament', meta: { filterOptions: ['Yes', 'No'] } }),
 	]);
 
+	const titledColumns = tournHelper.columns([
+		tournHelper.accessor('name', { header: 'Tournament' }),
+		tournHelper.accessor('state', { header: 'State', meta: { title: 'Two-letter state code' } }),
+	]);
+
 	type Note = { name: string; notes: string };
 
 	const longNotes = 'Prefers a slower delivery, flows on paper, and wants clear voting issues at the end of every final focus. Please signpost.';
@@ -166,6 +170,14 @@
 			]),
 		}),
 	]);
+</script>
+
+<script lang="ts">
+	// Page state for the Manual Pagination story: the story slices the tourns the way a page backed by a server would
+	let manualPagination = $state({ pageIndex: 0, pageSize: 10 });
+	const manualPage = $derived(
+		tourns.slice(manualPagination.pageIndex * 10, (manualPagination.pageIndex + 1) * 10),
+	);
 </script>
 
 {#snippet srOnly(label: string)}
@@ -308,7 +320,7 @@
 	{/snippet}
 </Story>
 
-<!-- TableSearch and TablePager go in Table's above/below snippets. The hidden District column is still searchable. -->
+<!-- TableSearch goes in Table's above snippet; `pager` shows the pager for the pageSize. The hidden District column is still searchable. -->
 <Story
 	name="Search and Pager"
 	play={async ({ canvasElement }) => {
@@ -336,14 +348,55 @@
 			data={tourns}
 			getRowId={(row) => row.id}
 			pageSize={10}
+			pager
 		>
 			{#snippet above(table)}
 				<TableSearch {table} />
 			{/snippet}
-			{#snippet below(table)}
-				<TablePager {table} />
-			{/snippet}
 		</Table>
+	{/snippet}
+</Story>
+
+<!-- With `pagination` the story owns the page state and hands the table one page at a time, as a page backed by a paginated API does -->
+<Story
+	name="Manual Pagination"
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const rows = () => canvasElement.querySelectorAll('tbody tr');
+
+		await expect(rows()).toHaveLength(10);
+		await expect(canvas.getByText('1-10 of 25')).toBeInTheDocument();
+		await expect(canvas.getByText('District Tournament 1')).toBeInTheDocument();
+		await userEvent.click(canvas.getByRole('button', { name: 'Next page' }));
+		await expect(canvas.getByText('Page 2 of 3')).toBeInTheDocument();
+		await expect(canvas.getByText('District Tournament 11')).toBeInTheDocument();
+		await expect(canvas.queryByText('District Tournament 1')).not.toBeInTheDocument();
+	}}
+>
+	{#snippet template()}
+		<Table
+			columns={tournColumns}
+			data={manualPage}
+			getRowId={(row) => row.id}
+			onPaginationChange={(next) => (manualPagination = next)}
+			pager
+			pagination={manualPagination}
+			rowCount={tourns.length}
+		/>
+	{/snippet}
+</Story>
+
+<!-- meta.title puts hover text on a column's body cells -->
+<Story
+	name="Cell Title"
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(canvas.getAllByTitle('Two-letter state code')).toHaveLength(3);
+		await expect(canvas.getByText('TX').closest('td')).toHaveAttribute('title', 'Two-letter state code');
+	}}
+>
+	{#snippet template()}
+		<Table columns={titledColumns} data={tourns.slice(0, 3)} />
 	{/snippet}
 </Story>
 

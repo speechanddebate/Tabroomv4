@@ -5,6 +5,15 @@ export const id = z.coerce.number().int().positive() satisfies ZodOpenApiSchemaO
 export const TwoLetterCode = z.string().regex(/^[A-Z]{2}$/, 'Must be a valid 2-letter code') satisfies ZodOpenApiSchemaObject;
 export const limit = z.coerce.number().int().positive().meta({ description: 'The number of results to return.' })
 export const offset = z.coerce.number().int().nonnegative().meta({ description: 'The number of results to skip when returning.' })
+/**
+ * One page of a limit/offset list, with the total so a client can show page counts.
+ * Strict, like the item should be: a loose object with an id gets a second "Output"
+ * component in the OpenAPI spec when another component references it.
+ */
+export const paginated = <T extends z.ZodType>(item: T) => z.object({
+	items: z.array(item),
+	total: z.int().nonnegative().meta({ description: 'The number of items across all pages' }),
+}).strict();
 /** coerces an ISO datetime string to a JavaScript Date object */
 export const datetime = () => z.iso.datetime().pipe(z.coerce.date()) satisfies ZodOpenApiSchemaObject;
 

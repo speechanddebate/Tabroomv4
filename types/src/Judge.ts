@@ -94,7 +94,7 @@ export const JudgeHistorySchema = z.object({
 		tz: TournSchema.shape.tz.meta({
 			description: 'IANA time zone of the tournament',
 		}),
-	}).meta({
+	}).strict().meta({
 		description: 'Tournament details',
 	}),
 	Weekend: WeekendSchema.pick({ id: true, name: true, start: true, end: true }).nullable().meta({
@@ -107,12 +107,19 @@ export const JudgeHistorySchema = z.object({
 	roundsObligated: z.number().int().nonnegative().meta({
 		description: 'Number of rounds obligated at the tournament',
 	}),
-}).meta({
+}).strict().meta({
 	id: 'JudgeHistory',
 	description: "A person's history of judging",
 }) satisfies ZodOpenApiSchemaObject;
 
 export type JudgeHistory = z.infer<typeof JudgeHistorySchema>;
+
+export const JudgeHistoryPageSchema = utils.paginated(JudgeHistorySchema).meta({
+	id: 'JudgeHistoryPage',
+	description: "One page of a person's judging history",
+}) satisfies ZodOpenApiSchemaObject;
+
+export type JudgeHistoryPage = z.infer<typeof JudgeHistoryPageSchema>;
 
 export const JudgeLiveDocSchema = z.object({
 	judgeId: z.coerce.number().int(),

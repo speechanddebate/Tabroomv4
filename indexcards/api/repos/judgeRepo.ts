@@ -112,11 +112,26 @@ async function unlinkedSearch(
 	.execute();
 }
 
-async function getJudgeHistory(db: Database, personId: number, opts: queryOpts = {}) {
-
-	let query = buildJudgeQuery(db, opts)
+// The judge rows that count as history: at tournaments that have started and are not hidden
+function buildJudgeHistoryBase(db: Database, personId: number, opts: queryOpts = {}) {
+	return buildJudgeQuery(db, opts)
 	.innerJoin('category', 'judge.category', 'category.id')
 	.innerJoin('tourn', 'category.tourn', 'tourn.id')
+	.where('judge.person', '=', personId)
+	.where('tourn.start', '<', new Date())
+	.where('tourn.hidden', '!=', 1);
+}
+
+async function countJudgeHistory(db: Database, personId: number) {
+	const row = await buildJudgeHistoryBase(db, personId)
+	.select(sql<number>`COUNT(DISTINCT judge.id)`.as('total'))
+	.executeTakeFirstOrThrow();
+	return Number(row.total);
+}
+
+async function getJudgeHistory(db: Database, personId: number, opts: queryOpts = {}) {
+
+	let query = buildJudgeHistoryBase(db, personId, opts)
 	.leftJoin('event', 'event.category', 'category.id')
 	.leftJoin('event_setting as es', (join) =>
 		join
@@ -160,11 +175,6 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 
 		sql<number>`COUNT(DISTINCT round.id)`.as('round_count'),
 	])
-
-	.where('judge.person', '=', personId)
-	.where('tourn.start', '<', new Date())
-	.where('tourn.hidden', '!=', 1)
-
 	.groupBy('judge.id')
 	.orderBy('tourn.start', 'desc');
 	const result = await query.execute();
@@ -276,5 +286,6 @@ export default {
 	updateJudge,
 	unlinkedSearch,
 	getJudgeHistory,
+	countJudgeHistory,
 	getLiveDocs,
 };

@@ -123,8 +123,11 @@ async function history(req: ValidatedRequest, res: Response) {
 	const person = getPerson(req);
 	const { limit, offset } = req.query;
 
-	const judgeHistory = await judgeRepo.getJudgeHistory(db, person.id, {limit, offset});
-	return res.status(200).json(judgeHistory.map(j => ({
+	const [judgeHistory, total] = await Promise.all([
+		judgeRepo.getJudgeHistory(db, person.id, {limit, offset}),
+		judgeRepo.countJudgeHistory(db, person.id),
+	]);
+	const items = judgeHistory.map(j => ({
 		id: j.id,
 		Tourn: {
 			id: j.Tourn.id,
@@ -137,7 +140,8 @@ async function history(req: ValidatedRequest, res: Response) {
 		division: j.Category.name,
 		roundsJudged: j.roundCount,
 		roundsObligated: (j.obligation ?? 0) + (j.hired ?? 0),
-	})));
+	}));
+	return res.status(200).json({ items, total });
 };
 
 async function getParadigm(req: Request, res: Response) {

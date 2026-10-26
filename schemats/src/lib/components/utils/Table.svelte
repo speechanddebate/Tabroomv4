@@ -1,14 +1,17 @@
 <script generics="TData extends import('@tanstack/svelte-table').RowData" lang="ts">
 /**
- * This should always remain JUST the table, any extra features like toolbars, query handling, etc
+ * This should always remain JUST the table (and its pager), any extra features like toolbars, query handling, etc
  * should be implemented in wrapper components (like QueryTable.svelte) that use this component under the hood.
 */
 	import {
 		FlexRender,
 		functionalUpdate,
+		type PaginationState,
+		type Updater,
 	} from '@tanstack/svelte-table';
 	import type { TableProps } from './table.types';
 	import { createAppTable } from './table.hook';
+	import TablePager from './TablePager.svelte';
 	import { Spinner } from 'flowbite-svelte';
 
 	let {
@@ -21,6 +24,11 @@
 		columnVisibility = $bindable({}),
 		columnFilters = $bindable([]),
 		pageSize,
+		pagination,
+		onPaginationChange,
+		rowCount,
+		pager = false,
+		isFetching = false,
 		enableColumnResizing = true,
 		columnResizeMode = 'onChange',
 		striped = true,
@@ -36,16 +44,39 @@
 		...props
 	}: TableProps<TData> = $props();
 
+	// A table is controlled for its lifetime: with `pagination` the page owns the page state and
+	// the table reads it from the prop; otherwise TanStack keeps its own, seeded from pageSize
+	// svelte-ignore state_referenced_locally
+	const controlled = pagination !== undefined;
+
+	// The props own visibility and filters, so a page can set them and anything that
+	// changes them (a column menu, TableSearch) writes back to them
+	const state = {
+		get columnVisibility() {
+			return columnVisibility;
+		},
+		get columnFilters() {
+			return columnFilters;
+		},
+	};
+	if (controlled) {
+		Object.defineProperty(state, 'pagination', { enumerable: true, get: () => pagination });
+	}
+
 	// svelte-ignore state_referenced_locally
 	const table = createAppTable({
 		getRowId,
 		enableSorting,
 		enableColumnResizing,
 		columnResizeMode,
-		// Without a page size every row shows: manual pagination treats the data as the current page
-		manualPagination: pageSize === undefined,
+		// Manual pagination treats the data as the current page: without a page size every row
+		// shows, and with `pagination` the page fetches each page itself
+		manualPagination: controlled || pageSize === undefined,
 		initialState: {
 			pagination: { pageIndex: 0, pageSize: pageSize ?? 10 },
+		},
+		get rowCount() {
+			return rowCount;
 		},
 		get data() {
 			return data ?? [];
@@ -53,22 +84,18 @@
 		get columns() {
 			return columns;
 		},
-		// The props own visibility and filters, so a page can set them and anything that
-		// changes them (a column menu, TableSearch) writes back to them
-		state: {
-			get columnVisibility() {
-				return columnVisibility;
-			},
-			get columnFilters() {
-				return columnFilters;
-			},
-		},
+		state,
 		onColumnVisibilityChange: (updater) => {
 			columnVisibility = functionalUpdate(updater, columnVisibility);
 		},
 		onColumnFiltersChange: (updater) => {
 			columnFilters = functionalUpdate(updater, columnFilters);
 		},
+		// Only a controlled table overrides TanStack's own pagination updater; an explicit undefined would disable it
+		...(controlled && {
+			onPaginationChange: (updater: Updater<PaginationState>) =>
+				onPaginationChange?.(functionalUpdate(updater, pagination as PaginationState)),
+		}),
 	});
 
 	// Non-resizable columns are locked at their size; the rest share the remaining width.
@@ -202,6 +229,7 @@
 										class={[cellClass, meta?.cellClass]}
 										colspan={cell.getColSpan() > 1 ? cell.getColSpan() : undefined}
 										rowspan={cell.getRowSpan() > 1 ? cell.getRowSpan() : undefined}
+										title={meta?.title}
 									>
 										{#if meta?.truncate === false}
 											<FlexRender {cell} />
@@ -243,6 +271,9 @@
 		</table>
 	</div>
 	{@render below?.(table)}
+	{#if pager && (pagination !== undefined || pageSize !== undefined)}
+		<TablePager disabled={isFetching} {table} />
+	{/if}
 </div>
 
 <style>

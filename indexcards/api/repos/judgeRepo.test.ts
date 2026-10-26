@@ -185,6 +185,28 @@ describe('judgeRepo', () => {
 				end: weekend.end,
 			});
 		});
+
+		it('pages newest first and counts only tournaments that count as history', async () => {
+			const Person = await factories.person.create();
+			const DAY = 24 * 60 * 60 * 1000;
+			const judgeAt = async (tournOverrides: Parameters<typeof factories.tourn.create>[0]) => {
+				const Tourn = await factories.tourn.create(tournOverrides);
+				const category = await factories.category.create({ tourn: Tourn.id });
+				return factories.judge.create({ person: Person.id, category: category.id });
+			};
+			const oldest = await judgeAt({ start: new Date(Date.now() - 30 * DAY) });
+			const middle = await judgeAt({ start: new Date(Date.now() - 20 * DAY) });
+			const newest = await judgeAt({ start: new Date(Date.now() - 10 * DAY) });
+			await judgeAt({ start: new Date(Date.now() - 5 * DAY), hidden: 1 });
+			await judgeAt({ start: new Date(Date.now() + 5 * DAY) });
+
+			const firstPage = await judgeRepo.getJudgeHistory(db, Person.id, { limit: 2, offset: 0 });
+			const secondPage = await judgeRepo.getJudgeHistory(db, Person.id, { limit: 2, offset: 2 });
+
+			expect(firstPage.map(j => j.id)).toEqual([newest.id, middle.id]);
+			expect(secondPage.map(j => j.id)).toEqual([oldest.id]);
+			expect(await judgeRepo.countJudgeHistory(db, Person.id)).toBe(3);
+		});
 	});
 	describe('getLiveDocs', () => {
 		it('returns the correct shape for livedocs', async () => {

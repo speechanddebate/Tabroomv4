@@ -20,10 +20,20 @@ type ExtractEnvelope<T> = T extends InfiniteData<infer E> ? E : T;
 export type SuccessData<TResponse extends OrvalEnvelope> =
 	Extract<TResponse, { status: HTTPStatusCode2xx }>['data'];
 
+/** A limit/offset page as the API returns it: the rows plus the count across every page */
+export type PaginatedData<TItem = unknown> = { items: readonly TItem[]; total: number };
+
+export const isPaginatedData = (data: unknown): data is PaginatedData =>
+	typeof data === 'object' && data !== null
+	&& Array.isArray((data as PaginatedData).items)
+	&& typeof (data as PaginatedData).total === 'number';
+
 export type ExtractedRow<TResponse extends OrvalEnvelope> =
 	NonNullable<SuccessData<TResponse>> extends readonly (infer TItem)[]
 		? TItem
-		: NonNullable<SuccessData<TResponse>>;
+		: NonNullable<SuccessData<TResponse>> extends PaginatedData<infer TItem>
+			? TItem
+			: NonNullable<SuccessData<TResponse>>;
 
 export type QueryLike<TResponse extends OrvalEnvelope, TQueryError> = {
 	data: TResponse | null | undefined;

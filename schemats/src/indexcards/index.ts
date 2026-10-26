@@ -48,7 +48,7 @@ import type {
 	HomepageAd,
 	InboxMessage,
 	InboxUnreadCount,
-	JudgeHistory,
+	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
 	LoginRequest,
@@ -9554,7 +9554,7 @@ export const createUserJudgesClaim = <
 };
 
 export type userJudgesHistoryResponse200 = {
-	data: JudgeHistory[];
+	data: JudgeHistoryPage;
 	status: 200;
 };
 

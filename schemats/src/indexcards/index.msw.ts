@@ -27,7 +27,7 @@ import type {
 	HomepageAd,
 	InboxMessage,
 	InboxUnreadCount,
-	JudgeHistory,
+	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
 	LoginResponse,
@@ -2458,8 +2458,10 @@ export const getUserJudgesClaimResponseMock = (
 	...overrideResponse,
 });
 
-export const getUserJudgesHistoryResponseMock = (): JudgeHistory[] =>
-	Array.from(
+export const getUserJudgesHistoryResponseMock = (
+	overrideResponse: Partial<Extract<JudgeHistoryPage, object>> = {},
+): JudgeHistoryPage => ({
+	items: Array.from(
 		{ length: faker.number.int({ min: 1, max: 10 }) },
 		(_, i) => i + 1,
 	).map(() => ({
@@ -2483,7 +2485,10 @@ export const getUserJudgesHistoryResponseMock = (): JudgeHistory[] =>
 		division: faker.string.alpha({ length: { min: 10, max: 20 } }),
 		roundsJudged: faker.number.int({ min: 0, max: 9007199254740991 }),
 		roundsObligated: faker.number.int({ min: 0, max: 9007199254740991 }),
-	}));
+	})),
+	total: faker.number.int({ min: 0, max: 9007199254740991 }),
+	...overrideResponse,
+});
 
 export const getUserJudgesParadigmResponseMock = (
 	overrideResponse: Partial<Extract<UserParadigmOutput, object>> = {},
@@ -4090,10 +4095,10 @@ export const getUserJudgesClaimMockHandler = (
 
 export const getUserJudgesHistoryMockHandler = (
 	overrideResponse?:
-		| JudgeHistory[]
+		| JudgeHistoryPage
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<JudgeHistory[]> | JudgeHistory[]),
+		  ) => Promise<JudgeHistoryPage> | JudgeHistoryPage),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(

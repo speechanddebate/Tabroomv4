@@ -7,7 +7,11 @@
 	import Button from '$lib/components/Button.svelte';
 	import type { AppTable } from './table.types';
 
-	let { table }: { table: AppTable<TData> } = $props();
+	let { table, disabled = false }: {
+		table: AppTable<TData>;
+		/** Blocks paging, e.g. while a manually paginated table is fetching */
+		disabled?: boolean;
+	} = $props();
 
 	const pagination = $derived(table.atoms.pagination.get());
 	const rowCount = $derived(table.getRowCount());
@@ -22,7 +26,7 @@
 	</span>
 	{#if pageCount > 1}
 		<Button
-			disabled={!table.getCanPreviousPage()}
+			disabled={disabled || !table.getCanPreviousPage()}
 			label="Previous page"
 			onclick={() => table.previousPage()}
 			size="sm"
@@ -32,7 +36,7 @@
 		</Button>
 		<span>Page {pagination.pageIndex + 1} of {pageCount}</span>
 		<Button
-			disabled={!table.getCanNextPage()}
+			disabled={disabled || !table.getCanNextPage()}
 			label="Next page"
 			onclick={() => table.nextPage()}
 			size="sm"

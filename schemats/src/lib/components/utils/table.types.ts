@@ -3,6 +3,7 @@ import type {
 	ColumnFiltersState,
 	ColumnResizeMode,
 	ColumnVisibilityState,
+	PaginationState,
 	RowData,
 	SvelteTable,
 } from '@tanstack/svelte-table';
@@ -19,6 +20,8 @@ export type AppColumnMeta = {
 	truncate?: boolean;
 	/** Classes added to this column's body cells, after the table's cellClass */
 	cellClass?: string;
+	/** Hover text (the `title` attribute) on this column's body cells */
+	title?: string;
 	/** The column's name in TableSearch's column picker. Defaults to its header when that's a string. */
 	filterLabel?: string;
 	/** Fixed values to search by, shown as a dropdown in TableSearch instead of a text box */
@@ -42,6 +45,19 @@ export type TableProps<TData extends RowData> = {
 	columnFilters?: ColumnFiltersState;
 	/** Rows per page. Leave unset to show every row. */
 	pageSize?: number;
+	/**
+	 * Manual (server-side) pagination: the page owns the page state, the table shows `data` as
+	 * the current page, and paging reports through `onPaginationChange`. `pageSize` is ignored.
+	 */
+	pagination?: PaginationState;
+	/** Called with the next page state when the user pages. A plain callback, so it survives a props spread. */
+	onPaginationChange?: (_next: PaginationState) => void;
+	/** Rows across every page, for manual pagination. The pager uses it for the range and page count. */
+	rowCount?: number;
+	/** Show the pager under a paginated table (one with `pageSize` or `pagination`). Defaults to false. */
+	pager?: boolean;
+	/** A page is loading behind the current rows; the pager is disabled meanwhile */
+	isFetching?: boolean;
 	enableColumnResizing?: boolean;
 	columnResizeMode?: ColumnResizeMode;
 	/** Stripe alternate body rows. Turn off when rows are grouped by spanned cells. */
@@ -60,7 +76,7 @@ export type TableProps<TData extends RowData> = {
 	problem?: Problem | null;
 	/** Rendered above the table with the table instance, e.g. a TableSearch */
 	above?: Snippet<[AppTable<TData>]>;
-	/** Rendered below the table with the table instance, e.g. a TablePager */
+	/** Rendered below the table (above the pager) with the table instance */
 	below?: Snippet<[AppTable<TData>]>;
 };
 

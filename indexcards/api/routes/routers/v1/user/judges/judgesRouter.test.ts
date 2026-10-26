@@ -2,7 +2,7 @@ import factories from '../../../../../../tests/factories/index.js';
 import request from 'supertest';
 import server from '../../../../../../app.js';
 import z from 'zod';
-import { ClaimResponseSchema, JudgeHistorySchema, UnlinkedJudgeSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
+import { ClaimResponseSchema, JudgeHistoryPageSchema, UnlinkedJudgeSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import personRepo from '../../../../../repos/personRepo.js';
 import { db } from '../../../../../../api/data/database.js';
 import chapterJudgeRepo from '../../../../../repos/chapterJudgeRepo.js';
@@ -128,7 +128,7 @@ describe('judgesRouter', () => {
 				.set('Accept', 'application/json')
 				.asPerson(userkey)
 				.expect(200);
-			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
+			expect(res.body).toMatchSchema(JudgeHistoryPageSchema);
 		});
 
 		it('returns tournament and weekend dates as UTC ISO strings with the tourn tz', async () => {
@@ -147,13 +147,44 @@ describe('judgesRouter', () => {
 				.asPerson(key)
 				.expect(200);
 
-			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
-			expect(res.body).toHaveLength(1);
-			expect(res.body[0].id).toBe(Judge.id);
-			expect(res.body[0].Tourn.start).toBe(start.toISOString());
-			expect(res.body[0].Tourn.tz).toBe('America/Chicago');
-			expect(res.body[0].Weekend.start).toBe(weekend.start.toISOString());
-			expect(res.body[0].Weekend.end).toBe(weekend.end.toISOString());
+			expect(res.body).toMatchSchema(JudgeHistoryPageSchema);
+			expect(res.body.items).toHaveLength(1);
+			expect(res.body.items[0].id).toBe(Judge.id);
+			expect(res.body.items[0].Tourn.start).toBe(start.toISOString());
+			expect(res.body.items[0].Tourn.tz).toBe('America/Chicago');
+			expect(res.body.items[0].Weekend.start).toBe(weekend.start.toISOString());
+			expect(res.body.items[0].Weekend.end).toBe(weekend.end.toISOString());
+		});
+
+		it('returns one page of history with the total', async () => {
+			const { id: person } = await factories.person.create();
+			const { userkey: key } = await factories.session.create({ person });
+			for (let i = 0; i < 3; i++) {
+				const Tourn = await factories.tourn.create();
+				const Category = await factories.category.create({ tourn: Tourn.id });
+				await factories.judge.create({ person, category: Category.id });
+			}
+
+			const res = await request(server)
+				.get('/v1/user/judges/history')
+				.query({ limit: 2, offset: 0 })
+				.set('Accept', 'application/json')
+				.asPerson(key)
+				.expect(200);
+
+			expect(res.body).toMatchSchema(JudgeHistoryPageSchema);
+			expect(res.body.items).toHaveLength(2);
+			expect(res.body.total).toBe(3);
+		});
+
+		it('rejects a limit of zero', async () => {
+			const res = await request(server)
+				.get('/v1/user/judges/history')
+				.query({ limit: 0 })
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(400);
+			expect(res.body).toBeProblemResponse(400);
 		});
 	});
 	describe("GET /user/judges/paradigm", () => {

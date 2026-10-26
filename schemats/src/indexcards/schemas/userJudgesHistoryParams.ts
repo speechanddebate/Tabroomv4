@@ -8,12 +8,14 @@
 
 export type UserJudgesHistoryParams = {
 	/**
-	 * @minimum -9007199254740991
+	 * The number of tournaments to return
 	 * @maximum 9007199254740991
+	 * @exclusiveMinimum 0
 	 */
 	limit?: number;
 	/**
-	 * @minimum -9007199254740991
+	 * The number of tournaments to skip
+	 * @minimum 0
 	 * @maximum 9007199254740991
 	 */
 	offset?: number;

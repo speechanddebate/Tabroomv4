@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
 import judgesController from '../../../../../controllers/user/judgesController.js';
-import { UnlinkedJudgeSchema, JudgeHistorySchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
+import { UnlinkedJudgeSchema, JudgeHistoryPageSchema, ClaimResponseSchema, UserParadigmSchema, JudgeLiveDocSchema } from '@tabroom/types';
 import z from 'zod';
 
 const router = Router();
@@ -65,16 +65,16 @@ router.route('/history')
 		tags: ['Orval','user:judge','Judges'],
 		requestParams: {
 			query: z.object({
-			limit: z.coerce.number().int().default(100),
-			offset: z.coerce.number().int().default(0),
-			})
+				limit: z.coerce.number().int().positive().default(50).meta({ description: 'The number of tournaments to return' }),
+				offset: z.coerce.number().int().nonnegative().default(0).meta({ description: 'The number of tournaments to skip' }),
+			}),
 		},
 		responses: {
 			200: {
 				description: 'Successful response',
 				content: {
 					'application/json': {
-						schema: z.array(JudgeHistorySchema),
+						schema: JudgeHistoryPageSchema,
 					},
 				},
 			},

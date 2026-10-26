@@ -1,11 +1,15 @@
 <script lang="ts">
-    import QueryTable from '$lib/components/utils/QueryTable.svelte';
 	import { createUserJudgesHistory } from '$indexcards';
 	import type { JudgeHistory } from '$indexcards/schemas/judgeHistory';
+	import QueryTable from '$lib/components/utils/QueryTable.svelte';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
 	import { parseDateTime, showDateRange } from '$lib/helpers/dt';
+	import { createPaging } from '$lib/helpers/paging.svelte';
+	import { PAGE_SIZE } from './pageSize';
 
-	const historyQuery = createUserJudgesHistory();
+	const paging = createPaging(PAGE_SIZE);
+	const historyQuery = createUserJudgesHistory(paging.params, paging.options);
+
 	const columnHelper = createAppColumnHelper<JudgeHistory>();
 		const columns = columnHelper.columns([
 			columnHelper.accessor('Tourn.name', {
@@ -43,12 +47,16 @@
 					return `${row.original.roundsJudged}/${row.original.roundsObligated}`;
 				},
 				size: 80,
+				meta: { title: 'Rounds judged/Rounds obligated' },
 			}),
 		]);
 </script>
 <h2>Judging History</h2>
 <QueryTable
+	caption="Judging history"
 	{columns}
+	enableSorting={false}
 	getRowId={(row) => String(row.id)}
+	{paging}
 	query={historyQuery}
-	/>
+/>
