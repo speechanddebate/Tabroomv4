@@ -1,4 +1,4 @@
-import type { JudgeHistory, JudgeHistoryPage, JudgeHistoryPanel, JudgeTournHistory, JudgeTournRecord } from '$indexcards/schemas';
+import type { JudgeHistory, JudgeHistoryPage, JudgeHistoryPanel, JudgeHistoryResult, JudgeTournHistory, JudgeTournRecord, ScoreCell } from '$indexcards/schemas';
 
 const divisions = ['Open', 'JV', 'Novice', 'Varsity'];
 
@@ -59,6 +59,48 @@ const debatePanel = (id: number, overrides: Partial<JudgeHistoryPanel> = {}): Ju
 	...overrides,
 });
 
+const none: ScoreCell = { winloss: null, rank: null, point: null };
+
+/** A debate prelim this judge decided for the aff with speaker points */
+export const debateResult: JudgeHistoryResult = {
+	id: 31,
+	flight: null,
+	Round: { id: 131, name: 1, label: null, type: 'prelim' },
+	Event: { id: 7, abbr: 'LD', type: 'debate' },
+	Entries: [
+		{ id: 311, code: '101', name: 'Northview AB', side: 'Aff', speakerOrder: null, Scores: { ...none, winloss: 'W' },
+			Students: [{ id: 1, last: 'Smith', Scores: { ...none, point: 28.5 } }] },
+		{ id: 312, code: '202', name: 'Southview CD', side: 'Neg', speakerOrder: null, Scores: { ...none, winloss: 'L' },
+			Students: [{ id: 2, last: 'Jones', Scores: { ...none, point: 27 } }] },
+	],
+	Winner: null,
+};
+
+/** A speech round ranked 1-3 */
+export const speechResult: JudgeHistoryResult = {
+	id: 32,
+	flight: null,
+	Round: { id: 132, name: 2, label: null, type: 'prelim' },
+	Event: { id: 8, abbr: 'OO', type: 'speech' },
+	Entries: [1, 2, 3].map((n) => ({
+		id: 320 + n, code: `40${n}`, name: null, side: null, speakerOrder: n, Scores: { ...none, rank: n, point: 100 - n }, Students: [],
+	})),
+	Winner: null,
+};
+
+/** An elim this judge voted in that the panel split 2-1 for the aff */
+export const elimResult: JudgeHistoryResult = {
+	id: 33,
+	flight: 2,
+	Round: { id: 133, name: 5, label: 'Quarterfinals', type: 'elim' },
+	Event: { id: 7, abbr: 'LD', type: 'debate' },
+	Entries: [
+		{ id: 331, code: '101', name: 'Northview AB', side: 'Aff', speakerOrder: null, Scores: { ...none, winloss: 'W' }, Students: [] },
+		{ id: 332, code: '202', name: 'Southview CD', side: 'Neg', speakerOrder: null, Scores: { ...none, winloss: 'L' }, Students: [] },
+	],
+	Winner: { entry: 331, code: '101', name: 'Northview AB', record: '2-1' },
+};
+
 export const schoolJudge: JudgeTournRecord = {
 	id: 501,
 	code: '42A',
@@ -73,6 +115,7 @@ export const schoolJudge: JudgeTournRecord = {
 		debatePanel(2, { flight: 2, Round: { id: 102, name: 2, label: null, type: 'prelim' } }),
 		debatePanel(3, { Room: null, Round: { id: 103, name: 3, label: 'Quarterfinals', type: 'elim' } }),
 	],
+	Results: [],
 };
 
 export const volunteerJudge: JudgeTournRecord = {
@@ -93,6 +136,15 @@ export const volunteerJudge: JudgeTournRecord = {
 			],
 		}),
 	],
+	Results: [],
+};
+
+/** A finished tournament: nothing left assigned, results entered */
+export const finishedJudge: JudgeTournRecord = {
+	...schoolJudge,
+	id: 503,
+	Panels: [],
+	Results: [debateResult, speechResult, elimResult],
 };
 
 export const createTournHistory = (Judges: JudgeTournRecord[] = [schoolJudge]): JudgeTournHistory => ({ Tourn: tourn, Judges });

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { JudgeTournHistoryTourn, JudgeTournRecord } from '$indexcards/schemas';
 	import AssignedRounds from './AssignedRounds.svelte';
+	import EnteredResults from './EnteredResults.svelte';
 
 	let { judge, tourn }: { judge: JudgeTournRecord; tourn: JudgeTournHistoryTourn } = $props();
 
@@ -42,6 +43,12 @@
 		<div class="p-3">
 			<h4 class="mb-2 text-sm font-semibold">Assigned Rounds</h4>
 			<AssignedRounds panels={judge.Panels} {tourn} />
+		</div>
+	{/if}
+	{#if judge.Results.length > 0}
+		<div class="p-3">
+			<h4 class="mb-2 text-sm font-semibold">Entered Results</h4>
+			<EnteredResults results={judge.Results} />
 		</div>
 	{/if}
 </section>

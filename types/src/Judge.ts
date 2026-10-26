@@ -158,6 +158,48 @@ export const JudgeHistoryPanelSchema = z.object({
 
 export type JudgeHistoryPanel = z.infer<typeof JudgeHistoryPanelSchema>;
 
+export const ScoreCellSchema = z.object({
+	winloss: z.enum(['W', 'L']).nullable().meta({ description: 'The decision, when the ballot has one' }),
+	rank: z.number().nullable(),
+	point: z.number().nullable(),
+}).strict().meta({
+	id: 'ScoreCell',
+	description: "A judge's scores for one entry or speaker",
+}) satisfies ZodOpenApiSchemaObject;
+
+export type ScoreCell = z.infer<typeof ScoreCellSchema>;
+
+export const JudgeHistoryResultSchema = z.object({
+	id: JudgeHistoryPanelSchema.shape.id,
+	flight: JudgeHistoryPanelSchema.shape.flight,
+	Round: JudgeHistoryPanelSchema.shape.Round,
+	Event: JudgeHistoryPanelSchema.shape.Event,
+	Entries: z.array(z.object({
+		id: EntrySchema.shape.id,
+		code: EntrySchema.shape.code,
+		name: z.string().nullable(),
+		side: z.string().nullable().meta({ description: 'Side or position label for the entry (e.g., Aff, Con, 1G)' }),
+		speakerOrder: z.int().nullable(),
+		Scores: ScoreCellSchema.meta({ description: "This judge's entry-level scores; for WUDC the whole panel's" }),
+		Students: z.array(z.object({
+			id: utils.id,
+			last: z.string().nullable(),
+			Scores: ScoreCellSchema,
+		}).strict()).meta({ description: "Speakers this judge scored individually" }),
+	}).strict()),
+	Winner: z.object({
+		entry: EntrySchema.shape.id,
+		code: EntrySchema.shape.code,
+		name: z.string().nullable(),
+		record: z.string().meta({ description: 'Ballot count, winner first (e.g., 2-1)' }),
+	}).strict().nullable().meta({ description: 'The panel winner of a debate elimination round without speaker scores' }),
+}).strict().meta({
+	id: 'JudgeHistoryResult',
+	description: 'A section a judge entered a decision for, with their scores',
+}) satisfies ZodOpenApiSchemaObject;
+
+export type JudgeHistoryResult = z.infer<typeof JudgeHistoryResultSchema>;
+
 export const JudgeTournRecordSchema = z.object({
 	id: JudgeSchema.shape.id,
 	code: z.string().nullable().meta({ description: 'Judge code; null when the category hides codes' }),
@@ -175,6 +217,7 @@ export const JudgeTournRecordSchema = z.object({
 		abbr: z.string().nullable(),
 	}).strict(),
 	Panels: z.array(JudgeHistoryPanelSchema).meta({ description: 'Published sections not yet past primary results' }),
+	Results: z.array(JudgeHistoryResultSchema).meta({ description: 'Sections with results posted' }),
 }).strict().meta({
 	id: 'JudgeTournRecord',
 	description: "A person's judge record at one tournament",

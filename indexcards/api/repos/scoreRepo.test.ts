@@ -85,6 +85,26 @@ describe('createScores', async () => {
 	});
 });
 
+describe('getPanelScores', () => {
+	it('returns decision, rank, and point scores on the sections with their ballot', async () => {
+		const Panel = await factories.panel.create();
+		const Judge = await factories.judge.create();
+		const Entry = await factories.entry.create();
+		const elsewhere = await factories.ballot.create();
+		const { Score } = await factories.score.create({ ballot: elsewhere.id, tag: 'winloss', value: 1 });
+		const ballot = await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: Entry.id, side: 2 });
+		await factories.score.create({ ballot: ballot.id, tag: 'point', value: 28.5 });
+		await factories.score.create({ ballot: ballot.id, tag: 'rfd', value: 0 });
+
+		const scores = await scoreRepo.getPanelScores(db, [Panel.id]);
+
+		expect(scores).toHaveLength(1);
+		expect(scores[0]).toMatchObject({ tag: 'point', value: 28.5, ballot: ballot.id, judge: Judge.id, entry: Entry.id, panel: Panel.id, side: 2 });
+		expect(scores.map(s => s.ballot)).not.toContain(Score?.ballot);
+		expect(await scoreRepo.getPanelScores(db, [])).toEqual([]);
+	});
+});
+
 describe('updateScore', async () => {
 	it('updates the score and returns its id', async () => {
 		const ballot = await factories.ballot.create();

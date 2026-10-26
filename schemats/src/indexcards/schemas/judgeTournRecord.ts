@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.2.0
  */
 import type { JudgeHistoryPanel } from './judgeHistoryPanel';
+import type { JudgeHistoryResult } from './judgeHistoryResult';
 import type { JudgeTournRecordCategory } from './judgeTournRecordCategory';
 import type { JudgeTournRecordSchool } from './judgeTournRecordSchool';
 
@@ -52,4 +53,6 @@ export interface JudgeTournRecord {
 	Category: JudgeTournRecordCategory;
 	/** Published sections not yet past primary results */
 	Panels: JudgeHistoryPanel[];
+	/** Sections with results posted */
+	Results: JudgeHistoryResult[];
 }

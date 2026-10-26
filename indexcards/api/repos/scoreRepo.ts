@@ -63,9 +63,34 @@ async function deleteScores(db: Database, opts: { ballots: number[], tags: strin
 	return result.numDeletedRows > 0;
 }
 
+// Every judge's decision, rank, and point scores on the sections, with the ballot they came from
+async function getPanelScores(db: Database, panelIds: number[]) {
+	if (panelIds.length === 0) return [];
+	const rows = await db.selectFrom('score')
+	.innerJoin('ballot', 'ballot.id', 'score.ballot')
+	.select([
+		'score.tag',
+		'score.value',
+		'score.student',
+		'ballot.id as ballot',
+		'ballot.judge',
+		'ballot.entry',
+		'ballot.panel',
+		'ballot.side',
+		'ballot.forfeit',
+		'ballot.bye',
+	])
+	.where('ballot.panel', 'in', panelIds)
+	.where('score.tag', 'in', ['winloss', 'rank', 'point'])
+	.execute();
+	// DECIMAL columns come back as strings
+	return rows.map(row => ({ ...row, value: Number(row.value) }));
+}
+
 export default {
 	getScore,
 	getScores,
+	getPanelScores,
 	createScore,
 	createScores,
 	updateScore,

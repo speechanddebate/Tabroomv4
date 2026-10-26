@@ -218,6 +218,53 @@ describe('judgesRouter', () => {
 			expect(res.body.Judges[0].Panels[0].Entries[0]).toMatchObject({ id: Entry.id, code: '101', side: 'Pro' });
 		});
 
+		it("returns the judge's entered results with speaker points and the panel winner", async () => {
+			const Tourn = await finishedTourn();
+			const Category = await factories.category.create({ tourn: Tourn.id });
+			const Judge = await factories.judge.create({ person: personId, category: Category.id });
+			const Event = await factories.event.create({ category: Category.id, type: 'debate' });
+			const aff = await factories.entry.create({ event: Event.id, tourn: Tourn.id, code: '101', name: 'Northview AB', students: [(await factories.student.create({ last: 'Smith' })).id] });
+			const neg = await factories.entry.create({ event: Event.id, tourn: Tourn.id, code: '202', name: 'Southview CD' });
+
+			// A prelim this judge scored with speaker points, and an elim the panel split 2-1 for the aff
+			const prelimRound = await factories.round.create({ event: Event.id, name: 1, type: 'prelim', published: 1, post_primary: 3 });
+			const prelim = await factories.panel.create({ round: prelimRound.id });
+			const affBallot = await factories.ballot.create({ panel: prelim.id, judge: Judge.id, entry: aff.id, side: 1 });
+			await factories.ballot.create({ panel: prelim.id, judge: Judge.id, entry: neg.id, side: 2 });
+			await factories.score.create({ ballot: affBallot.id, tag: 'winloss', value: 1 });
+			const [smith] = await db.selectFrom('entry_student').select('student').where('entry', '=', aff.id).execute();
+			await factories.score.create({ ballot: affBallot.id, tag: 'point', value: 28.5, student: smith.student });
+
+			const elimRound = await factories.round.create({ event: Event.id, name: 2, type: 'elim', published: 1, post_primary: 3 });
+			const elim = await factories.panel.create({ round: elimRound.id });
+			const otherJudges = [await factories.judge.create({ category: Category.id }), await factories.judge.create({ category: Category.id })];
+			for (const [judgeId, affWins] of [[Judge.id, 1], [otherJudges[0].id, 1], [otherJudges[1].id, 0]] as const) {
+				const a = await factories.ballot.create({ panel: elim.id, judge: judgeId, entry: aff.id, side: 1 });
+				const n = await factories.ballot.create({ panel: elim.id, judge: judgeId, entry: neg.id, side: 2 });
+				await factories.score.create({ ballot: a.id, tag: 'winloss', value: affWins });
+				await factories.score.create({ ballot: n.id, tag: 'winloss', value: affWins ? 0 : 1 });
+			}
+
+			const res = await request(server)
+				.get(`/v1/user/judges/history/${Tourn.id}`)
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(200);
+
+			expect(res.body).toMatchSchema(JudgeTournHistorySchema);
+			const [record] = res.body.Judges;
+			expect(record.Panels).toHaveLength(0);
+			expect(record.Results.map((r: { Round: { name: number } }) => r.Round.name)).toEqual([1, 2]);
+
+			const [prelimResult, elimResult] = record.Results;
+			expect(prelimResult.Entries[0]).toMatchObject({ code: '101', side: 'Aff', Scores: { winloss: 'W', rank: null, point: null } });
+			expect(prelimResult.Entries[0].Students).toEqual([{ id: smith.student, last: 'Smith', Scores: { winloss: null, rank: null, point: 28.5 } }]);
+			expect(prelimResult.Winner).toBeNull();
+
+			expect(elimResult.Entries.map((e: { Scores: { winloss: string } }) => e.Scores.winloss)).toEqual(['W', 'L']);
+			expect(elimResult.Winner).toEqual({ entry: aff.id, code: '101', name: 'Northview AB', record: '2-1' });
+		});
+
 		it('is not found for a tournament the person did not judge', async () => {
 			const Tourn = await finishedTourn();
 			const res = await request(server)
