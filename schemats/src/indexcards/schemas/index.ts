@@ -95,6 +95,7 @@ export * from './inboxMessageTourn';
 export * from './inboxUnreadCount';
 export * from './judgeHistory';
 export * from './judgeHistoryTourn';
+export * from './judgeHistoryWeekend';
 export * from './judgeLiveDoc';
 export * from './judgeRecord';
 export * from './judgeRecordTourn';

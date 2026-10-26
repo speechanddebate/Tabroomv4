@@ -147,16 +147,16 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 		'tourn.name as tourn_name',
 		'tourn.city as tourn_city',
 		'tourn.state as tourn_state',
+		'tourn.tz as tourn_tz',
+		// The pool reads DATETIME columns as UTC, so these come back as correct
+		// instants; callers display them in tourn_tz
+		'tourn.start as tourn_start',
+		'tourn.end as tourn_end',
 
-		// Converted timezone values
-		sql<Date>`CONVERT_TZ(tourn.start, '+00:00', tourn.tz)`.as('tourn_start'),
-		sql<Date>`CONVERT_TZ(tourn.end, '+00:00', tourn.tz)`.as('tourn_end'),
-		sql<Date>`CONVERT_TZ(weekend.start, '+00:00', tourn.tz)`.as(
-			'weekend_start',
-		),
-		sql<Date>`CONVERT_TZ(weekend.end, '+00:00', tourn.tz)`.as(
-			'weekend_end',
-		),
+		'weekend.id as weekend_id',
+		'weekend.name as weekend_name',
+		'weekend.start as weekend_start',
+		'weekend.end as weekend_end',
 
 		sql<number>`COUNT(DISTINCT round.id)`.as('round_count'),
 	])
@@ -187,11 +187,14 @@ async function getJudgeHistory(db: Database, personId: number, opts: queryOpts =
 			state: row.tourn_state,
 			start: row.tourn_start,
 			end: row.tourn_end,
+			tz: row.tourn_tz,
 		},
-		Weekend: {
+		Weekend: row.weekend_id ? {
+			id: row.weekend_id,
+			name: row.weekend_name,
 			start: row.weekend_start,
 			end: row.weekend_end,
-		},
+		} : null,
 		roundCount: row.round_count,
 	}));
 }

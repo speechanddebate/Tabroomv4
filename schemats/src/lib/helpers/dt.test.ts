@@ -1,4 +1,40 @@
-import { showDateTime, getWeek } from '$lib/helpers/dt';
+import { showDateTime, showDateRange, getWeek } from '$lib/helpers/dt';
+
+describe('showDateRange', () => {
+	const short = (startISO: string, endISO: string, tz?: string) =>
+		showDateRange({ startISO, endISO, tz, mode: 'date', format: 'short' }).dateOutput?.trim();
+
+	it('shows one date when the range is within a day', () => {
+		expect(short('2025-03-13T14:00:00Z', '2025-03-13T22:00:00Z')).toBe('3/13');
+	});
+
+	it('repeats only the day when the range stays in one month', () => {
+		expect(short('2025-03-13T14:00:00Z', '2025-03-15T22:00:00Z')).toBe('3/13 - 15');
+	});
+
+	it('shows both month and day when the range crosses a month', () => {
+		expect(short('2025-01-30T14:00:00Z', '2025-02-01T22:00:00Z')).toBe('1/30 - 2/1');
+	});
+
+	it('shows both dates when the range crosses a year', () => {
+		expect(short('2024-12-30T14:00:00Z', '2025-01-02T22:00:00Z')).toBe('12/30 - 1/2');
+	});
+
+	it('formats in the given time zone, not UTC', () => {
+		// 04:00Z on 3/14 is still 3/13 in Chicago
+		expect(short('2025-03-14T04:00:00Z', '2025-03-16T04:00:00Z', 'America/Chicago')).toBe('3/13 - 15');
+		expect(short('2025-03-14T04:00:00Z', '2025-03-16T04:00:00Z')).toBe('3/14 - 16');
+	});
+
+	it('includes the year outside the short format', () => {
+		expect(showDateRange({
+			startISO: '2025-03-13T14:00:00Z',
+			endISO: '2025-03-15T22:00:00Z',
+			mode: 'date',
+		}).dateOutput?.trim()).toBe('Mar 13 - 15, 2025');
+	});
+});
+
 describe('showDateTime', () => {
 	it('does not throw on undefined input', () => {
 		expect(() => showDateTime({ dt: undefined })).not.toThrow();

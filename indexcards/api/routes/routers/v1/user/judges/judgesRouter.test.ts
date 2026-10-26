@@ -130,6 +130,31 @@ describe('judgesRouter', () => {
 				.expect(200);
 			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
 		});
+
+		it('returns tournament and weekend dates as UTC ISO strings with the tourn tz', async () => {
+			const { id: person } = await factories.person.create();
+			const { userkey: key } = await factories.session.create({ person });
+			const start = new Date('2025-03-08T05:30:00Z');
+			const Tourn = await factories.tourn.create({ tz: 'America/Chicago', start, end: new Date('2025-03-10T04:00:00Z') });
+			const Category = await factories.category.create({ tourn: Tourn.id });
+			const Judge = await factories.judge.create({ person, category: Category.id });
+			const weekend = await factories.weekend.create({ tourn: Tourn.id, start });
+			await factories.event.create({ category: Category.id, settings: { weekend: weekend.id } });
+
+			const res = await request(server)
+				.get('/v1/user/judges/history')
+				.set('Accept', 'application/json')
+				.asPerson(key)
+				.expect(200);
+
+			expect(res.body).toMatchSchema(z.array(JudgeHistorySchema));
+			expect(res.body).toHaveLength(1);
+			expect(res.body[0].id).toBe(Judge.id);
+			expect(res.body[0].Tourn.start).toBe(start.toISOString());
+			expect(res.body[0].Tourn.tz).toBe('America/Chicago');
+			expect(res.body[0].Weekend.start).toBe(weekend.start.toISOString());
+			expect(res.body[0].Weekend.end).toBe(weekend.end.toISOString());
+		});
 	});
 	describe("GET /user/judges/paradigm", () => {
 		it("should return the paradigm for a person", async () => {

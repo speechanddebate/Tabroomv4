@@ -1,6 +1,8 @@
 import * as utils from './utils.js';
 import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
+import { TournSchema } from './Tourn.js';
+import { WeekendSchema } from './Weekend.js';
 
 export const JudgeSchema = z.object({
 	id: utils.id,
@@ -77,19 +79,26 @@ export const JudgeRecordSchema = z.object({
 export type JudgeRecord = z.infer<typeof JudgeRecordSchema>;
 
 export const JudgeHistorySchema = z.object({
+	id: JudgeSchema.shape.id.meta({ description: 'Judge id' }),
 	Tourn: z.object({
 		id: utils.id.meta({
 			description: 'Tournament id',
 		}),
 		name: z.string().meta({ description: 'Tournament name' }),
 		start: z.iso.datetime().meta({
-			description: 'start date',
+			description: 'Tournament start (UTC)',
 		}),
 		end: z.iso.datetime().meta({
-			description: 'end date',
+			description: 'Tournament end (UTC)',
+		}),
+		tz: TournSchema.shape.tz.meta({
+			description: 'IANA time zone of the tournament',
 		}),
 	}).meta({
 		description: 'Tournament details',
+	}),
+	Weekend: WeekendSchema.pick({ id: true, name: true, start: true, end: true }).nullable().meta({
+		description: "The weekend the judge's category is assigned to, when the tournament uses weekends",
 	}),
 	division: z.string().meta({ description: 'Division name (e.g., Open, JV)' }),
 	roundsJudged: z.number().int().nonnegative().meta({

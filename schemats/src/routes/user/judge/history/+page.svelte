@@ -3,6 +3,7 @@
 	import { createUserJudgesHistory } from '$indexcards';
 	import type { JudgeHistory } from '$indexcards/schemas/judgeHistory';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
+	import { parseDateTime, showDateRange } from '$lib/helpers/dt';
 
 	const historyQuery = createUserJudgesHistory();
 	const columnHelper = createAppColumnHelper<JudgeHistory>();
@@ -11,10 +12,9 @@
 				id: 'name',
 				header: 'Tournament',
 			}),
-			columnHelper.accessor('Tourn.start', {
+			columnHelper.accessor((row) => parseDateTime({ dtISO: row.Tourn.start, tz: row.Tourn.tz }).year, {
 				id: 'year',
 				header: 'Year',
-				cell: start => new Date(start.getValue()).getFullYear(),
 				size: 60,
 				maxSize: 60,
 			}),
@@ -22,9 +22,14 @@
 				id: 'dates',
 				header: 'Dates',
 				cell: ({ row }) => {
-					const start = new Date(row.original.Tourn.start);
-					const end = new Date(row.original.Tourn.end);
-					return `${start.getMonth() + 1}/${start.getDate()} - ${end.getMonth() + 1}/${end.getDate()}`;
+					const span = row.original.Weekend ?? row.original.Tourn;
+					return showDateRange({
+						startISO: span.start,
+						endISO: span.end,
+						tz: row.original.Tourn.tz,
+						mode: 'date',
+						format: 'short',
+					}).dateOutput?.trim() ?? '';
 				},
 			}),
 			columnHelper.accessor('division', {
@@ -44,5 +49,6 @@
 <h2>Judging History</h2>
 <QueryTable
 	{columns}
+	getRowId={(row) => String(row.id)}
 	query={historyQuery}
 	/>

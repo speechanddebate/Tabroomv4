@@ -125,12 +125,15 @@ async function history(req: ValidatedRequest, res: Response) {
 
 	const judgeHistory = await judgeRepo.getJudgeHistory(db, person.id, {limit, offset});
 	return res.status(200).json(judgeHistory.map(j => ({
+		id: j.id,
 		Tourn: {
 			id: j.Tourn.id,
 			name: j.Tourn.name,
 			start: j.Tourn.start,
 			end: j.Tourn.end,
+			tz: j.Tourn.tz,
 		},
+		Weekend: j.Weekend,
 		division: j.Category.name,
 		roundsJudged: j.roundCount,
 		roundsObligated: (j.obligation ?? 0) + (j.hired ?? 0),

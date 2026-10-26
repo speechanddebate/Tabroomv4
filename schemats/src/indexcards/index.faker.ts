@@ -2460,12 +2460,23 @@ export const getUserJudgesHistoryResponseMock = (): JudgeHistory[] =>
 		{ length: faker.number.int({ min: 1, max: 10 }) },
 		(_, i) => i + 1,
 	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
 		Tourn: {
 			id: faker.number.int({ min: 0, max: 9007199254740991 }),
 			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
 			start: faker.date.past().toISOString().slice(0, 19) + 'Z',
 			end: faker.date.past().toISOString().slice(0, 19) + 'Z',
+			tz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 		},
+		Weekend: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.string.alpha({ length: { min: 10, max: 63 } }),
+				start: faker.date.past().toISOString().slice(0, 19) + 'Z',
+				end: faker.date.past().toISOString().slice(0, 19) + 'Z',
+			},
+			null,
+		]),
 		division: faker.string.alpha({ length: { min: 10, max: 20 } }),
 		roundsJudged: faker.number.int({ min: 0, max: 9007199254740991 }),
 		roundsObligated: faker.number.int({ min: 0, max: 9007199254740991 }),

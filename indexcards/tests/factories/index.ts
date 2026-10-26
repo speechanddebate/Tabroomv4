@@ -30,6 +30,7 @@ import personQuiz from './personQuiz.js';
 import quiz from './quiz.js';
 import student from './student.js';
 import webpage from './webpage.js';
+import weekend from './weekend.js';
 
 const factories = {
 	ad,
@@ -64,6 +65,7 @@ const factories = {
 	quiz,
 	student,
 	webpage,
+	weekend,
 };
 
 export default factories;

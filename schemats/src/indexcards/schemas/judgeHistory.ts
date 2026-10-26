@@ -6,13 +6,22 @@
  * OpenAPI spec version: 1.2.0
  */
 import type { JudgeHistoryTourn } from './judgeHistoryTourn';
+import type { JudgeHistoryWeekend } from './judgeHistoryWeekend';
 
 /**
  * A person's history of judging
  */
 export interface JudgeHistory {
+	/**
+	 * Judge id
+	 * @maximum 9007199254740991
+	 * @exclusiveMinimum 0
+	 */
+	id: number;
 	/** Tournament details */
 	Tourn: JudgeHistoryTourn;
+	/** The weekend the judge's category is assigned to, when the tournament uses weekends */
+	Weekend: JudgeHistoryWeekend;
 	/** Division name (e.g., Open, JV) */
 	division: string;
 	/**

@@ -254,7 +254,7 @@ export const showDateRange = (rangeProps:DtRangeProps): FormattedRanges => {
 			diffPoint = 'day';
 		}
 
-		if (diffPoint === 'month') {
+		if (diffPoint === 'month' || diffPoint === 'year') {
 
 			switch (rangeProps.format) {
 				case 'short':

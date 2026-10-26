@@ -21,6 +21,7 @@ export * from './src/NSDACategory.js';
 export * from './src/Room/OnlineRoom.js';
 export * from './src/Round.js';
 export * from './src/Tourn.js';
+export * from './src/Weekend.js';
 export * from './src/Section.js';
 export * from './src/Problem.js';
 export * from './src/ResultSet.js';

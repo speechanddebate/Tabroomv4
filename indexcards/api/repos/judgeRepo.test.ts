@@ -148,6 +148,43 @@ describe('judgeRepo', () => {
 			expect(history[0].id).toBe(Judge.id);
 			expect(history[0].Category.id).toBe(category.id);
 		});
+
+		it('returns tournament dates as the stored UTC instants with the tourn tz', async () => {
+			const Person = await factories.person.create();
+			// Midnight-adjacent instants, so a zone shift would move the calendar day
+			const start = new Date('2025-03-08T05:30:00Z');
+			const end = new Date('2025-03-10T04:00:00Z');
+			const Tourn = await factories.tourn.create({ tz: 'America/Los_Angeles', start, end });
+			const category = await factories.category.create({ tourn: Tourn.id });
+			await factories.judge.create({ person: Person.id, category: category.id });
+
+			const history = await judgeRepo.getJudgeHistory(db, Person.id);
+
+			expect(history).toHaveLength(1);
+			expect(history[0].Tourn.start?.getTime()).toBe(start.getTime());
+			expect(history[0].Tourn.end?.getTime()).toBe(end.getTime());
+			expect(history[0].Tourn.tz).toBe('America/Los_Angeles');
+			expect(history[0].Weekend).toBeNull();
+		});
+
+		it("returns the weekend of the judge's event when the tournament uses weekends", async () => {
+			const Person = await factories.person.create();
+			const Tourn = await factories.tourn.create();
+			const category = await factories.category.create({ tourn: Tourn.id });
+			await factories.judge.create({ person: Person.id, category: category.id });
+			const weekend = await factories.weekend.create({ tourn: Tourn.id, start: new Date('2025-02-01T14:00:00Z') });
+			await factories.event.create({ category: category.id, settings: { weekend: weekend.id } });
+
+			const history = await judgeRepo.getJudgeHistory(db, Person.id);
+
+			expect(history).toHaveLength(1);
+			expect(history[0].Weekend).toEqual({
+				id: weekend.id,
+				name: weekend.name,
+				start: weekend.start,
+				end: weekend.end,
+			});
+		});
 	});
 	describe('getLiveDocs', () => {
 		it('returns the correct shape for livedocs', async () => {
