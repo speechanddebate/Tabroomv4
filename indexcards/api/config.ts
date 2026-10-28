@@ -212,7 +212,7 @@ export const ConfigSchema = z.object({
 		locationDB: z.string().default('/var/lib/GeoIP/GeoLite2-City.mmdb'),
 		ispDB: z.string().default('/var/lib/GeoIP/GeoIP2-ISP.mmdb'),
 	}).prefault({}),
-}).strict();
+});
 
 type RuntimeConfig = z.infer<typeof ConfigSchema>;
 
