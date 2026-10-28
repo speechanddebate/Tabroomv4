@@ -4,7 +4,7 @@ import { db } from '../data/database.js';
 import { summon } from '../repos/utils/index.js';
 import changeLogRepo from '../repos/changeLogRepo.js';
 import config from '../config.js';
-import notify from './blast.js';
+import { notify } from '../services/notifications/notify.js';
 import logger from './logger.js';
 
 export const showTabroomUsage = async () => {

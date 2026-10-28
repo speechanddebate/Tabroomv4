@@ -1,6 +1,6 @@
 import moment from 'moment-timezone';
 import { ordinalize } from '@speechanddebate/nsda-js-utils';
-import { notify } from './blast.js';
+import { notify } from '../services/notifications/notify.js';
 import { sidelocks } from './round.js';
 import config from '../config.js';
 import { sql } from 'kysely';

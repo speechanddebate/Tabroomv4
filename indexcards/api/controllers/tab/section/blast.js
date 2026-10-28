@@ -1,7 +1,7 @@
 import { sql } from 'kysely';
 import { getFollowers, getPairingFollowers } from '../../../helpers/followers.js';
 import logger from '../../../helpers/logger.js';
-import { notify } from '../../../helpers/blast.js';
+import { notify } from '../../../services/notifications/notify.js';
 import { sendPairingBlast, formatPairingBlast } from '../../../helpers/pairing.js';
 import { db as kdb } from '../../../data/database.js';
 import { summon } from '../../../repos/utils/index.js';

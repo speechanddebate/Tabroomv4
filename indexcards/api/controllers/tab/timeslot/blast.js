@@ -1,6 +1,6 @@
 import { getFollowers } from '../../../helpers/followers.js';
 import logger from '../../../helpers/logger.js';
-import { notify } from '../../../helpers/blast.js';
+import { notify } from '../../../services/notifications/notify.js';
 import { blastRoundPairing } from '../round/blast.js';
 import { BadRequest, Forbidden } from '../../../helpers/problem.js';
 import { sql } from 'kysely';

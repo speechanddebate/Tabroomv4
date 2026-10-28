@@ -10,7 +10,7 @@ import tabroomRepo from '../../repos/tabroomRepo.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
 import { profanityCheck, sanitizeHTML } from '../../helpers/text.js';
 import { BadRequest, Forbidden, NotFound } from '../../helpers/problem.js';
-import { notify } from '../../helpers/blast.js';
+import { notify } from '../../services/notifications/notify.js';
 import logger from '../../helpers/logger.js';
 import { db } from '../../data/database.js';
 import { getPerson } from '../../middleware/auth/authorization.js';

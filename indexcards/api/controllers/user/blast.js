@@ -1,7 +1,7 @@
 import axios from 'axios';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
-//import notify from '../../helpers/blast.js';
+//import { notify } from '../../services/notifications/notify.js';
 
 /*
  * export async function pushMessage(req, res) {
