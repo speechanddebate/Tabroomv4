@@ -25,7 +25,7 @@ export default defineConfig( () => {
 				allow: ['.', './config'],
 			},
 			hmr: {
-				clientPort : process.env.VITE_CLIENT_PORT ? Number(process.env.VITE_CLIENT_PORT) : 9003,
+				clientPort : process.env.VITE_CLIENT_PORT ? Number(process.env.VITE_CLIENT_PORT) : undefined,
 			},
 			proxy: {
 				'/v1': {

@@ -8,6 +8,8 @@ services:
             - '443:443'
         volumes:
             - ../nginx.conf:/etc/nginx/conf.d/tabroom.conf:ro
+            # optional mkcert pair for https; see schemats/doc/nginx.dev.tabroom.com.sample
+            - ../certs:/etc/nginx/certs:ro
         networks:
             default:
                 aliases:
@@ -56,6 +58,9 @@ services:
             OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: http://prometheus:9090/api/v1/otlp/v1/metrics
             OTEL_METRIC_EXPORT_INTERVAL: '15000'
             OTEL_RESOURCE_ATTRIBUTES: host.name=dev,container.name=schemats-dev,service.instance.id=dev-schemats-dev
+            # trust the mkcert CA for server-side fetches to https://api.dev.tabroom.com.
+            # Node only warns when the file is missing. See schemats/doc/nginx.dev.tabroom.com.sample
+            NODE_EXTRA_CA_CERTS: /certs/rootCA.pem
         logging:
             driver: loki
             options:
@@ -67,6 +72,7 @@ services:
                 max-file: '3'
         volumes:
             - ./schemats/src:/app/schemats/src
+            - ../certs:/certs:ro
 
 networks:
     default:
