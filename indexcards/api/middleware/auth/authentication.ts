@@ -6,6 +6,9 @@ import { Forbidden } from '../../helpers/problem.js';
 import sessionRepo from '../../repos/sessionRepo.js';
 import type { AuthInfo, AuthStrategy, SessionPerson } from './types.js';
 
+/** how stale session.last_access may get before a request refreshes it */
+const LAST_ACCESS_INTERVAL_MS = 60 * 60 * 1000;
+
 /** authenticate with the session userkey in the TabroomToken cookie */
 export const cookieStrategy: AuthStrategy = async (db, { cookies }) => {
 	const userkey = cookies[config.cookie.name];
@@ -20,6 +23,11 @@ export const cookieStrategy: AuthStrategy = async (db, { cookies }) => {
 	if (session.Person.banned == '1') {
 		await sessionRepo.deleteSession(db, session.id);
 		return { status: 'forbidden', detail: 'User is banned' };
+	}
+
+	// refreshed while su'd too, the session is in use either way
+	if (!session.last_access || Date.now() - session.last_access.getTime() > LAST_ACCESS_INTERVAL_MS) {
+		await sessionRepo.updateSession(db, session.id, { last_access: new Date() });
 	}
 
 	return {
