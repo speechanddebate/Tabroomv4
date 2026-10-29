@@ -386,7 +386,7 @@ describe('pushMessage', () => {
 		await pushMessage(message.id);
 
 		expect(JSON.parse(sendNotification.mock.calls[0][1] as string)).toMatchObject({
-			title: 'Message from Tabroom',
+			title: 'Message from Tabroom.com',
 			body: 'Your round is in room 12. Go now.',
 			url: '/user/home',
 		});

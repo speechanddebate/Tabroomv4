@@ -1,29 +1,19 @@
-import { UnrecoverableError, Worker, type Processor } from 'bullmq';
+import { UnrecoverableError, Worker } from 'bullmq';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
-import { processEmail, processNotify, processPush } from '../notifications/jobs.js';
 import { baseOptions, isRedisDown } from './connection.js';
-import type { QueueData, QueueName } from './queues.js';
-
-type WorkerSettings<N extends QueueName> = {
-	processor: Processor<QueueData[N]>,
-	/** Jobs one worker runs at the same time */
-	concurrency: number,
-};
-
-/** What processes each queue's jobs */
-const settings: { [N in QueueName]: WorkerSettings<N> } = {
-	notify: { processor: processNotify, concurrency: 2 },
-	email: { processor: processEmail, concurrency: 10 },
-	push: { processor: processPush, concurrency: 10 },
-};
+import type { QueueDefinition } from './define.js';
+import { queueDefinitions } from './registry.js';
 
 const workers: Worker[] = [];
 
-// Generic per queue so each processor keeps its own job data type
-function startWorker<N extends QueueName>(name: N) {
-	const { processor, concurrency } = settings[name];
-	const worker = new Worker<QueueData[N]>(name, processor, { ...baseOptions, concurrency });
+function startWorker({ name, processor, concurrency, backoffStrategy }: QueueDefinition) {
+	const worker = new Worker(name, processor, {
+		...baseOptions,
+		concurrency,
+		// Only queues defined with a strategy add their jobs with backoff type custom
+		...(backoffStrategy ? { settings: { backoffStrategy } } : {}),
+	});
 
 	// Without a listener BullMQ prints every error to the console
 	worker.on('error', (error) => {
@@ -41,17 +31,17 @@ function startWorker<N extends QueueName>(name: N) {
 	workers.push(worker);
 }
 
-/** Start config.queue.workers workers for every queue */
+/** Start one worker for every queue, unless config.queue.runWorkers leaves the jobs to another process */
 export function startWorkers() {
-	for (const name of Object.keys(settings) as QueueName[]) {
-		for (let i = 0; i < config.queue.workers; i++) {
-			startWorker(name);
-		}
+	if (!config.queue.runWorkers) {
+		logger.info('Not running job workers in this process');
+		return;
 	}
 
-	if (workers.length > 0) {
-		logger.info(`Started ${config.queue.workers} worker(s) for each job queue`);
+	for (const definition of queueDefinitions) {
+		startWorker(definition);
 	}
+	logger.info(`Started a worker for each job queue: ${queueDefinitions.map((definition) => definition.name).join(', ')}`);
 }
 
 /** Close every worker, letting jobs in progress finish first */

@@ -1,9 +1,13 @@
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
-import { closeQueues, getQueue, queueNames } from './queues.js';
+import { closeQueues, getQueue } from './queues.js';
+import { queueNames } from './registry.js';
 import { closeWorkers } from './workers.js';
 
-export { getQueue, type QueueData, type QueueName } from './queues.js';
+export { RetryAfterError, retryAfterBackoff } from './backoff.js';
+export { defineQueue } from './define.js';
+export { getQueue } from './queues.js';
+export { type QueueData, type QueueName, type QueueResult } from './registry.js';
 export { startWorkers } from './workers.js';
 
 /** Open every queue and wait for Redis. Logs instead of throwing so the API still starts without Redis */

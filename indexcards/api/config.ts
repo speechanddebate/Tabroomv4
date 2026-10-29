@@ -71,8 +71,11 @@ export const ConfigSchema = z.object({
 	}).prefault({}),
 	/** BullMQ job queues */
 	queue: z.object({
-		/** Workers to run per queue in this process. 0 runs none, so jobs wait for another process to take them */
-		workers: z.int().min(0).default(1),
+		/**
+		 * Whether this process runs the jobs. Off, it only adds them and a worker process takes
+		 * them. One worker per queue; parallelism is each queue's concurrency, not more workers
+		 */
+		runWorkers: z.boolean().default(true),
 	}).prefault({}),
 	//------------------------------------------------------------------------------
 	// SECURITY
