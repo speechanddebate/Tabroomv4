@@ -28,6 +28,15 @@ describe('Session Router', () => {
 			expect(res.body.Person).toHaveProperty('id', personId);
 			expect(res.body.Person).toHaveProperty('tz', 'America/Chicago');
 		});
+		it('Does not expose the push subscription columns', async () => {
+			const res = await request(server)
+				.get('/v1/user/session')
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(200);
+
+			expect(Object.keys(res.body).filter((key) => key.startsWith('push_'))).toEqual([]);
+		});
 		it('Returns 401 if not authenticated', async () => {
 			const res = await request(server)
 				.get('/v1/user/session')

@@ -1,6 +1,15 @@
 # DB Schema Updates
 
-When the database schema changes (new table, dropped table, added/removed column, changed constraint, etc.) three things must happen in order.
+When the database schema changes (new table, dropped table, added/removed column, changed constraint, etc.) these things must happen in order.
+
+## 0. Write the migration
+
+Schema change SQL lives in `data/migrations/`. Each change is a pair of files named for the date and what it does:
+
+- `YYYY-MM-DD-description.sql` applies the change
+- `YYYY-MM-DD-description.down.sql` reverts it
+
+Run the up, the down, and the up again against the dev database to make sure both directions work, then apply it before the steps below.
 
 ## 1. Regenerate the Kysely types
 
@@ -41,7 +50,7 @@ If other developers pull your schema changes they will also need to reload the f
 After regenerating types and the test snapshot, run all tests to catch anything broken by the schema change.
 
 ```bash
-npm run test-ci
+npm run test:ci
 ```
 
 Fix any failures before merging. 
@@ -50,7 +59,8 @@ Fix any failures before merging.
 
 | Step | Command | When |
 |------|---------|------|
+| Write migration | `data/migrations/YYYY-MM-DD-description.sql` + `.down.sql` | Before any schema change |
 | Regenerate types | `kysely-codegen` → `api/data/schema.ts` | Schema changes in dev DB |
 | Regenerate test snapshot | `npm run updateTestFile` | After types are updated |
 | Reload test DB | `mysql -u <user> -p tabtest < tests/test.sql` | After snapshot is updated |
-| Run tests | `npm run test-ci` | After test DB is reloaded |
+| Run tests | `npm run test:ci` | After test DB is reloaded |

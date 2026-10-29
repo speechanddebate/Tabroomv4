@@ -16,6 +16,16 @@ describe('getSession', () => {
 		expect(session).toBeDefined();
 		expect(session?.id).toBe(sessionId);
 	});
+	it('does not return the push subscription columns', async () => {
+		const { id: sessionId } = await factories.session.create({ person: Person.id });
+		const session = await sessionRepo.getSession(db, sessionId);
+		expect(session).toHaveProperty('push_notify');
+		expect(session).not.toHaveProperty('push_endpoint');
+		expect(session).not.toHaveProperty('push_p256dh');
+		expect(session).not.toHaveProperty('push_auth');
+		expect(session).not.toHaveProperty('push_vapid_key');
+		expect(session).not.toHaveProperty('push_disabled');
+	});
 });
 
 describe('findByUserKey', () => {

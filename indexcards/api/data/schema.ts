@@ -19,7 +19,7 @@ export interface Ad {
   end: Generated<Date | null>;
   filename: Generated<string | null>;
   id: Generated<number>;
-person: number;
+  person: number;
   sort_order: Generated<number | null>;
   start: Generated<Date | null>;
   tag: Generated<string | null>;
@@ -1128,7 +1128,12 @@ export interface Session {
   last_access: Generated<Date | null>;
   person: Generated<number>;
   push_active: Generated<Date | null>;
+  push_auth: Generated<string | null>;
+  push_disabled: Generated<number>;
+  push_endpoint: Generated<string | null>;
   push_notify: Generated<string | null>;
+  push_p256dh: Generated<string | null>;
+  push_vapid_key: Generated<string | null>;
   su: Generated<number | null>;
   timestamp: Generated<Date>;
   userkey: Generated<string | null>;

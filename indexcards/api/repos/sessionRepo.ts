@@ -79,10 +79,26 @@ export const findByUserKey = async (
 	};
 };
 
+// Leaves out the push subscription columns (push_endpoint, push_p256dh, push_auth,
+// push_vapid_key, push_disabled) so they can't leak through a caller that returns the row
 export const getSession = async (db: Database, id: number) => {
 	const query = db
 		.selectFrom(['session'])
-		.selectAll('session')
+		.select([
+			'session.id',
+			'session.userkey',
+			'session.ip',
+			'session.defaults',
+			'session.su',
+			'session.person',
+			'session.agent_data',
+			'session.geoip',
+			'session.push_notify',
+			'session.push_active',
+			'session.last_access',
+			'session.created_at',
+			'session.timestamp',
+		])
 		.where('session.id', '=', id);
 		
 	return await query.executeTakeFirst();
