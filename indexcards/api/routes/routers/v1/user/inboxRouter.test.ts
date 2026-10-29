@@ -184,4 +184,49 @@ describe('Inbox Router', () => {
 			expect(res).toBeProblemResponse(404);
 		});
 	});
+	describe('messages the inbox hides', () => {
+		// A message with no visible_at is a delivery record that no inbox shows
+		const invisible = () => factories.message.create({ person: personId, visible_at: null });
+		const deleted = () => factories.message.create({ person: personId, deleted_at: faker.date.recent() });
+
+		it.each([
+			['GET', (id: number) => request(server).get(`/v1/user/inbox/${id}`)],
+			['markRead', (id: number) => request(server).post(`/v1/user/inbox/${id}/markRead`)],
+			['markUnread', (id: number) => request(server).post(`/v1/user/inbox/${id}/markUnread`)],
+			['DELETE', (id: number) => request(server).delete(`/v1/user/inbox/${id}`)],
+		])('%s returns 404 for a message that is not visible', async (_label, send) => {
+			const Message = await invisible();
+
+			const res = await send(Message.id).set('Accept', 'application/json').asPerson(userkey);
+
+			expect(res).toBeProblemResponse(404);
+		});
+
+		it.each([
+			['markRead', (id: number) => request(server).post(`/v1/user/inbox/${id}/markRead`)],
+			['markUnread', (id: number) => request(server).post(`/v1/user/inbox/${id}/markUnread`)],
+		])('%s returns 404 for a deleted message', async (_label, send) => {
+			const Message = await deleted();
+
+			const res = await send(Message.id).set('Accept', 'application/json').asPerson(userkey);
+
+			expect(res).toBeProblemResponse(404);
+			const row = await messageRepo.getMessage(db, Message.id, personId);
+			expect(row?.read_at).toBeNull();
+		});
+
+		it('does not count a message that is not visible as unread', async () => {
+			await invisible();
+			await request(server).post('/v1/user/inbox/markAllRead').asPerson(userkey).expect(204);
+
+			const res = await request(server)
+				.get('/v1/user/inbox/unread')
+				.set('Accept', 'application/json')
+				.asPerson(userkey)
+				.expect(200);
+
+			expect(res.body).toMatchSchema(InboxUnreadCountSchema);
+			expect(res.body.count).toBe(0);
+		});
+	});
 });

@@ -45,14 +45,14 @@ export const readAllMessages = async (req: Request, res: Response) => {
 
 export const getMessage = async (req: ValidatedRequest, res: Response) => {
 	const person = getPerson(req);
-	const message = await messageRepo.getMessage(db,req.params.messageId, person.id);
+	const message = await messageRepo.getMessage(db, req.params.messageId, person.id, { excludeInvisible: true });
 	if(!message) return NotFound(req,res,'Message not found');
 	return res.status(200).json(message);
 };
 
 export const readMessage = async (req: ValidatedRequest, res: Response) => {
 	const person = getPerson(req);
-	const message = await messageRepo.getMessage(db, req.params.messageId, person.id);
+	const message = await messageRepo.getMessage(db, req.params.messageId, person.id, { excludeInvisible: true, excludeDeleted: true });
 	if(!message) return NotFound(req,res,'Message not found');
 	await db
 		.updateTable('message')
@@ -65,7 +65,7 @@ export const readMessage = async (req: ValidatedRequest, res: Response) => {
 
 export const unreadMessage = async (req: ValidatedRequest, res: Response) => {
 	const person = getPerson(req);
-	const message = await messageRepo.getMessage(db, req.params.messageId, person.id);
+	const message = await messageRepo.getMessage(db, req.params.messageId, person.id, { excludeInvisible: true, excludeDeleted: true });
 	if(!message) return NotFound(req,res,'Message not found');
 	await db
 		.updateTable('message')
@@ -78,7 +78,7 @@ export const unreadMessage = async (req: ValidatedRequest, res: Response) => {
 
 export const deleteMessage = async (req: ValidatedRequest, res: Response) => {
 	const person = getPerson(req);
-	const message = await messageRepo.getMessage(db, req.params.messageId, person.id);
+	const message = await messageRepo.getMessage(db, req.params.messageId, person.id, { excludeInvisible: true });
 	if(!message) return NotFound(req,res,'Message not found');
 	await db
 		.updateTable('message')
