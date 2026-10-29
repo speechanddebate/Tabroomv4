@@ -2,7 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import webPush from 'web-push';
 import config from '../../../config.js';
 import logger from '../../../helpers/logger.js';
-import { checkPushHost, getVapid, initWebPush, isPushConfigured } from './webpush.js';
+import { MAX_PUSH_BODY, checkPushHost, getVapid, initWebPush, isPushConfigured, sendPush } from './webpush.js';
+
+// web-push is CommonJS, so only the default import exists. Everything but the send stays real
+const { sendNotification } = vi.hoisted(() => ({ sendNotification: vi.fn() }));
+vi.mock('web-push', async (importOriginal) => {
+	const actual = await importOriginal<{ default: typeof import('web-push') }>();
+	return { default: { ...actual.default, sendNotification } };
+});
 
 describe('checkPushHost', () => {
 	it.each([
@@ -89,5 +96,203 @@ describe('initWebPush', () => {
 		initWebPush();
 
 		expect(isPushConfigured()).toBe(false);
+	});
+});
+
+describe('sendPush', () => {
+	const original = config.webpush;
+	const keys = webPush.generateVAPIDKeys();
+	const endpoint = 'https://fcm.googleapis.com/fcm/send/secret-token';
+	const subscription = { endpoint, keys: { p256dh: 'p256dh-key', auth: 'auth-secret' } };
+	const payload = { title: 'Round 3 posted', body: 'You are in room 12', url: '/user/home', tag: 'message:42' };
+
+	const pushError = (statusCode: number, headers: Record<string, string> = {}, body = '') =>
+		new webPush.WebPushError('Received unexpected response code', statusCode, headers, body, endpoint);
+
+	const sentJson = () => JSON.parse(sendNotification.mock.calls[0][1] as string);
+	const sentOptions = () => sendNotification.mock.calls[0][2] as Record<string, unknown>;
+
+	beforeEach(() => {
+		config.webpush = { subject: 'mailto:test@tabroom.com', publicKey: keys.publicKey, privateKey: keys.privateKey };
+		initWebPush();
+		sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
+		vi.spyOn(logger, 'debug').mockImplementation(() => logger);
+		vi.spyOn(logger, 'warn').mockImplementation(() => logger);
+		vi.spyOn(logger, 'error').mockImplementation(() => logger);
+	});
+
+	afterEach(() => {
+		config.webpush = original;
+		initWebPush();
+		vi.restoreAllMocks();
+	});
+
+	it('sends the payload as JSON with the default TTL and a timeout', async () => {
+		await expect(sendPush(subscription, payload)).resolves.toEqual({ status: 'sent' });
+
+		expect(sendNotification).toHaveBeenCalledOnce();
+		expect(sendNotification.mock.calls[0][0]).toBe(subscription);
+		expect(sentJson()).toEqual(payload);
+		expect(sentOptions()).toEqual({ TTL: 4 * 60 * 60, timeout: 10_000, topic: 'message-42' });
+	});
+
+	it('passes ttl and urgency through', async () => {
+		await sendPush(subscription, payload, { ttl: 60, urgency: 'high' });
+
+		expect(sentOptions()).toMatchObject({ TTL: 60, urgency: 'high' });
+	});
+
+	it('clips the topic to 32 base64url characters', async () => {
+		await sendPush(subscription, { ...payload, tag: 'a tag with spaces/and slashes that runs long' });
+
+		expect(sentOptions().topic).toBe('a-tag-with-spaces-and-slashes-th');
+	});
+
+	it('sends no topic without a tag', async () => {
+		await sendPush(subscription, { title: 'Hi', body: 'there' });
+
+		expect(sentOptions()).not.toHaveProperty('topic');
+		expect(sentJson()).toEqual({ title: 'Hi', body: 'there' });
+	});
+
+	it('clips a long body', async () => {
+		await sendPush(subscription, { ...payload, body: 'x'.repeat(MAX_PUSH_BODY + 500) });
+
+		const { body } = sentJson();
+		expect(body).toHaveLength(MAX_PUSH_BODY);
+		expect(body.endsWith('…')).toBe(true);
+	});
+
+	it('leaves a body at the limit alone', async () => {
+		const body = 'x'.repeat(MAX_PUSH_BODY);
+		await sendPush(subscription, { ...payload, body });
+
+		expect(sentJson().body).toBe(body);
+	});
+
+	it('is rejected without sending when push is not configured', async () => {
+		config.webpush = {};
+		initWebPush();
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({
+			status: 'rejected',
+			reason: 'web push is not configured',
+		});
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it.each([404, 410])('reports a %s as gone', async (statusCode) => {
+		sendNotification.mockRejectedValue(pushError(statusCode));
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({ status: 'gone' });
+		expect(logger.warn).not.toHaveBeenCalled();
+		expect(logger.error).not.toHaveBeenCalled();
+	});
+
+	it.each([400, 401, 403])('rejects a %s and logs an error about the keys', async (statusCode) => {
+		sendNotification.mockRejectedValue(pushError(statusCode, {}, 'the key is wrong'));
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({
+			status: 'rejected',
+			reason: `push service responded ${statusCode}`,
+		});
+		expect(logger.error).toHaveBeenCalledOnce();
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('VAPID'));
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('the key is wrong'));
+	});
+
+	it('rejects a 413 and logs an error about the payload', async () => {
+		sendNotification.mockRejectedValue(pushError(413));
+
+		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'rejected' });
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('payload too large'));
+	});
+
+	it('rejects any other 4xx with a warning', async () => {
+		sendNotification.mockRejectedValue(pushError(418));
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({
+			status: 'rejected',
+			reason: 'push service responded 418',
+		});
+		expect(logger.warn).toHaveBeenCalledOnce();
+		expect(logger.error).not.toHaveBeenCalled();
+	});
+
+	it.each([429, 500, 502, 503])('asks for a retry on a %s', async (statusCode) => {
+		sendNotification.mockRejectedValue(pushError(statusCode));
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({
+			status: 'retry',
+			reason: `push service responded ${statusCode}`,
+			retryAfter: undefined,
+		});
+		expect(logger.warn).toHaveBeenCalledOnce();
+	});
+
+	it('reads Retry-After given in seconds', async () => {
+		sendNotification.mockRejectedValue(pushError(429, { 'retry-after': '120' }));
+
+		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'retry', retryAfter: 120 });
+	});
+
+	it('reads Retry-After given as an HTTP date', async () => {
+		const date = new Date(Date.now() + 90 * 1000).toUTCString();
+		sendNotification.mockRejectedValue(pushError(503, { 'retry-after': date }));
+
+		const result = await sendPush(subscription, payload);
+		expect(result).toMatchObject({ status: 'retry' });
+		expect((result as { retryAfter?: number }).retryAfter).toBeGreaterThanOrEqual(88);
+		expect((result as { retryAfter?: number }).retryAfter).toBeLessThanOrEqual(90);
+	});
+
+	it('ignores a Retry-After it cannot read', async () => {
+		sendNotification.mockRejectedValue(pushError(429, { 'retry-after': 'soon' }));
+
+		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'retry', retryAfter: undefined });
+	});
+
+	it('truncates the error body it logs', async () => {
+		sendNotification.mockRejectedValue(pushError(400, {}, 'y'.repeat(1000)));
+
+		await sendPush(subscription, payload);
+		const logged = String(vi.mocked(logger.error).mock.calls[0][0]);
+		expect(logged.length).toBeLessThan(400);
+	});
+
+	it.each([
+		['a connection reset', Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' })],
+		['a DNS failure', Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' })],
+		['a socket timeout', new Error('Socket timeout')],
+	])('asks for a retry on %s', async (_label, error) => {
+		sendNotification.mockRejectedValue(error);
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({ status: 'retry', reason: error.message });
+		expect(logger.warn).toHaveBeenCalledOnce();
+	});
+
+	it('rejects when web-push refuses the arguments', async () => {
+		sendNotification.mockRejectedValue(new Error('To send a message with a payload, the subscription must have \'auth\' and \'p256dh\' keys.'));
+
+		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'rejected' });
+		expect(logger.error).toHaveBeenCalledOnce();
+	});
+
+	it('never logs the endpoint path', async () => {
+		const errors = [pushError(400, {}, 'bad'), pushError(429), pushError(410), new Error('Socket timeout'), new Error('bad args')];
+		for (const error of errors) {
+			sendNotification.mockRejectedValueOnce(error);
+			await sendPush(subscription, payload);
+		}
+		await sendPush(subscription, payload);
+
+		const lines = [logger.debug, logger.warn, logger.error]
+			.flatMap(fn => vi.mocked(fn).mock.calls)
+			.map(call => String(call[0]));
+		expect(lines.length).toBeGreaterThan(0);
+		for (const line of lines) {
+			expect(line).not.toContain('secret-token');
+			expect(line).toContain('fcm.googleapis.com');
+		}
 	});
 });

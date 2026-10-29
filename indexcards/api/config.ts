@@ -199,7 +199,6 @@ export const ConfigSchema = z.object({
 		}).optional(),
 	}).prefault({}),
 	onesignal: z.object({
-		api_url: z.string().min(1).default('https://onesignal.com/api/v1'),
 		url: z.string().min(1).optional(),
 		appId: z.string().min(1).optional(),
 		safariId: z.string().min(1).optional(),

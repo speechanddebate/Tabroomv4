@@ -1,11 +1,7 @@
-import axios from "axios";
-import { sql } from "kysely";
 import { createHash } from 'node:crypto';
 import webPush from 'web-push';
-import { db } from "../../../data/database.js";
 import config from "../../../config.js";
 import logger from '../../../helpers/logger.js';
-import type { notifyResponse, NotificationRequest } from "../notify.js";
 
 /**
  * Push service hosts a subscription endpoint may point at. A leading `*.`
@@ -66,95 +62,146 @@ export function checkPushHost(url: URL): boolean {
 		: host === allowed);
 }
 
-export async function sendWebPushNotification(notification: NotificationRequest): Promise<notifyResponse> {
+/** What the service worker shows. Matches readPayload() in schemats/src/service-worker.ts */
+export type PushPayload = {
+	title: string;
+	body: string;
+	/** Opened on click, relative to the site origin or absolute */
+	url?: string;
+	/** Notifications with the same tag replace each other in the browser */
+	tag?: string;
+};
 
-	const recipients = await db.selectFrom('person')
-		.innerJoin('session', 'person.id', 'session.person')
-		.where('person.id', 'in', notification.ids)
-		.where('session.push_notify', 'is not', null)
-		.where('session.last_access', '>', sql<Date>`DATE_SUB(NOW(), INTERVAL 60 DAY)`)
-		.select([
-			'person.id',
-			'person.first',
-			'person.last',
-			'person.no_email',
-			'session.push_notify',
-		])
-		.execute();
+export type PushSubscription = {
+	endpoint: string;
+	keys: { p256dh: string; auth: string };
+};
 
-	if (recipients.length < 1) {
-		return {
-			error   : false,
-			message : `No web pushes active.`,
-			email   : 0,
-			inbox   : 0,
-			web     : 0,
-		};
+export type PushSendOptions = {
+	/** Seconds the push service holds an undelivered message. Default 4 hours */
+	ttl?: number;
+	urgency?: 'very-low' | 'low' | 'normal' | 'high';
+};
+
+export type PushSendResult =
+	| { status: 'sent' }
+	/** The subscription is dead; the caller should remove it */
+	| { status: 'gone' }
+	/** The push service refused the request and a retry won't help */
+	| { status: 'rejected'; reason: string }
+	/** Try again later, after retryAfter seconds when the service said so */
+	| { status: 'retry'; reason: string; retryAfter?: number };
+
+/** Longest body sent. The encrypted payload has to fit the push service's 4 KB limit */
+export const MAX_PUSH_BODY = 1000;
+const DEFAULT_TTL = 4 * 60 * 60;
+/** Milliseconds before a silent push service gives the worker slot back */
+const SEND_TIMEOUT = 10_000;
+/** Longest error body kept in a log line */
+const MAX_LOGGED_BODY = 200;
+
+/**
+ * Sends one push message to one subscription. Reports what happened instead of
+ * throwing, so the caller decides what a dead or busy subscription means.
+ */
+export async function sendPush(
+	subscription: PushSubscription,
+	payload: PushPayload,
+	options: PushSendOptions = {},
+): Promise<PushSendResult> {
+	// The endpoint is a bearer URL, so log lines carry only its host
+	const host = endpointHost(subscription.endpoint);
+
+	if (!isPushConfigured()) {
+		return { status: 'rejected', reason: 'web push is not configured' };
 	}
 
-	let targetIds = recipients.map( (person) => {
-		if (person.id === 1) {
-			return '100';
+	const json = JSON.stringify({ ...payload, body: clipBody(payload.body) });
+
+	try {
+		await webPush.sendNotification(subscription, json, {
+			TTL: options.ttl ?? DEFAULT_TTL,
+			timeout: SEND_TIMEOUT,
+			...(options.urgency ? { urgency: options.urgency } : {}),
+			...(payload.tag ? { topic: topicFor(payload.tag) } : {}),
+		});
+	} catch (err) {
+		return sendFailure(err, host);
+	}
+
+	logger.debug(`Push sent to ${host}`);
+	return { status: 'sent' };
+}
+
+function endpointHost(endpoint: string): string {
+	try {
+		return new URL(endpoint).hostname;
+	} catch {
+		return 'invalid endpoint';
+	}
+}
+
+function clipBody(body: string): string {
+	return body.length > MAX_PUSH_BODY ? `${body.slice(0, MAX_PUSH_BODY - 1)}…` : body;
+}
+
+/** The tag as a push service topic: at most 32 characters from the base64url set */
+function topicFor(tag: string): string {
+	return tag.replace(/[^A-Za-z0-9_-]/g, '-').slice(0, 32);
+}
+
+/** Sorts a failed send into gone, retry, or rejected */
+function sendFailure(err: unknown, host: string): PushSendResult {
+	if (err instanceof webPush.WebPushError) {
+		const { statusCode } = err;
+		const body = (err.body ?? '').slice(0, MAX_LOGGED_BODY);
+
+		if (statusCode === 404 || statusCode === 410) {
+			logger.debug(`Push subscription on ${host} is gone (${statusCode})`);
+			return { status: 'gone' };
 		}
-		return `${person.id}`;
-	});
 
-	// If you are not running in production either send it only to the UID
-	// spec'd in config.js or to Palmer since let's be real that's almost
-	// always who this is. If you mess with this code and do NOT set
-	// TEST_USERID though, I will look for you. I will find you.  And I
-	// will....
+		const reason = `push service responded ${statusCode}`;
 
-	// TODO: TEST_USERID is a string, so targetIds stops being an array here.
-	if (process.env.NODE_ENV !== 'production'
-		&& config.mail.server !== 'mail.in.speechanddebate.org'
-	) {
-		targetIds = process.env.TEST_USERID ? [process.env.TEST_USERID] : ['100'];
+		if (statusCode === 429 || statusCode >= 500) {
+			const retryAfter = parseRetryAfter(err.headers?.['retry-after']);
+			logger.warn(`Push to ${host} failed, ${reason}, will retry${retryAfter === undefined ? '' : ` after ${retryAfter}s`}`);
+			return { status: 'retry', reason, retryAfter };
+		}
+
+		if (statusCode === 400 || statusCode === 401 || statusCode === 403) {
+			logger.error(`Push to ${host} rejected, ${reason}, check the VAPID keys: ${body}`);
+		} else if (statusCode === 413) {
+			logger.error(`Push to ${host} rejected, payload too large: ${body}`);
+		} else {
+			logger.warn(`Push to ${host} rejected, ${reason}: ${body}`);
+		}
+		return { status: 'rejected', reason };
 	}
 
-	if (notification.append) {
-		notification.text += `\n${notification.append}`;
+	// Node network errors carry a code (ECONNRESET, ENOTFOUND...); web-push's own timeout doesn't
+	const code = (err as NodeJS.ErrnoException)?.code;
+	const message = err instanceof Error ? err.message : String(err);
+	if (code || message === 'Socket timeout') {
+		logger.warn(`Push to ${host} failed, ${message}, will retry`);
+		return { status: 'retry', reason: message };
 	}
 
-	const promises: Promise<unknown>[] = [];
+	// What's left is web-push refusing the arguments: malformed keys or options
+	logger.error(`Push to ${host} rejected, ${message}`);
+	return { status: 'rejected', reason: message };
+}
 
-	if (targetIds && targetIds.length > 0) {
+/** Seconds to wait from a Retry-After header, given as seconds or an HTTP date */
+function parseRetryAfter(value: string | undefined): number | undefined {
+	if (!value) return undefined;
 
-		const msg = {
-			app_id          : config.onesignal.appId,
-			name            : notification.sender || 'Tournament Blast',
-			url 		    : notification.url || 'https://www.tabroom.com/user/home.mhtml',
-			contents        : { en: notification.text },
-			headings        : { en: notification.subject || 'Message from Tab' },
-			include_aliases: {
-				external_id: targetIds,
-			},
-			target_channel  : 'push',
-		};
-
-		const webPromise = axios.post(
-			`${config.onesignal.api_url}/notifications`,
-			msg,
-			{
-				headers : {
-					Authorization  : `Basic ${config.onesignal.appKey}`,
-					'Content-Type' : 'application/json',
-					Accept         : 'application/json',
-				},
-			},
-		);
-
-		promises.push(webPromise);
-
+	if (/^\d+$/.test(value.trim())) {
+		return Number(value);
 	}
 
-	await Promise.all(promises);
+	const date = Date.parse(value);
+	if (Number.isNaN(date)) return undefined;
 
-	return {
-		error   : false,
-		message : `${targetIds ? targetIds.length : 0} web pushes sent.`,
-		email   : 0,
-		inbox   : 0,
-		web     : targetIds.length,
-	};
+	return Math.max(0, Math.ceil((date - Date.now()) / 1000));
 }

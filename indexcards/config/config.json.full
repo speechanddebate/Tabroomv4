@@ -85,9 +85,7 @@
     "port": 25,
     "pool": 128
   },
-  "onesignal": {
-    "api_url": "https://onesignal.com/api/v1"
-  },
+  "onesignal": {},
   "webpush": {},
   "features": {
     "HIDE_DEV_ENDPOINTS": true
