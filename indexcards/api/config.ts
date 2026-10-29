@@ -213,6 +213,7 @@ export const ConfigSchema = z.object({
 		subject: z.string().min(1).optional(),
 		publicKey: z.string().min(1).optional(),
 		privateKey: z.string().min(1).optional(),
+		allowSelfSigned: z.boolean().optional(),
 	}).prefault({}),
 	//--------------------------------------------------------------------
 	// MISC

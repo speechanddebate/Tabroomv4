@@ -1,9 +1,8 @@
-import { emailQueue, notifyQueue, pushQueue } from '../notifications/queues.js';
+import { emailQueue, pushQueue } from '../notifications/queues.js';
 import type { QueueDefinition } from './define.js';
 
 /** Every queue the API opens and runs workers for. The one place that knows which features have queues */
 export const queueDefinitions = [
-	notifyQueue,
 	emailQueue,
 	pushQueue,
 ] as const satisfies readonly QueueDefinition[];

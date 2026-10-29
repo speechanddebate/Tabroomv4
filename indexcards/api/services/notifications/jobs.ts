@@ -5,25 +5,66 @@ import { isPushConfigured, pushMessage, type PushMessageResult } from './channel
 
 // Job data is ids only; the job loads the rest from the database
 
-// TODO: carry only the notify row id once that table exists
-export type NotifyJobData = { ids: number[] };
-export type EmailJobData = { notify: number, person: number };
+export type EmailJobData = { message: number };
 /** sent lists the logins earlier attempts reached */
 export type PushJobData = { message: number, sent?: number[] };
 
-// TODO: replace with the fanOut/finalize and sendEmail steps when the BullMQ dispatcher lands.
-// Nothing adds email jobs yet; until then a job fails once instead of retrying
+// TODO: replace with the blast email step. Nothing adds email jobs yet; until then a job
+// fails once instead of retrying
 function notImplemented(): never {
 	throw new UnrecoverableError('Notification jobs are not implemented yet');
 }
 
-/** Fans a notification out to email and push jobs, then records the results once they finish */
-export const processNotify: Processor<NotifyJobData, void> = async (job) => {
-	// TODO: fan out to email and push jobs. For now this only proves the queue is wired up
-	for (const person of job.data.ids) {
-		logger.info(`Notify job ${job.id} for person ${person}`);
-	}
+/** What a set of delivery jobs added up to, for whatever runs after them */
+export type DeliveryTotals = {
+	/** Distinct messages the jobs were for */
+	recipients: number;
+	push: {
+		/** Logins that got the message */
+		sent: number;
+		/** Dead subscriptions that were removed */
+		gone: number;
+		/** Subscriptions the push service refused */
+		rejected: number;
+		/** Jobs that had nothing to send to */
+		skipped: number;
+		/** Jobs that gave up after their retries */
+		failed: number;
+	};
 };
+
+// A delivery job's key is bull:<queue>:message-<message id>, from the jobId prepNotify() gives it
+function queueOf(jobKey: string): string {
+	return jobKey.split(':')[1];
+}
+function messageOf(jobKey: string): string {
+	return jobKey.split(':').at(-1)?.replace(/^message-/, '') ?? '';
+}
+
+/**
+ * Adds up what the delivery jobs under a flow parent reported, from the parent's
+ * getChildrenValues() and getIgnoredChildrenFailures(). The parent belongs to whoever
+ * queued the deliveries (a blast's finalize job, for one); this is the arithmetic
+ */
+export function tallyDeliveries(
+	values: Record<string, PushJobResult>,
+	failures: Record<string, string> = {},
+): DeliveryTotals {
+	const push: DeliveryTotals['push'] = { sent: 0, gone: 0, rejected: 0, skipped: 0, failed: 0 };
+	for (const [key, value] of Object.entries(values)) {
+		if (queueOf(key) !== 'push') continue;
+		push.sent += value.sent;
+		push.gone += value.gone;
+		push.rejected += value.rejected;
+		if (value.skipped) push.skipped += 1;
+	}
+	for (const key of Object.keys(failures)) {
+		if (queueOf(key) === 'push') push.failed += 1;
+	}
+
+	const recipients = new Set([...Object.keys(values), ...Object.keys(failures)].map(messageOf)).size;
+	return { recipients, push };
+}
 
 /** Emails one person a notification */
 export const processEmail: Processor<EmailJobData, void> = async () => notImplemented();

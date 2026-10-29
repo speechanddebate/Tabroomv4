@@ -1,12 +1,14 @@
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
+import { closeFlows } from './flows.js';
 import { closeQueues, getQueue } from './queues.js';
 import { queueNames } from './registry.js';
 import { closeWorkers } from './workers.js';
 
 export { RetryAfterError, retryAfterBackoff } from './backoff.js';
-export { defineQueue } from './define.js';
-export { getQueue } from './queues.js';
+export { defineQueue, type FlowJobOpts, type FlowNode } from './define.js';
+export { addFlow } from './flows.js';
+export { addJobs, getQueue } from './queues.js';
 export { type QueueData, type QueueName, type QueueResult } from './registry.js';
 export { startWorkers } from './workers.js';
 
@@ -26,8 +28,8 @@ export async function startQueues() {
 	}
 }
 
-/** Close the workers, then the queues and their Redis connections */
+/** Close the workers, then the queues and flow producer and their Redis connections */
 export async function stopQueues() {
 	await closeWorkers();
-	await closeQueues();
+	await Promise.all([closeQueues(), closeFlows()]);
 }

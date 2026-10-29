@@ -1,5 +1,16 @@
-import type { BackoffStrategy, DefaultJobOptions, Processor } from 'bullmq';
+import type { BackoffStrategy, DefaultJobOptions, JobsOptions, Processor } from 'bullmq';
 import { RETRY_DELAY } from './backoff.js';
+
+/** Options a job in a flow may set; its place in the flow comes from where it is passed */
+export type FlowJobOpts = Omit<JobsOptions, 'parent' | 'repeat'>;
+
+/** A job ready to go in a flow, with its queue's options filled in */
+export type FlowNode = {
+	queueName: string;
+	name: string;
+	data: unknown;
+	opts: FlowJobOpts;
+};
 
 /**
  * A queue and the worker that runs its jobs. Features define theirs with defineQueue next
@@ -16,6 +27,11 @@ export type QueueDefinition<Name extends string = string, Data = any, Result = a
 	jobOptions: DefaultJobOptions;
 	/** Set when the queue's jobs use backoff type custom */
 	backoffStrategy?: BackoffStrategy;
+	/**
+	 * A job for this queue with the queue's options applied, for addFlow. A flow doesn't
+	 * pick up a queue's default options the way Queue.add does, so they go on here
+	 */
+	job: (name: string, data: Data, opts?: FlowJobOpts) => FlowNode;
 };
 
 export type QueueOptions<Name extends string, Data, Result> = {
@@ -37,19 +53,26 @@ export function defineQueue<Name extends string, Data, Result>(
 	options: QueueOptions<Name, Data, Result>,
 ): QueueDefinition<Name, Data, Result> {
 	const { name, processor, concurrency = 1, attempts = 3, backoffStrategy } = options;
+	const jobOptions: DefaultJobOptions = {
+		attempts,
+		backoff: backoffStrategy
+			? { type: 'custom' }
+			: { type: 'exponential', delay: RETRY_DELAY },
+		// Redis runs with noeviction, so finished jobs have to be cleaned up or they fill it
+		removeOnComplete: { age: 24 * 60 * 60 },
+		removeOnFail: { age: 7 * 24 * 60 * 60 },
+	};
 	return {
 		name,
 		processor,
 		concurrency,
 		...(backoffStrategy ? { backoffStrategy } : {}),
-		jobOptions: {
-			attempts,
-			backoff: backoffStrategy
-				? { type: 'custom' }
-				: { type: 'exponential', delay: RETRY_DELAY },
-			// Redis runs with noeviction, so finished jobs have to be cleaned up or they fill it
-			removeOnComplete: { age: 24 * 60 * 60 },
-			removeOnFail: { age: 7 * 24 * 60 * 60 },
-		},
+		jobOptions,
+		job: (jobName, data, opts = {}) => ({
+			queueName: name,
+			name: jobName,
+			data,
+			opts: { ...jobOptions, ...opts },
+		}),
 	};
 }

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import https from 'node:https';
 import { convert } from 'html-to-text';
 import webPush from 'web-push';
 import config from "../../../config.js";
@@ -102,6 +103,8 @@ const DEFAULT_TTL = 4 * 60 * 60;
 const SEND_TIMEOUT = 10_000;
 /** Longest error body kept in a log line */
 const MAX_LOGGED_BODY = 200;
+/** Seconds to wait on a 429 that gives no Retry-After. FCM documents a minute as its default */
+const RATE_LIMIT_WAIT = 60;
 
 /**
  * Sends one push message to one subscription. Reports what happened instead of
@@ -127,6 +130,7 @@ export async function sendPush(
 			timeout: SEND_TIMEOUT,
 			...(options.urgency ? { urgency: options.urgency } : {}),
 			...(payload.tag ? { topic: topicFor(payload.tag) } : {}),
+			agent: pushAgent(),
 		});
 	} catch (err) {
 		return sendFailure(err, host);
@@ -134,6 +138,23 @@ export async function sendPush(
 
 	logger.debug(`Push sent to ${host}`);
 	return { status: 'sent' };
+}
+
+const agents = new Map<boolean, https.Agent>();
+
+/**
+ * One keep-alive agent for every send, so consecutive pushes to the same service reuse
+ * a connection instead of each paying for a TLS handshake. Accepts any certificate when
+ * allowSelfSigned is set, for the load test's local fake push service
+ */
+function pushAgent(): https.Agent {
+	const allowSelfSigned = config.webpush.allowSelfSigned === true;
+	let agent = agents.get(allowSelfSigned);
+	if (!agent) {
+		agent = new https.Agent({ keepAlive: true, rejectUnauthorized: !allowSelfSigned });
+		agents.set(allowSelfSigned, agent);
+	}
+	return agent;
 }
 
 function endpointHost(endpoint: string): string {
@@ -166,8 +187,10 @@ function sendFailure(err: unknown, host: string): PushSendResult {
 
 		const reason = `push service responded ${statusCode}`;
 
-		if (statusCode === 429 || statusCode >= 500) {
-			const retryAfter = parseRetryAfter(err.headers?.['retry-after']);
+		// 429 is a rate limit everywhere but WNS, which uses 406 for its throttle
+		if (statusCode === 429 || statusCode === 406 || statusCode >= 500) {
+			const retryAfter = parseRetryAfter(err.headers?.['retry-after'])
+				?? (statusCode === 429 ? RATE_LIMIT_WAIT : undefined);
 			logger.warn(`Push to ${host} failed, ${reason}, will retry${retryAfter === undefined ? '' : ` after ${retryAfter}s`}`);
 			return { status: 'retry', reason, retryAfter };
 		}
@@ -228,9 +251,11 @@ export async function pushMessage(
 		return { ...result, skipped: 'unconfigured' };
 	}
 
+	// A blast's message carries no body of its own; the content is on its email row
 	const message = await db.selectFrom('message')
-		.select(['id', 'person', 'subject', 'body', 'url', 'deleted_at'])
-		.where('id', '=', messageId)
+		.leftJoin('email', 'email.id', 'message.email')
+		.select(['message.id', 'message.person', 'message.subject', 'message.body', 'message.url', 'message.deleted_at', 'email.content'])
+		.where('message.id', '=', messageId)
 		.executeTakeFirst();
 
 	// A message deleted between queueing and sending is the recheck working, not an error
@@ -252,7 +277,7 @@ export async function pushMessage(
 
 	const payload: PushPayload = {
 		title: message.subject || DEFAULT_TITLE,
-		body: plainText(message.body ?? ''),
+		body: plainText(message.body ?? message.content ?? ''),
 		url: message.url || DEFAULT_URL,
 		// A retried send replaces the notification on screen instead of adding a second one
 		tag: `message:${message.id}`,

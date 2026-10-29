@@ -135,7 +135,24 @@ describe('sendPush', () => {
 		expect(sendNotification).toHaveBeenCalledOnce();
 		expect(sendNotification.mock.calls[0][0]).toBe(subscription);
 		expect(sentJson()).toEqual(payload);
-		expect(sentOptions()).toEqual({ TTL: 4 * 60 * 60, timeout: 10_000, topic: 'message-42' });
+		expect(sentOptions()).toEqual({ TTL: 4 * 60 * 60, timeout: 10_000, topic: 'message-42', agent: expect.any(Object) });
+	});
+
+	it('sends through a shared keep-alive agent that checks certificates', async () => {
+		await sendPush(subscription, payload);
+		await sendPush(subscription, payload);
+
+		const agent = (call: number) => sendNotification.mock.calls[call][2].agent as { options: { keepAlive?: boolean; rejectUnauthorized?: boolean } };
+		expect(agent(0).options).toMatchObject({ keepAlive: true, rejectUnauthorized: true });
+		expect(agent(1)).toBe(agent(0));
+	});
+
+	it('accepts any certificate only when allowSelfSigned is set', async () => {
+		config.webpush = { ...config.webpush, allowSelfSigned: true };
+		await sendPush(subscription, payload);
+
+		const { agent } = sendNotification.mock.calls[0][2] as { agent: { options: { rejectUnauthorized?: boolean } } };
+		expect(agent.options.rejectUnauthorized).toBe(false);
 	});
 
 	it('passes ttl and urgency through', async () => {
@@ -221,7 +238,7 @@ describe('sendPush', () => {
 		expect(logger.error).not.toHaveBeenCalled();
 	});
 
-	it.each([429, 500, 502, 503])('asks for a retry on a %s', async (statusCode) => {
+	it.each([406, 500, 502, 503])('asks for a retry on a %s', async (statusCode) => {
 		sendNotification.mockRejectedValue(pushError(statusCode));
 
 		await expect(sendPush(subscription, payload)).resolves.toEqual({
@@ -230,6 +247,17 @@ describe('sendPush', () => {
 			retryAfter: undefined,
 		});
 		expect(logger.warn).toHaveBeenCalledOnce();
+	});
+
+	it('waits a minute on a 429 that gives no Retry-After', async () => {
+		sendNotification.mockRejectedValue(pushError(429));
+
+		await expect(sendPush(subscription, payload)).resolves.toEqual({
+			status: 'retry',
+			reason: 'push service responded 429',
+			retryAfter: 60,
+		});
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('after 60s'));
 	});
 
 	it('reads Retry-After given in seconds', async () => {
@@ -248,8 +276,14 @@ describe('sendPush', () => {
 		expect((result as { retryAfter?: number }).retryAfter).toBeLessThanOrEqual(90);
 	});
 
-	it('ignores a Retry-After it cannot read', async () => {
+	it('falls back to the default wait when a 429 Retry-After cannot be read', async () => {
 		sendNotification.mockRejectedValue(pushError(429, { 'retry-after': 'soon' }));
+
+		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'retry', retryAfter: 60 });
+	});
+
+	it('ignores a Retry-After it cannot read on a 503', async () => {
+		sendNotification.mockRejectedValue(pushError(503, { 'retry-after': 'soon' }));
 
 		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'retry', retryAfter: undefined });
 	});
@@ -390,6 +424,16 @@ describe('pushMessage', () => {
 			body: 'Your round is in room 12. Go now.',
 			url: '/user/home',
 		});
+	});
+
+	it('uses the email row content when a blast message has no body of its own', async () => {
+		await factories.session.create({ person: Person.id, ...subscription() });
+		const email = await factories.email.create({ content: '<p>Pairings for <b>round 3</b> are up.</p>' });
+		const message = await newMessage({ body: null, email: email.id });
+
+		await pushMessage(message.id);
+
+		expect(JSON.parse(sendNotification.mock.calls[0][1] as string)).toMatchObject({ body: 'Pairings for round 3 are up.' });
 	});
 
 	it('skips a message that does not exist', async () => {

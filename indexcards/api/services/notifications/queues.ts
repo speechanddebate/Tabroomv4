@@ -1,13 +1,6 @@
 import { retryAfterBackoff } from '../queue/backoff.js';
 import { defineQueue } from '../queue/define.js';
-import { processEmail, processNotify, processPush } from './jobs.js';
-
-/** Fans a notification out to its recipients, then records the results */
-export const notifyQueue = defineQueue({
-	name: 'notify',
-	processor: processNotify,
-	concurrency: 2,
-});
+import { processEmail, processPush } from './jobs.js';
 
 /** Emails one person a notification */
 export const emailQueue = defineQueue({
