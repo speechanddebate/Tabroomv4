@@ -165,6 +165,26 @@ export const getPushStatus = async (db: Database, sessionId: number) => {
 		.executeTakeFirst();
 };
 
+/** A person's own (not su'd) sessions with their push columns, most recently used first */
+export const getSessions = async (db: Database, personId: number) => {
+	return await db.selectFrom('session')
+		.select([
+			'session.id',
+			'session.agent_data',
+			'session.ip',
+			'session.last_access',
+			'session.created_at',
+			'session.push_endpoint',
+			'session.push_vapid_key',
+			'session.push_disabled',
+		])
+		.where('session.person', '=', personId)
+		.where('session.su', 'is', null)
+		.orderBy('session.last_access', 'desc')
+		.orderBy('session.id', 'desc')
+		.execute();
+};
+
 const clearedPush = {
 	push_endpoint: null,
 	push_p256dh: null,
@@ -262,6 +282,7 @@ export default {
 	updateSession,
 	createSession,
 	getPushStatus,
+	getSessions,
 	setPushSubscription,
 	clearPushSubscription,
 }
