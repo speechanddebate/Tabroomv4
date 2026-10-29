@@ -63,6 +63,7 @@
 		"ua-parser-js": "^2.0.9",
 		"unixcrypt": "^3.0.4",
 		"uuid": "^13.0.0",
+		"web-push": "^3.6.7",
 		"winston": "^3.2.1",
 		"zod": "^4.6.5",
 		"zod-openapi": "^6.0.2"
@@ -77,6 +78,7 @@
 		"@types/luxon": "^3.7.1",
 		"@types/sanitize-html": "^2.16.2",
 		"@types/supertest": "^7.2.0",
+		"@types/web-push": "^3.6.4",
 		"@vitest/coverage-v8": "^5.0.1",
 		"@vitest/ui": "^5.0.1",
 		"kysely-codegen": "^0.20.0",

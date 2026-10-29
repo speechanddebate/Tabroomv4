@@ -205,6 +205,13 @@ export const ConfigSchema = z.object({
 		safariId: z.string().min(1).optional(),
 		appKey: z.string().min(1).optional(),
 	}).prefault({}),
+	/** Web push notifications configuration, web push will fail to start without proper keys configured */
+	webpush: z.object({
+		/** Engineering contact for web push notifications (e.g., a mailto: address) */
+		subject: z.string().min(1).optional(),
+		publicKey: z.string().min(1).optional(),
+		privateKey: z.string().min(1).optional(),
+	}).prefault({}),
 	//--------------------------------------------------------------------
 	// MISC
 	// -------------------------------------------------------------------

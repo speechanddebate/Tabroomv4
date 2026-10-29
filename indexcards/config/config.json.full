@@ -88,6 +88,7 @@
   "onesignal": {
     "api_url": "https://onesignal.com/api/v1"
   },
+  "webpush": {},
   "features": {
     "HIDE_DEV_ENDPOINTS": true
   },

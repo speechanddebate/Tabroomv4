@@ -1,8 +1,70 @@
 import axios from "axios";
 import { sql } from "kysely";
+import { createHash } from 'node:crypto';
+import webPush from 'web-push';
 import { db } from "../../../data/database.js";
 import config from "../../../config.js";
+import logger from '../../../helpers/logger.js';
 import type { notifyResponse, NotificationRequest } from "../notify.js";
+
+/**
+ * Push service hosts a subscription endpoint may point at. A leading `*.`
+ * matches any subdomain; other entries must match exactly. The send job POSTs
+ * to whatever endpoint is stored, so anything else is refused.
+ */
+export const PUSH_HOSTS = [
+	'fcm.googleapis.com',
+	'updates.push.services.mozilla.com',
+	'*.push.apple.com',
+	'*.notify.windows.com',
+] as const;
+
+let vapid: { publicKey: string; fingerprint: string } | null = null;
+
+/** Sets the VAPID keys web-push signs with. Leaves push unconfigured when the keys are missing or malformed */
+export function initWebPush(): void {
+	vapid = null;
+	const { subject, publicKey, privateKey } = config.webpush;
+
+	if (!subject || !publicKey || !privateKey) {
+		logger.warn('Web push keys not present, web push will not work');
+		return;
+	}
+
+	try {
+		webPush.setVapidDetails(subject, publicKey, privateKey);
+	} catch (err) {
+		logger.warn('Web push keys are invalid, web push will not work', err);
+		return;
+	}
+
+	vapid = { publicKey, fingerprint: fingerprintKey(publicKey) };
+}
+
+export function isPushConfigured(): boolean {
+	return vapid !== null;
+}
+
+/** The VAPID public key browsers subscribe with, and a short fingerprint of it, or null when push is unconfigured */
+export function getVapid(): { publicKey: string; fingerprint: string } | null {
+	return vapid;
+}
+
+/** First 8 bytes of the SHA-256 of the key, as 16 lowercase hex characters */
+function fingerprintKey(publicKey: string): string {
+	return createHash('sha256').update(publicKey).digest('hex').slice(0, 16);
+}
+
+/** Whether a push subscription endpoint points at an allowed push service over plain https */
+export function checkPushHost(url: URL): boolean {
+	if (url.protocol !== 'https:' || url.port !== '' || url.username !== '' || url.password !== '') {
+		return false;
+	}
+	const host = url.hostname.toLowerCase();
+	return PUSH_HOSTS.some(allowed => allowed.startsWith('*.')
+		? host.endsWith(allowed.slice(1))
+		: host === allowed);
+}
 
 export async function sendWebPushNotification(notification: NotificationRequest): Promise<notifyResponse> {
 
