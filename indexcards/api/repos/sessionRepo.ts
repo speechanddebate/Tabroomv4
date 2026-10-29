@@ -260,6 +260,42 @@ export const setPushSubscription = async (
 	});
 };
 
+/**
+ * A person's own logins that can receive push: subscribed under the current VAPID key,
+ * not turned off, and not su'd
+ */
+export const getPushSubscriptions = async (db: Database, personId: number, vapidKey: string) => {
+	return await db.selectFrom('session')
+		.select([
+			'session.id',
+			'session.push_endpoint',
+			'session.push_p256dh',
+			'session.push_auth',
+		])
+		.where('session.person', '=', personId)
+		.where('session.su', 'is', null)
+		.where('session.push_endpoint', 'is not', null)
+		.where('session.push_disabled', '=', 0)
+		.where('session.push_vapid_key', '=', vapidKey)
+		// setPushSubscription writes the three columns together, so none is null when the endpoint isn't
+		.$narrowType<{ push_endpoint: string; push_p256dh: string; push_auth: string }>()
+		.execute();
+};
+
+/**
+ * Removes a dead subscription. Only clears the session while it still holds that endpoint,
+ * so a subscription the browser saved in the meantime is kept. Leaves push_disabled alone:
+ * the browser gave up, not the person. Returns whether anything was cleared
+ */
+export const clearPushEndpoint = async (db: Database, sessionId: number, endpoint: string) => {
+	const result = await db.updateTable('session')
+		.set(clearedPush)
+		.where('session.id', '=', sessionId)
+		.where('session.push_endpoint', '=', endpoint)
+		.executeTakeFirst();
+	return result.numUpdatedRows > 0;
+};
+
 /** Removes a session's push subscription, and turns push off for it when disable is set */
 export const clearPushSubscription = async (
 	db: Database,
@@ -283,6 +319,8 @@ export default {
 	createSession,
 	getPushStatus,
 	getSessions,
+	getPushSubscriptions,
 	setPushSubscription,
+	clearPushEndpoint,
 	clearPushSubscription,
 }

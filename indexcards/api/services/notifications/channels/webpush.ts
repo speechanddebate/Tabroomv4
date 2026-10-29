@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
+import { convert } from 'html-to-text';
 import webPush from 'web-push';
 import config from "../../../config.js";
+import { db } from "../../../data/database.js";
 import logger from '../../../helpers/logger.js';
+import sessionRepo from '../../../repos/sessionRepo.js';
 
 /**
  * Push service hosts a subscription endpoint may point at. A leading `*.`
@@ -190,6 +193,112 @@ function sendFailure(err: unknown, host: string): PushSendResult {
 	// What's left is web-push refusing the arguments: malformed keys or options
 	logger.error(`Push to ${host} rejected, ${message}`);
 	return { status: 'rejected', reason: message };
+}
+
+export type PushMessageResult = {
+	/** Subscriptions that got the message, by session id */
+	sent: number[];
+	/** Dead subscriptions that were removed */
+	gone: number;
+	/** Subscriptions the push service refused */
+	rejected: number;
+	/** Sessions to try again, with the longest Retry-After the service asked for */
+	retry: { sessions: number[]; retryAfter?: number };
+	/** Why nothing was attempted, when nothing was */
+	skipped?: 'unconfigured' | 'no message' | 'deleted' | 'no subscriptions';
+};
+
+const DEFAULT_TITLE = 'Message from Tabroom.com';
+const DEFAULT_URL = '/user/home';
+
+/**
+ * Pushes one message to each of its person's subscribed logins and removes the dead
+ * ones. Reports per-subscription outcomes instead of throwing, so the caller decides
+ * whether a retry is worth it; only the unexpected (the database is down) throws.
+ */
+export async function pushMessage(
+	messageId: number,
+	/** Sessions not to send to, such as ones an earlier attempt already reached */
+	skip: number[] = [],
+): Promise<PushMessageResult> {
+	const result: PushMessageResult = { sent: [], gone: 0, rejected: 0, retry: { sessions: [] } };
+
+	const vapid = getVapid();
+	if (!vapid) {
+		return { ...result, skipped: 'unconfigured' };
+	}
+
+	const message = await db.selectFrom('message')
+		.select(['id', 'person', 'subject', 'body', 'url', 'deleted_at'])
+		.where('id', '=', messageId)
+		.executeTakeFirst();
+
+	// A message deleted between queueing and sending is the recheck working, not an error
+	if (!message || !message.person) {
+		logger.debug(`Push for message ${messageId} skipped, no message`);
+		return { ...result, skipped: 'no message' };
+	}
+	if (message.deleted_at) {
+		logger.debug(`Push for message ${messageId} skipped, deleted`);
+		return { ...result, skipped: 'deleted' };
+	}
+
+	const subscriptions = (await sessionRepo.getPushSubscriptions(db, message.person, vapid.fingerprint))
+		.filter(session => !skip.includes(session.id));
+	if (subscriptions.length === 0) {
+		logger.debug(`Push for message ${messageId} skipped, person ${message.person} has no subscriptions`);
+		return { ...result, skipped: 'no subscriptions' };
+	}
+
+	const payload: PushPayload = {
+		title: message.subject || DEFAULT_TITLE,
+		body: plainText(message.body ?? ''),
+		url: message.url || DEFAULT_URL,
+		// A retried send replaces the notification on screen instead of adding a second one
+		tag: `message:${message.id}`,
+	};
+
+	const outcomes = await Promise.all(subscriptions.map(async session => ({
+		session,
+		outcome: await sendPush({
+			endpoint: session.push_endpoint,
+			keys: { p256dh: session.push_p256dh, auth: session.push_auth },
+		}, payload),
+	})));
+
+	for (const { session, outcome } of outcomes) {
+		switch (outcome.status) {
+			case 'sent':
+				result.sent.push(session.id);
+				break;
+			case 'gone':
+				await sessionRepo.clearPushEndpoint(db, session.id, session.push_endpoint);
+				result.gone += 1;
+				break;
+			case 'rejected':
+				result.rejected += 1;
+				break;
+			case 'retry':
+				result.retry.sessions.push(session.id);
+				if (outcome.retryAfter !== undefined) {
+					result.retry.retryAfter = Math.max(result.retry.retryAfter ?? 0, outcome.retryAfter);
+				}
+				break;
+		}
+	}
+
+	return result;
+}
+
+/** The inbox body (html or text) as one line of plain text for the notification */
+function plainText(body: string): string {
+	return convert(body, {
+		wordwrap: false,
+		selectors: [
+			{ selector: 'a', options: { ignoreHref: true } },
+			{ selector: 'img', format: 'skip' },
+		],
+	}).replace(/\s+/g, ' ').trim();
 }
 
 /** Seconds to wait from a Retry-After header, given as seconds or an HTTP date */

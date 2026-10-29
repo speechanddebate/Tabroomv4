@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
 import webPush from 'web-push';
+import factories from '../../../../tests/factories/index.js';
 import config from '../../../config.js';
+import { db } from '../../../data/database.js';
 import logger from '../../../helpers/logger.js';
-import { MAX_PUSH_BODY, checkPushHost, getVapid, initWebPush, isPushConfigured, sendPush } from './webpush.js';
+import { MAX_PUSH_BODY, checkPushHost, getVapid, initWebPush, isPushConfigured, pushMessage, sendPush } from './webpush.js';
 
 // web-push is CommonJS, so only the default import exists. Everything but the send stays real
 const { sendNotification } = vi.hoisted(() => ({ sendNotification: vi.fn() }));
@@ -294,5 +296,214 @@ describe('sendPush', () => {
 			expect(line).not.toContain('secret-token');
 			expect(line).toContain('fcm.googleapis.com');
 		}
+	});
+});
+
+describe('pushMessage', () => {
+	const original = config.webpush;
+	const keys = webPush.generateVAPIDKeys();
+	let count = 0;
+
+	const subscription = () => ({
+		push_endpoint: `https://fcm.googleapis.com/fcm/send/pm-${process.pid}-${++count}`,
+		push_p256dh: 'p256dh',
+		push_auth: 'auth',
+		push_vapid_key: getVapid()!.fingerprint,
+	});
+	const pushError = (statusCode: number, endpoint: string, headers: Record<string, string> = {}) =>
+		new webPush.WebPushError('Received unexpected response code', statusCode, headers, '', endpoint);
+	/** Resolves or rejects per endpoint, so each session can get its own outcome */
+	const respondByEndpoint = (outcomes: Record<string, number | Error>) => {
+		sendNotification.mockImplementation(async (sub: { endpoint: string }) => {
+			const outcome = outcomes[sub.endpoint] ?? 201;
+			if (outcome instanceof Error) throw outcome;
+			if (outcome >= 400) throw pushError(outcome, sub.endpoint);
+			return { statusCode: outcome, body: '', headers: {} };
+		});
+	};
+	const sentTo = () => sendNotification.mock.calls.map(call => (call[0] as { endpoint: string }).endpoint).sort();
+	const pushRow = (id: number) => db.selectFrom('session')
+		.select(['push_endpoint', 'push_disabled'])
+		.where('id', '=', id)
+		.executeTakeFirstOrThrow();
+
+	let Person: { id: number };
+
+	beforeAll(async () => {
+		Person = await factories.person.create();
+	});
+
+	beforeEach(() => {
+		config.webpush = { subject: 'mailto:test@tabroom.com', publicKey: keys.publicKey, privateKey: keys.privateKey };
+		initWebPush();
+		sendNotification.mockReset().mockResolvedValue({ statusCode: 201, body: '', headers: {} });
+		vi.spyOn(logger, 'debug').mockImplementation(() => logger);
+		vi.spyOn(logger, 'warn').mockImplementation(() => logger);
+		vi.spyOn(logger, 'error').mockImplementation(() => logger);
+	});
+
+	afterEach(() => {
+		config.webpush = original;
+		initWebPush();
+		vi.restoreAllMocks();
+	});
+
+	async function newMessage(overrides = {}) {
+		return await factories.message.create({ person: Person.id, ...overrides });
+	}
+
+	it('sends the message to every subscribed login', async () => {
+		const Owner = await factories.person.create();
+		const first = await factories.session.create({ person: Owner.id, ...subscription() });
+		const second = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id, subject: 'Round 3 posted', body: 'Room 12', url: '/user/judge/ballot/1' });
+
+		const result = await pushMessage(message.id);
+
+		expect(result).toEqual({ sent: expect.arrayContaining([first.id, second.id]), gone: 0, rejected: 0, retry: { sessions: [] } });
+		expect(result.sent).toHaveLength(2);
+		expect(sentTo()).toEqual([first.push_endpoint, second.push_endpoint].sort());
+		expect(sendNotification.mock.calls[0][0]).toEqual({
+			endpoint: expect.any(String),
+			keys: { p256dh: 'p256dh', auth: 'auth' },
+		});
+		expect(JSON.parse(sendNotification.mock.calls[0][1] as string)).toEqual({
+			title: 'Round 3 posted',
+			body: 'Room 12',
+			url: '/user/judge/ballot/1',
+			tag: `message:${message.id}`,
+		});
+	});
+
+	it('fills in a title and url and flattens an html body', async () => {
+		await factories.session.create({ person: Person.id, ...subscription() });
+		const message = await newMessage({
+			subject: null,
+			url: null,
+			body: '<p>Your round is in <a href="https://example.com">room 12</a>.</p>\n<p>Go <b>now</b>.</p><img src="x.png">',
+		});
+
+		await pushMessage(message.id);
+
+		expect(JSON.parse(sendNotification.mock.calls[0][1] as string)).toMatchObject({
+			title: 'Message from Tabroom',
+			body: 'Your round is in room 12. Go now.',
+			url: '/user/home',
+		});
+	});
+
+	it('skips a message that does not exist', async () => {
+		await expect(pushMessage(999999999)).resolves.toMatchObject({ skipped: 'no message', sent: [] });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it('skips a deleted message', async () => {
+		await factories.session.create({ person: Person.id, ...subscription() });
+		const message = await newMessage({ deleted_at: new Date() });
+
+		await expect(pushMessage(message.id)).resolves.toMatchObject({ skipped: 'deleted' });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it('skips a person with no subscriptions', async () => {
+		const Loner = await factories.person.create();
+		await factories.session.create({ person: Loner.id });
+		const message = await newMessage({ person: Loner.id });
+
+		await expect(pushMessage(message.id)).resolves.toMatchObject({ skipped: 'no subscriptions' });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it('skips when push is not configured', async () => {
+		await factories.session.create({ person: Person.id, ...subscription() });
+		const message = await newMessage();
+		config.webpush = {};
+		initWebPush();
+
+		await expect(pushMessage(message.id)).resolves.toMatchObject({ skipped: 'unconfigured' });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it('does not repeat logins already sent to', async () => {
+		const Owner = await factories.person.create();
+		const done = await factories.session.create({ person: Owner.id, ...subscription() });
+		const waiting = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+
+		const result = await pushMessage(message.id, [done.id]);
+
+		expect(result.sent).toEqual([waiting.id]);
+		expect(sentTo()).toEqual([waiting.push_endpoint]);
+	});
+
+	it('skips when every login was already sent to', async () => {
+		const Owner = await factories.person.create();
+		const done = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+
+		await expect(pushMessage(message.id, [done.id])).resolves.toMatchObject({ skipped: 'no subscriptions' });
+	});
+
+	it('removes a subscription the push service says is gone', async () => {
+		const Owner = await factories.person.create();
+		const dead = await factories.session.create({ person: Owner.id, ...subscription() });
+		const live = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+		respondByEndpoint({ [dead.push_endpoint as string]: 410 });
+
+		const result = await pushMessage(message.id);
+
+		expect(result).toEqual({ sent: [live.id], gone: 1, rejected: 0, retry: { sessions: [] } });
+		expect(await pushRow(dead.id)).toEqual({ push_endpoint: null, push_disabled: 0 });
+		expect(await pushRow(live.id)).toEqual({ push_endpoint: live.push_endpoint, push_disabled: 0 });
+	});
+
+	it('keeps a subscription the browser replaced while the send was in flight', async () => {
+		const Owner = await factories.person.create();
+		const session = await factories.session.create({ person: Owner.id, ...subscription() });
+		const replacement = subscription().push_endpoint;
+		const message = await newMessage({ person: Owner.id });
+		sendNotification.mockImplementation(async (sub: { endpoint: string }) => {
+			await db.updateTable('session').set({ push_endpoint: replacement }).where('id', '=', session.id).execute();
+			throw pushError(410, sub.endpoint);
+		});
+
+		const result = await pushMessage(message.id);
+
+		expect(result.gone).toBe(1);
+		expect((await pushRow(session.id)).push_endpoint).toBe(replacement);
+	});
+
+	it('collects the logins to retry and the longest Retry-After', async () => {
+		const Owner = await factories.person.create();
+		const ok = await factories.session.create({ person: Owner.id, ...subscription() });
+		const busy = await factories.session.create({ person: Owner.id, ...subscription() });
+		const down = await factories.session.create({ person: Owner.id, ...subscription() });
+		const later = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+		sendNotification.mockImplementation(async (sub: { endpoint: string }) => {
+			if (sub.endpoint === busy.push_endpoint) throw pushError(429, sub.endpoint, { 'retry-after': '30' });
+			if (sub.endpoint === down.push_endpoint) throw pushError(503, sub.endpoint);
+			if (sub.endpoint === later.push_endpoint) throw pushError(429, sub.endpoint, { 'retry-after': '90' });
+			return { statusCode: 201, body: '', headers: {} };
+		});
+
+		const result = await pushMessage(message.id);
+
+		expect(result.sent).toEqual([ok.id]);
+		expect(result.retry.sessions.sort()).toEqual([busy.id, down.id, later.id].sort());
+		expect(result.retry.retryAfter).toBe(90);
+	});
+
+	it('counts subscriptions the push service rejected', async () => {
+		const Owner = await factories.person.create();
+		const bad = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+		respondByEndpoint({ [bad.push_endpoint as string]: 400 });
+
+		const result = await pushMessage(message.id);
+
+		expect(result).toEqual({ sent: [], gone: 0, rejected: 1, retry: { sessions: [] } });
+		expect((await pushRow(bad.id)).push_endpoint).toBe(bad.push_endpoint);
 	});
 });

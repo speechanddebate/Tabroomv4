@@ -110,3 +110,68 @@ describe('createSession', () => {
 		expect(session1.userkey).not.toBe(session2.userkey);
 	});
 });
+
+describe('push subscriptions', () => {
+	const KEY = 'abcdef0123456789';
+	let count = 0;
+	const subscription = () => ({
+		push_endpoint: `https://fcm.googleapis.com/fcm/send/${Person.id}-${++count}`,
+		push_p256dh: 'p256dh',
+		push_auth: 'auth',
+		push_vapid_key: KEY,
+	});
+
+	describe('getPushSubscriptions', () => {
+		it('returns the endpoint and keys of each live subscription', async () => {
+			const Owner = await factories.person.create();
+			const first = await factories.session.create({ person: Owner.id, ...subscription() });
+			const second = await factories.session.create({ person: Owner.id, ...subscription() });
+
+			const rows = await sessionRepo.getPushSubscriptions(db, Owner.id, KEY);
+
+			expect(rows.map(row => row.id).sort()).toEqual([first.id, second.id].sort());
+			expect(rows[0]).toEqual({
+				id: expect.any(Number),
+				push_endpoint: expect.stringContaining('https://fcm.googleapis.com/'),
+				push_p256dh: 'p256dh',
+				push_auth: 'auth',
+			});
+		});
+
+		it('leaves out sessions that cannot receive push', async () => {
+			const Owner = await factories.person.create();
+			const Other = await factories.person.create();
+			await factories.session.create({ person: Owner.id });
+			await factories.session.create({ person: Owner.id, ...subscription(), push_disabled: 1 });
+			await factories.session.create({ person: Owner.id, ...subscription(), push_vapid_key: 'fedcba9876543210' });
+			await factories.session.create({ person: Owner.id, su: Other.id, ...subscription() });
+			await factories.session.create({ person: Other.id, ...subscription() });
+
+			expect(await sessionRepo.getPushSubscriptions(db, Owner.id, KEY)).toEqual([]);
+		});
+	});
+
+	describe('clearPushEndpoint', () => {
+		it('clears the subscription and keeps push on', async () => {
+			const values = subscription();
+			const Session = await factories.session.create({ person: Person.id, ...values });
+
+			expect(await sessionRepo.clearPushEndpoint(db, Session.id, values.push_endpoint)).toBe(true);
+
+			const row = await sessionRepo.getPushStatus(db, Session.id);
+			expect(row).toMatchObject({ push_endpoint: null, push_vapid_key: null, push_disabled: 0 });
+			expect(await sessionRepo.getPushSubscriptions(db, Person.id, KEY)).not.toContainEqual(expect.objectContaining({ id: Session.id }));
+		});
+
+		it('keeps a subscription saved since the endpoint was read', async () => {
+			const stale = subscription();
+			const fresh = subscription();
+			const Session = await factories.session.create({ person: Person.id, ...fresh });
+
+			expect(await sessionRepo.clearPushEndpoint(db, Session.id, stale.push_endpoint)).toBe(false);
+
+			const row = await sessionRepo.getPushStatus(db, Session.id);
+			expect(row?.push_endpoint).toBe(fresh.push_endpoint);
+		});
+	});
+});
