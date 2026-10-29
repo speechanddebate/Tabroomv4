@@ -15,6 +15,7 @@ function mockSession(Person: Partial<Session['Person']> = {}): Session {
 		su      : null,
 		person  : 69,
 		userkey,
+		last_access : new Date(),
 		Person  : {
 			id         : 69,
 			first      : 'I',
@@ -171,6 +172,81 @@ describe('Authentication Middleware', () => {
 			expect(next).not.toHaveBeenCalled();
 		});
 
+	});
+
+	describe('last_access upkeep', () => {
+		const hour = 60 * 60 * 1000;
+		const context = () => createContext({
+			cookies: {
+				[config.cookie.name]: userkey,
+			},
+		});
+
+		it('does not rewrite a last_access from within the hour', async () => {
+			const { req, res, next } = context();
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({
+				...mockSession(),
+				last_access: new Date(Date.now() - (hour / 2)),
+			});
+			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
+
+			await Authenticate(req, res, next);
+
+			expect(touch).not.toHaveBeenCalled();
+			expect(next).toHaveBeenCalledWith();
+		});
+		it('sets a null last_access', async () => {
+			const { req, res, next } = context();
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({ ...mockSession(), last_access: null });
+			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
+
+			await Authenticate(req, res, next);
+
+			expect(touch).toHaveBeenCalledWith(req.db, 1, { last_access: expect.any(Date) });
+			expect(next).toHaveBeenCalledWith();
+		});
+		it('refreshes a last_access older than an hour', async () => {
+			const { req, res, next } = context();
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({
+				...mockSession(),
+				last_access: new Date(Date.now() - (2 * hour)),
+			});
+			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
+
+			await Authenticate(req, res, next);
+
+			expect(touch).toHaveBeenCalledWith(req.db, 1, { last_access: expect.any(Date) });
+		});
+		it('refreshes a stale last_access while su\'d', async () => {
+			const { req, res, next } = context();
+			const Su = { id: 1, first: 'Admin', last: 'Person', email: 'admin@example.com', site_admin: 1, tz: null };
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({
+				...mockSession(),
+				su: 1,
+				Su,
+				last_access: new Date(Date.now() - (2 * hour)),
+			});
+			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
+
+			await Authenticate(req, res, next);
+
+			expect(touch).toHaveBeenCalledWith(req.db, 1, { last_access: expect.any(Date) });
+			expect(req.auth.su).toEqual(Su);
+		});
+		it('does not touch a banned session', async () => {
+			const { req, res, next } = context();
+			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce({
+				...mockSession({ banned: '1' }),
+				last_access: null,
+			});
+			vi.spyOn(sessionRepo, 'deleteSession').mockResolvedValueOnce();
+			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
+
+			await Authenticate(req, res, next);
+
+			expect(touch).not.toHaveBeenCalled();
+			expect(next).not.toHaveBeenCalled();
+		});
 	});
 
 	describe('Header tokens', () => {

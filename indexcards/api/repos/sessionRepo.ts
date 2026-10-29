@@ -25,6 +25,7 @@ export const findByUserKey = async (
 		'session.su',
 		'session.person',
 		'session.userkey',
+		'session.last_access',
 	])
 	.select([
 		'p.id as personId',
@@ -55,6 +56,7 @@ export const findByUserKey = async (
 		su: session.su,
 		person: session.person,
 		userkey: session.userkey,
+		last_access: session.last_access,
 		Person: {
 					id: session.personId,
 					first: session.personFirst,
