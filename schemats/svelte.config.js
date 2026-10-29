@@ -18,6 +18,10 @@ const config = {
 				server: true,
 			},
 		},
+		// src/service-worker.ts is only for web push, so only $lib/helpers/webpush registers it
+		serviceWorker: {
+			register: false,
+		},
 		// exposed as `version` from $app/env. Falls back to kit's default (build timestamp) outside CI
 		version: {
 			name: process.env.GIT_COMMIT || undefined,

@@ -34,6 +34,7 @@ import type {
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
 	PersonTournSummary,
+	PushStatus,
 	QuizOutput,
 	RestCircuit,
 	ResultSetSchema,
@@ -44,6 +45,7 @@ import type {
 	UnlinkedStudentSearchSchema,
 	UserChapter,
 	UserParadigmOutput,
+	UserSession,
 } from './schemas';
 
 export const getRestAdsResponseMock = (): HomepageAd[] =>
@@ -2194,6 +2196,30 @@ export const getUserInboxGetMessageResponseMock = (
 	...overrideResponse,
 });
 
+export const getUserPushResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getUserPushSubscribeResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
 export const getUserSessionResponseMock = (
 	overrideResponse: Partial<Extract<Session, object>> = {},
 ): Session => ({
@@ -2254,6 +2280,37 @@ export const getUserSessionResponseMock = (
 	},
 	...overrideResponse,
 });
+
+export const getUserSessionsResponseMock = (): UserSession[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		current: faker.datatype.boolean(),
+		subscribed: faker.datatype.boolean(),
+		disabled: faker.datatype.boolean(),
+		host: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		agent: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		ip: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		last_access: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		created_at: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+	}));
 
 export const getUserJudgesLinkRequestsResponseMock =
 	(): UnlinkedJudgeSchema[] =>
