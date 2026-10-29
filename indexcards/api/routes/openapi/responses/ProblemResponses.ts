@@ -143,4 +143,24 @@ export const BadRequest = {
 		},
 	},
 } satisfies ProblemResponse;
+export const ServiceUnavailable = {
+	description: 'ServiceUnavailable - the service needed for this request is not available.',
+	content: {
+		'application/problem+json': {
+			schema: ProblemSchema,
+			examples:{
+				serviceunavailable: {
+					summary: '503 Service Unavailable',
+					value: {
+						type: 'about:blank',
+						title: 'Service Unavailable',
+						status: 503,
+						detail: 'Push notifications are not configured on this server',
+						instance: '/api/v1/example',
+					},
+				},
+			},
+		},
+	},
+} satisfies ProblemResponse;
 

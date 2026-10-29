@@ -3,6 +3,7 @@ import type { Database } from '../data/database.js';
 import crypto from 'crypto';
 import { encrypt } from 'unixcrypt';
 import config from '../config.js';
+import logger from '../helpers/logger.js';
 import type { Insertable, Updateable } from 'kysely';
 
 export const findByUserKey = async (
@@ -150,10 +151,117 @@ export const deleteSession = async (db: Database, id: number) => {
 		.execute();
 };
 
+/** The push subscription columns of a session, or undefined if the session doesn't exist */
+export const getPushStatus = async (db: Database, sessionId: number) => {
+	return await db.selectFrom('session')
+		.select([
+			'session.id',
+			'session.person',
+			'session.push_endpoint',
+			'session.push_vapid_key',
+			'session.push_disabled',
+		])
+		.where('session.id', '=', sessionId)
+		.executeTakeFirst();
+};
+
+const clearedPush = {
+	push_endpoint: null,
+	push_p256dh: null,
+	push_auth: null,
+	push_vapid_key: null,
+} as const;
+
+export type PushSubscriptionValues = {
+	endpoint: string;
+	p256dh: string;
+	auth: string;
+	/** fingerprint of the VAPID key the browser subscribed with */
+	vapidKey: string;
+	/** an earlier endpoint from this browser that the new one replaces */
+	replaces?: string;
+	/** turn push back on if it was turned off for this session */
+	enable: boolean;
+};
+
+/**
+ * Saves a push subscription to a session. An endpoint belongs to only one session, so any
+ * other session holding it (a shared device) is cleared first
+ */
+export const setPushSubscription = async (
+	db: Database,
+	sessionId: number,
+	personId: number,
+	values: PushSubscriptionValues,
+) => {
+	const { endpoint, p256dh, auth, vapidKey, replaces, enable } = values;
+
+	// read committed, because under repeatable read MariaDB rejects the second of two parallel
+	// saves to the same row with "record has changed since last read" (two tabs syncing at once).
+	// Two sessions claiming the same endpoint at the same instant still fail on the unique index
+	await db.transaction().setIsolationLevel('read committed').execute(async trx => {
+		const holders = await trx.selectFrom('session')
+			.select(['session.id', 'session.person'])
+			.where('session.push_endpoint', '=', endpoint)
+			.where('session.id', '!=', sessionId)
+			.execute();
+
+		if (holders.length > 0) {
+			for (const holder of holders) {
+				if (holder.person !== personId) {
+					logger.warn(`Push endpoint on ${new URL(endpoint).hostname} moved from person ${holder.person} to person ${personId}`);
+				}
+			}
+			await trx.updateTable('session')
+				.set(clearedPush)
+				.where('session.id', 'in', holders.map(holder => holder.id))
+				.where('session.push_endpoint', '=', endpoint)
+				.execute();
+		}
+
+		if (replaces && replaces !== endpoint) {
+			await trx.updateTable('session')
+				.set(clearedPush)
+				.where('session.person', '=', personId)
+				.where('session.push_endpoint', '=', replaces)
+				.execute();
+		}
+
+		await trx.updateTable('session')
+			.set({
+				push_endpoint: endpoint,
+				push_p256dh: p256dh,
+				push_auth: auth,
+				push_vapid_key: vapidKey,
+				...(enable ? { push_disabled: 0 } : {}),
+			})
+			.where('session.id', '=', sessionId)
+			.execute();
+	});
+};
+
+/** Removes a session's push subscription, and turns push off for it when disable is set */
+export const clearPushSubscription = async (
+	db: Database,
+	sessionId: number,
+	{ disable }: { disable: boolean },
+) => {
+	await db.updateTable('session')
+		.set({
+			...clearedPush,
+			...(disable ? { push_disabled: 1 } : {}),
+		})
+		.where('session.id', '=', sessionId)
+		.execute();
+};
+
 export default {
 	findByUserKey,
 	getSession,
 	deleteSession,
 	updateSession,
-	createSession
+	createSession,
+	getPushStatus,
+	setPushSubscription,
+	clearPushSubscription,
 }

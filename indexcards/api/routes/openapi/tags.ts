@@ -48,6 +48,12 @@ export const tags: TagObject[] = [
 		description: 'Endpoints for managing a user inbox messages',
 	},
 	{
+		name: 'user:push',
+		summary: 'Push',
+		parent: 'User',
+		description: 'Endpoints for managing push notification subscriptions on a user\'s logins',
+	},
+	{
 		name: 'Push Notifications',
 		description: 'Endpoints for managing user push notifications',
 	},
