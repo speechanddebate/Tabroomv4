@@ -1,25 +1,11 @@
 import { db } from "../../../data/database.js";
 import emailBlast from "../../../helpers/mail.js";
-import type { notifyResponse, inputData } from "../notify.js";
+import type { notifyResponse, NotificationRequest } from "../notify.js";
 
-export async function sendEmailNotification(inputData: inputData): Promise<notifyResponse> {
-
-	if (
-		!inputData.ids
-		|| inputData.ids.length < 1
-		|| (!inputData.text && !inputData.html)
-	) {
-		return {
-			error   : false,
-			message : `No web pushes active.`,
-			email   : inputData.ids.length,
-			inbox   : 0,
-			web     : 0,
-		};
-	}
+export async function sendEmailNotification(notification: NotificationRequest): Promise<notifyResponse> {
 
 	const recipients = await db.selectFrom('person')
-		.where('person.id', 'in', inputData.ids)
+		.where('person.id', 'in', notification.ids)
 		.select([
 			'person.id',
 			'person.first',
@@ -29,8 +15,8 @@ export async function sendEmailNotification(inputData: inputData): Promise<notif
 		])
 		.execute();
 
-	inputData.email = recipients.filter( (person) => {
-		if (inputData.ignoreNoEmail || (!person.no_email)) {
+	notification.email = recipients.filter( (person) => {
+		if (notification.ignoreNoEmail || (!person.no_email)) {
 			return person;
 		}
 		return null;
@@ -40,8 +26,8 @@ export async function sendEmailNotification(inputData: inputData): Promise<notif
 
 	const promises: Promise<unknown>[] = [];
 
-	if (inputData.email && inputData.email.length > 0) {
-		const promise = emailBlast(inputData);
+	if (notification.email && notification.email.length > 0) {
+		const promise = emailBlast(notification);
 		promises.push(promise);
 	}
 
@@ -49,8 +35,8 @@ export async function sendEmailNotification(inputData: inputData): Promise<notif
 
 	return {
 		error   : false,
-		message : `${inputData.email.length} emails sent.`,
-		email   : inputData.email.length,
+		message : `${notification.email.length} emails sent.`,
+		email   : notification.email.length,
 		inbox   : 0,
 		web     : 0,
 	};

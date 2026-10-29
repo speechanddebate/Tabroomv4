@@ -1,38 +1,26 @@
 import { db } from "../../../data/database.js";
+import type { Insertable } from "kysely";
+import type { Message } from "../../../data/schema.js";
 import logger from "../../../helpers/logger.js";
-import type { notifyResponse, inputData } from "../notify.js";
+import type { notifyResponse, NotificationRequest } from "../notify.js";
 
-export async function sendInboxNotification(inputData: inputData): Promise<notifyResponse> {
+export async function sendInboxNotification(notification: NotificationRequest): Promise<notifyResponse> {
 
-	if (
-		!inputData.ids
-		|| inputData.ids.length < 1
-		|| (!inputData.text && !inputData.html)
-	) {
-		return {
-			error   : false,
-			message : `No receipients sent.`,
-			email   : 0,
-			inbox   : inputData.ids.length,
-			web     : 0,
-		};
-	}
-
-	const message: Record<string, unknown> = {
-		body          : inputData.html || inputData.text,
-		subject       : inputData.subject,
-		sender        : inputData.sender,
-		sender_string : inputData.replyTo || inputData.from,
-		url           : inputData.url,
-		email         : inputData.emailId,
+	const message: Insertable<Message> = {
+		body          : notification.html || notification.text,
+		subject       : notification.subject,
+		sender        : notification.sender,
+		sender_string : notification.replyTo || notification.from,
+		url           : notification.url,
+		email         : notification.emailId,
 	};
 
 	// Tourn must exist, or otherwise be null
-	if (inputData.tourn) {
-		message.tourn = inputData.tourn;
+	if (notification.tourn) {
+		message.tourn = notification.tourn;
 	}
 
-	if (message.email && !inputData.append) {
+	if (message.email && !notification.append) {
 		delete message.body;
 	}
 
@@ -40,23 +28,24 @@ export async function sendInboxNotification(inputData: inputData): Promise<notif
 	const errors: unknown[] = [];
 
 	// TODO: the insert is built but never executed, so no inbox rows are written.
-	inputData.ids.forEach( async (id) => {
+	notification.ids.forEach( async (id) => {
 
 		try {
-			const response = db.insertInto('message')
+			const response = await db.insertInto('message')
 				.values({
 					person: id,
 					...message,
-				});
+				})
+				.execute();
 			responses.push(response);
 		} catch (err) {
 			errors.push(err);
 		}
 	});
 
-	await Promise.all(responses);
+	// await Promise.all(responses); // This line is not needed because responses are already awaited individually in the forEach loop.
 
-	if (errors.length > 1) {
+	if (errors.length > 0) {
 
 		logger.error(errors);
 
@@ -72,9 +61,9 @@ export async function sendInboxNotification(inputData: inputData): Promise<notif
 
 	return {
 		error   : false,
-		message : `${inputData.ids.length} Tabroom inbox messages delivered.`,
+		message : `${notification.ids.length} Tabroom inbox messages delivered.`,
 		email   : 0,
-		inbox   : inputData.ids.length,
+		inbox   : notification.ids.length,
 		web     : 0,
 	};
 }

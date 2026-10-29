@@ -64,6 +64,16 @@ export const ConfigSchema = z.object({
 			queryTimeout: z.int().min(0).default(30000),
 		}).prefault({}),
 	}),
+	/** Redis, which backs the BullMQ job queues */
+	redis: z.object({
+		/** The Redis URL, e.g. redis://user:pass@localhost:6379/0 */
+		url: z.string().min(1).default(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+	}).prefault({}),
+	/** BullMQ job queues */
+	queue: z.object({
+		/** Workers to run per queue in this process. 0 runs none, so jobs wait for another process to take them */
+		workers: z.int().min(0).default(1),
+	}).prefault({}),
 	//------------------------------------------------------------------------------
 	// SECURITY
 	// -----------------------------------------------------------------------------

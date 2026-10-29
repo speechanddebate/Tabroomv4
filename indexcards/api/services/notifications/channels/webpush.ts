@@ -2,26 +2,13 @@ import axios from "axios";
 import { sql } from "kysely";
 import { db } from "../../../data/database.js";
 import config from "../../../config.js";
-import type { notifyResponse, inputData } from "../notify.js";
+import type { notifyResponse, NotificationRequest } from "../notify.js";
 
-export async function sendWebPushNotification(inputData: inputData): Promise<notifyResponse> {
+export async function sendWebPushNotification(notification: NotificationRequest): Promise<notifyResponse> {
 
-	if (
-		!inputData.ids
-		|| inputData.ids.length < 1
-		|| !inputData.text
-	) {
-		return {
-			error   : false,
-			message : `No recipients or message sent for push notifications`,
-			email   : 0,
-			inbox   : 0,
-			web     : inputData.ids.length,
-		};
-	}
 	const recipients = await db.selectFrom('person')
 		.innerJoin('session', 'person.id', 'session.person')
-		.where('person.id', 'in', inputData.ids)
+		.where('person.id', 'in', notification.ids)
 		.where('session.push_notify', 'is not', null)
 		.where('session.last_access', '>', sql<Date>`DATE_SUB(NOW(), INTERVAL 60 DAY)`)
 		.select([
@@ -63,20 +50,20 @@ export async function sendWebPushNotification(inputData: inputData): Promise<not
 		targetIds = process.env.TEST_USERID ? [process.env.TEST_USERID] : ['100'];
 	}
 
-	if (inputData.append) {
-		inputData.text += `\n${inputData.append}`;
+	if (notification.append) {
+		notification.text += `\n${notification.append}`;
 	}
 
 	const promises: Promise<unknown>[] = [];
 
 	if (targetIds && targetIds.length > 0) {
 
-		const notification = {
+		const msg = {
 			app_id          : config.onesignal.appId,
-			name            : inputData.sender || 'Tournament Blast',
-			url 		    : inputData.url || 'https://www.tabroom.com/user/home.mhtml',
-			contents        : { en: inputData.text },
-			headings        : { en: inputData.subject || 'Message from Tab' },
+			name            : notification.sender || 'Tournament Blast',
+			url 		    : notification.url || 'https://www.tabroom.com/user/home.mhtml',
+			contents        : { en: notification.text },
+			headings        : { en: notification.subject || 'Message from Tab' },
 			include_aliases: {
 				external_id: targetIds,
 			},
@@ -85,7 +72,7 @@ export async function sendWebPushNotification(inputData: inputData): Promise<not
 
 		const webPromise = axios.post(
 			`${config.onesignal.api_url}/notifications`,
-			notification,
+			msg,
 			{
 				headers : {
 					Authorization  : `Basic ${config.onesignal.appKey}`,

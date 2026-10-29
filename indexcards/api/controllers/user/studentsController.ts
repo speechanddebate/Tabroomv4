@@ -69,6 +69,11 @@ async function claimRequest(req: ValidatedRequest, res: Response) {
 		const emailData = buildChapterStudentClaimEmail(Student, person);
 		await notify({
 			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
+			channels: {
+				inbox: true,
+				webpush: true,
+				email: true,
+			},
 			...emailData,
 		});
 	} else {

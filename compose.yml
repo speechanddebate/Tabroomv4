@@ -26,6 +26,8 @@ services:
         environment:
             # where the app runs, for telemetry. deathstar sets the same keys per host and container
             OTEL_RESOURCE_ATTRIBUTES: host.name=dev,container.name=indexcards-dev,service.instance.id=dev-indexcards-dev
+            # the redis container in the nsda stack. config.json is shared with the host, where it's localhost
+            REDIS_URL: redis://redis:6379
         # loki labels job and container. The driver always sets host to the machine's hostname itself.
         # Needs the driver plugin once per machine:
         #   docker plugin install grafana/loki-docker-driver:3.7.8-amd64 --alias loki --grant-all-permissions
