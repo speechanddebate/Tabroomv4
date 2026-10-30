@@ -192,6 +192,8 @@ export * from './unlinkedJudgeSchema';
 export * from './unlinkedJudgeSchemaType';
 export * from './unlinkedStudentSearchSchema';
 export * from './unlinkedStudentSearchSchemaChapter';
+export * from './unsubscribeResponse';
+export * from './unsubscribeStatus';
 export * from './userChapter';
 export * from './userJudgesClaimParams';
 export * from './userJudgesHistoryParams';

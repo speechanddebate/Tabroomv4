@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import * as controller from '../../../../controllers/user/push.js';
-import { requirePerson } from '../../../../middleware/auth/authorization.js';
+import * as controller from '../../../../../controllers/user/push.js';
+import { requirePerson } from '../../../../../middleware/auth/authorization.js';
 import { PushStatusSchema, PushSubscribeRequestSchema } from '@tabroom/types';
 import z from 'zod';
-import { ValidateRequest } from '../../../../middleware/validation.js';
+import { ValidateRequest } from '../../../../../middleware/validation.js';
 
 const router = Router();
 
@@ -16,10 +16,10 @@ router.route('/')
 	.get(ValidateRequest, controller.getPushStatus)
 	.put(ValidateRequest, controller.savePushSubscription)
 	.delete(ValidateRequest, controller.disablePush).openapi = {
-		path: '/user/push',
+		path: '/user/notify/push',
 		tags: ['Orval', 'user:push'],
 		get: {
-			operationId: 'UserPush',
+			operationId: 'UserNotifyPush',
 			summary: 'Get push status',
 			description: 'Get the VAPID public key and the push subscription status of the current login. Allowed while su\'d',
 			responses: {
@@ -35,7 +35,7 @@ router.route('/')
 			},
 		},
 		put: {
-			operationId: 'UserPushSubscribe',
+			operationId: 'UserNotifyPushSubscribe',
 			summary: 'Save push subscription',
 			description: 'Save this browser\'s push subscription to the current login. Saving the same endpoint again changes nothing. Returns 409 if push is turned off for this login and enable is not true',
 			requestBody: {
@@ -62,7 +62,7 @@ router.route('/')
 			},
 		},
 		delete: {
-			operationId: 'UserPushUnsubscribe',
+			operationId: 'UserNotifyPushUnsubscribe',
 			summary: 'Turn off push',
 			description: 'Remove the push subscription from the current login and turn push off for it',
 			responses: {
@@ -73,8 +73,8 @@ router.route('/')
 	};
 
 router.route('/sessions/:session').delete(ValidateRequest, controller.disableSessionPush).openapi = {
-	path: '/user/push/sessions/{session}',
-	operationId: 'UserPushUnsubscribeSession',
+	path: '/user/notify/push/sessions/{session}',
+	operationId: 'UserNotifyPushUnsubscribeSession',
 	summary: 'Turn off push on another login',
 	description: 'Remove the push subscription from another of the user\'s logins and turn push off for it',
 	tags: ['Orval', 'user:push'],

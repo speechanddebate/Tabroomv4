@@ -11,9 +11,9 @@ import type { PushClient } from './webpush';
 
 // The real client imports the API base URL from $app/env/public; syncPush gets fakes instead
 vi.mock('$indexcards', () => ({
-	userPush: vi.fn(),
-	userPushSubscribe: vi.fn(),
-	userPushUnsubscribe: vi.fn(),
+	userNotifyPush: vi.fn(),
+	userNotifyPushSubscribe: vi.fn(),
+	userNotifyPushUnsubscribe: vi.fn(),
 }));
 
 // 65 bytes, like a real uncompressed P-256 VAPID public key

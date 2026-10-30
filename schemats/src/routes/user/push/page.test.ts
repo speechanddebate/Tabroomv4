@@ -45,21 +45,21 @@ const query = (data: unknown) => ({
 });
 
 vi.mock('$indexcards', () => ({
-	createUserPush: () => query(mocks.pushResponse),
+	createUserNotifyPush: () => query(mocks.pushResponse),
 	createUserSessions: () => query(mocks.sessionsResponse),
-	createUserPushSubscribe: () => ({
+	createUserNotifyPushSubscribe: () => ({
 		mutateAsync: mocks.subscribeMutateAsync,
 		isPending: false,
 	}),
-	createUserPushUnsubscribe: () => ({
+	createUserNotifyPushUnsubscribe: () => ({
 		mutateAsync: mocks.unsubscribeMutateAsync,
 		isPending: false,
 	}),
-	createUserPushUnsubscribeSession: () => ({
+	createUserNotifyPushUnsubscribeSession: () => ({
 		mutateAsync: mocks.unsubscribeSessionMutateAsync,
 		isPending: false,
 	}),
-	getUserPushQueryKey: () => ['userPush'],
+	getUserNotifyPushQueryKey: () => ['userNotifyPush'],
 	getUserSessionsQueryKey: () => ['userSessions'],
 }));
 
@@ -191,7 +191,7 @@ describe('Push notifications page', () => {
 			expect(screen.getByTestId('push-sync')).toHaveTextContent('saved to this login');
 		});
 		expect(mocks.webpush.syncPush).toHaveBeenCalledTimes(1);
-		expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['userPush'] });
+		expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['userNotifyPush'] });
 		expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['userSessions'] });
 	});
 

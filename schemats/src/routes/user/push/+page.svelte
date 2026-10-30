@@ -2,12 +2,12 @@
 	import { onMount } from 'svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import {
-		createUserPush,
-		createUserPushSubscribe,
-		createUserPushUnsubscribe,
-		createUserPushUnsubscribeSession,
+		createUserNotifyPush,
+		createUserNotifyPushSubscribe,
+		createUserNotifyPushUnsubscribe,
+		createUserNotifyPushUnsubscribeSession,
 		createUserSessions,
-		getUserPushQueryKey,
+		getUserNotifyPushQueryKey,
 		getUserSessionsQueryKey,
 	} from '$indexcards';
 	import type { UserSession } from '$indexcards/schemas';
@@ -28,11 +28,11 @@
 	type Permission = NotificationPermission | 'unsupported';
 
 	const queryClient = useQueryClient();
-	const pushQuery = createUserPush();
+	const pushQuery = createUserNotifyPush();
 	const sessionsQuery = createUserSessions();
-	const subscribeMutation = createUserPushSubscribe();
-	const unsubscribeMutation = createUserPushUnsubscribe();
-	const unsubscribeSessionMutation = createUserPushUnsubscribeSession();
+	const subscribeMutation = createUserNotifyPushSubscribe();
+	const unsubscribeMutation = createUserNotifyPushUnsubscribe();
+	const unsubscribeSessionMutation = createUserNotifyPushUnsubscribeSession();
 
 	// All null until mounted, so the server render doesn't guess the browser's state
 	let permission = $state<Permission | null>(null);
@@ -74,7 +74,7 @@
 
 	const refresh = async () => {
 		await Promise.all([
-			queryClient.invalidateQueries({ queryKey: getUserPushQueryKey() }),
+			queryClient.invalidateQueries({ queryKey: getUserNotifyPushQueryKey() }),
 			queryClient.invalidateQueries({ queryKey: getUserSessionsQueryKey() }),
 		]);
 	};

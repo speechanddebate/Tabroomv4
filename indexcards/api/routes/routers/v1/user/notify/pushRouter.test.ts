@@ -1,12 +1,12 @@
 import request from 'supertest';
 import crypto from 'node:crypto';
 import webPush from 'web-push';
-import server from '../../../../../app.js';
-import factories from '../../../../../tests/factories/index.js';
-import config from '../../../../config.js';
-import logger from '../../../../helpers/logger.js';
-import { db } from '../../../../data/database.js';
-import { getVapid, initWebPush } from '../../../../services/notifications/channels/webpush.js';
+import server from '../../../../../../app.js';
+import factories from '../../../../../../tests/factories/index.js';
+import config from '../../../../../config.js';
+import logger from '../../../../../helpers/logger.js';
+import { db } from '../../../../../data/database.js';
+import { getVapid, initWebPush } from '../../../../../services/notifications/channels/webpush.js';
 import { PushStatusSchema } from '@tabroom/types';
 
 const vapidKeys = webPush.generateVAPIDKeys();
@@ -87,14 +87,14 @@ describe('Push Router', () => {
 
 	describe('auth and CSRF', () => {
 		it('returns 401 without a cookie', async () => {
-			const res = await request(server).get('/v1/user/push').expect(401);
+			const res = await request(server).get('/v1/user/notify/push').expect(401);
 			expect(res).toBeProblemResponse(401);
 		});
 
 		it('returns 403 on PUT without a trusted Origin', async () => {
 			const { id, userkey } = await newSession(personId);
 			const res = await request(server)
-				.put('/v1/user/push')
+				.put('/v1/user/notify/push')
 				.set('Cookie', [`${config.cookie.name}=${userkey}`])
 				.send({ subscription: makeSubscription() })
 				.expect(403);
@@ -106,14 +106,14 @@ describe('Push Router', () => {
 			const { id, userkey } = await newSession(personId, adminId);
 			const other = await newSession(personId);
 
-			const put = await request(server).put('/v1/user/push').asPerson(userkey)
+			const put = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: makeSubscription() }).expect(403);
 			expect(put).toBeProblemResponse(403);
 
-			const del = await request(server).delete('/v1/user/push').asPerson(userkey).expect(403);
+			const del = await request(server).delete('/v1/user/notify/push').asPerson(userkey).expect(403);
 			expect(del).toBeProblemResponse(403);
 
-			const delOther = await request(server).delete(`/v1/user/push/sessions/${other.id}`).asPerson(userkey).expect(403);
+			const delOther = await request(server).delete(`/v1/user/notify/push/sessions/${other.id}`).asPerson(userkey).expect(403);
 			expect(delOther).toBeProblemResponse(403);
 
 			expect(await pushRow(id)).toMatchObject({ push_endpoint: null, push_disabled: 0 });
@@ -122,15 +122,15 @@ describe('Push Router', () => {
 
 		it('allows GET while su\'d', async () => {
 			const { userkey } = await newSession(personId, adminId);
-			const res = await request(server).get('/v1/user/push').asPerson(userkey).expect(200);
+			const res = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(200);
 			expect(res.body).toMatchSchema(PushStatusSchema);
 		});
 	});
 
-	describe('GET /user/push', () => {
+	describe('GET /user/notify/push', () => {
 		it('returns the public key and a null endpoint for a new session', async () => {
 			const { userkey } = await newSession(personId);
-			const res = await request(server).get('/v1/user/push').asPerson(userkey).expect(200);
+			const res = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(200);
 			expect(res).not.toBeProblemResponse();
 			expect(res.body).toMatchSchema(PushStatusSchema);
 			expect(res.body).toEqual({ publicKey: vapidKeys.publicKey, endpoint: null, disabled: false });
@@ -139,7 +139,7 @@ describe('Push Router', () => {
 		it('reflects disabled', async () => {
 			const { id, userkey } = await newSession(personId);
 			await db.updateTable('session').set({ push_disabled: 1 }).where('id', '=', id).execute();
-			const res = await request(server).get('/v1/user/push').asPerson(userkey).expect(200);
+			const res = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(200);
 			expect(res.body.disabled).toBe(true);
 		});
 
@@ -153,14 +153,14 @@ describe('Push Router', () => {
 				push_vapid_key: '0123456789abcdef',
 			}).where('id', '=', id).execute();
 
-			const res = await request(server).get('/v1/user/push').asPerson(userkey).expect(200);
+			const res = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(200);
 			expect(res.body.endpoint).toBeNull();
 		});
 
 		it('returns 503 when push is not configured', async () => {
 			unconfigurePush();
 			const { userkey } = await newSession(personId);
-			const res = await request(server).get('/v1/user/push').asPerson(userkey).expect(503);
+			const res = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(503);
 			expect(res).toBeProblemResponse(503);
 		});
 	});
@@ -169,7 +169,7 @@ describe('Push Router', () => {
 		it('returns 503 on PUT', async () => {
 			unconfigurePush();
 			const { id, userkey } = await newSession(personId);
-			const res = await request(server).put('/v1/user/push').asPerson(userkey)
+			const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: makeSubscription() }).expect(503);
 			expect(res).toBeProblemResponse(503);
 			expect((await pushRow(id)).push_endpoint).toBeNull();
@@ -178,17 +178,17 @@ describe('Push Router', () => {
 		it('still returns 204 on DELETE', async () => {
 			unconfigurePush();
 			const { id, userkey } = await newSession(personId);
-			await request(server).delete('/v1/user/push').asPerson(userkey).expect(204);
+			await request(server).delete('/v1/user/notify/push').asPerson(userkey).expect(204);
 			expect((await pushRow(id)).push_disabled).toBe(1);
 		});
 	});
 
-	describe('PUT /user/push', () => {
+	describe('PUT /user/notify/push', () => {
 		it('stores the subscription and the current fingerprint', async () => {
 			const { id, userkey } = await newSession(personId);
 			const sub = makeSubscription();
 
-			const res = await request(server).put('/v1/user/push').asPerson(userkey)
+			const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: sub }).expect(200);
 
 			expect(res).not.toBeProblemResponse();
@@ -207,9 +207,9 @@ describe('Push Router', () => {
 			const { id, userkey } = await newSession(personId);
 			const sub = makeSubscription();
 
-			await request(server).put('/v1/user/push').asPerson(userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(userkey).send({ subscription: sub }).expect(200);
 			const first = await pushRow(id);
-			const res = await request(server).put('/v1/user/push').asPerson(userkey).send({ subscription: sub }).expect(200);
+			const res = await request(server).put('/v1/user/notify/push').asPerson(userkey).send({ subscription: sub }).expect(200);
 
 			expect(res.body.endpoint).toBe(sub.endpoint);
 			expect(await pushRow(id)).toEqual(first);
@@ -221,8 +221,8 @@ describe('Push Router', () => {
 			const current = await newSession(personId);
 			const sub = makeSubscription();
 
-			await request(server).put('/v1/user/push').asPerson(old.userkey).send({ subscription: sub }).expect(200);
-			await request(server).put('/v1/user/push').asPerson(current.userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(old.userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(current.userkey).send({ subscription: sub }).expect(200);
 
 			expect(await holders(sub.endpoint)).toEqual([{ id: current.id }]);
 			expect(await pushRow(old.id)).toMatchObject({ push_endpoint: null, push_p256dh: null, push_auth: null, push_vapid_key: null });
@@ -234,9 +234,9 @@ describe('Push Router', () => {
 			const current = await newSession(personId);
 			const sub = makeSubscription();
 
-			await request(server).put('/v1/user/push').asPerson(old.userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(old.userkey).send({ subscription: sub }).expect(200);
 			const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger);
-			await request(server).put('/v1/user/push').asPerson(current.userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(current.userkey).send({ subscription: sub }).expect(200);
 
 			expect(await holders(sub.endpoint)).toEqual([{ id: current.id }]);
 			expect(await pushRow(old.id)).toMatchObject({ push_endpoint: null, push_p256dh: null, push_auth: null, push_vapid_key: null });
@@ -258,15 +258,15 @@ describe('Push Router', () => {
 			const mySub = makeSubscription();
 			const theirSub = makeSubscription();
 
-			await request(server).put('/v1/user/push').asPerson(mine.userkey).send({ subscription: mySub }).expect(200);
-			await request(server).put('/v1/user/push').asPerson(theirs.userkey).send({ subscription: theirSub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(mine.userkey).send({ subscription: mySub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(theirs.userkey).send({ subscription: theirSub }).expect(200);
 
 			const replacement = makeSubscription();
-			await request(server).put('/v1/user/push').asPerson(current.userkey)
+			await request(server).put('/v1/user/notify/push').asPerson(current.userkey)
 				.send({ subscription: replacement, replaces: mySub.endpoint }).expect(200);
 			expect((await pushRow(mine.id)).push_endpoint).toBeNull();
 
-			await request(server).put('/v1/user/push').asPerson(current.userkey)
+			await request(server).put('/v1/user/notify/push').asPerson(current.userkey)
 				.send({ subscription: makeSubscription(), replaces: theirSub.endpoint }).expect(200);
 			expect((await pushRow(theirs.id)).push_endpoint).toBe(theirSub.endpoint);
 		});
@@ -276,16 +276,16 @@ describe('Push Router', () => {
 			await db.updateTable('session').set({ push_disabled: 1 }).where('id', '=', id).execute();
 			const sub = makeSubscription();
 
-			const conflict = await request(server).put('/v1/user/push').asPerson(userkey)
+			const conflict = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: sub }).expect(409);
 			expect(conflict).toBeProblemResponse(409);
 			expect(await pushRow(id)).toMatchObject({ push_endpoint: null, push_disabled: 1 });
 
-			const falseEnable = await request(server).put('/v1/user/push').asPerson(userkey)
+			const falseEnable = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: sub, enable: false }).expect(409);
 			expect(falseEnable).toBeProblemResponse(409);
 
-			const res = await request(server).put('/v1/user/push').asPerson(userkey)
+			const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: sub, enable: true }).expect(200);
 			expect(res.body).toEqual({ publicKey: vapidKeys.publicKey, endpoint: sub.endpoint, disabled: false });
 			expect(await pushRow(id)).toMatchObject({ push_endpoint: sub.endpoint, push_disabled: 0 });
@@ -301,11 +301,11 @@ describe('Push Router', () => {
 				push_vapid_key: '0123456789abcdef',
 			}).where('id', '=', id).execute();
 
-			const status = await request(server).get('/v1/user/push').asPerson(userkey).expect(200);
+			const status = await request(server).get('/v1/user/notify/push').asPerson(userkey).expect(200);
 			expect(status.body.endpoint).toBeNull();
 
 			const sub = makeSubscription();
-			const res = await request(server).put('/v1/user/push').asPerson(userkey)
+			const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 				.send({ subscription: sub, replaces: old.endpoint }).expect(200);
 			expect(res.body.endpoint).toBe(sub.endpoint);
 			expect(await pushRow(id)).toMatchObject({
@@ -325,7 +325,7 @@ describe('Push Router', () => {
 				const { id, userkey } = await newSession(personId);
 				const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger);
 
-				const res = await request(server).put('/v1/user/push').asPerson(userkey)
+				const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 					.send({ subscription: { ...makeSubscription(), endpoint } }).expect(400);
 
 				expect(res).toBeProblemResponse(400);
@@ -356,7 +356,7 @@ describe('Push Router', () => {
 				['missing keys', { endpoint: valid.endpoint }],
 			])('%s', async (_label, subscription) => {
 				const { id, userkey } = await newSession(personId);
-				const res = await request(server).put('/v1/user/push').asPerson(userkey)
+				const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 					.send({ subscription }).expect(400);
 				expect(res).toBeProblemResponse(400);
 				expect((await pushRow(id)).push_endpoint).toBeNull();
@@ -364,7 +364,7 @@ describe('Push Router', () => {
 
 			it('a non-https replaces', async () => {
 				const { userkey } = await newSession(personId);
-				const res = await request(server).put('/v1/user/push').asPerson(userkey)
+				const res = await request(server).put('/v1/user/notify/push').asPerson(userkey)
 					.send({ subscription: makeSubscription(), replaces: 'http://fcm.googleapis.com/fcm/send/abc' }).expect(400);
 				expect(res).toBeProblemResponse(400);
 			});
@@ -382,8 +382,8 @@ describe('Push Router', () => {
 				vi.spyOn(logger, 'error').mockImplementation(() => logger);
 
 				const responses = await Promise.all([
-					request(server).put('/v1/user/push').asPerson(first.userkey).send({ subscription: sub }),
-					request(server).put('/v1/user/push').asPerson(second.userkey).send({ subscription: sub }),
+					request(server).put('/v1/user/notify/push').asPerson(first.userkey).send({ subscription: sub }),
+					request(server).put('/v1/user/notify/push').asPerson(second.userkey).send({ subscription: sub }),
 				]);
 
 				expect(responses.map(res => res.status)).toContain(200);
@@ -397,7 +397,7 @@ describe('Push Router', () => {
 				const subs = [makeSubscription(), makeSubscription()];
 
 				const responses = await Promise.all(subs.map(subscription =>
-					request(server).put('/v1/user/push').asPerson(userkey).send({ subscription })
+					request(server).put('/v1/user/notify/push').asPerson(userkey).send({ subscription })
 				));
 
 				expect(responses.map(res => res.status)).toEqual([200, 200]);
@@ -413,27 +413,27 @@ describe('Push Router', () => {
 		});
 	});
 
-	describe('DELETE /user/push', () => {
+	describe('DELETE /user/notify/push', () => {
 		it('clears the subscription and turns push off, idempotently', async () => {
 			const { id, userkey } = await newSession(personId);
-			await request(server).put('/v1/user/push').asPerson(userkey).send({ subscription: makeSubscription() }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(userkey).send({ subscription: makeSubscription() }).expect(200);
 
-			await request(server).delete('/v1/user/push').asPerson(userkey).expect(204);
+			await request(server).delete('/v1/user/notify/push').asPerson(userkey).expect(204);
 			const cleared = { push_endpoint: null, push_p256dh: null, push_auth: null, push_vapid_key: null, push_disabled: 1 };
 			expect(await pushRow(id)).toMatchObject(cleared);
 
-			await request(server).delete('/v1/user/push').asPerson(userkey).expect(204);
+			await request(server).delete('/v1/user/notify/push').asPerson(userkey).expect(204);
 			expect(await pushRow(id)).toMatchObject(cleared);
 		});
 	});
 
-	describe('DELETE /user/push/sessions/:session', () => {
+	describe('DELETE /user/notify/push/sessions/:session', () => {
 		it('clears and turns off another of your sessions', async () => {
 			const other = await newSession(personId);
 			const current = await newSession(personId);
-			await request(server).put('/v1/user/push').asPerson(other.userkey).send({ subscription: makeSubscription() }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(other.userkey).send({ subscription: makeSubscription() }).expect(200);
 
-			await request(server).delete(`/v1/user/push/sessions/${other.id}`).asPerson(current.userkey).expect(204);
+			await request(server).delete(`/v1/user/notify/push/sessions/${other.id}`).asPerson(current.userkey).expect(204);
 			expect(await pushRow(other.id)).toMatchObject({
 				push_endpoint: null, push_p256dh: null, push_auth: null, push_vapid_key: null, push_disabled: 1,
 			});
@@ -444,10 +444,10 @@ describe('Push Router', () => {
 			const theirs = await newSession(otherPerson);
 			const current = await newSession(personId);
 			const sub = makeSubscription();
-			await request(server).put('/v1/user/push').asPerson(theirs.userkey).send({ subscription: sub }).expect(200);
+			await request(server).put('/v1/user/notify/push').asPerson(theirs.userkey).send({ subscription: sub }).expect(200);
 			const before = await pushRow(theirs.id);
 
-			const res = await request(server).delete(`/v1/user/push/sessions/${theirs.id}`).asPerson(current.userkey).expect(404);
+			const res = await request(server).delete(`/v1/user/notify/push/sessions/${theirs.id}`).asPerson(current.userkey).expect(404);
 			expect(res).toBeProblemResponse(404);
 			expect(await pushRow(theirs.id)).toEqual(before);
 		});
@@ -457,14 +457,14 @@ describe('Push Router', () => {
 			const gone = await newSession(personId);
 			await db.deleteFrom('session').where('id', '=', gone.id).execute();
 
-			const res = await request(server).delete(`/v1/user/push/sessions/${gone.id}`).asPerson(current.userkey).expect(404);
+			const res = await request(server).delete(`/v1/user/notify/push/sessions/${gone.id}`).asPerson(current.userkey).expect(404);
 			expect(res).toBeProblemResponse(404);
 		});
 
 		it('returns 403 while su\'d', async () => {
 			const other = await newSession(personId);
 			const su = await newSession(personId, adminId);
-			const res = await request(server).delete(`/v1/user/push/sessions/${other.id}`).asPerson(su.userkey).expect(403);
+			const res = await request(server).delete(`/v1/user/notify/push/sessions/${other.id}`).asPerson(su.userkey).expect(403);
 			expect(res).toBeProblemResponse(403);
 			expect((await pushRow(other.id)).push_disabled).toBe(0);
 		});

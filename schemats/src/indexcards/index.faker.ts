@@ -43,6 +43,8 @@ import type {
 	Tourn,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
+	UnsubscribeResponse,
+	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
 	UserSession,
@@ -1705,6 +1707,22 @@ export const getRestStudentsUnlinkedSearchResponseMock =
 			]),
 		}));
 
+export const getRestNotifyEmailUnsubscribeStatusResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeStatus, object>> = {},
+): UnsubscribeStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	noEmail: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestNotifyEmailUnsubscribeResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
+): UnsubscribeResponse => ({
+	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -2196,7 +2214,7 @@ export const getUserInboxGetMessageResponseMock = (
 	...overrideResponse,
 });
 
-export const getUserPushResponseMock = (
+export const getUserNotifyPushResponseMock = (
 	overrideResponse: Partial<Extract<PushStatus, object>> = {},
 ): PushStatus => ({
 	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -2208,7 +2226,7 @@ export const getUserPushResponseMock = (
 	...overrideResponse,
 });
 
-export const getUserPushSubscribeResponseMock = (
+export const getUserNotifyPushSubscribeResponseMock = (
 	overrideResponse: Partial<Extract<PushStatus, object>> = {},
 ): PushStatus => ({
 	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),

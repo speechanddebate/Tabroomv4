@@ -81,7 +81,7 @@ sw.addEventListener('pushsubscriptionchange', (event) => {
 		}
 
 		// The cookie and an Origin header go along, which the API's CSRF check needs
-		const res = await fetch(`${API_BASE}/user/push`, {
+		const res = await fetch(`${API_BASE}/user/notify/push`, {
 			method: 'PUT',
 			credentials: 'include',
 			headers: { 'Content-Type': 'application/json' },

@@ -46,6 +46,8 @@ import type {
 	Tourn,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
+	UnsubscribeResponse,
+	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
 	UserSession,
@@ -1708,6 +1710,22 @@ export const getRestStudentsUnlinkedSearchResponseMock =
 			]),
 		}));
 
+export const getRestNotifyEmailUnsubscribeStatusResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeStatus, object>> = {},
+): UnsubscribeStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	noEmail: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestNotifyEmailUnsubscribeResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
+): UnsubscribeResponse => ({
+	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -2199,7 +2217,7 @@ export const getUserInboxGetMessageResponseMock = (
 	...overrideResponse,
 });
 
-export const getUserPushResponseMock = (
+export const getUserNotifyPushResponseMock = (
 	overrideResponse: Partial<Extract<PushStatus, object>> = {},
 ): PushStatus => ({
 	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -2211,7 +2229,7 @@ export const getUserPushResponseMock = (
 	...overrideResponse,
 });
 
-export const getUserPushSubscribeResponseMock = (
+export const getUserNotifyPushSubscribeResponseMock = (
 	overrideResponse: Partial<Extract<PushStatus, object>> = {},
 ): PushStatus => ({
 	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3604,6 +3622,54 @@ export const getRestStudentsUnlinkedSearchMockHandler = (
 	);
 };
 
+export const getRestNotifyEmailUnsubscribeStatusMockHandler = (
+	overrideResponse?:
+		| UnsubscribeStatus
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<UnsubscribeStatus> | UnsubscribeStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/notify/email/unsubscribe/:token',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestNotifyEmailUnsubscribeStatusResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestNotifyEmailUnsubscribeMockHandler = (
+	overrideResponse?:
+		| UnsubscribeResponse
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<UnsubscribeResponse> | UnsubscribeResponse),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/notify/email/unsubscribe/:token',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestNotifyEmailUnsubscribeResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
 export const getAuthLoginMockHandler = (
 	overrideResponse?:
 		| LoginResponse
@@ -3988,7 +4054,7 @@ export const getUserInboxMarkUnreadMockHandler = (
 	);
 };
 
-export const getUserPushMockHandler = (
+export const getUserNotifyPushMockHandler = (
 	overrideResponse?:
 		| PushStatus
 		| ((
@@ -3997,14 +4063,14 @@ export const getUserPushMockHandler = (
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
-		'*/user/push',
+		'*/user/notify/push',
 		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
 						? await overrideResponse(info)
 						: overrideResponse
-					: getUserPushResponseMock(),
+					: getUserNotifyPushResponseMock(),
 				{ status: 200 },
 			);
 		},
@@ -4012,7 +4078,7 @@ export const getUserPushMockHandler = (
 	);
 };
 
-export const getUserPushSubscribeMockHandler = (
+export const getUserNotifyPushSubscribeMockHandler = (
 	overrideResponse?:
 		| PushStatus
 		| ((
@@ -4021,14 +4087,14 @@ export const getUserPushSubscribeMockHandler = (
 	options?: RequestHandlerOptions,
 ) => {
 	return http.put(
-		'*/user/push',
+		'*/user/notify/push',
 		async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
 			return HttpResponse.json(
 				overrideResponse !== undefined
 					? typeof overrideResponse === 'function'
 						? await overrideResponse(info)
 						: overrideResponse
-					: getUserPushSubscribeResponseMock(),
+					: getUserNotifyPushSubscribeResponseMock(),
 				{ status: 200 },
 			);
 		},
@@ -4036,7 +4102,7 @@ export const getUserPushSubscribeMockHandler = (
 	);
 };
 
-export const getUserPushUnsubscribeMockHandler = (
+export const getUserNotifyPushUnsubscribeMockHandler = (
 	overrideResponse?:
 		| void
 		| ((
@@ -4045,7 +4111,7 @@ export const getUserPushUnsubscribeMockHandler = (
 	options?: RequestHandlerOptions,
 ) => {
 	return http.delete(
-		'*/user/push',
+		'*/user/notify/push',
 		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
 			if (typeof overrideResponse === 'function') {
 				await overrideResponse(info);
@@ -4057,7 +4123,7 @@ export const getUserPushUnsubscribeMockHandler = (
 	);
 };
 
-export const getUserPushUnsubscribeSessionMockHandler = (
+export const getUserNotifyPushUnsubscribeSessionMockHandler = (
 	overrideResponse?:
 		| void
 		| ((
@@ -4066,7 +4132,7 @@ export const getUserPushUnsubscribeSessionMockHandler = (
 	options?: RequestHandlerOptions,
 ) => {
 	return http.delete(
-		'*/user/push/sessions/:session',
+		'*/user/notify/push/sessions/:session',
 		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
 			if (typeof overrideResponse === 'function') {
 				await overrideResponse(info);
@@ -4381,6 +4447,8 @@ export const getIndexCardsAPIMock = () => [
 	getRestParadigmsRecordMockHandler(),
 	getRestQuizzesMockHandler(),
 	getRestStudentsUnlinkedSearchMockHandler(),
+	getRestNotifyEmailUnsubscribeStatusMockHandler(),
+	getRestNotifyEmailUnsubscribeMockHandler(),
 	getAuthLoginMockHandler(),
 	getAuthLogoutMockHandler(),
 	getAuthSuMockHandler(),
@@ -4398,10 +4466,10 @@ export const getIndexCardsAPIMock = () => [
 	getUserInboxMarkDeletedMockHandler(),
 	getUserInboxMarkReadMockHandler(),
 	getUserInboxMarkUnreadMockHandler(),
-	getUserPushMockHandler(),
-	getUserPushSubscribeMockHandler(),
-	getUserPushUnsubscribeMockHandler(),
-	getUserPushUnsubscribeSessionMockHandler(),
+	getUserNotifyPushMockHandler(),
+	getUserNotifyPushSubscribeMockHandler(),
+	getUserNotifyPushUnsubscribeMockHandler(),
+	getUserNotifyPushUnsubscribeSessionMockHandler(),
 	getUserSessionMockHandler(),
 	getUserSessionsMockHandler(),
 	getUserJudgesLinkRequestsMockHandler(),

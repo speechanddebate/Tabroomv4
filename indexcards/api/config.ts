@@ -24,6 +24,10 @@ export const ConfigSchema = z.object({
 	// ---------------------------------------------------------------------
 	host: z.string().min(1).default('0.0.0.0'),
 	port: z.number().int().min(1).max(65535).default(8001),
+	/** The public origin this API is reached at, for links that point back to it (email list headers) */
+	url: z.url().default('https://api.tabroom.com'),
+	/** The public origin of the schemats site, for links in email and redirects to its pages */
+	schemats_url: z.url().default('https://beta.tabroom.com'),
 	dockerhost: z.string().default(process.env.DOCKERHOST ?? 'unknown'),
 	/** An IP address, subnet, or an array of IP addresses and subnets to trust as being a reverse proxy. */
 	proxy: z.array(z.string().min(1)).min(1).optional(),

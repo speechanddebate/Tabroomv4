@@ -14,7 +14,7 @@
  * - Turn off: DELETE, then unsubscribe.
  * - The service worker handles `pushsubscriptionchange` itself (src/service-worker.ts).
  */
-import { userPush, userPushSubscribe, userPushUnsubscribe } from '$indexcards';
+import { userNotifyPush, userNotifyPushSubscribe, userNotifyPushUnsubscribe } from '$indexcards';
 import type { PushSubscription as PushSubscriptionBody } from '$indexcards/schemas';
 
 /** SvelteKit serves src/service-worker.ts here, in dev and in the build */
@@ -158,12 +158,12 @@ export type SyncResult = 'subscribed' | 'off' | 'no-permission' | 'reset' | 'una
 
 /** The API calls syncPush makes, so tests can swap them out */
 export type PushClient = {
-	getStatus: typeof userPush;
-	save: typeof userPushSubscribe;
-	remove: typeof userPushUnsubscribe;
+	getStatus: typeof userNotifyPush;
+	save: typeof userNotifyPushSubscribe;
+	remove: typeof userNotifyPushUnsubscribe;
 };
 
-const defaultClient: PushClient = { getStatus: userPush, save: userPushSubscribe, remove: userPushUnsubscribe };
+const defaultClient: PushClient = { getStatus: userNotifyPush, save: userNotifyPushSubscribe, remove: userNotifyPushUnsubscribe };
 
 /**
  * The page-load sync from the client contract. Never prompts for permission: when it is

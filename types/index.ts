@@ -32,5 +32,6 @@ export * from './src/Topic.js';
 export * from './src/Webpage.js';
 export * from './src/Person.js';
 export * from './src/Push.js';
+export * from './src/Unsubscribe.js';
 export * from './src/Quiz.js';
 export * from './src/School.js';

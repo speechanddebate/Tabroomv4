@@ -1,11 +1,11 @@
 import type { PageLoad } from './$types';
-import { prefetchUserPushQuery, prefetchUserSessionsQuery } from '$indexcards';
+import { prefetchUserNotifyPushQuery, prefetchUserSessionsQuery } from '$indexcards';
 
 export const load: PageLoad = async ({ parent, fetch }) => {
 	const { queryClient } = await parent();
 
 	await Promise.all([
-		prefetchUserPushQuery(
+		prefetchUserNotifyPushQuery(
 			queryClient,
 			{ fetcher: fetch }
 		),
