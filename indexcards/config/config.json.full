@@ -60,9 +60,6 @@
     "path": "/v2",
     "product_codes": {}
   },
-  "share": {
-    "smtp": {}
-  },
   "naudl": {
     "url": "https://urbandebate.my.salesforce.com",
     "tourn_endpoint": "/services/apexrest/v.1/TournamentService",
@@ -91,7 +88,6 @@
       "pool": 128
     }
   },
-  "onesignal": {},
   "webpush": {},
   "features": {
     "HIDE_DEV_ENDPOINTS": true

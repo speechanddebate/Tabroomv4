@@ -19,10 +19,11 @@ export type inputData = {
 	tourn?         : number
 	email?         : string[]
 	ignoreNoEmail? : boolean
-	channels: {
-		inbox? : boolean
-		email? : boolean
-		webpush?   : boolean
+	/** Each channel has its own default (see the schema); a caller names only the channels it wants different */
+	channels?: {
+		inbox?   : boolean
+		email?   : boolean
+		webpush? : boolean
 	}
 }
 /**
@@ -45,10 +46,12 @@ export const NotificationRequestSchema = z.object({
 	tourn         : z.number().optional(),
 	email         : z.array(z.string()).optional(),
 	ignoreNoEmail  : z.boolean().optional(),
+	// Each channel carries its own default, so a caller names only the ones it wants different.
+	// The general-purpose channels default on; a channel for particular cases (SMS, say) would default off
 	channels: z.object({
-		inbox : z.boolean().default(false),
-		email : z.boolean().default(false),
-		webpush   : z.boolean().default(false),
+		inbox   : z.boolean().default(true),
+		email   : z.boolean().default(true),
+		webpush : z.boolean().default(true),
 	}).prefault({})
 });
 export type NotificationRequest = z.infer<typeof NotificationRequestSchema>;

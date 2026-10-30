@@ -1,7 +1,7 @@
 // Integrate with share.tabroom.com rooms.
 import { randomPhrase } from '@speechanddebate/nsda-js-utils';
 import { getFollowers } from '../../../helpers/followers.js';
-import { emailBlast } from '../../../helpers/mail.js';
+import { notify } from '../../../services/notifications/notify.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
 
@@ -12,12 +12,18 @@ export async function makeShareRooms(req, res) {
 
 // Direct functional export because this also is called by cron.
 
+/**
+ * Opens a share.tabroom.com room for every panel in the round that has auto_docshare on
+ * and no room yet, and invites the panel's judges and competitors through notify().
+ * Replies route to the room because Reply-To is the room's address; the From can only
+ * follow once blast() writes an email row. Returns how many email jobs were queued
+ */
 export const shareRooms = async (roundId) => {
 
 	const { rows: sections } = await sql`
 		select
 			distinct panel.id id, panel.letter letter,
-			tourn.name tournName, round.label roundLabel, round.name roundName,
+			tourn.id tournId, tourn.name tournName, round.label roundLabel, round.name roundName,
 			auto_docshare.value autoShareEnabled
 		from (panel, round, event, tourn)
 
@@ -38,51 +44,48 @@ export const shareRooms = async (roundId) => {
 			and event.tourn = tourn.id
 	`.execute(kdb);
 
-	const emailPromises = [];
 	let counter = 0;
 
-	sections.forEach(async (section) => {
+	for (const section of sections) {
 
-		if (section.autoShareEnabled) {
+		if (!section.autoShareEnabled) continue;
 
-			const phrase = randomPhrase();
+		const phrase = randomPhrase();
 
-			await kdb.insertInto('panel_setting')
-				.values({ panel: section.id, tag: 'share', value: phrase })
-				.onDuplicateKeyUpdate({ value: phrase })
-				.execute();
+		await kdb.insertInto('panel_setting')
+			.values({ panel: section.id, tag: 'share', value: phrase })
+			.onDuplicateKeyUpdate({ value: phrase })
+			.execute();
 
-			const email = await getFollowers({
-				panelId        : section.id,
-				noFollowers    : true,
-				panelFollowers : true,
-				returnEmails   : true,
-			});
+		// The panel's judges and competitors themselves; followers are not in the room
+		const ids = await getFollowers({
+			panelId     : section.id,
+			noFollowers : true,
+		});
 
-			let messageText = `Share speech documents for this round (10mb limit, docs only) by replying to`;
-			messageText += ` this email with a file attachment, or going to https://share.tabroom.com/${phrase} \n`;
+		if (ids.length < 1) continue;
 
-			let messageHTML = `<p>Share speech documents for this round (10mb limit, docs only) by replying to`;
-			messageHTML += ` this email with a file attachment, or going to `;
-			messageHTML += `<a href="https://share.tabroom.com/${phrase}">https://share.tabroom.com/${phrase}</a></p>`;
+		let messageText = `Share speech documents for this round (10mb limit, docs only) by replying to`;
+		messageText += ` this email with a file attachment, or going to https://share.tabroom.com/${phrase} \n`;
 
-			const messageData = {
-				to      : `${phrase}@share.tabroom.com`,
-				subject : `${section.tournName} ${section.roundLabel || `Round ${section.roundName}`} (${phrase}) - Speech Documents`,
-				text    : messageText,
-				html    : messageHTML,
-				share   : true,
-				email,
-			};
+		let messageHTML = `<p>Share speech documents for this round (10mb limit, docs only) by replying to`;
+		messageHTML += ` this email with a file attachment, or going to `;
+		messageHTML += `<a href="https://share.tabroom.com/${phrase}">https://share.tabroom.com/${phrase}</a></p>`;
 
-			if (messageData.email.length > 0) {
-				const dispatch = emailBlast(messageData);
-				counter += email.length;
-				emailPromises.push(dispatch.result);
-			}
-		}
-	});
+		const response = await notify({
+			ids,
+			subject  : `${section.tournName} ${section.roundLabel || `Round ${section.roundName}`} (${phrase}) - Speech Documents`,
+			text     : messageText,
+			html     : messageHTML,
+			from     : 'Tabroom Share <share@share.tabroom.com>',
+			replyTo  : `${phrase}@share.tabroom.com`,
+			tourn    : section.tournId,
+			// The invite asks for a reply with a file, which only email can carry
+			channels : { inbox: false, webpush: false },
+		});
 
-	await Promise.all(emailPromises);
+		counter += response.email;
+	}
+
 	return counter;
 };

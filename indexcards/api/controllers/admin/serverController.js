@@ -206,10 +206,6 @@ const notifyCloudAdmins = async (req, log, subject) => {
 		subject : `Tabroom Cloud Change: ${subject}`,
 	};
 
-	if (config.linode.notify_slack) {
-		message.emailInclude = [config.linode.notify_slack];
-	}
-
 	const emailResponse = await notify(message);
 	return emailResponse;
 };

@@ -57,7 +57,6 @@ export const ConfigSchema = z.object({
 		stackscript_id: z.number().int().min(0),
 		firewall_id: z.number().int().min(0),
 		tabweb_cap: z.number().int().min(0),
-		notify_slack: z.string().min(1),
 	}).optional(),
 	//--------------------------------------------------------------------------
 	// DATABASE
@@ -168,13 +167,6 @@ export const ConfigSchema = z.object({
 			nco: z.int().optional(),
 		}).prefault({}),
 	}).prefault({}),
-	share: z.object({
-		smtp: z.object({
-			host: z.string().min(1).optional(),
-			user: z.string().min(1).optional(),
-			pass: z.string().min(1).optional(),
-		}).prefault({}),
-	}).prefault({}),
 	naudl: z.object({
 		username: z.string().min(1).optional(),
 		pw: z.string().min(1).optional(),
@@ -236,12 +228,6 @@ export const ConfigSchema = z.object({
 			ctx.addIssue({ code: 'custom', message: 'mail.mode "redirect" needs mail.redirectTo' });
 		}
 	}),
-	onesignal: z.object({
-		url: z.string().min(1).optional(),
-		appId: z.string().min(1).optional(),
-		safariId: z.string().min(1).optional(),
-		appKey: z.string().min(1).optional(),
-	}).prefault({}),
 	/** Web push notifications configuration, web push will fail to start without proper keys configured */
 	webpush: z.object({
 		/** Engineering contact for web push notifications (e.g., a mailto: address) */

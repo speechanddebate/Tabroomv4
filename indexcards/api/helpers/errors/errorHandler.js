@@ -1,7 +1,19 @@
 import logger from '../logger.js';
-import { adminBlast } from '../admin.js';
+import { sendEmail } from '../../services/notifications/channels/email.js';
 import { Forbidden, ServiceUnavailable, Unauthorized } from '../problem.js';
 import config from '../../config.js';
+
+/**
+ * Mails the stack to ERROR_DESTINATION straight through sendEmail, never the queue, so the
+ * report still goes out when Redis or the workers are down and is delivered immediately.
+ * Error mail is a stopgap; the long-term home for these is logging and alerting, not inboxes
+ */
+async function mailAdmins(subject, text) {
+	const addresses = config.ERROR_DESTINATION ?? [];
+	if (addresses.length === 0) return;
+	// sendEmail logs each rejected or retried send itself, so nothing to report here
+	await Promise.allSettled(addresses.map((to) => sendEmail({ to, from: 'error-handler@tabroom.com', subject, text })));
+}
 
 export const errorHandler = (err, req, res, next) => {
 	// MariaDB aborted a query that ran past db.pool.queryTimeout. Expected under load, so no admin email.
@@ -28,16 +40,12 @@ export const errorHandler = (err, req, res, next) => {
 	// Production bugs should find their way to Palmer
 	if (
 		process.env.NODE_ENV === 'production'
-		|| req.originalUrl === '/v1/glp/mailtest/error'
+		|| req.originalUrl === '/v1/admin/mailtest/error'
 	) {
 
 		logger.info('Sending mail');
 
-		const messageData = {
-			from    : 'error-handler@tabroom.com',
-			email   : config.ERROR_DESTINATION,
-			subject : `Indexcards Bug Tripped`,
-			text    : `
+		const text = `
 Host
 ${config.dockerhost}
 
@@ -57,17 +65,13 @@ Request Body
 ${JSON.stringify(req.body, null, 4)}
 
 Raw Full Error Object
-${JSON.stringify(err, Object.getOwnPropertyNames(err))}`,
+${JSON.stringify(err, Object.getOwnPropertyNames(err))}`;
 
-		};
-
-		try {
-			adminBlast(messageData);
-			err.message += ` Also, this stack was emailed to the admins to ${config.ERROR_DESTINATION}`;
-		} catch (error) {
-			logger.error(error);
-			err.message += ` Also, error response on sending email: ${err}`;
-		}
+		// Not awaited, so the 500 response is not held for the relay
+		void mailAdmins('Indexcards Bug Tripped', text).catch((error) => {
+			logger.error('Error mail to the admins failed', { message: error.message });
+		});
+		err.message += ` Also, this stack was emailed to the admins to ${config.ERROR_DESTINATION}`;
 	}
 
 	return res.status(500).json({
@@ -81,68 +85,6 @@ ${JSON.stringify(err, Object.getOwnPropertyNames(err))}`,
 		status           : 500,
 		error            : true,
 	});
-};
-
-export const inlineError = (err, location = 'Unknown') => {
-
-	// Validation error object from OpenAPI
-	if (err.status || err.errors) {
-		if (err.status === 400) {
-			return {
-				message          : `OpenAPI Validation error : ${err.message}`,
-				errors           : err.errors,
-				stack            : err.stack,
-				host             : config.dockerhost,
-				env              : process.env,
-			};
-		}
-		if (err.status === 401) {
-			return err.message;
-		}
-	}
-
-	// Default to a 500 error and give me a stack trace PLEASE ALWAYS GIVE ME A
-	// FRIGGIN STACK TRACE WHY IS THIS NOT THE DEFAULT DEV BEHAVIOR OMFG.
-	logger.error(err.message, err);
-
-	// Production bugs should find their way to Palmer
-	if (process.env.NODE_ENV === 'production') {
-
-		const messageData = {
-			from    : 'error-handler@tabroom.com',
-			email   : config.ERROR_DESTINATION,
-			subject : `Indexcards Bug Tripped`,
-			text    : `
-Host
-${config.dockerhost}
-
-Location
-${location}
-
-Stack
-${err.stack}
-
-Raw Full Error Object
-${JSON.stringify(err, Object.getOwnPropertyNames(err))}`,
-
-		};
-
-		try {
-			adminBlast(messageData);
-			err.message += ` Also, this stack was emailed to the admins to ${config.ERROR_DESTINATION}`;
-		} catch (error) {
-			logger.error(error);
-			err.message += ` Also, error response on sending email: ${err}`;
-		}
-	}
-
-	return {
-		message          : err.message || 'Internal server error',
-		host             : config.dockerhost,
-		path             : location,
-		stack            : err.stack,
-		env              : process.env,
-	};
 };
 
 export default errorHandler;

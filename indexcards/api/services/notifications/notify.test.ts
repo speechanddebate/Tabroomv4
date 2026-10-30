@@ -14,15 +14,22 @@ describe("Request Validation", () => {
 			subject: null,
 			body: null,
 			url: null,
-			channels: { inbox: true },
+			channels: { email: false, webpush: false },
 		};
 		expect(validateNotificationRequest(validInput)).toMatchSchema(NotificationRequestSchema);
+	});
+	it("applies each channel's default unless the request sets it", async () => {
+		const everywhere = validateNotificationRequest({ ids: [1], text: "test message", subject: null, body: null, url: null });
+		expect(everywhere.channels).toEqual({ inbox: true, email: true, webpush: true });
+
+		const emailOnly = validateNotificationRequest({ ids: [1], text: "test message", subject: null, body: null, url: null, channels: { inbox: false, webpush: false } });
+		expect(emailOnly.channels).toEqual({ inbox: false, email: true, webpush: false });
 	});
 	it("should reject duplicate IDs", async () => {
 		const invalidInput = {
 			ids: [1, 1, 2],
 			text: "test message",
-			channels: { inbox: true },
+			channels: { email: false, webpush: false },
 		};
 		expect(() => validateNotificationRequest(invalidInput)).toThrow();
 	});
@@ -30,7 +37,7 @@ describe("Request Validation", () => {
 		const invalidInput = {
 			ids: [],
 			text: "test message",
-			channels: { inbox: true },
+			channels: { email: false, webpush: false },
 		};
 		expect(() => validateNotificationRequest(invalidInput)).toThrow();
 	});
@@ -57,7 +64,7 @@ describe('notify', () => {
 	it('writes a message for each recipient and queues a push job for each', async () => {
 		const Sender = await factories.person.create();
 
-		const response = await notify({ ...base, ids: people, sender: Sender.id, channels: { inbox: true, webpush: true } });
+		const response = await notify({ ...base, ids: people, sender: Sender.id, channels: { email: false } });
 
 		expect(response).toMatchObject({ error: false, inbox: 2, jobs: { push: 2 } });
 
@@ -91,7 +98,7 @@ describe('notify', () => {
 	});
 
 	it('queues no push jobs when the channel is off', async () => {
-		const response = await notify({ ...base, ids: people, channels: { inbox: true } });
+		const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
 
 		expect(response.jobs).toEqual({ push: 0, email: 0 });
 		expect(await messageRows(people)).toHaveLength(2);
@@ -102,8 +109,8 @@ describe('notify', () => {
 		const emailJobs = () => (addJobs.mock.calls[0][0] as { queueName: string; name: string; data: unknown; opts: Record<string, unknown> }[])
 			.filter((delivery) => delivery.queueName === 'email');
 
-		it('queues an email job for each recipient after the push jobs, with the queue options', async () => {
-			const response = await notify({ ...base, ids: people, channels: { inbox: true, webpush: true, email: true } });
+		it('uses the channel defaults when none are named, queueing an email job per recipient after the push jobs', async () => {
+			const response = await notify({ ...base, ids: people });
 
 			expect(response).toMatchObject({ error: false, inbox: 2, email: 2, jobs: { push: 2, email: 2 } });
 
@@ -125,7 +132,7 @@ describe('notify', () => {
 		it('writes the message but queues no email for someone opted out', async () => {
 			const OptedOut = await factories.person.create({ no_email: 1 });
 
-			const response = await notify({ ...base, ids: [...people, OptedOut.id], channels: { inbox: true, email: true } });
+			const response = await notify({ ...base, ids: [...people, OptedOut.id], channels: { webpush: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 2 });
 			expect(await messageRows([OptedOut.id])).toHaveLength(1);
@@ -136,7 +143,7 @@ describe('notify', () => {
 		it('queues account mail to someone opted out and marks the job', async () => {
 			const OptedOut = await factories.person.create({ no_email: 1 });
 
-			const response = await notify({ ...base, ids: [OptedOut.id], ignoreNoEmail: true, channels: { email: true } });
+			const response = await notify({ ...base, ids: [OptedOut.id], ignoreNoEmail: true, channels: { inbox: false, webpush: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([OptedOut.id]))[0].id, ignoreNoEmail: true });
@@ -147,14 +154,14 @@ describe('notify', () => {
 			const NoAddress = await db.selectFrom('person').select('id').where('email', '=', '').executeTakeFirst()
 				?? await factories.person.create({ email: '' });
 
-			const response = await notify({ ...base, ids: [NoAddress.id, people[0]], channels: { email: true } });
+			const response = await notify({ ...base, ids: [NoAddress.id, people[0]], channels: { inbox: false, webpush: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([people[0]]))[0].id });
 		});
 
 		it('queues no email jobs when the channel is off', async () => {
-			const response = await notify({ ...base, ids: people, channels: { inbox: true } });
+			const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
 
 			expect(response.email).toBe(0);
 			expect(emailJobs()).toEqual([]);
@@ -162,7 +169,7 @@ describe('notify', () => {
 	});
 
 	it('keeps the message out of the inbox when that channel is off', async () => {
-		await notify({ ...base, ids: people, channels: { webpush: true } });
+		await notify({ ...base, ids: people, channels: { inbox: false, email: false } });
 
 		const messages = await messageRows(people);
 		expect(messages).toHaveLength(2);
@@ -172,13 +179,13 @@ describe('notify', () => {
 	it('links a blast email row and leaves the content to it', async () => {
 		const email = await factories.email.create({ content: '<p>Room 12</p>' });
 
-		await notify({ ...base, ids: people, html: '<p>Room 12</p>', emailId: email.id, channels: { inbox: true } });
+		await notify({ ...base, ids: people, html: '<p>Room 12</p>', emailId: email.id, channels: { email: false, webpush: false } });
 
 		expect((await messageRows(people))[0]).toMatchObject({ email: email.id, body: null });
 	});
 
 	it('stores html as the body and adds the footer', async () => {
-		await notify({ ...base, ids: people, html: '<p>Room 12</p>', append: 'Sent by Tab', channels: { inbox: true } });
+		await notify({ ...base, ids: people, html: '<p>Room 12</p>', append: 'Sent by Tab', channels: { email: false, webpush: false } });
 
 		expect((await messageRows(people))[0].body).toBe('<p>Room 12</p>\nSent by Tab');
 	});
@@ -186,13 +193,13 @@ describe('notify', () => {
 	it('keeps a footer on the message even when linked to an email row', async () => {
 		const email = await factories.email.create();
 
-		await notify({ ...base, ids: people, emailId: email.id, append: 'Sent by Tab', channels: { inbox: true } });
+		await notify({ ...base, ids: people, emailId: email.id, append: 'Sent by Tab', channels: { email: false, webpush: false } });
 
 		expect((await messageRows(people))[0].body).toBe('You are in room 12\nSent by Tab');
 	});
 
 	it('prepNotify writes the records and builds the deliveries without queueing', async () => {
-		const prepared = await prepNotify({ ...base, ids: people, channels: { inbox: true, webpush: true } });
+		const prepared = await prepNotify({ ...base, ids: people, channels: { email: false } });
 
 		expect(prepared.messages.map(message => message.person)).toEqual(people);
 		expect(await messageRows(people)).toHaveLength(2);
@@ -201,11 +208,11 @@ describe('notify', () => {
 	});
 
 	it('prepNotify throws on an invalid request', async () => {
-		await expect(prepNotify({ ...base, ids: [], channels: { inbox: true } })).rejects.toThrow('Invalid notification request');
+		await expect(prepNotify({ ...base, ids: [], channels: { email: false, webpush: false } })).rejects.toThrow('Invalid notification request');
 	});
 
 	it('rejects an invalid request without writing anything', async () => {
-		const response = await notify({ ...base, ids: [], channels: { inbox: true } });
+		const response = await notify({ ...base, ids: [], channels: { email: false, webpush: false } });
 
 		expect(response).toMatchObject({ error: true, inbox: 0 });
 		expect(addJobs).not.toHaveBeenCalled();

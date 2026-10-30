@@ -18,16 +18,4 @@ router.route('/mailtest/error').get(controller.throwTestError).openapi = {
 	},
 };
 
-router.route('/mailtest/slack').get(controller.testSlackNotification).openapi = {
-	path: '/admin/mailtest/slack',
-	summary: 'Undocumented Endpoint',
-	tags: ['admin:mail'],
-	responses: {
-		'200': {
-			description: 'OK',
-		},
-		'401' : { $ref: '#/components/responses/Unauthorized' },
-	},
-};
-
 export default router;
