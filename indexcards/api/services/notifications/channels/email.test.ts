@@ -422,6 +422,19 @@ describe('emailMessage', () => {
 		expect(sendMail).not.toHaveBeenCalled();
 	});
 
+	it.each(['sent', 'failed'] as const)('skips a message whose email already ended %s, so a rerun job sends nothing', async (email_status) => {
+		const message = await newMessage({ email_status });
+
+		await expect(emailMessage(message.id)).resolves.toEqual({ status: 'skipped', skipped: 'already delivered' });
+		expect(sendMail).not.toHaveBeenCalled();
+	});
+
+	it('sends a message whose email is still queued', async () => {
+		const message = await newMessage({ email_status: 'queued' });
+
+		await expect(emailMessage(message.id)).resolves.toEqual({ status: 'sent' });
+	});
+
 	it('skips a person with no address', async () => {
 		// Addresses are unique, so only one person can have a blank one; reuse it across runs
 		const NoAddress = await db.selectFrom('person').select('id').where('email', '=', '').executeTakeFirst()

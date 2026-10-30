@@ -1,4 +1,4 @@
-import type { BackoffStrategy, DefaultJobOptions, JobsOptions, Processor } from 'bullmq';
+import type { BackoffStrategy, DefaultJobOptions, Job, JobsOptions, Processor } from 'bullmq';
 import { RETRY_DELAY } from './backoff.js';
 
 /** Options a job in a flow may set; its place in the flow comes from where it is passed */
@@ -27,6 +27,8 @@ export type QueueDefinition<Name extends string = string, Data = any, Result = a
 	jobOptions: DefaultJobOptions;
 	/** Set when the queue's jobs use backoff type custom */
 	backoffStrategy?: BackoffStrategy;
+	/** Runs when a job has failed for the last time */
+	onFailed?: FailedHook<Data>;
 	/**
 	 * A job for this queue with the queue's options applied, for addFlow. A flow doesn't
 	 * pick up a queue's default options the way Queue.add does, so they go on here
@@ -46,13 +48,21 @@ export type QueueOptions<Name extends string, Data, Result> = {
 	 * RETRY_DELAY. Pass retryAfterBackoff for jobs that throw RetryAfterError
 	 */
 	backoffStrategy?: BackoffStrategy;
+	/**
+	 * Runs when a job has failed for the last time: its attempts are used up or it threw
+	 * UnrecoverableError. The worker logs anything it throws, so a hook can't fail the queue
+	 */
+	onFailed?: FailedHook<Data>;
 };
+
+/** What a queue runs after one of its jobs fails for good */
+export type FailedHook<Data> = (job: Job<Data>, error: Error) => Promise<void>;
 
 /** Fills in the defaults for a queue, so a definition says only what is particular to it */
 export function defineQueue<Name extends string, Data, Result>(
 	options: QueueOptions<Name, Data, Result>,
 ): QueueDefinition<Name, Data, Result> {
-	const { name, processor, concurrency = 1, attempts = 3, backoffStrategy } = options;
+	const { name, processor, concurrency = 1, attempts = 3, backoffStrategy, onFailed } = options;
 	const jobOptions: DefaultJobOptions = {
 		attempts,
 		backoff: backoffStrategy
@@ -67,6 +77,7 @@ export function defineQueue<Name extends string, Data, Result>(
 		processor,
 		concurrency,
 		...(backoffStrategy ? { backoffStrategy } : {}),
+		...(onFailed ? { onFailed } : {}),
 		jobOptions,
 		job: (jobName, data, opts = {}) => ({
 			queueName: name,

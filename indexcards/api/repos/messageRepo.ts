@@ -1,6 +1,6 @@
 import type { Database } from '../data/database.js';
 import type { Message } from '../data/schema.js';
-import type { Insertable } from 'kysely';
+import type { Insertable, Selectable } from 'kysely';
 
 type queryOpts = {
 	unread?: boolean;
@@ -129,8 +129,38 @@ async function createMessage(db: Database, data: Insertable<Message>) {
 	.executeTakeFirstOrThrow();
 };
 
+/** The final statuses a delivery job can record for each channel */
+export type DeliveryStatus = {
+	email: Exclude<NonNullable<Selectable<Message>['email_status']>, 'queued'>;
+	push: Exclude<NonNullable<Selectable<Message>['push_status']>, 'queued'>;
+};
+
+/**
+ * Records how a channel's delivery of a message ended. Only a delivery still pending
+ * (queued, or null for a job queued before the columns existed) is updated, so a late
+ * failure can't overwrite a send. Returns whether the row changed
+ */
+async function recordDelivery<C extends keyof DeliveryStatus>(
+	db: Database,
+	messageId: number,
+	channel: C,
+	status: DeliveryStatus[C],
+): Promise<boolean> {
+	const statusColumn = channel === 'email' ? 'email_status' : 'push_status';
+	const timeColumn = channel === 'email' ? 'emailed_at' : 'pushed_at';
+
+	const result = await db.updateTable('message')
+		.set({ [statusColumn]: status, [timeColumn]: new Date() })
+		.where('id', '=', messageId)
+		.where((eb) => eb.or([eb(statusColumn, 'is', null), eb(statusColumn, '=', 'queued')]))
+		.executeTakeFirst();
+
+	return result.numUpdatedRows > 0n;
+}
+
 export default {
 	getMessage,
 	getMessages,
 	createMessage,
+	recordDelivery,
 };

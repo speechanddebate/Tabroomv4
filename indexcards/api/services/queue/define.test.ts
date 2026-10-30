@@ -26,6 +26,13 @@ describe('defineQueue', () => {
 		expect(queue.jobOptions).toMatchObject({ attempts: 5, backoff: { type: 'custom' } });
 	});
 
+	it('carries a failure hook only when given one', async () => {
+		const onFailed = async () => undefined;
+
+		expect(defineQueue({ name: 'things', processor, onFailed }).onFailed).toBe(onFailed);
+		expect(defineQueue({ name: 'things', processor })).not.toHaveProperty('onFailed');
+	});
+
 	it('builds a flow node with the queue options under the job options', () => {
 		const queue = defineQueue<'things', { id: number }, void>({ name: 'things', processor });
 

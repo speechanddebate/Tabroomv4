@@ -45,7 +45,7 @@ describe("Request Validation", () => {
 
 describe('notify', () => {
 	const messageRows = (people: number[]) => db.selectFrom('message')
-		.select(['id', 'person', 'subject', 'body', 'url', 'sender', 'sender_string', 'email', 'visible_at'])
+		.select(['id', 'person', 'subject', 'body', 'url', 'sender', 'sender_string', 'email', 'visible_at', 'email_status', 'emailed_at', 'push_status', 'pushed_at'])
 		.where('person', 'in', people)
 		.orderBy('id')
 		.execute();
@@ -78,6 +78,9 @@ describe('notify', () => {
 			sender_string: 'Tab <tab@tabroom.com>',
 			email: null,
 		});
+		// Push is queued and unsettled; email, being off, has no status at all
+		expect(messages.every(message => message.push_status === 'queued' && message.pushed_at === null)).toBe(true);
+		expect(messages.every(message => message.email_status === null && message.emailed_at === null)).toBe(true);
 		expect(messages[0].visible_at).toBeInstanceOf(Date);
 		// Visible from the moment it was written, so the inbox shows it on the next read
 		expect(Math.abs(messages[0].visible_at!.getTime() - Date.now())).toBeLessThan(5000);
@@ -101,7 +104,9 @@ describe('notify', () => {
 		const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
 
 		expect(response.jobs).toEqual({ push: 0, email: 0 });
-		expect(await messageRows(people)).toHaveLength(2);
+		const messages = await messageRows(people);
+		expect(messages).toHaveLength(2);
+		expect(messages.every(message => message.push_status === null && message.email_status === null)).toBe(true);
 		expect(addJobs).toHaveBeenCalledWith([]);
 	});
 
@@ -127,6 +132,8 @@ describe('notify', () => {
 					backoff: { type: 'exponential', delay: expect.any(Number) },
 				}),
 			})));
+			expect(messages.every(message => message.email_status === 'queued' && message.emailed_at === null)).toBe(true);
+			expect(messages.every(message => message.push_status === 'queued')).toBe(true);
 		});
 
 		it('writes the message but queues no email for someone opted out', async () => {
@@ -135,9 +142,14 @@ describe('notify', () => {
 			const response = await notify({ ...base, ids: [...people, OptedOut.id], channels: { webpush: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 2 });
-			expect(await messageRows([OptedOut.id])).toHaveLength(1);
-			expect(emailJobs().map(job => (job.data as { message: number }).message))
-				.not.toContain((await messageRows([OptedOut.id]))[0].id);
+			const [skipped] = await messageRows([OptedOut.id]);
+			expect(skipped).toBeDefined();
+			expect(emailJobs().map(job => (job.data as { message: number }).message)).not.toContain(skipped.id);
+
+			// Settled at queue time, so the record says why nothing was sent
+			expect(skipped.email_status).toBe('skipped');
+			expect(skipped.emailed_at).toBeInstanceOf(Date);
+			expect((await messageRows(people)).every(message => message.email_status === 'queued')).toBe(true);
 		});
 
 		it('queues account mail to someone opted out and marks the job', async () => {
@@ -146,7 +158,9 @@ describe('notify', () => {
 			const response = await notify({ ...base, ids: [OptedOut.id], ignoreNoEmail: true, channels: { inbox: false, webpush: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
-			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([OptedOut.id]))[0].id, ignoreNoEmail: true });
+			const [message] = await messageRows([OptedOut.id]);
+			expect(emailJobs()[0].data).toEqual({ message: message.id, ignoreNoEmail: true });
+			expect(message.email_status).toBe('queued');
 		});
 
 		it('queues no email for someone with no address', async () => {
@@ -158,6 +172,10 @@ describe('notify', () => {
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([people[0]]))[0].id });
+			// The blank-address person collects messages across runs, so read only this run's
+			const [latest] = (await messageRows([NoAddress.id])).slice(-1);
+			expect(latest.email_status).toBe('skipped');
+			expect(latest.emailed_at).toBeInstanceOf(Date);
 		});
 
 		it('queues no email jobs when the channel is off', async () => {
@@ -165,6 +183,7 @@ describe('notify', () => {
 
 			expect(response.email).toBe(0);
 			expect(emailJobs()).toEqual([]);
+			expect((await messageRows(people)).every(message => message.email_status === null && message.emailed_at === null)).toBe(true);
 		});
 	});
 

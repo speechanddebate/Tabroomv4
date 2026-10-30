@@ -106,6 +106,12 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 		? null
 		: request.append ? `${content}\n${request.append}` : content;
 
+	// No email job for anyone email can't reach; the job checks again at send time for changes since
+	const reachable = request.channels.email
+		? await emailRecipients(request.ids, request.ignoreNoEmail === true)
+		: new Set<number>();
+	const queuedAt = new Date();
+
 	const messages = await db.insertInto('message')
 		.values(request.ids.map((person) => ({
 			person,
@@ -118,7 +124,15 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			tourn         : request.tourn,
 			// The inbox shows a message once visible_at has passed and never shows one without it,
 			// so the row is still the record of the delivery when the inbox channel is off
-			visible_at: request.channels.inbox ? new Date() : null,
+			visible_at: request.channels.inbox ? queuedAt : null,
+			// Each channel's status starts here: queued until its job settles, or settled
+			// already for someone email can't reach. A channel that is off stays null
+			...(request.channels.email
+				? reachable.has(person)
+					? { email_status: 'queued' as const }
+					: { email_status: 'skipped' as const, emailed_at: queuedAt }
+				: {}),
+			...(request.channels.webpush ? { push_status: 'queued' as const } : {}),
 		})))
 		.returning(['id', 'person'])
 		// every row above has a person
@@ -136,8 +150,6 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 		}
 	}
 	if (request.channels.email) {
-		// No job for anyone email can't reach; the job checks again at send time for changes since
-		const reachable = await emailRecipients(request.ids, request.ignoreNoEmail === true);
 		for (const message of messages) {
 			if (!reachable.has(message.person)) continue;
 			deliveries.push(emailQueue.job('email', {

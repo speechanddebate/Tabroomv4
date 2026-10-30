@@ -449,6 +449,22 @@ describe('pushMessage', () => {
 		expect(sendNotification).not.toHaveBeenCalled();
 	});
 
+	it('skips a message whose push already ended, so a rerun job sends nothing', async () => {
+		await factories.session.create({ person: Person.id, ...subscription() });
+		const message = await newMessage({ push_status: 'sent' });
+
+		await expect(pushMessage(message.id)).resolves.toMatchObject({ skipped: 'already delivered', sent: [] });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
+	it('sends a message whose push is still queued, as a retry in progress is', async () => {
+		const Owner = await factories.person.create();
+		const session = await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id, push_status: 'queued' });
+
+		await expect(pushMessage(message.id)).resolves.toMatchObject({ sent: [session.id] });
+	});
+
 	it('skips a person with no subscriptions', async () => {
 		const Loner = await factories.person.create();
 		await factories.session.create({ person: Loner.id });

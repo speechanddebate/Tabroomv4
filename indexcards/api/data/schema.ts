@@ -641,8 +641,12 @@ export interface Message {
   created_at: Generated<Date | null>;
   deleted_at: Generated<Date | null>;
   email: Generated<number | null>;
+  email_status: Generated<"failed" | "logged" | "queued" | "rejected" | "sent" | "skipped" | null>;
+  emailed_at: Generated<Date | null>;
   id: Generated<number>;
   person: Generated<number | null>;
+  push_status: Generated<"failed" | "queued" | "rejected" | "sent" | "skipped" | null>;
+  pushed_at: Generated<Date | null>;
   read_at: Generated<Date | null>;
   sender: Generated<number | null>;
   sender_string: Generated<string | null>;

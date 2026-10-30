@@ -1,6 +1,8 @@
 import type { Processor } from 'bullmq';
 import config from '../../config.js';
+import { db } from '../../data/database.js';
 import logger from '../../helpers/logger.js';
+import messageRepo, { type DeliveryStatus } from '../../repos/messageRepo.js';
 import { RetryAfterError } from '../queue/backoff.js';
 import { emailMessage, type EmailMessageResult } from './channels/email.js';
 import { isPushConfigured, pushMessage, type PushMessageResult } from './channels/webpush.js';
@@ -115,6 +117,11 @@ export const processEmail: Processor<EmailJobData, EmailJobResult> = async (job)
 		throw new Error(`Email for message ${job.data.message} needs another try, the relay or the network was busy`);
 	}
 
+	// A message already delivered keeps the outcome it has
+	if (result.skipped !== 'already delivered') {
+		await messageRepo.recordDelivery(db, job.data.message, 'email', result.status);
+	}
+
 	return {
 		status: result.status,
 		...(result.skipped ? { skipped: result.skipped } : {}),
@@ -133,6 +140,17 @@ export type PushJobResult = {
 	skipped?: PushMessageResult['skipped'];
 };
 
+/**
+ * How a push job ended for the message as a whole: sent once any login got it, across
+ * every attempt; rejected when logins were tried and none took it; skipped when there
+ * was nothing to try
+ */
+function pushStatus(sent: number, result: PushMessageResult): DeliveryStatus['push'] {
+	if (sent > 0) return 'sent';
+	if (result.skipped) return 'skipped';
+	return result.rejected + result.gone > 0 ? 'rejected' : 'skipped';
+}
+
 let warnedUnconfigured = false;
 
 /** Pushes one message to its person's subscribed logins, retrying the ones the push service put off */
@@ -143,6 +161,7 @@ export const processPush: Processor<PushJobData, PushJobResult> = async (job) =>
 			warnedUnconfigured = true;
 			logger.warn('Push jobs are being skipped, web push is not configured on this worker');
 		}
+		await messageRepo.recordDelivery(db, job.data.message, 'push', 'skipped');
 		return { sent: 0, gone: 0, rejected: 0, skipped: 'unconfigured' };
 	}
 	warnedUnconfigured = false;
@@ -158,6 +177,11 @@ export const processPush: Processor<PushJobData, PushJobResult> = async (job) =>
 			`Push for message ${job.data.message} needs another try for ${result.retry.sessions.length} login(s)`,
 			result.retry.retryAfter,
 		);
+	}
+
+	// A message already delivered keeps the outcome it has
+	if (result.skipped !== 'already delivered') {
+		await messageRepo.recordDelivery(db, job.data.message, 'push', pushStatus(sent.length, result));
 	}
 
 	return {

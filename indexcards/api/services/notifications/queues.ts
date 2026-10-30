@@ -1,3 +1,5 @@
+import { db } from '../../data/database.js';
+import messageRepo from '../../repos/messageRepo.js';
 import { retryAfterBackoff } from '../queue/backoff.js';
 import { defineQueue } from '../queue/define.js';
 import { processEmail, processPush } from './jobs.js';
@@ -8,6 +10,9 @@ export const emailQueue = defineQueue({
 	processor: processEmail,
 	concurrency: 10,
 	// The default exponential backoff: a relay says "try later" with a 4xx reply but never says when
+	onFailed: async (job) => {
+		await messageRepo.recordDelivery(db, job.data.message, 'email', 'failed');
+	},
 });
 
 /** Pushes one message to its person's subscribed logins */
@@ -17,4 +22,7 @@ export const pushQueue = defineQueue({
 	concurrency: 10,
 	// Push services answer 429 and 503 with Retry-After, which the job passes on in RetryAfterError
 	backoffStrategy: retryAfterBackoff,
+	onFailed: async (job) => {
+		await messageRepo.recordDelivery(db, job.data.message, 'push', 'failed');
+	},
 });

@@ -7,13 +7,21 @@ import { processEmail, processPush, tallyDeliveries, type EmailJobData, type Pus
 import type { EmailMessageResult } from './channels/email.js';
 import type { PushMessageResult } from './channels/webpush.js';
 
-const { isPushConfigured, pushMessage, emailMessage } = vi.hoisted(() => ({
+const { isPushConfigured, pushMessage, emailMessage, recordDelivery } = vi.hoisted(() => ({
 	isPushConfigured: vi.fn(),
 	pushMessage: vi.fn(),
 	emailMessage: vi.fn(),
+	recordDelivery: vi.fn(),
 }));
 vi.mock('./channels/webpush.js', () => ({ isPushConfigured, pushMessage }));
 vi.mock('./channels/email.js', () => ({ emailMessage }));
+vi.mock('../../repos/messageRepo.js', () => ({ default: { recordDelivery } }));
+
+/** The status a job recorded for message 5, or undefined when it recorded none */
+const recorded = (channel: 'email' | 'push') => {
+	const call = recordDelivery.mock.calls.find(([, message, recordedChannel]) => message === 5 && recordedChannel === channel);
+	return call?.[3] as string | undefined;
+};
 
 const outcome = (overrides: Partial<PushMessageResult> = {}): PushMessageResult => ({
 	sent: [],
@@ -36,6 +44,7 @@ describe('processPush', () => {
 	beforeEach(() => {
 		isPushConfigured.mockReturnValue(true);
 		pushMessage.mockReset().mockResolvedValue(outcome());
+		recordDelivery.mockReset().mockResolvedValue(true);
 		vi.spyOn(logger, 'warn').mockImplementation(() => logger);
 	});
 
@@ -50,6 +59,8 @@ describe('processPush', () => {
 		await expect(processPush(job)).resolves.toEqual({ sent: 2, gone: 1, rejected: 2 });
 		expect(pushMessage).toHaveBeenCalledWith(5, []);
 		expect(job.updateData).not.toHaveBeenCalled();
+		// Any login reaching it makes the message sent, whatever the others did
+		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 5, 'push', 'sent');
 	});
 
 	it('skips the logins an earlier attempt reached and counts them as sent', async () => {
@@ -58,6 +69,34 @@ describe('processPush', () => {
 
 		await expect(processPush(job)).resolves.toEqual({ sent: 3, gone: 0, rejected: 0 });
 		expect(pushMessage).toHaveBeenCalledWith(5, [11, 12]);
+	});
+
+	it('records sent when an earlier attempt reached a login and this one found nothing left', async () => {
+		pushMessage.mockResolvedValue(outcome({ skipped: 'no subscriptions' }));
+
+		await processPush(fakeJob<PushJobData>({ message: 5, sent: [11] }));
+
+		expect(recorded('push')).toBe('sent');
+	});
+
+	it.each([
+		['rejected', outcome({ rejected: 1 })],
+		['rejected', outcome({ gone: 2 })],
+		['skipped', outcome({ skipped: 'no subscriptions' })],
+		['skipped', outcome({ skipped: 'deleted' })],
+	] as const)('records %s when no login got it', async (status, result) => {
+		pushMessage.mockResolvedValue(result);
+
+		await processPush(fakeJob<PushJobData>({ message: 5 }));
+
+		expect(recorded('push')).toBe(status);
+	});
+
+	it('records nothing for a message already delivered, keeping the outcome it has', async () => {
+		pushMessage.mockResolvedValue(outcome({ skipped: 'already delivered' }));
+
+		await expect(processPush(fakeJob<PushJobData>({ message: 5 }))).resolves.toMatchObject({ skipped: 'already delivered' });
+		expect(recordDelivery).not.toHaveBeenCalled();
 	});
 
 	it('remembers what was sent and asks for a retry when a login was put off', async () => {
@@ -70,6 +109,8 @@ describe('processPush', () => {
 		expect((error as RetryAfterError).retryAfter).toBe(30);
 		expect((error as Error).message).toContain('message 5');
 		expect(job.updateData).toHaveBeenCalledWith({ message: 5, sent: [11, 12] });
+		// Still in progress, so the message stays queued
+		expect(recordDelivery).not.toHaveBeenCalled();
 	});
 
 	it('asks for a retry without a Retry-After when the service gave none', async () => {
@@ -97,12 +138,15 @@ describe('processPush', () => {
 		expect(pushMessage).toHaveBeenCalledTimes(1);
 		expect(logger.warn).toHaveBeenCalledOnce();
 		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('not configured'));
+		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 2, 'push', 'skipped');
+		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 3, 'push', 'skipped');
 	});
 
 	it('lets a database error fail the job', async () => {
 		pushMessage.mockRejectedValue(new Error('Connection lost'));
 
 		await expect(processPush(fakeJob<PushJobData>({ message: 5 }))).rejects.toThrow('Connection lost');
+		expect(recordDelivery).not.toHaveBeenCalled();
 	});
 });
 
@@ -113,6 +157,7 @@ describe('processEmail', () => {
 	beforeEach(() => {
 		config.mail.mode = 'live';
 		emailMessage.mockReset().mockResolvedValue(result());
+		recordDelivery.mockReset().mockResolvedValue(true);
 		vi.spyOn(logger, 'warn').mockImplementation(() => logger);
 	});
 
@@ -124,6 +169,7 @@ describe('processEmail', () => {
 	it('emails the message and reports the status', async () => {
 		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).resolves.toEqual({ status: 'sent' });
 		expect(emailMessage).toHaveBeenCalledWith(5, { ignoreNoEmail: undefined });
+		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 5, 'email', 'sent');
 	});
 
 	it('forwards the account-mail flag', async () => {
@@ -132,22 +178,33 @@ describe('processEmail', () => {
 		expect(emailMessage).toHaveBeenCalledWith(5, { ignoreNoEmail: true });
 	});
 
-	it.each(['logged', 'rejected'] as const)('passes %s through', async (status) => {
+	it.each(['logged', 'rejected'] as const)('passes %s through and records it', async (status) => {
 		emailMessage.mockResolvedValue(result({ status }));
 
 		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).resolves.toEqual({ status });
+		expect(recorded('email')).toBe(status);
 	});
 
-	it('passes a skipped reason through', async () => {
+	it('passes a skipped reason through and records the skip', async () => {
 		emailMessage.mockResolvedValue(result({ status: 'skipped', skipped: 'opted out' }));
 
 		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).resolves.toEqual({ status: 'skipped', skipped: 'opted out' });
+		expect(recorded('email')).toBe('skipped');
+	});
+
+	it('records nothing for a message already delivered, keeping the outcome it has', async () => {
+		emailMessage.mockResolvedValue(result({ status: 'skipped', skipped: 'already delivered' }));
+
+		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).resolves.toEqual({ status: 'skipped', skipped: 'already delivered' });
+		expect(recordDelivery).not.toHaveBeenCalled();
 	});
 
 	it('asks the queue for another try when the relay was busy', async () => {
 		emailMessage.mockResolvedValue(result({ status: 'retry' }));
 
 		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).rejects.toThrow('message 5');
+		// Still in progress, so the message stays queued
+		expect(recordDelivery).not.toHaveBeenCalled();
 	});
 
 	it('warns once while the worker is in log mode and keeps logging the messages', async () => {

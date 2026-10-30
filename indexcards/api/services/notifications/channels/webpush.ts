@@ -228,7 +228,7 @@ export type PushMessageResult = {
 	/** Sessions to try again, with the longest Retry-After the service asked for */
 	retry: { sessions: number[]; retryAfter?: number };
 	/** Why nothing was attempted, when nothing was */
-	skipped?: 'unconfigured' | 'no message' | 'deleted' | 'no subscriptions';
+	skipped?: 'unconfigured' | 'no message' | 'already delivered' | 'deleted' | 'no subscriptions';
 };
 
 const DEFAULT_TITLE = 'Message from Tabroom.com';
@@ -254,7 +254,7 @@ export async function pushMessage(
 	// A blast's message carries no body of its own; the content is on its email row
 	const message = await db.selectFrom('message')
 		.leftJoin('email', 'email.id', 'message.email')
-		.select(['message.id', 'message.person', 'message.subject', 'message.body', 'message.url', 'message.deleted_at', 'email.content'])
+		.select(['message.id', 'message.person', 'message.subject', 'message.body', 'message.url', 'message.deleted_at', 'message.push_status', 'email.content'])
 		.where('message.id', '=', messageId)
 		.executeTakeFirst();
 
@@ -262,6 +262,12 @@ export async function pushMessage(
 	if (!message || !message.person) {
 		logger.debug(`Push for message ${messageId} skipped, no message`);
 		return { ...result, skipped: 'no message' };
+	}
+	// A job run again after its push settled sends nothing; null is a job queued before
+	// delivery was recorded. Retries of a job still in progress stay queued and go through
+	if (message.push_status && message.push_status !== 'queued') {
+		logger.debug(`Push for message ${messageId} skipped, already ${message.push_status}`);
+		return { ...result, skipped: 'already delivered' };
 	}
 	if (message.deleted_at) {
 		logger.debug(`Push for message ${messageId} skipped, deleted`);

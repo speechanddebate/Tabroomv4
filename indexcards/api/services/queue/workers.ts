@@ -7,7 +7,7 @@ import { queueDefinitions } from './registry.js';
 
 const workers: Worker[] = [];
 
-function startWorker({ name, processor, concurrency, backoffStrategy }: QueueDefinition) {
+function startWorker({ name, processor, concurrency, backoffStrategy, onFailed }: QueueDefinition) {
 	const worker = new Worker(name, processor, {
 		...baseOptions,
 		concurrency,
@@ -26,6 +26,12 @@ function startWorker({ name, processor, concurrency, backoffStrategy }: QueueDef
 		const final = error instanceof UnrecoverableError || (job?.attemptsMade ?? 0) >= attempts;
 		const outcome = final ? 'giving up' : 'will retry';
 		logger.warn(`Job ${name}:${job?.id} (${job?.name}) failed on attempt ${job?.attemptsMade} of ${attempts}, ${outcome}`, error);
+
+		if (final && job && onFailed) {
+			onFailed(job, error).catch((hookError: unknown) => {
+				logger.error(`Job ${name}:${job.id} (${job.name}) failure hook failed`, hookError);
+			});
+		}
 	});
 
 	workers.push(worker);

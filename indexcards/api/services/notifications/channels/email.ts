@@ -165,7 +165,7 @@ export type EmailMessageResult = {
 	/** What sendEmail reported, or skipped when nothing was sent */
 	status: EmailSendResult['status'] | 'skipped';
 	/** Why nothing was sent, when nothing was */
-	skipped?: 'no message' | 'deleted' | 'no address' | 'opted out';
+	skipped?: 'no message' | 'already delivered' | 'deleted' | 'no address' | 'opted out';
 };
 
 export type EmailMessageOptions = {
@@ -189,7 +189,7 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 		.innerJoin('person', 'person.id', 'message.person')
 		.leftJoin('email', 'email.id', 'message.email')
 		.select([
-			'message.id', 'message.subject', 'message.body', 'message.url', 'message.sender_string', 'message.deleted_at',
+			'message.id', 'message.subject', 'message.body', 'message.url', 'message.sender_string', 'message.deleted_at', 'message.email_status',
 			'email.content as email_content', 'email.subject as email_subject', 'email.sender_raw', 'email.metadata',
 			'person.id as person_id', 'person.email as person_email', 'person.no_email', 'person.first', 'person.last',
 		])
@@ -203,6 +203,9 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 
 	// A message deleted between queueing and sending is the recheck working, not an error
 	if (!row) return skip('no message');
+	// A job run again after its email went out (a stalled worker's job, say) sends nothing;
+	// null is a job queued before delivery was recorded
+	if (row.email_status && row.email_status !== 'queued') return skip('already delivered', `already ${row.email_status}`);
 	if (row.deleted_at) return skip('deleted');
 	if (!row.person_email.trim()) return skip('no address', `person ${row.person_id} has no address`);
 	if (row.no_email && !options.ignoreNoEmail) return skip('opted out', `person ${row.person_id} opted out`);
