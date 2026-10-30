@@ -2,6 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import z from 'zod';
 
+/** The SMTP relay outbound mail goes through */
+export const SmtpRelaySchema = z.object({
+	host: z.string().default('localhost'),
+	port: z.int().default(25),
+	/** TLS from the first byte, as on port 465. Off, the connection starts plain and upgrades with STARTTLS when the relay offers it */
+	secure: z.boolean().default(false),
+	/** Verify the relay's certificate. Off for Mailpit and self-signed relays */
+	rejectUnauthorized: z.boolean().default(true),
+	/** Connections kept open to the relay at once */
+	pool: z.int().positive().default(128),
+	/** Credentials, for a relay that wants them. Both or neither */
+	user: z.string().min(1).optional(),
+	pass: z.string().min(1).optional(),
+});
+
 /** This schema defines the app config. add comments to a config value to get descriptions at usage. */
 export const ConfigSchema = z.object({
 	//----------------------------------------------------------------------
@@ -189,18 +204,34 @@ export const ConfigSchema = z.object({
 		timeout: z.int().min(1).default(30000),
 	}).prefault({}),
 	mail: z.object({
-		test: z.boolean().default(true),
+		/**
+		 * What happens to a message at the relay step.
+		 * log: logged and dropped, nothing is handed to a relay. The default, so a machine with no mail config sends nothing.
+		 * redirect: every recipient is replaced by redirectTo, for reading real mail in your own inbox.
+		 * live: handed to the relay as addressed. Outside production only with allowLiveOutsideProduction,
+		 * for a relay that delivers nothing, such as the Mailpit container.
+		 */
+		mode: z.enum(['log', 'redirect', 'live']).default('log'),
+		/** Where every message goes in redirect mode */
+		redirectTo: z.array(z.email()).nonempty().optional(),
+		/** Lets mode live run when NODE_ENV is not production. Set it only when the relay is a sink  THIS WILL SEND ALL EMAILS TO THE CONFIGURED RELAYS AS ADDRESSED */
+		allowLiveOutsideProduction: z.boolean().default(false),
+		/** The From address when a message names none */
 		from: z.string().default('live@www.tabroom.com'),
-		server: z.string().default('localhost'),
-		port: z.int().default(25),
-		pool: z.int().positive().default(128),
-		admin: z.object({
-		secure: z.boolean().default(false),
-		server: z.string().default('localhost'),
-		port: z.int().default(25),
-		pool: z.int().positive().default(128),
-		}).optional(),
-	}).prefault({}),
+		/** The relay every message goes through */
+		smtp: SmtpRelaySchema.prefault({}),
+	}).prefault({}).superRefine((mail, ctx) => {
+		// The dev database is a copy with real addresses, so live delivery is a production-only setting
+		if (mail.mode === 'live' && process.env.NODE_ENV !== 'production' && !mail.allowLiveOutsideProduction) {
+			ctx.addIssue({
+				code: 'custom',
+				message: 'mail.mode "live" requires NODE_ENV=production; use log or redirect, or set mail.allowLiveOutsideProduction for a relay that delivers nothing',
+			});
+		}
+		if (mail.mode === 'redirect' && !mail.redirectTo) {
+			ctx.addIssue({ code: 'custom', message: 'mail.mode "redirect" needs mail.redirectTo' });
+		}
+	}),
 	onesignal: z.object({
 		url: z.string().min(1).optional(),
 		appId: z.string().min(1).optional(),

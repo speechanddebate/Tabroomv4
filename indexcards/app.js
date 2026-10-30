@@ -17,6 +17,7 @@ import { sql } from 'kysely';
 import logger, { setupRequest } from './api/helpers/logger.js';
 import { startQueues, startWorkers, stopQueues } from './api/services/queue/index.js';
 import { initWebPush } from './api/services/notifications/channels/webpush.js';
+import { closeMail } from './api/services/notifications/channels/email.js';
 import { onShutdown } from './api/helpers/shutdown.js';
 
 const app = express();
@@ -38,6 +39,8 @@ initWebPush();
 if (process.env.NODE_ENV !== 'test') {
 	await startQueues();
 	startWorkers();
+	// Hooks run last registered first, so the relays close after the workers finish their jobs
+	onShutdown('mail', async () => closeMail());
 	onShutdown('queues', stopQueues);
 }
 

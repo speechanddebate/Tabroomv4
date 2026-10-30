@@ -30,6 +30,8 @@ cp config/config.sample.json config/config.json
  
 At minimum, make sure your local values for `development` and `test` DB settings are correct in `config/config.json`.
 
+Outbound email is gated by `mail.mode`. The default, `log`, writes each message to the log and sends nothing, so a machine with no mail config can never mail anyone. In dev, mail goes to [Mailpit](https://mailpit.axllent.org/), a container in the shared nsda compose stack (`~/source/nsda/compose.yml`) that accepts every message over SMTP and delivers nothing; read what would have gone out at http://localhost:8025. Point `mail.smtp` at it by container name, which is what the `indexcards-dev` container sees; a process on the host reaches it at `localhost` port 1025. Mailpit is the only reason to set `mail.allowLiveOutsideProduction`: `mode: "live"` on its own refuses to start unless `NODE_ENV` is `production`. Without Mailpit, use `mode: "redirect"` with your own address in `mail.redirectTo` to receive every message yourself, with the original recipient in an `X-Original-To` header.
+
 > [!NOTE]
 > When using the indexcards Docker image, the config file will have to be mounted in the container to the `/config` directory. ex: `docker run -v ./config/config.json:/config/config.json:ro indexcards`
 

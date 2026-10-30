@@ -79,11 +79,17 @@
     "timeout": 30000
   },
   "mail": {
-    "test": true,
+    "mode": "log",
+    "redirectTo": ["you@example.com"],
+    "allowLiveOutsideProduction": false,
     "from": "live@www.tabroom.com",
-    "server": "localhost",
-    "port": 25,
-    "pool": 128
+    "smtp": {
+      "host": "localhost",
+      "port": 25,
+      "secure": false,
+      "rejectUnauthorized": true,
+      "pool": 128
+    }
   },
   "onesignal": {},
   "webpush": {},
