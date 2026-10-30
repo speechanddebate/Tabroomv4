@@ -2,7 +2,7 @@ import { z } from "zod";
 import { db } from "../../data/database.js";
 import logger from "../../helpers/logger.js";
 import { addJobs, type FlowNode } from "../queue/index.js";
-import { pushQueue } from "./queues.js";
+import { emailQueue, pushQueue } from "./queues.js";
 
 export type inputData = {
 	ids     : number[]
@@ -61,8 +61,14 @@ export type notifyResponse = {
 	web     : number
 	errors? : unknown[]
 	/** Jobs queued per channel */
-	jobs?   : { push: number }
+	jobs?   : { push: number; email: number }
 }
+
+/**
+ * Email jobs yield to anything added without a priority, so the transactional mail that
+ * comes later (password resets, confirmations) jumps ahead of a blast in progress
+ */
+const EMAIL_JOB_PRIORITY = 10;
 
 export class NotificationRequestError extends Error {
 	constructor(message: string) {
@@ -107,9 +113,9 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			sender        : request.sender,
 			sender_string : request.replyTo || request.from,
 			tourn         : request.tourn,
-			// Every inbox hides a message with no visible_at, so the row is still the record
-			// of the delivery without ever being shown
-			...(request.channels.inbox ? {} : { visible_at: null }),
+			// The inbox shows a message once visible_at has passed and never shows one without it,
+			// so the row is still the record of the delivery when the inbox channel is off
+			visible_at: request.channels.inbox ? new Date() : null,
 		})))
 		.returning(['id', 'person'])
 		// every row above has a person
@@ -126,9 +132,35 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			}));
 		}
 	}
-	// TODO: add the email deliveries here when the email job lands
+	if (request.channels.email) {
+		// No job for anyone email can't reach; the job checks again at send time for changes since
+		const reachable = await emailRecipients(request.ids, request.ignoreNoEmail === true);
+		for (const message of messages) {
+			if (!reachable.has(message.person)) continue;
+			deliveries.push(emailQueue.job('email', {
+				message: message.id,
+				...(request.ignoreNoEmail ? { ignoreNoEmail: true } : {}),
+			}, {
+				jobId: `message-${message.id}`,
+				priority: EMAIL_JOB_PRIORITY,
+				ignoreDependencyOnFailure: true,
+			}));
+		}
+	}
 
 	return { messages, deliveries };
+}
+
+/** The ids among these people who have an address and have not opted out (or all with one, for account mail) */
+async function emailRecipients(ids: number[], ignoreNoEmail: boolean): Promise<Set<number>> {
+	const people = await db.selectFrom('person')
+		.select(['id', 'email', 'no_email'])
+		.where('id', 'in', ids)
+		.execute();
+
+	return new Set(people
+		.filter((person) => person.email.trim() !== '' && (ignoreNoEmail || !person.no_email))
+		.map((person) => person.id));
 }
 
 /**
@@ -154,13 +186,16 @@ export async function notify(inputData: inputData): Promise<notifyResponse> {
 
 	await addJobs(deliveries);
 
-	const jobs = { push: deliveries.filter((delivery) => delivery.queueName === 'push').length };
-	logger.info(`Notification recorded for ${messages.length} people, queued ${jobs.push} push job(s)`);
+	const jobs = {
+		push  : deliveries.filter((delivery) => delivery.queueName === 'push').length,
+		email : deliveries.filter((delivery) => delivery.queueName === 'email').length,
+	};
+	logger.info(`Notification recorded for ${messages.length} people, queued ${jobs.push} push and ${jobs.email} email job(s)`);
 
 	return {
 		error   : false,
 		message : `Notification queued for ${messages.length} people`,
-		email   : 0,
+		email   : jobs.email,
 		inbox   : messages.length,
 		web     : 0,
 		jobs,

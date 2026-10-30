@@ -6,8 +6,11 @@ import nodemailer, {
 	type SMTPPoolSentMessageInfo,
 	type Transporter,
 } from 'nodemailer';
+import { convert } from 'html-to-text';
 import config from '../../../config.js';
+import { db } from '../../../data/database.js';
 import logger from '../../../helpers/logger.js';
+import { unsubscribeToken } from '../unsubscribe.js';
 
 /** One message for one address. Formatting (subject prefix, footer, list headers) is the caller's */
 export type OutboundEmail = {
@@ -156,4 +159,148 @@ function sendFailure(err: unknown, to: string): EmailSendResult {
 
 	logger.warn(`Email to ${to} failed, ${message}, will retry`);
 	return { status: 'retry', reason: message };
+}
+
+export type EmailMessageResult = {
+	/** What sendEmail reported, or skipped when nothing was sent */
+	status: EmailSendResult['status'] | 'skipped';
+	/** Why nothing was sent, when nothing was */
+	skipped?: 'no message' | 'deleted' | 'no address' | 'opted out';
+};
+
+export type EmailMessageOptions = {
+	/** Send even to a person who opted out, for mail about an action on their own account */
+	ignoreNoEmail?: boolean;
+};
+
+const DEFAULT_SUBJECT = 'Message from Tabroom.com';
+/** The prefix every notification subject has carried since classic, so filters built on it keep working */
+const SUBJECT_PREFIX = '[TAB] ';
+const UNSUBSCRIBE_PATH = '/v1/rest/notify/email/unsubscribe/';
+
+/**
+ * Emails one message to its person. Loads the message, its blast email row when it has
+ * one, and the person at send time, so an opt-out or an address change since queueing
+ * is honored. Reports what happened instead of throwing, so the caller decides what a
+ * skip or a refused relay means; only the unexpected (the database is down) throws
+ */
+export async function emailMessage(messageId: number, options: EmailMessageOptions = {}): Promise<EmailMessageResult> {
+	const row = await db.selectFrom('message')
+		.innerJoin('person', 'person.id', 'message.person')
+		.leftJoin('email', 'email.id', 'message.email')
+		.select([
+			'message.id', 'message.subject', 'message.body', 'message.url', 'message.sender_string', 'message.deleted_at',
+			'email.content as email_content', 'email.subject as email_subject', 'email.sender_raw', 'email.metadata',
+			'person.id as person_id', 'person.email as person_email', 'person.no_email', 'person.first', 'person.last',
+		])
+		.where('message.id', '=', messageId)
+		.executeTakeFirst();
+
+	const skip = (skipped: NonNullable<EmailMessageResult['skipped']>, detail: string = skipped): EmailMessageResult => {
+		logger.debug(`Email for message ${messageId} skipped, ${detail}`);
+		return { status: 'skipped', skipped };
+	};
+
+	// A message deleted between queueing and sending is the recheck working, not an error
+	if (!row) return skip('no message');
+	if (row.deleted_at) return skip('deleted');
+	if (!row.person_email.trim()) return skip('no address', `person ${row.person_id} has no address`);
+	if (row.no_email && !options.ignoreNoEmail) return skip('opted out', `person ${row.person_id} opted out`);
+
+	const person = { id: row.person_id, email: row.person_email.trim() };
+	const name = [row.first, row.last].filter(Boolean).join(' ').replace(/"/g, '').trim();
+	const content = row.body ?? row.email_content ?? '';
+	const link = row.url ? absoluteUrl(row.url) : null;
+	// Mail about the person's own account goes out even to someone opted out, so an unsubscribe link would be misleading
+	const token = options.ignoreNoEmail ? null : await unsubscribeToken(person);
+
+	// From stays in our own domain so the relay signs it; whoever should get the answers goes in
+	// Reply-To. A blast's email row can name both; a plain message names only the reply address,
+	// which is what its sender_string has always meant to the inbox
+	const outbound: OutboundEmail = {
+		to: name ? `"${name}" <${person.email}>` : person.email,
+		from: row.sender_raw || config.mail.from,
+		subject: SUBJECT_PREFIX + (row.subject || row.email_subject || DEFAULT_SUBJECT),
+		text: [
+			isHtml(content) ? plainText(content) : content,
+			link ? `Read more: ${link}` : null,
+			textFooter(token),
+		].filter(Boolean).join('\n\n'),
+	};
+
+	const replyTo = metadataReplyTo(row.metadata) ?? row.sender_string?.trim();
+	if (replyTo) outbound.replyTo = replyTo;
+
+	if (isHtml(content)) {
+		outbound.html = [
+			content,
+			link ? `<p>Read more: <a href="${link}">${link}</a></p>` : null,
+			htmlFooter(token),
+		].filter(Boolean).join('\n');
+	}
+
+	// RFC 8058: with both headers, mail clients show their own Unsubscribe button and POST without opening a page
+	if (token) {
+		outbound.headers = {
+			'List-Unsubscribe': `<${config.url}${UNSUBSCRIBE_PATH}${token}>`,
+			'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+		};
+	}
+
+	const result = await sendEmail(outbound);
+	return { status: result.status };
+}
+
+/** Whether the inbox body is html rather than plain text */
+function isHtml(content: string): boolean {
+	return /<[a-z][\s\S]*>/i.test(content);
+}
+
+/** The inbox html as readable plain text, paragraphs kept, images dropped, links shown after their text */
+function plainText(html: string): string {
+	return convert(html, {
+		wordwrap: 78,
+		selectors: [{ selector: 'img', format: 'skip' }],
+	}).trim();
+}
+
+/** A message url as a link that works from an email: site-relative paths get the site in front */
+function absoluteUrl(url: string): string {
+	return url.startsWith('/') ? `${config.schemats_url}${url}` : url;
+}
+
+const profileUrl = () => `${config.schemats_url}/user/profile`;
+const unsubscribeUrl = (token: string) => `${config.schemats_url}/unsubscribe/${token}`;
+
+function textFooter(token: string | null): string {
+	const lines = ['----------------------------'];
+	if (token) {
+		lines.push(
+			'You received this email because you have an account on Tabroom.com.',
+			`Stop these emails: ${unsubscribeUrl(token)}`,
+			`Or manage them from your profile: ${profileUrl()}`,
+		);
+	} else {
+		// Account mail goes out whatever the email setting says, so there is nothing to point the person at
+		lines.push('You received this email because of an action on your Tabroom.com account.');
+	}
+	return lines.join('\n');
+}
+
+function htmlFooter(token: string | null): string {
+	return token
+		? `<hr><p>You received this email because you have an account on Tabroom.com. <a href="${unsubscribeUrl(token)}">Stop these emails</a> or manage them from <a href="${profileUrl()}">your profile</a>.</p>`
+		: '<hr><p>You received this email because of an action on your Tabroom.com account.</p>';
+}
+
+/** The Reply-To a blast's email row recorded, when its metadata is JSON that carries one */
+function metadataReplyTo(metadata: string | null): string | undefined {
+	if (!metadata) return undefined;
+	try {
+		const parsed: unknown = JSON.parse(metadata);
+		const replyTo = (parsed as { replyTo?: unknown })?.replyTo;
+		return typeof replyTo === 'string' && replyTo.trim() ? replyTo : undefined;
+	} catch {
+		return undefined;
+	}
 }

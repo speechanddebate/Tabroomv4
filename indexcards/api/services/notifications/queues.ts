@@ -7,6 +7,7 @@ export const emailQueue = defineQueue({
 	name: 'email',
 	processor: processEmail,
 	concurrency: 10,
+	// The default exponential backoff: a relay says "try later" with a 4xx reply but never says when
 });
 
 /** Pushes one message to its person's subscribed logins */
