@@ -75,6 +75,7 @@ import type {
 	ServiceUnavailableResponse,
 	Session,
 	StudentSchema,
+	TooManyRequestsResponse,
 	Tourn,
 	UnauthorizedResponse,
 	UnlinkedJudgeSchema,
@@ -8214,6 +8215,185 @@ export const createUserNotifyPushUnsubscribe = <
 > => {
 	return createMutation(
 		() => ({ ...getUserNotifyPushUnsubscribeMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userNotifyPushTestResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userNotifyPushTestResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushTestResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userNotifyPushTestResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userNotifyPushTestResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
+export type userNotifyPushTestResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushTestResponse503 = {
+	data: ServiceUnavailableResponse;
+	status: 503;
+};
+
+export type userNotifyPushTestResponseSuccess =
+	userNotifyPushTestResponse204 & {
+		headers: Headers;
+	};
+export type userNotifyPushTestResponseError = (
+	| userNotifyPushTestResponse401
+	| userNotifyPushTestResponse403
+	| userNotifyPushTestResponse409
+	| userNotifyPushTestResponse429
+	| userNotifyPushTestResponse500
+	| userNotifyPushTestResponse503
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushTestResponse =
+	| userNotifyPushTestResponseSuccess
+	| userNotifyPushTestResponseError;
+
+export const getUserNotifyPushTestUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push/test`;
+};
+
+/**
+ * Send one push notification to the current login's subscription, so the person can check push works on this browser. Creates no inbox message. Limited to 5 a minute per login
+ * @summary Send a test notification
+ */
+export const userNotifyPushTest = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushTestResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserNotifyPushTestUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushTestResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushTestResponse;
+};
+
+export const getUserNotifyPushTestMutationOptions = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userNotifyPushTest>>,
+		TError,
+		void,
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userNotifyPushTest>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ['userNotifyPushTest'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userNotifyPushTest>>,
+		void
+	> = () => {
+		return userNotifyPushTest(fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserNotifyPushTestMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPushTest>>
+>;
+
+export type UserNotifyPushTestMutationError =
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| ConflictResponse
+	| TooManyRequestsResponse
+	| ErrorResponseResponse
+	| ServiceUnavailableResponse;
+
+/**
+ * @summary Send a test notification
+ */
+export const createUserNotifyPushTest = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userNotifyPushTest>>,
+			TError,
+			void,
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userNotifyPushTest>>,
+	TError,
+	void,
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserNotifyPushTestMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

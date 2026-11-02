@@ -151,6 +151,30 @@ describe('push subscriptions', () => {
 		});
 	});
 
+	describe('getPushSubscription', () => {
+		it('returns the endpoint and keys of a live subscription', async () => {
+			const values = subscription();
+			const Session = await factories.session.create({ person: Person.id, ...values });
+
+			expect(await sessionRepo.getPushSubscription(db, Session.id, KEY)).toEqual({
+				id: Session.id,
+				push_endpoint: values.push_endpoint,
+				push_p256dh: 'p256dh',
+				push_auth: 'auth',
+			});
+		});
+
+		it.each([
+			['has no subscription', () => ({})],
+			['is turned off', () => ({ ...subscription(), push_disabled: 1 })],
+			['was saved under another key', () => ({ ...subscription(), push_vapid_key: 'fedcba9876543210' })],
+		])('is undefined when the login %s', async (_name, values) => {
+			const Session = await factories.session.create({ person: Person.id, ...values() });
+
+			expect(await sessionRepo.getPushSubscription(db, Session.id, KEY)).toBeUndefined();
+		});
+	});
+
 	describe('clearPushEndpoint', () => {
 		it('clears the subscription and keeps push on', async () => {
 			const values = subscription();

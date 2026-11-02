@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import * as controller from '../../../../../controllers/user/push.js';
+import { RateLimitExceeded } from '../../../../../helpers/problem.js';
 import { requirePerson } from '../../../../../middleware/auth/authorization.js';
 import { PushStatusSchema, PushSubscribeRequestSchema } from '@tabroom/types';
 import z from 'zod';
@@ -71,6 +73,31 @@ router.route('/')
 			},
 		},
 	};
+
+// Each test is a real send through the push service, so a held-down button can't flood it
+const TEST_LIMIT = 5;
+const testLimiter = rateLimit({
+	windowMs: 60 * 1000,
+	limit: TEST_LIMIT,
+	// requirePerson has run, so every request here has a login session
+	keyGenerator: (req) => `push-test:${req.auth.sessionId}`,
+	handler: (req, res) => RateLimitExceeded(req, res, `You can send ${TEST_LIMIT} test notifications a minute. Wait a minute and try again.`),
+});
+
+router.route('/test').post(ValidateRequest, testLimiter, controller.sendTestPush).openapi = {
+	path: '/user/notify/push/test',
+	operationId: 'UserNotifyPushTest',
+	summary: 'Send a test notification',
+	description: `Send one push notification to the current login's subscription, so the person can check push works on this browser. Creates no inbox message. Limited to ${TEST_LIMIT} a minute per login`,
+	tags: ['Orval', 'user:push'],
+	responses: {
+		204: { description: 'The push service accepted the test notification' },
+		403: forbiddenWhileSu,
+		409: { $ref: '#/components/responses/Conflict' },
+		429: { $ref: '#/components/responses/TooManyRequests' },
+		503: unavailable,
+	},
+};
 
 router.route('/sessions/:session').delete(ValidateRequest, controller.disableSessionPush).openapi = {
 	path: '/user/notify/push/sessions/{session}',

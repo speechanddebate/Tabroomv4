@@ -4123,6 +4123,27 @@ export const getUserNotifyPushUnsubscribeMockHandler = (
 	);
 };
 
+export const getUserNotifyPushTestMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/notify/push/test',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
 export const getUserNotifyPushUnsubscribeSessionMockHandler = (
 	overrideResponse?:
 		| void
@@ -4469,6 +4490,7 @@ export const getIndexCardsAPIMock = () => [
 	getUserNotifyPushMockHandler(),
 	getUserNotifyPushSubscribeMockHandler(),
 	getUserNotifyPushUnsubscribeMockHandler(),
+	getUserNotifyPushTestMockHandler(),
 	getUserNotifyPushUnsubscribeSessionMockHandler(),
 	getUserSessionMockHandler(),
 	getUserSessionsMockHandler(),

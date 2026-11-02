@@ -184,6 +184,7 @@ export * from './studentSchema';
 export * from './studentSchemaMetadata';
 export * from './studentSchemaSettings';
 export * from './studentSchemaSettingsTimestamps';
+export * from './tooManyRequestsResponse';
 export * from './tourn';
 export * from './tournSettings';
 export * from './tournSettingsTimestamps';

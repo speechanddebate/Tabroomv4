@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
 	invalidateQueries: vi.fn(),
 	subscribeMutateAsync: vi.fn(),
 	unsubscribeMutateAsync: vi.fn(),
+	testMutateAsync: vi.fn(),
 	toastError: vi.fn(),
+	toastWarning: vi.fn(),
+	toastSuccess: vi.fn(),
 	webpush: {
 		isPushSupported: vi.fn(),
 		subscribeBrowser: vi.fn(),
@@ -38,6 +41,7 @@ vi.mock('$indexcards', () => ({
 	}),
 	createUserNotifyPushSubscribe: () => ({ mutateAsync: mocks.subscribeMutateAsync, isPending: false }),
 	createUserNotifyPushUnsubscribe: () => ({ mutateAsync: mocks.unsubscribeMutateAsync, isPending: false }),
+	createUserNotifyPushTest: () => ({ mutateAsync: mocks.testMutateAsync, isPending: false }),
 	getUserNotifyPushQueryKey: () => ['userNotifyPush'],
 	getUserSessionsQueryKey: () => ['userSessions'],
 }));
@@ -47,7 +51,7 @@ vi.mock('$lib/helpers/SessionContext.svelte', () => ({
 }));
 
 vi.mock('$lib/helpers/toasts', () => ({
-	toast: { error: mocks.toastError },
+	toast: { error: mocks.toastError, warning: mocks.toastWarning, success: mocks.toastSuccess },
 }));
 
 vi.mock('$lib/helpers/webpush', () => mocks.webpush);
@@ -87,6 +91,7 @@ describe('createPushState', () => {
 		mocks.invalidateQueries.mockResolvedValue(undefined);
 		mocks.subscribeMutateAsync.mockResolvedValue({ status: 200, data: {} });
 		mocks.unsubscribeMutateAsync.mockResolvedValue({ status: 204, data: {} });
+		mocks.testMutateAsync.mockResolvedValue({ status: 204, data: undefined });
 		mocks.webpush.isPushSupported.mockReturnValue(true);
 		mocks.webpush.subscribeBrowser.mockResolvedValue(browserSubscription);
 		mocks.webpush.unsubscribeBrowser.mockResolvedValue(true);
@@ -207,6 +212,55 @@ describe('createPushState', () => {
 				detail: 'push service down',
 			});
 			expect(push.busy).toBe(false);
+			cleanup();
+		});
+	});
+
+	describe('sendTest', () => {
+		beforeEach(() => {
+			vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+		});
+
+		it('says the test was sent', async () => {
+			const { push, cleanup } = setup();
+
+			await expect(push.sendTest()).resolves.toBe(true);
+
+			expect(mocks.toastSuccess).toHaveBeenCalledWith({
+				message: 'Test notification sent. It should appear in a few seconds.',
+			});
+			expect(mocks.invalidateQueries).not.toHaveBeenCalled();
+			cleanup();
+		});
+
+		it('shows the API\'s reason and refreshes the status when the subscription is gone', async () => {
+			mocks.testMutateAsync.mockResolvedValue({
+				status: 409,
+				data: { title: 'Conflict', status: 409, detail: 'This browser\'s subscription has expired. Turn notifications on again.' },
+			});
+			const { push, cleanup } = setup();
+
+			await expect(push.sendTest()).resolves.toBe(false);
+
+			expect(mocks.toastWarning).toHaveBeenCalledWith(expect.objectContaining({
+				detail: 'This browser\'s subscription has expired. Turn notifications on again.',
+			}));
+			expect(mocks.toastSuccess).not.toHaveBeenCalled();
+			expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['userNotifyPush'] });
+			cleanup();
+		});
+
+		it('shows the API\'s reason without refreshing when the push service fails', async () => {
+			mocks.testMutateAsync.mockResolvedValue({
+				status: 503,
+				data: { title: 'Service Unavailable', status: 503, detail: 'The push service didn\'t accept the test notification. Try again later.' },
+			});
+			const { push, cleanup } = setup();
+
+			await expect(push.sendTest()).resolves.toBe(false);
+
+			expect(mocks.toastError).toHaveBeenCalledWith(expect.objectContaining({ status: 503 }));
+			expect(mocks.invalidateQueries).not.toHaveBeenCalled();
 			cleanup();
 		});
 	});

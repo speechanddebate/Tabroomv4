@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Toggle } from 'flowbite-svelte';
 	import { CLASSIC_URL } from '$app/env/public';
+	import Button from '$lib/components/Button.svelte';
 	import { createPushState } from '$lib/helpers/pushState.svelte';
 
 	// A stub until the profile moves here: push lives on this page, everything else on classic
@@ -31,13 +32,25 @@
 	<section class="flex flex-col gap-3 rounded-md border border-border bg-surface px-4 py-3 shadow-sm">
 		<h1 class="text-lg font-semibold text-text">Your Profile</h1>
 
-		<Toggle
-			checked={push.state === 'on'}
-			disabled={!canToggle || push.busy}
-			onchange={toggle}
-		>
-			Receive notifications on this browser
-		</Toggle>
+		<div class="flex flex-wrap items-center gap-3">
+			<Toggle
+				checked={push.state === 'on'}
+				disabled={!canToggle || push.busy}
+				onchange={toggle}
+			>
+				Receive notifications on this browser
+			</Toggle>
+			{#if push.state === 'on'}
+				<Button
+					disabled={push.busy}
+					onclick={push.sendTest}
+					size="sm"
+					variant="outline"
+				>
+					Send test notification
+				</Button>
+			{/if}
+		</div>
 
 		{#if push.state === 'unsupported'}
 			<p class="text-sm text-muted" data-testid="push-note">This browser doesn't support push notifications.</p>

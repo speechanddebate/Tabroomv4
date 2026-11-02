@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/svelte-query';
 import {
 	createUserNotifyPush,
 	createUserNotifyPushSubscribe,
+	createUserNotifyPushTest,
 	createUserNotifyPushUnsubscribe,
 	getUserNotifyPushQueryKey,
 	getUserSessionsQueryKey,
@@ -47,6 +48,7 @@ export function createPushState() {
 	const pushQuery = createUserNotifyPush(() => ({ query: { meta: { persist: false } } }));
 	const subscribeMutation = createUserNotifyPushSubscribe();
 	const unsubscribeMutation = createUserNotifyPushUnsubscribe();
+	const testMutation = createUserNotifyPushTest();
 
 	// null until read in the browser, so the server render doesn't guess the browser's state
 	let permission = $state<Permission | null>(null);
@@ -144,15 +146,41 @@ export function createPushState() {
 		return true;
 	});
 
+	/**
+	 * Has the API send one push to this login. The API's problem detail (no subscription, expired,
+	 * push service down, rate limit) is shown as the error toast. Returns whether it was sent
+	 */
+	const sendTest = async (): Promise<boolean> => {
+		let conflict = false;
+		const sent = await handleMutation(testMutation.mutateAsync(), {
+			Problem: (problem, callDefault) => {
+				conflict = problem.status === 409;
+				callDefault(problem);
+			},
+		});
+		if (sent === null) {
+			// The subscription is gone or push is off for this login, so the toggle is out of date
+			if (conflict) {
+				await refresh();
+			}
+			return false;
+		}
+		toast.success({ message: 'Test notification sent. It should appear in a few seconds.' });
+		return true;
+	};
+
 	return {
 		get permission() { return permission; },
 		get status() { return status; },
 		get state() { return state; },
-		get busy() { return working || subscribeMutation.isPending || unsubscribeMutation.isPending; },
+		get busy() {
+			return working || subscribeMutation.isPending || unsubscribeMutation.isPending || testMutation.isPending;
+		},
 		/** Reads the browser's permission. Call from onMount: it is browser only */
 		readPermission: () => { permission = readPermission(); },
 		enable,
 		turnOff,
+		sendTest,
 		refresh,
 	};
 }

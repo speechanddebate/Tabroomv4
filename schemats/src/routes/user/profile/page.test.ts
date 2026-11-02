@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
 		readPermission: vi.fn(),
 		enable: vi.fn(),
 		turnOff: vi.fn(),
+		sendTest: vi.fn(),
 	},
 }));
 
@@ -70,6 +71,36 @@ describe('Profile page', () => {
 
 		expect(mocks.push.turnOff).toHaveBeenCalled();
 		expect(mocks.push.enable).not.toHaveBeenCalled();
+	});
+
+	it('sends a test notification when on', async () => {
+		mocks.push.state = 'on';
+		const user = userEvent.setup();
+		render(ProfilePage);
+
+		await user.click(screen.getByRole('button', { name: 'Send test notification' }));
+
+		expect(mocks.push.sendTest).toHaveBeenCalled();
+	});
+
+	it.each([
+		['undecided'],
+		['off'],
+		['denied'],
+		['su'],
+	] as const)('offers no test when %s', (state) => {
+		mocks.push.state = state;
+		render(ProfilePage);
+
+		expect(screen.queryByRole('button', { name: 'Send test notification' })).not.toBeInTheDocument();
+	});
+
+	it('disables the test button while a push step runs', () => {
+		mocks.push.state = 'on';
+		mocks.push.busy = true;
+		render(ProfilePage);
+
+		expect(screen.getByRole('button', { name: 'Send test notification' })).toBeDisabled();
 	});
 
 	it('puts the toggle back when turning on doesn\'t take', async () => {

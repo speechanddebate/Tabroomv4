@@ -3,7 +3,7 @@ import sessionRepo from '../../repos/sessionRepo.js';
 import { db } from '../../data/database.js';
 import logger from '../../helpers/logger.js';
 import { getPerson } from '../../middleware/auth/authorization.js';
-import { checkPushHost, getVapid } from '../../services/notifications/channels/webpush.js';
+import { checkPushHost, getVapid, sendPush } from '../../services/notifications/channels/webpush.js';
 
 import type { Request, Response } from 'express';
 import type { PushStatus, PushSubscribeRequest } from '@tabroom/types';
@@ -81,6 +81,47 @@ export const disablePush = async (req: Request, res: Response) => {
 
 	await sessionRepo.clearPushSubscription(db, sessionId, { disable: true });
 	return res.status(204).end();
+};
+
+/**
+ * Sends one push straight to this login's subscription so the person can see push working.
+ * Skips notify() and the queue: no inbox message, and the answer says whether the push
+ * service took it. sendPush logs any failure itself
+ */
+export const sendTestPush = async (req: Request, res: Response) => {
+	const vapid = getVapid();
+	if (!vapid) return ServiceUnavailable(req, res, UNAVAILABLE);
+	if (req.auth.su) return Forbidden(req, res, SU_FORBIDDEN);
+
+	const sessionId = req.auth.sessionId;
+	if (!sessionId) return Forbidden(req, res, NO_SESSION);
+
+	const session = await sessionRepo.getPushSubscription(db, sessionId, vapid.fingerprint);
+	if (!session) return Conflict(req, res, 'Push notifications aren\'t on for this browser');
+
+	const result = await sendPush({
+		endpoint: session.push_endpoint,
+		keys: { p256dh: session.push_p256dh, auth: session.push_auth },
+	}, {
+		title: 'Test notification',
+		body: 'Notifications from Tabroom are working on this browser.',
+		url: '/user/profile',
+		tag: 'push-test',
+	}, {
+		// A test that turns up an hour later is no use
+		ttl: 60,
+		urgency: 'high',
+	});
+
+	switch (result.status) {
+		case 'sent':
+			return res.status(204).end();
+		case 'gone':
+			await sessionRepo.clearPushEndpoint(db, session.id, session.push_endpoint);
+			return Conflict(req, res, 'This browser\'s subscription has expired. Turn notifications on again.');
+		default:
+			return ServiceUnavailable(req, res, 'The push service didn\'t accept the test notification. Try again later.');
+	}
 };
 
 export const disableSessionPush = async (req: ValidatedRequest, res: Response) => {
