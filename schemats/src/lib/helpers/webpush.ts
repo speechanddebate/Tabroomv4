@@ -5,8 +5,8 @@
  * Browser only. Every function touches `navigator`, `window` or `Notification`, so call them
  * from onMount or an event handler, never during server rendering.
  *
- * The client contract (docs/webpush-job.md in indexcards):
- * - Page load: if permission is granted, get or create the subscription without prompting and
+ * The client contract with the API:
+ * - Page load (syncPush, run by the root layout once per login): if permission is granted, get or create the subscription without prompting and
  *   PUT it without `enable`. A 409 means push is turned off for this login: unsubscribe.
  *   A null endpoint from GET with a subscription present under another key is a key rotation:
  *   unsubscribe, subscribe with the new key, PUT.

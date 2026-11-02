@@ -23,12 +23,22 @@ type AppShellProps = {
 	suEndFn  : () => Promise<void>;
 };
 
-const { appShellProps, env, mockInvalidateAll, mockLogoutMutateAsync, mockSuEndMutateAsync } = vi.hoisted(() => ({
+const {
+	appShellProps,
+	env,
+	mockInvalidateAll,
+	mockLogoutMutateAsync,
+	mockSuEndMutateAsync,
+	mockIsPushSupported,
+	mockSyncPush,
+} = vi.hoisted(() => ({
 	appShellProps: { current: null as null | AppShellProps },
 	env: { browser: true },
 	mockInvalidateAll: vi.fn(),
 	mockLogoutMutateAsync: vi.fn(),
 	mockSuEndMutateAsync: vi.fn(),
+	mockIsPushSupported: vi.fn(),
+	mockSyncPush: vi.fn(),
 }));
 
 vi.mock('$app/env', () => ({
@@ -49,7 +59,80 @@ vi.mock('$indexcards', () => ({
 	createAuthLogout: () => ({ mutateAsync: mockLogoutMutateAsync }),
 	createAuthSuEnd: () => ({ mutateAsync: mockSuEndMutateAsync }),
 	createUserInboxUnread: () => ({ data: undefined, error: null, isError: false, isSuccess: false }),
+	getUserNotifyPushQueryKey: () => ['userNotifyPush'],
+	getUserSessionsQueryKey: () => ['userSessions'],
 }));
+vi.mock('$lib/helpers/webpush', () => ({
+	isPushSupported: mockIsPushSupported,
+	syncPush: mockSyncPush,
+}));
+
+beforeEach(() => {
+	mockIsPushSupported.mockReturnValue(true);
+	mockSyncPush.mockResolvedValue('no-permission');
+});
+
+afterEach(() => {
+	vi.clearAllMocks();
+});
+
+const renderLayout = (sessionData: unknown, queryClient = new QueryClient()) => render(Layout, {
+	props: {
+		data: { queryClient, sessionData },
+		children: () => {},
+	},
+} as never);
+
+describe('root layout push sync', () => {
+	it('syncs push once for a logged-in session and refreshes the push queries', async () => {
+		const queryClient = new QueryClient();
+		const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
+		const { rerender } = renderLayout({ id: 7, Person: { id: 1, first: 'Alice' } }, queryClient);
+
+		await waitFor(() => {
+			expect(invalidate).toHaveBeenCalledWith({ queryKey: ['userNotifyPush'] });
+		});
+		expect(invalidate).toHaveBeenCalledWith({ queryKey: ['userSessions'] });
+
+		// A rerun of the layout load for the same login doesn't sync again
+		await rerender({ data: { queryClient, sessionData: { id: 7, Person: { id: 1, first: 'Alice' } } } } as never);
+		expect(mockSyncPush).toHaveBeenCalledTimes(1);
+	});
+
+	it('syncs again for a different login', async () => {
+		const queryClient = new QueryClient();
+		const { rerender } = renderLayout({ id: 7, Person: { id: 1, first: 'Alice' } }, queryClient);
+		await rerender({ data: { queryClient, sessionData: { id: 8, Person: { id: 2, first: 'Bob' } } } } as never);
+
+		await waitFor(() => {
+			expect(mockSyncPush).toHaveBeenCalledTimes(2);
+		});
+	});
+
+	it.each([
+		['logged out', null],
+		['su\'d', { id: 7, Person: { id: 2, first: 'Bob' }, Su: { id: 1, first: 'Alice' } }],
+	])('does not sync when %s', (_name, sessionData) => {
+		renderLayout(sessionData);
+		expect(mockSyncPush).not.toHaveBeenCalled();
+	});
+
+	it('does not sync in a browser without web push', () => {
+		mockIsPushSupported.mockReturnValue(false);
+		renderLayout({ id: 7, Person: { id: 1, first: 'Alice' } });
+		expect(mockSyncPush).not.toHaveBeenCalled();
+	});
+
+	it('logs a failed sync instead of throwing', async () => {
+		const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+		mockSyncPush.mockRejectedValue(new Error('push service down'));
+		renderLayout({ id: 7, Person: { id: 1, first: 'Alice' } });
+
+		await waitFor(() => {
+			expect(consoleError).toHaveBeenCalledWith('Push sync failed', expect.any(Error));
+		});
+	});
+});
 
 describe('root layout session teardown', () => {
 	beforeEach(() => {

@@ -23,6 +23,7 @@
 		LogOut,
 		LayoutDashboard,
 		Search,
+		UserRound,
 	} from '@lucide/svelte';
 
 	import { isAuthenticated, isSuSession, getSessionOwner, getPerson } from '$lib/helpers/SessionContext.svelte';
@@ -301,6 +302,10 @@
 						</span>
 						Inbox
 				</DropdownItem>
+				<DropdownItem
+					class={dropdownItemClasses}
+					href={resolve('/user/profile')}
+					><UserRound class="w-4 h-4" />Profile</DropdownItem>
 				<DropdownItem
 					class="{dropdownItemClasses} opacity-50 cursor-not-allowed"
 					aria-disabled="true"
