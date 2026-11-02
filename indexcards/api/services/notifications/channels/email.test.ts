@@ -229,11 +229,15 @@ describe('sendEmail', () => {
 		['a DNS failure', mailError('getaddrinfo ENOTFOUND smtp.example.com', { code: 'EDNS' })],
 		['a bad greeting', mailError('Invalid greeting', { code: 'EPROTOCOL' })],
 		['a connection reset', mailError('read ECONNRESET', { code: 'ECONNRESET' })],
+		// The relay never answered and nodemailer did not say the message was at fault, so the retries decide
+		['an error with no code', new Error('Connection closed')],
+		['a pool closed mid-send', new Error('Cannot read properties of undefined')],
 	])('asks for a retry on %s', async (_label, error) => {
 		sendMail.mockRejectedValue(error);
 
 		await expect(sendEmail(message)).resolves.toEqual({ status: 'retry', reason: error.message });
 		expect(logger.warn).toHaveBeenCalledOnce();
+		expect(logger.error).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -242,7 +246,6 @@ describe('sendEmail', () => {
 		['a broken attachment stream', mailError('Stream error', { code: 'ESTREAM' })],
 		['missing credentials', mailError('Missing credentials for "PLAIN"', { code: 'ENOAUTH' })],
 		['a TLS failure', mailError('self-signed certificate', { code: 'ETLS' })],
-		['bad arguments', new Error('Cannot read properties of undefined')],
 	])('rejects on %s', async (_label, error) => {
 		sendMail.mockRejectedValue(error);
 
@@ -250,10 +253,10 @@ describe('sendEmail', () => {
 		expect(logger.error).toHaveBeenCalledOnce();
 	});
 
-	it('rejects on a throw that is not an Error', async () => {
+	it('asks for a retry on a throw that is not an Error', async () => {
 		sendMail.mockRejectedValue('boom');
 
-		await expect(sendEmail(message)).resolves.toEqual({ status: 'rejected', reason: 'boom' });
+		await expect(sendEmail(message)).resolves.toEqual({ status: 'retry', reason: 'boom' });
 	});
 
 	it('clips a long relay reply in the log', async () => {

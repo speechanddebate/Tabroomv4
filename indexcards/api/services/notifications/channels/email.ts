@@ -147,12 +147,14 @@ function sendFailure(err: unknown, to: string): EmailSendResult {
 	}
 
 	// With no reply from the relay, our own message or setup is the problem only when
-	// nodemailer says so; anything else is the network or a relay that went quiet
-	if (!code || MESSAGE_ERRORS.has(code)) {
+	// nodemailer says so; anything else, including an error with no code at all (a pool
+	// closed under us, say), is the network or a relay that went quiet, and the retries
+	// decide whether it was final
+	if (code && MESSAGE_ERRORS.has(code)) {
 		logger.error(`Email to ${to} rejected, ${message}`);
 		return { status: 'rejected', reason: message };
 	}
-	if (SETUP_ERRORS.has(code)) {
+	if (code && SETUP_ERRORS.has(code)) {
 		logger.error(`Email rejected, check the relay settings: ${message}`);
 		return { status: 'rejected', reason: message };
 	}

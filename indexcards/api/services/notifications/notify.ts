@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { db } from "../../data/database.js";
 import logger from "../../helpers/logger.js";
+import messageRepo from "../../repos/messageRepo.js";
 import { addJobs, type FlowNode } from "../queue/index.js";
 import { emailQueue, pushQueue } from "./queues.js";
 
@@ -198,13 +199,26 @@ export async function notify(inputData: inputData): Promise<notifyResponse> {
 		};
 	}
 	const { messages, deliveries } = prepared;
-
-	await addJobs(deliveries);
-
 	const jobs = {
 		push  : deliveries.filter((delivery) => delivery.queueName === 'push').length,
 		email : deliveries.filter((delivery) => delivery.queueName === 'email').length,
 	};
+
+	try {
+		await addJobs(deliveries);
+	} catch (error) {
+		// The rows are written and say queued, but nothing will ever run for them. Settle them
+		// as failed so the inbox entries do not look pending forever and a retried blast is
+		// not mistaken for a duplicate. The caller still gets the error
+		logger.error(`Could not queue ${jobs.push} push and ${jobs.email} email job(s) for ${messages.length} people`, error);
+		const settled = await messageRepo.failQueued(db, messages.map((message) => message.id), {
+			email: jobs.email > 0,
+			push: jobs.push > 0,
+		});
+		logger.warn(`Marked ${settled.email} email and ${settled.push} push deliveries failed for the jobs that were not queued`);
+		throw error;
+	}
+
 	logger.info(`Notification recorded for ${messages.length} people, queued ${jobs.push} push and ${jobs.email} email job(s)`);
 
 	return {

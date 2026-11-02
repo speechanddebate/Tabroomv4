@@ -158,9 +158,44 @@ async function recordDelivery<C extends keyof DeliveryStatus>(
 	return result.numUpdatedRows > 0n;
 }
 
+/**
+ * Marks deliveries that never got a job as failed: the rows were written as queued and
+ * then the queue could not take the jobs. Only the named channels and only rows still
+ * queued change, so a job that did get through keeps whatever it recorded. Returns the
+ * rows changed per channel
+ */
+async function failQueued(
+	db: Database,
+	messageIds: number[],
+	channels: { email?: boolean; push?: boolean },
+): Promise<{ email: number; push: number }> {
+	const changed = { email: 0, push: 0 };
+	if (messageIds.length === 0) return changed;
+
+	const failedAt = new Date();
+	if (channels.email) {
+		const result = await db.updateTable('message')
+			.set({ email_status: 'failed', emailed_at: failedAt })
+			.where('id', 'in', messageIds)
+			.where('email_status', '=', 'queued')
+			.executeTakeFirst();
+		changed.email = Number(result.numUpdatedRows);
+	}
+	if (channels.push) {
+		const result = await db.updateTable('message')
+			.set({ push_status: 'failed', pushed_at: failedAt })
+			.where('id', 'in', messageIds)
+			.where('push_status', '=', 'queued')
+			.executeTakeFirst();
+		changed.push = Number(result.numUpdatedRows);
+	}
+	return changed;
+}
+
 export default {
 	getMessage,
 	getMessages,
 	createMessage,
 	recordDelivery,
+	failQueued,
 };

@@ -100,6 +100,28 @@ describe('notify', () => {
 		})));
 	});
 
+	it('marks the deliveries failed and rethrows when the queue will not take the jobs', async () => {
+		addJobs.mockRejectedValue(new Error('Job queues are not connected to Redis'));
+
+		await expect(notify({ ...base, ids: people })).rejects.toThrow('not connected to Redis');
+
+		// The inbox entries stay, and both channels say so rather than queued forever
+		const messages = await messageRows(people);
+		expect(messages).toHaveLength(2);
+		expect(messages.every(message => message.email_status === 'failed' && message.emailed_at instanceof Date)).toBe(true);
+		expect(messages.every(message => message.push_status === 'failed' && message.pushed_at instanceof Date)).toBe(true);
+	});
+
+	it('settles only the channels that had jobs when the queue will not take them', async () => {
+		addJobs.mockRejectedValue(new Error('Timed out adding jobs'));
+
+		await expect(notify({ ...base, ids: people, channels: { webpush: false } })).rejects.toThrow('Timed out');
+
+		const messages = await messageRows(people);
+		expect(messages.every(message => message.email_status === 'failed')).toBe(true);
+		expect(messages.every(message => message.push_status === null && message.pushed_at === null)).toBe(true);
+	});
+
 	it('queues no push jobs when the channel is off', async () => {
 		const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
 
@@ -128,7 +150,8 @@ describe('notify', () => {
 					jobId: `message-${message.id}`,
 					priority: 10,
 					ignoreDependencyOnFailure: true,
-					attempts: 3,
+					// Enough tries to outlast greylisting and a relay restart
+					attempts: 8,
 					backoff: { type: 'exponential', delay: expect.any(Number) },
 				}),
 			})));
