@@ -143,4 +143,44 @@ export const BadRequest = {
 		},
 	},
 } satisfies ProblemResponse;
+export const TooManyRequests = {
+	description: 'TooManyRequests - the rate limit for this request was reached.',
+	content: {
+		'application/problem+json': {
+			schema: ProblemSchema,
+			examples:{
+				toomanyrequests: {
+					summary: '429 Too Many Requests',
+					value: {
+						type: 'about:blank',
+						title: 'Rate limit exceeded',
+						status: 429,
+						detail: 'You have sent too many test notifications. Wait a minute and try again.',
+						instance: '/api/v1/example',
+					},
+				},
+			},
+		},
+	},
+} satisfies ProblemResponse;
+export const ServiceUnavailable = {
+	description: 'ServiceUnavailable - the service needed for this request is not available.',
+	content: {
+		'application/problem+json': {
+			schema: ProblemSchema,
+			examples:{
+				serviceunavailable: {
+					summary: '503 Service Unavailable',
+					value: {
+						type: 'about:blank',
+						title: 'Service Unavailable',
+						status: 503,
+						detail: 'Push notifications are not configured on this server',
+						instance: '/api/v1/example',
+					},
+				},
+			},
+		},
+	},
+} satisfies ProblemResponse;
 

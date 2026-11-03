@@ -2,6 +2,21 @@ import fs from 'fs';
 import path from 'path';
 import z from 'zod';
 
+/** The SMTP relay outbound mail goes through */
+export const SmtpRelaySchema = z.object({
+	host: z.string().default('localhost'),
+	port: z.int().default(25),
+	/** TLS from the first byte, as on port 465. Off, the connection starts plain and upgrades with STARTTLS when the relay offers it */
+	secure: z.boolean().default(false),
+	/** Verify the relay's certificate. Off for Mailpit and self-signed relays */
+	rejectUnauthorized: z.boolean().default(true),
+	/** Connections kept open to the relay at once */
+	pool: z.int().positive().default(128),
+	/** Credentials, for a relay that wants them. Both or neither */
+	user: z.string().min(1).optional(),
+	pass: z.string().min(1).optional(),
+});
+
 /** This schema defines the app config. add comments to a config value to get descriptions at usage. */
 export const ConfigSchema = z.object({
 	//----------------------------------------------------------------------
@@ -9,6 +24,10 @@ export const ConfigSchema = z.object({
 	// ---------------------------------------------------------------------
 	host: z.string().min(1).default('0.0.0.0'),
 	port: z.number().int().min(1).max(65535).default(8001),
+	/** The public origin this API is reached at, for links that point back to it (email list headers) */
+	url: z.url().default('https://api.tabroom.com'),
+	/** The public origin of the schemats site, for links in email and redirects to its pages */
+	schemats_url: z.url().default('https://beta.tabroom.com'),
 	dockerhost: z.string().default(process.env.DOCKERHOST ?? 'unknown'),
 	/** An IP address, subnet, or an array of IP addresses and subnets to trust as being a reverse proxy. */
 	proxy: z.array(z.string().min(1)).min(1).optional(),
@@ -38,7 +57,6 @@ export const ConfigSchema = z.object({
 		stackscript_id: z.number().int().min(0),
 		firewall_id: z.number().int().min(0),
 		tabweb_cap: z.number().int().min(0),
-		notify_slack: z.string().min(1),
 	}).optional(),
 	//--------------------------------------------------------------------------
 	// DATABASE
@@ -64,6 +82,19 @@ export const ConfigSchema = z.object({
 			queryTimeout: z.int().min(0).default(30000),
 		}).prefault({}),
 	}),
+	/** Redis, which backs the BullMQ job queues */
+	redis: z.object({
+		/** The Redis URL, e.g. redis://user:pass@localhost:6379/0 */
+		url: z.string().min(1).default(process.env.REDIS_URL ?? 'redis://localhost:6379'),
+	}).prefault({}),
+	/** BullMQ job queues */
+	queue: z.object({
+		/**
+		 * Whether this process runs the jobs. Off, it only adds them and a worker process takes
+		 * them. One worker per queue; parallelism is each queue's concurrency, not more workers
+		 */
+		runWorkers: z.boolean().default(true),
+	}).prefault({}),
 	//------------------------------------------------------------------------------
 	// SECURITY
 	// -----------------------------------------------------------------------------
@@ -136,13 +167,6 @@ export const ConfigSchema = z.object({
 			nco: z.int().optional(),
 		}).prefault({}),
 	}).prefault({}),
-	share: z.object({
-		smtp: z.object({
-			host: z.string().min(1).optional(),
-			user: z.string().min(1).optional(),
-			pass: z.string().min(1).optional(),
-		}).prefault({}),
-	}).prefault({}),
 	naudl: z.object({
 		username: z.string().min(1).optional(),
 		pw: z.string().min(1).optional(),
@@ -181,24 +205,41 @@ export const ConfigSchema = z.object({
 		timeout: z.int().min(1).default(30000),
 	}).prefault({}),
 	mail: z.object({
-		test: z.boolean().default(true),
+		/**
+		 * What happens to a message at the relay step.
+		 * log: logged and dropped, nothing is handed to a relay. The default, so a machine with no mail config sends nothing.
+		 * redirect: every recipient is replaced by redirectTo, for reading real mail in your own inbox.
+		 * live: handed to the relay as addressed. Outside production only with allowLiveOutsideProduction,
+		 * for a relay that delivers nothing, such as the Mailpit container.
+		 */
+		mode: z.enum(['log', 'redirect', 'live']).default('log'),
+		/** Where every message goes in redirect mode */
+		redirectTo: z.array(z.email()).nonempty().optional(),
+		/** Lets mode live run when NODE_ENV is not production. Set it only when the relay is a sink  THIS WILL SEND ALL EMAILS TO THE CONFIGURED RELAYS AS ADDRESSED */
+		allowLiveOutsideProduction: z.boolean().default(false),
+		/** The From address when a message names none */
 		from: z.string().default('live@www.tabroom.com'),
-		server: z.string().default('localhost'),
-		port: z.int().default(25),
-		pool: z.int().positive().default(128),
-		admin: z.object({
-		secure: z.boolean().default(false),
-		server: z.string().default('localhost'),
-		port: z.int().default(25),
-		pool: z.int().positive().default(128),
-		}).optional(),
-	}).prefault({}),
-	onesignal: z.object({
-		api_url: z.string().min(1).default('https://onesignal.com/api/v1'),
-		url: z.string().min(1).optional(),
-		appId: z.string().min(1).optional(),
-		safariId: z.string().min(1).optional(),
-		appKey: z.string().min(1).optional(),
+		/** The relay every message goes through */
+		smtp: SmtpRelaySchema.prefault({}),
+	}).prefault({}).superRefine((mail, ctx) => {
+		// The dev database is a copy with real addresses, so live delivery is a production-only setting
+		if (mail.mode === 'live' && process.env.NODE_ENV !== 'production' && !mail.allowLiveOutsideProduction) {
+			ctx.addIssue({
+				code: 'custom',
+				message: 'mail.mode "live" requires NODE_ENV=production; use log or redirect, or set mail.allowLiveOutsideProduction for a relay that delivers nothing',
+			});
+		}
+		if (mail.mode === 'redirect' && !mail.redirectTo) {
+			ctx.addIssue({ code: 'custom', message: 'mail.mode "redirect" needs mail.redirectTo' });
+		}
+	}),
+	/** Web push notifications configuration, web push will fail to start without proper keys configured */
+	webpush: z.object({
+		/** Engineering contact for web push notifications (e.g., a mailto: address) */
+		subject: z.string().min(1).optional(),
+		publicKey: z.string().min(1).optional(),
+		privateKey: z.string().min(1).optional(),
+		allowSelfSigned: z.boolean().optional(),
 	}).prefault({}),
 	//--------------------------------------------------------------------
 	// MISC

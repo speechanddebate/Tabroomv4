@@ -1,4 +1,4 @@
-import { notify } from '../../../helpers/blast.js';
+import { notify } from '../../../services/notifications/notify.js';
 import { BadRequest, UnexpectedError } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';

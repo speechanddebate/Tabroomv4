@@ -11,9 +11,16 @@
 	import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
 	import { initSessionContext } from '$lib/helpers/SessionContext.svelte';
-	import { createAuthLogout, createAuthSuEnd, createUserInboxUnread } from '$indexcards';
+	import {
+		createAuthLogout,
+		createAuthSuEnd,
+		createUserInboxUnread,
+		getUserNotifyPushQueryKey,
+		getUserSessionsQueryKey,
+	} from '$indexcards';
 	import { invalidateAll } from '$app/navigation';
 	import { handleOrval } from '$lib/helpers/query';
+	import { isPushSupported, syncPush } from '$lib/helpers/webpush';
 
 	import type { LayoutProps } from './$types';
 
@@ -62,6 +69,23 @@
 			Problem: (problem, callDefault) => problem.status === 401 ? void 0 : callDefault(problem),
 		})?.count ?? 0,
 	);
+
+	// The page-load sync from the web push client contract ($lib/helpers/webpush), once per
+	// login rather than per navigation. It never prompts. su'd sessions can't save a subscription
+	let pushSyncedFor: number | null = null;
+	$effect(() => {
+		const session = data.sessionData;
+		if (!session || session.Su || !isPushSupported() || pushSyncedFor === session.id) {
+			return;
+		}
+		pushSyncedFor = session.id;
+		syncPush()
+			.then(() => Promise.all([
+				data.queryClient.invalidateQueries({ queryKey: getUserNotifyPushQueryKey() }),
+				data.queryClient.invalidateQueries({ queryKey: getUserSessionsQueryKey() }),
+			]))
+			.catch((err) => console.error('Push sync failed', err));
+	});
 
 </script>
 

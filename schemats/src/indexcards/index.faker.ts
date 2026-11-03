@@ -36,6 +36,7 @@ import type {
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
 	PersonTournSummary,
+	PushStatus,
 	QuizOutput,
 	RestCircuit,
 	ResultSetSchema,
@@ -44,8 +45,11 @@ import type {
 	Tourn,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
+	UnsubscribeResponse,
+	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
+	UserSession,
 	UtilityRoom,
 } from './schemas';
 
@@ -1847,6 +1851,22 @@ export const getRestStudentsUnlinkedSearchResponseMock =
 			]),
 		}));
 
+export const getRestNotifyEmailUnsubscribeStatusResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeStatus, object>> = {},
+): UnsubscribeStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	noEmail: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestNotifyEmailUnsubscribeResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
+): UnsubscribeResponse => ({
+	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -1983,6 +2003,23 @@ export const getUserTournsFinesResponseMock = (): Fine[] =>
 		school: faker.number.int({ min: 0, max: 9007199254740991 }),
 		schoolName: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		judge: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		Judge: faker.helpers.arrayElement([
+			{
+				first: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		leviedAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
@@ -2348,6 +2385,30 @@ export const getUserInboxGetMessageResponseMock = (
 	...overrideResponse,
 });
 
+export const getUserNotifyPushResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getUserNotifyPushSubscribeResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
 export const getUserSessionResponseMock = (
 	overrideResponse: Partial<Extract<Session, object>> = {},
 ): Session => ({
@@ -2408,6 +2469,37 @@ export const getUserSessionResponseMock = (
 	},
 	...overrideResponse,
 });
+
+export const getUserSessionsResponseMock = (): UserSession[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		current: faker.datatype.boolean(),
+		subscribed: faker.datatype.boolean(),
+		disabled: faker.datatype.boolean(),
+		host: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		agent: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		ip: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		last_access: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		created_at: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+	}));
 
 export const getUserJudgesLinkRequestsResponseMock =
 	(): UnlinkedJudgeSchema[] =>

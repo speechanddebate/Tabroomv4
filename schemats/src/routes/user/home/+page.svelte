@@ -4,6 +4,7 @@
 	import { handleOrval } from '$lib/helpers/query';
 	import Tournament from './Tournament.svelte';
 	import Loading from '$lib/layouts/Loading.svelte';
+	import PushPrompt from './PushPrompt.svelte';
 
 	const userTournsQuery = createUserTourns();
 
@@ -11,6 +12,7 @@
 </script>
 
 <div class="flex flex-col gap-4">
+	<PushPrompt />
 	<div class="rounded-md border border-warning bg-warning-soft p-4">
 		<h2 class="text-lg font-semibold text-text">Page Under Development</h2>
 		<p class="mt-2 text-sm text-text">

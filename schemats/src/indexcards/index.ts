@@ -61,6 +61,8 @@ import type {
 	ParadigmSearchResult,
 	PersonTournSummary,
 	ProblemSchema,
+	PushStatus,
+	PushSubscribeRequest,
 	QuizOutput,
 	RegisterRequest,
 	RestCircuit,
@@ -75,17 +77,22 @@ import type {
 	RestTournsSectionsRoomGetParams,
 	RestTournsSectionsRoomJoinParams,
 	ResultSetSchema,
+	ServiceUnavailableResponse,
 	Session,
 	StudentSchema,
+	TooManyRequestsResponse,
 	Tourn,
 	UnauthorizedResponse,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
+	UnsubscribeResponse,
+	UnsubscribeStatus,
 	UserChapter,
 	UserJudgesClaimParams,
 	UserJudgesHistoryParams,
 	UserParadigm,
 	UserParadigmOutput,
+	UserSession,
 	UserStudentsClaimParams,
 	UserTournsBallotsParams,
 	UserTournsParams,
@@ -6354,6 +6361,392 @@ export const prefetchRestStudentsUnlinkedSearchQuery = async <
 	return queryClient;
 };
 
+export type restNotifyEmailUnsubscribeStatusResponse200 = {
+	data: UnsubscribeStatus;
+	status: 200;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponse302 = {
+	data: void;
+	status: 302;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponseDefault = {
+	data: ErrorResponseResponse;
+	status: Exclude<HTTPStatusCodes, 200 | 302 | 401 | 404 | 500>;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponseSuccess =
+	restNotifyEmailUnsubscribeStatusResponse200 & {
+		headers: Headers;
+	};
+export type restNotifyEmailUnsubscribeStatusResponseError = (
+	| restNotifyEmailUnsubscribeStatusResponse302
+	| restNotifyEmailUnsubscribeStatusResponse401
+	| restNotifyEmailUnsubscribeStatusResponse404
+	| restNotifyEmailUnsubscribeStatusResponse500
+	| restNotifyEmailUnsubscribeStatusResponseDefault
+) & {
+	headers: Headers;
+};
+
+export type restNotifyEmailUnsubscribeStatusResponse =
+	| restNotifyEmailUnsubscribeStatusResponseSuccess
+	| restNotifyEmailUnsubscribeStatusResponseError;
+
+export const getRestNotifyEmailUnsubscribeStatusUrl = (token: string) => {
+	return `${indexcardsApiBaseUrl()}/rest/notify/email/unsubscribe/${token}`;
+};
+
+/**
+ * Reports whose email the link opts out and whether it already has. Changes nothing. A request that prefers HTML is redirected to the unsubscribe page.
+ * @summary Who an unsubscribe link is for
+ */
+export const restNotifyEmailUnsubscribeStatus = async (
+	token: string,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restNotifyEmailUnsubscribeStatusResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestNotifyEmailUnsubscribeStatusUrl(token),
+		{
+			credentials: 'include',
+			...options,
+			method: 'GET',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restNotifyEmailUnsubscribeStatusResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restNotifyEmailUnsubscribeStatusResponse;
+};
+
+export const getRestNotifyEmailUnsubscribeStatusQueryKey = (token: string) => {
+	return [
+		`${indexcardsApiBaseUrl()}/rest/notify/email/unsubscribe/${token}`,
+	] as const;
+};
+
+export const getRestNotifyEmailUnsubscribeStatusQueryOptions = <
+	TData = Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+	TError =
+		| void
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	token: string,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getRestNotifyEmailUnsubscribeStatusQueryKey(token);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>
+	> = ({ signal }) =>
+		restNotifyEmailUnsubscribeStatus(
+			token,
+			{ signal, ...fetchOptions },
+			fetcherFn,
+		);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: token !== null && token !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestNotifyEmailUnsubscribeStatusQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>
+>;
+export type RestNotifyEmailUnsubscribeStatusQueryError =
+	| void
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Who an unsubscribe link is for
+ */
+
+export function createRestNotifyEmailUnsubscribeStatus<
+	TData = Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+	TError =
+		| void
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	token: () => string,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() =>
+			getRestNotifyEmailUnsubscribeStatusQueryOptions(
+				token(),
+				options?.(),
+			),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Who an unsubscribe link is for
+ */
+export const prefetchRestNotifyEmailUnsubscribeStatusQuery = async <
+	TData = Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+	TError =
+		| void
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	token: string,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restNotifyEmailUnsubscribeStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestNotifyEmailUnsubscribeStatusQueryOptions(
+		token,
+		options,
+	);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restNotifyEmailUnsubscribeResponse200 = {
+	data: UnsubscribeResponse;
+	status: 200;
+};
+
+export type restNotifyEmailUnsubscribeResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restNotifyEmailUnsubscribeResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restNotifyEmailUnsubscribeResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restNotifyEmailUnsubscribeResponseDefault = {
+	data: ErrorResponseResponse;
+	status: Exclude<HTTPStatusCodes, 200 | 401 | 404 | 500>;
+};
+
+export type restNotifyEmailUnsubscribeResponseSuccess =
+	restNotifyEmailUnsubscribeResponse200 & {
+		headers: Headers;
+	};
+export type restNotifyEmailUnsubscribeResponseError = (
+	| restNotifyEmailUnsubscribeResponse401
+	| restNotifyEmailUnsubscribeResponse404
+	| restNotifyEmailUnsubscribeResponse500
+	| restNotifyEmailUnsubscribeResponseDefault
+) & {
+	headers: Headers;
+};
+
+export type restNotifyEmailUnsubscribeResponse =
+	| restNotifyEmailUnsubscribeResponseSuccess
+	| restNotifyEmailUnsubscribeResponseError;
+
+export const getRestNotifyEmailUnsubscribeUrl = (token: string) => {
+	return `${indexcardsApiBaseUrl()}/rest/notify/email/unsubscribe/${token}`;
+};
+
+/**
+ * Opts the person the link is for out of Tabroom email. Also the one-click target mail providers POST to (RFC 8058); the body is ignored.
+ * @summary Use an unsubscribe link
+ */
+export const restNotifyEmailUnsubscribe = async (
+	token: string,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restNotifyEmailUnsubscribeResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestNotifyEmailUnsubscribeUrl(token),
+		{
+			credentials: 'include',
+			...options,
+			method: 'POST',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restNotifyEmailUnsubscribeResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restNotifyEmailUnsubscribeResponse;
+};
+
+export const getRestNotifyEmailUnsubscribeMutationOptions = <
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>,
+		TError,
+		{ token: string },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>,
+	TError,
+	{ token: string },
+	TContext
+> => {
+	const mutationKey = ['restNotifyEmailUnsubscribe'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>,
+		{ token: string }
+	> = (props) => {
+		const { token } = props ?? {};
+
+		return restNotifyEmailUnsubscribe(token, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestNotifyEmailUnsubscribeMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>
+>;
+
+export type RestNotifyEmailUnsubscribeMutationError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Use an unsubscribe link
+ */
+export const createRestNotifyEmailUnsubscribe = <
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>,
+			TError,
+			{ token: string },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restNotifyEmailUnsubscribe>>,
+	TError,
+	{ token: string },
+	TContext
+> => {
+	return createMutation(
+		() => ({
+			...getRestNotifyEmailUnsubscribeMutationOptions(options?.()),
+		}),
+		queryClient,
+	);
+};
+
 export type authLoginResponse200 = {
 	data: LoginResponse;
 	status: 200;
@@ -9066,6 +9459,865 @@ export const createUserInboxMarkUnread = <
 	);
 };
 
+export type userNotifyPushResponse200 = {
+	data: PushStatus;
+	status: 200;
+};
+
+export type userNotifyPushResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushResponse503 = {
+	data: ServiceUnavailableResponse;
+	status: 503;
+};
+
+export type userNotifyPushResponseSuccess = userNotifyPushResponse200 & {
+	headers: Headers;
+};
+export type userNotifyPushResponseError = (
+	| userNotifyPushResponse401
+	| userNotifyPushResponse500
+	| userNotifyPushResponse503
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushResponse =
+	| userNotifyPushResponseSuccess
+	| userNotifyPushResponseError;
+
+export const getUserNotifyPushUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push`;
+};
+
+/**
+ * Get the VAPID public key and the push subscription status of the current login. Allowed while su'd
+ * @summary Get push status
+ */
+export const userNotifyPush = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserNotifyPushUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushResponse;
+};
+
+export const getUserNotifyPushQueryKey = () => {
+	return [`${indexcardsApiBaseUrl()}/user/notify/push`] as const;
+};
+
+export const getUserNotifyPushQueryOptions = <
+	TData = Awaited<ReturnType<typeof userNotifyPush>>,
+	TError =
+		| UnauthorizedResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+>(options?: {
+	query?: Partial<
+		CreateQueryOptions<
+			Awaited<ReturnType<typeof userNotifyPush>>,
+			TError,
+			TData
+		>
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserNotifyPushQueryKey();
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof userNotifyPush>>
+	> = ({ signal }) => userNotifyPush({ signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userNotifyPush>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserNotifyPushQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPush>>
+>;
+export type UserNotifyPushQueryError =
+	| UnauthorizedResponse
+	| ErrorResponseResponse
+	| ServiceUnavailableResponse;
+
+/**
+ * @summary Get push status
+ */
+
+export function createUserNotifyPush<
+	TData = Awaited<ReturnType<typeof userNotifyPush>>,
+	TError =
+		| UnauthorizedResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+>(
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userNotifyPush>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserNotifyPushQueryOptions(options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get push status
+ */
+export const prefetchUserNotifyPushQuery = async <
+	TData = Awaited<ReturnType<typeof userNotifyPush>>,
+	TError =
+		| UnauthorizedResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+>(
+	queryClient: QueryClient,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userNotifyPush>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserNotifyPushQueryOptions(options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userNotifyPushSubscribeResponse200 = {
+	data: PushStatus;
+	status: 200;
+};
+
+export type userNotifyPushSubscribeResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userNotifyPushSubscribeResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushSubscribeResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userNotifyPushSubscribeResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userNotifyPushSubscribeResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushSubscribeResponse503 = {
+	data: ServiceUnavailableResponse;
+	status: 503;
+};
+
+export type userNotifyPushSubscribeResponseSuccess =
+	userNotifyPushSubscribeResponse200 & {
+		headers: Headers;
+	};
+export type userNotifyPushSubscribeResponseError = (
+	| userNotifyPushSubscribeResponse400
+	| userNotifyPushSubscribeResponse401
+	| userNotifyPushSubscribeResponse403
+	| userNotifyPushSubscribeResponse409
+	| userNotifyPushSubscribeResponse500
+	| userNotifyPushSubscribeResponse503
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushSubscribeResponse =
+	| userNotifyPushSubscribeResponseSuccess
+	| userNotifyPushSubscribeResponseError;
+
+export const getUserNotifyPushSubscribeUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push`;
+};
+
+/**
+ * Save this browser's push subscription to the current login. Saving the same endpoint again changes nothing. Returns 409 if push is turned off for this login and enable is not true
+ * @summary Save push subscription
+ */
+export const userNotifyPushSubscribe = async (
+	pushSubscribeRequest: PushSubscribeRequest,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushSubscribeResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserNotifyPushSubscribeUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(pushSubscribeRequest),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushSubscribeResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushSubscribeResponse;
+};
+
+export const getUserNotifyPushSubscribeMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userNotifyPushSubscribe>>,
+		TError,
+		{ data: PushSubscribeRequest },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userNotifyPushSubscribe>>,
+	TError,
+	{ data: PushSubscribeRequest },
+	TContext
+> => {
+	const mutationKey = ['userNotifyPushSubscribe'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userNotifyPushSubscribe>>,
+		{ data: PushSubscribeRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return userNotifyPushSubscribe(data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserNotifyPushSubscribeMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPushSubscribe>>
+>;
+export type UserNotifyPushSubscribeMutationBody = PushSubscribeRequest;
+export type UserNotifyPushSubscribeMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| ConflictResponse
+	| ErrorResponseResponse
+	| ServiceUnavailableResponse;
+
+/**
+ * @summary Save push subscription
+ */
+export const createUserNotifyPushSubscribe = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userNotifyPushSubscribe>>,
+			TError,
+			{ data: PushSubscribeRequest },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userNotifyPushSubscribe>>,
+	TError,
+	{ data: PushSubscribeRequest },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserNotifyPushSubscribeMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userNotifyPushUnsubscribeResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userNotifyPushUnsubscribeResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushUnsubscribeResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userNotifyPushUnsubscribeResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushUnsubscribeResponseSuccess =
+	userNotifyPushUnsubscribeResponse204 & {
+		headers: Headers;
+	};
+export type userNotifyPushUnsubscribeResponseError = (
+	| userNotifyPushUnsubscribeResponse401
+	| userNotifyPushUnsubscribeResponse403
+	| userNotifyPushUnsubscribeResponse500
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushUnsubscribeResponse =
+	| userNotifyPushUnsubscribeResponseSuccess
+	| userNotifyPushUnsubscribeResponseError;
+
+export const getUserNotifyPushUnsubscribeUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push`;
+};
+
+/**
+ * Remove the push subscription from the current login and turn push off for it
+ * @summary Turn off push
+ */
+export const userNotifyPushUnsubscribe = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushUnsubscribeResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserNotifyPushUnsubscribeUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'DELETE',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushUnsubscribeResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushUnsubscribeResponse;
+};
+
+export const getUserNotifyPushUnsubscribeMutationOptions = <
+	TError = UnauthorizedResponse | ForbiddenResponse | ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>,
+		TError,
+		void,
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ['userNotifyPushUnsubscribe'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>,
+		void
+	> = () => {
+		return userNotifyPushUnsubscribe(fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserNotifyPushUnsubscribeMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>
+>;
+
+export type UserNotifyPushUnsubscribeMutationError =
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Turn off push
+ */
+export const createUserNotifyPushUnsubscribe = <
+	TError = UnauthorizedResponse | ForbiddenResponse | ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>,
+			TError,
+			void,
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribe>>,
+	TError,
+	void,
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserNotifyPushUnsubscribeMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userNotifyPushTestResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userNotifyPushTestResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushTestResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userNotifyPushTestResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userNotifyPushTestResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
+export type userNotifyPushTestResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushTestResponse503 = {
+	data: ServiceUnavailableResponse;
+	status: 503;
+};
+
+export type userNotifyPushTestResponseSuccess =
+	userNotifyPushTestResponse204 & {
+		headers: Headers;
+	};
+export type userNotifyPushTestResponseError = (
+	| userNotifyPushTestResponse401
+	| userNotifyPushTestResponse403
+	| userNotifyPushTestResponse409
+	| userNotifyPushTestResponse429
+	| userNotifyPushTestResponse500
+	| userNotifyPushTestResponse503
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushTestResponse =
+	| userNotifyPushTestResponseSuccess
+	| userNotifyPushTestResponseError;
+
+export const getUserNotifyPushTestUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push/test`;
+};
+
+/**
+ * Send one push notification to the current login's subscription, so the person can check push works on this browser. Creates no inbox message. Limited to 5 a minute per login
+ * @summary Send a test notification
+ */
+export const userNotifyPushTest = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushTestResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserNotifyPushTestUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushTestResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushTestResponse;
+};
+
+export const getUserNotifyPushTestMutationOptions = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userNotifyPushTest>>,
+		TError,
+		void,
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userNotifyPushTest>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ['userNotifyPushTest'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userNotifyPushTest>>,
+		void
+	> = () => {
+		return userNotifyPushTest(fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserNotifyPushTestMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPushTest>>
+>;
+
+export type UserNotifyPushTestMutationError =
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| ConflictResponse
+	| TooManyRequestsResponse
+	| ErrorResponseResponse
+	| ServiceUnavailableResponse;
+
+/**
+ * @summary Send a test notification
+ */
+export const createUserNotifyPushTest = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse
+		| ServiceUnavailableResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userNotifyPushTest>>,
+			TError,
+			void,
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userNotifyPushTest>>,
+	TError,
+	void,
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserNotifyPushTestMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userNotifyPushUnsubscribeSessionResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userNotifyPushUnsubscribeSessionResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userNotifyPushUnsubscribeSessionResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userNotifyPushUnsubscribeSessionResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userNotifyPushUnsubscribeSessionResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userNotifyPushUnsubscribeSessionResponseSuccess =
+	userNotifyPushUnsubscribeSessionResponse204 & {
+		headers: Headers;
+	};
+export type userNotifyPushUnsubscribeSessionResponseError = (
+	| userNotifyPushUnsubscribeSessionResponse401
+	| userNotifyPushUnsubscribeSessionResponse403
+	| userNotifyPushUnsubscribeSessionResponse404
+	| userNotifyPushUnsubscribeSessionResponse500
+) & {
+	headers: Headers;
+};
+
+export type userNotifyPushUnsubscribeSessionResponse =
+	| userNotifyPushUnsubscribeSessionResponseSuccess
+	| userNotifyPushUnsubscribeSessionResponseError;
+
+export const getUserNotifyPushUnsubscribeSessionUrl = (session: number) => {
+	return `${indexcardsApiBaseUrl()}/user/notify/push/sessions/${session}`;
+};
+
+/**
+ * Remove the push subscription from another of the user's logins and turn push off for it
+ * @summary Turn off push on another login
+ */
+export const userNotifyPushUnsubscribeSession = async (
+	session: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userNotifyPushUnsubscribeSessionResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getUserNotifyPushUnsubscribeSessionUrl(session),
+		{
+			credentials: 'include',
+			...options,
+			method: 'DELETE',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userNotifyPushUnsubscribeSessionResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userNotifyPushUnsubscribeSessionResponse;
+};
+
+export const getUserNotifyPushUnsubscribeSessionMutationOptions = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>,
+		TError,
+		{ session: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>,
+	TError,
+	{ session: number },
+	TContext
+> => {
+	const mutationKey = ['userNotifyPushUnsubscribeSession'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>,
+		{ session: number }
+	> = (props) => {
+		const { session } = props ?? {};
+
+		return userNotifyPushUnsubscribeSession(
+			session,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserNotifyPushUnsubscribeSessionMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>
+>;
+
+export type UserNotifyPushUnsubscribeSessionMutationError =
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Turn off push on another login
+ */
+export const createUserNotifyPushUnsubscribeSession = <
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>,
+			TError,
+			{ session: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userNotifyPushUnsubscribeSession>>,
+	TError,
+	{ session: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({
+			...getUserNotifyPushUnsubscribeSessionMutationOptions(options?.()),
+		}),
+		queryClient,
+	);
+};
+
 export type userSessionResponse200 = {
 	data: Session;
 	status: 200;
@@ -9228,6 +10480,167 @@ export const prefetchUserSessionQuery = async <
 	},
 ): Promise<QueryClient> => {
 	const queryOptions = getUserSessionQueryOptions(options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userSessionsResponse200 = {
+	data: UserSession[];
+	status: 200;
+};
+
+export type userSessionsResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userSessionsResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userSessionsResponseSuccess = userSessionsResponse200 & {
+	headers: Headers;
+};
+export type userSessionsResponseError = (
+	| userSessionsResponse401
+	| userSessionsResponse500
+) & {
+	headers: Headers;
+};
+
+export type userSessionsResponse =
+	| userSessionsResponseSuccess
+	| userSessionsResponseError;
+
+export const getUserSessionsUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/sessions`;
+};
+
+/**
+ * List the user's logins, most recently used first, with the push status of each. Only the push service host is returned, never a login's push endpoint or keys. Allowed while su'd
+ * @summary List sessions
+ */
+export const userSessions = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userSessionsResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserSessionsUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userSessionsResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userSessionsResponse;
+};
+
+export const getUserSessionsQueryKey = () => {
+	return [`${indexcardsApiBaseUrl()}/user/sessions`] as const;
+};
+
+export const getUserSessionsQueryOptions = <
+	TData = Awaited<ReturnType<typeof userSessions>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(options?: {
+	query?: Partial<
+		CreateQueryOptions<
+			Awaited<ReturnType<typeof userSessions>>,
+			TError,
+			TData
+		>
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserSessionsQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof userSessions>>> = ({
+		signal,
+	}) => userSessions({ signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userSessions>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserSessionsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userSessions>>
+>;
+export type UserSessionsQueryError =
+	| UnauthorizedResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary List sessions
+ */
+
+export function createUserSessions<
+	TData = Awaited<ReturnType<typeof userSessions>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userSessions>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserSessionsQueryOptions(options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary List sessions
+ */
+export const prefetchUserSessionsQuery = async <
+	TData = Awaited<ReturnType<typeof userSessions>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userSessions>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserSessionsQueryOptions(options);
 
 	await queryClient.prefetchQuery(queryOptions);
 

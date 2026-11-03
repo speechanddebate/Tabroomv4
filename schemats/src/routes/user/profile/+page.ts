@@ -1,5 +1,8 @@
-import { redirect } from '@sveltejs/kit';
+import type { PageLoad } from './$types';
+import { prefetchUserNotifyPushQuery } from '$indexcards';
 
-export function load() {
-	throw redirect(302, 'https://www.tabroom.com/user/login/profile.mhtml');
-}
+export const load: PageLoad = async ({ parent, fetch }) => {
+	const { queryClient } = await parent();
+
+	await prefetchUserNotifyPushQuery(queryClient, { fetcher: fetch });
+};

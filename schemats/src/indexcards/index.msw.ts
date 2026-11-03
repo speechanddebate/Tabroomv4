@@ -39,6 +39,7 @@ import type {
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
 	PersonTournSummary,
+	PushStatus,
 	QuizOutput,
 	RestCircuit,
 	ResultSetSchema,
@@ -47,8 +48,11 @@ import type {
 	Tourn,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
+	UnsubscribeResponse,
+	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
+	UserSession,
 	UtilityRoom,
 } from './schemas';
 
@@ -1850,6 +1854,22 @@ export const getRestStudentsUnlinkedSearchResponseMock =
 			]),
 		}));
 
+export const getRestNotifyEmailUnsubscribeStatusResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeStatus, object>> = {},
+): UnsubscribeStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	noEmail: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestNotifyEmailUnsubscribeResponseMock = (
+	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
+): UnsubscribeResponse => ({
+	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -1986,6 +2006,23 @@ export const getUserTournsFinesResponseMock = (): Fine[] =>
 		school: faker.number.int({ min: 0, max: 9007199254740991 }),
 		schoolName: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		judge: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		Judge: faker.helpers.arrayElement([
+			{
+				first: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		leviedAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
@@ -2351,6 +2388,30 @@ export const getUserInboxGetMessageResponseMock = (
 	...overrideResponse,
 });
 
+export const getUserNotifyPushResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getUserNotifyPushSubscribeResponseMock = (
+	overrideResponse: Partial<Extract<PushStatus, object>> = {},
+): PushStatus => ({
+	publicKey: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	endpoint: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	disabled: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
 export const getUserSessionResponseMock = (
 	overrideResponse: Partial<Extract<Session, object>> = {},
 ): Session => ({
@@ -2411,6 +2472,37 @@ export const getUserSessionResponseMock = (
 	},
 	...overrideResponse,
 });
+
+export const getUserSessionsResponseMock = (): UserSession[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		current: faker.datatype.boolean(),
+		subscribed: faker.datatype.boolean(),
+		disabled: faker.datatype.boolean(),
+		host: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		agent: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		ip: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		last_access: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		created_at: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+	}));
 
 export const getUserJudgesLinkRequestsResponseMock =
 	(): UnlinkedJudgeSchema[] =>
@@ -3893,6 +3985,54 @@ export const getRestStudentsUnlinkedSearchMockHandler = (
 	);
 };
 
+export const getRestNotifyEmailUnsubscribeStatusMockHandler = (
+	overrideResponse?:
+		| UnsubscribeStatus
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<UnsubscribeStatus> | UnsubscribeStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/notify/email/unsubscribe/:token',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestNotifyEmailUnsubscribeStatusResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestNotifyEmailUnsubscribeMockHandler = (
+	overrideResponse?:
+		| UnsubscribeResponse
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<UnsubscribeResponse> | UnsubscribeResponse),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/notify/email/unsubscribe/:token',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestNotifyEmailUnsubscribeResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
 export const getAuthLoginMockHandler = (
 	overrideResponse?:
 		| LoginResponse
@@ -4277,6 +4417,117 @@ export const getUserInboxMarkUnreadMockHandler = (
 	);
 };
 
+export const getUserNotifyPushMockHandler = (
+	overrideResponse?:
+		| PushStatus
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<PushStatus> | PushStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/notify/push',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserNotifyPushResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserNotifyPushSubscribeMockHandler = (
+	overrideResponse?:
+		| PushStatus
+		| ((
+				info: Parameters<Parameters<typeof http.put>[1]>[0],
+		  ) => Promise<PushStatus> | PushStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.put(
+		'*/user/notify/push',
+		async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserNotifyPushSubscribeResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserNotifyPushUnsubscribeMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.delete>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.delete(
+		'*/user/notify/push',
+		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
+export const getUserNotifyPushTestMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/notify/push/test',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
+export const getUserNotifyPushUnsubscribeSessionMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.delete>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.delete(
+		'*/user/notify/push/sessions/:session',
+		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
 export const getUserSessionMockHandler = (
 	overrideResponse?:
 		| Session
@@ -4294,6 +4545,30 @@ export const getUserSessionMockHandler = (
 						? await overrideResponse(info)
 						: overrideResponse
 					: getUserSessionResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserSessionsMockHandler = (
+	overrideResponse?:
+		| UserSession[]
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<UserSession[]> | UserSession[]),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/sessions',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserSessionsResponseMock(),
 				{ status: 200 },
 			);
 		},
@@ -4564,6 +4839,8 @@ export const getIndexCardsAPIMock = () => [
 	getRestParadigmsRecordMockHandler(),
 	getRestQuizzesMockHandler(),
 	getRestStudentsUnlinkedSearchMockHandler(),
+	getRestNotifyEmailUnsubscribeStatusMockHandler(),
+	getRestNotifyEmailUnsubscribeMockHandler(),
 	getAuthLoginMockHandler(),
 	getAuthLogoutMockHandler(),
 	getAuthSuMockHandler(),
@@ -4581,7 +4858,13 @@ export const getIndexCardsAPIMock = () => [
 	getUserInboxMarkDeletedMockHandler(),
 	getUserInboxMarkReadMockHandler(),
 	getUserInboxMarkUnreadMockHandler(),
+	getUserNotifyPushMockHandler(),
+	getUserNotifyPushSubscribeMockHandler(),
+	getUserNotifyPushUnsubscribeMockHandler(),
+	getUserNotifyPushTestMockHandler(),
+	getUserNotifyPushUnsubscribeSessionMockHandler(),
 	getUserSessionMockHandler(),
+	getUserSessionsMockHandler(),
 	getUserJudgesLinkRequestsMockHandler(),
 	getUserJudgesClaimMockHandler(),
 	getUserJudgesHistoryMockHandler(),

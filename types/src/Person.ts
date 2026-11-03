@@ -51,6 +51,24 @@ export const SessionSchema = z.object({
 
 export type Session = z.infer<typeof SessionSchema>;
 
+// Never carries a session's push endpoint or keys, only the push service host
+export const UserSessionSchema = z.object({
+	id: utils.id.meta({ description: 'The ID of the login session' }),
+	current: z.boolean().meta({ description: 'Whether this is the login making the request' }),
+	subscribed: z.boolean().meta({ description: 'Whether the login has a push subscription for the current push key' }),
+	disabled: z.boolean().meta({ description: 'Whether push notifications are turned off for the login' }),
+	host: z.string().nullable().meta({ description: 'The host name of the push service the login is subscribed through, or null if it is not subscribed' }),
+	agent: z.string().nullable().meta({ description: 'The browser user agent data recorded for the login' }),
+	ip: z.string().nullable().meta({ description: 'The IP address the login was made from' }),
+	last_access: z.string().nullable().meta({ description: 'When the login was last used, in UTC' }),
+	created_at: z.string().nullable().meta({ description: 'When the login was made, in UTC' }),
+}).strict().meta({
+	id: 'UserSession',
+	description: 'One of the user\'s login sessions and its push notification status',
+}) satisfies ZodOpenApiSchemaObject;
+
+export type UserSession = z.infer<typeof UserSessionSchema>;
+
 export const ParadigmDetailsSchema = z.object({
 	id: utils.id.meta({
 		description: 'The id of the person associated with the paradigm',

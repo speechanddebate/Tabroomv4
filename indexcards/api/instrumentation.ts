@@ -8,6 +8,7 @@ import { BatchSpanProcessor } from '@opentelemetry/sdk-trace';
 import { envDetector, hostDetector, processDetector, resourceFromAttributes } from '@opentelemetry/resources';
 import packageData from '../package.json' with { type: 'json' };
 import config from './config.js';
+import { onShutdown } from './helpers/shutdown.js';
 
 const { telemetry } = config;
 
@@ -40,12 +41,7 @@ if (telemetry.enabled) {
 
 	sdk.start();
 
-	// Flush buffered spans and metrics before the container stops
-	process.once('SIGTERM', async () => {
-		try {
-			await sdk.shutdown();
-		} finally {
-			process.exit(0);
-		}
-	});
+	// Flush buffered spans and metrics before the container stops. Registered first so it runs last,
+	// after the app's own shutdown steps have recorded their spans
+	onShutdown('telemetry', () => sdk.shutdown());
 }

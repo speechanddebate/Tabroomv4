@@ -18,6 +18,8 @@ const { Story } = defineMeta({
 			reason: `JUDGE FINE: ${faker.person.firstName()} ${faker.person.lastName()}`,
 			school: 1,
 			schoolName: 'example school',
+			judge: 1,
+			Judge: { first: faker.person.firstName(), last: faker.person.lastName() },
 			leviedAt: faker.date.recent().toISOString(),
 		},
 	}}

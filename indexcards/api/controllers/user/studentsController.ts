@@ -1,6 +1,6 @@
 import studentRepo from '../../repos/studentRepo.js';
 import { BadRequest } from '../../helpers/problem.js';
-import { notify } from '../../helpers/blast.js';
+import { notify } from '../../services/notifications/notify.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import logger from '../../helpers/logger.js';
 import  { db } from '../../data/database.js';

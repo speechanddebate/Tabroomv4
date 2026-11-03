@@ -3,7 +3,7 @@ import { sql } from 'kysely';
 import { db as kdb } from '../../data/database.js';
 import { summon } from '../../repos/utils/index.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
-import notify from '../../helpers/blast.js';
+import { notify } from '../../services/notifications/notify.js';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
 import {
@@ -205,10 +205,6 @@ const notifyCloudAdmins = async (req, log, subject) => {
 		from    : `${sender.first} ${sender.last} <${sender.email}>`,
 		subject : `Tabroom Cloud Change: ${subject}`,
 	};
-
-	if (config.linode.notify_slack) {
-		message.emailInclude = [config.linode.notify_slack];
-	}
 
 	const emailResponse = await notify(message);
 	return emailResponse;

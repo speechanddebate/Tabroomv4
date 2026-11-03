@@ -60,9 +60,6 @@
     "path": "/v2",
     "product_codes": {}
   },
-  "share": {
-    "smtp": {}
-  },
   "naudl": {
     "url": "https://urbandebate.my.salesforce.com",
     "tourn_endpoint": "/services/apexrest/v.1/TournamentService",
@@ -84,15 +81,19 @@
     "timeout": 30000
   },
   "mail": {
-    "test": true,
+    "mode": "log",
+    "redirectTo": ["you@example.com"],
+    "allowLiveOutsideProduction": false,
     "from": "live@www.tabroom.com",
-    "server": "localhost",
-    "port": 25,
-    "pool": 128
+    "smtp": {
+      "host": "localhost",
+      "port": 25,
+      "secure": false,
+      "rejectUnauthorized": true,
+      "pool": 128
+    }
   },
-  "onesignal": {
-    "api_url": "https://onesignal.com/api/v1"
-  },
+  "webpush": {},
   "features": {
     "HIDE_DEV_ENDPOINTS": true
   },

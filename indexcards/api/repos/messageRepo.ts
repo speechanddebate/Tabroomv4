@@ -1,6 +1,6 @@
 import type { Database } from '../data/database.js';
 import type { Message } from '../data/schema.js';
-import type { Insertable } from 'kysely';
+import type { Insertable, Selectable } from 'kysely';
 
 type queryOpts = {
 	unread?: boolean;
@@ -129,8 +129,73 @@ async function createMessage(db: Database, data: Insertable<Message>) {
 	.executeTakeFirstOrThrow();
 };
 
+/** The final statuses a delivery job can record for each channel */
+export type DeliveryStatus = {
+	email: Exclude<NonNullable<Selectable<Message>['email_status']>, 'queued'>;
+	push: Exclude<NonNullable<Selectable<Message>['push_status']>, 'queued'>;
+};
+
+/**
+ * Records how a channel's delivery of a message ended. Only a delivery still pending
+ * (queued, or null for a job queued before the columns existed) is updated, so a late
+ * failure can't overwrite a send. Returns whether the row changed
+ */
+async function recordDelivery<C extends keyof DeliveryStatus>(
+	db: Database,
+	messageId: number,
+	channel: C,
+	status: DeliveryStatus[C],
+): Promise<boolean> {
+	const statusColumn = channel === 'email' ? 'email_status' : 'push_status';
+	const timeColumn = channel === 'email' ? 'emailed_at' : 'pushed_at';
+
+	const result = await db.updateTable('message')
+		.set({ [statusColumn]: status, [timeColumn]: new Date() })
+		.where('id', '=', messageId)
+		.where((eb) => eb.or([eb(statusColumn, 'is', null), eb(statusColumn, '=', 'queued')]))
+		.executeTakeFirst();
+
+	return result.numUpdatedRows > 0n;
+}
+
+/**
+ * Marks deliveries that never got a job as failed: the rows were written as queued and
+ * then the queue could not take the jobs. Only the named channels and only rows still
+ * queued change, so a job that did get through keeps whatever it recorded. Returns the
+ * rows changed per channel
+ */
+async function failQueued(
+	db: Database,
+	messageIds: number[],
+	channels: { email?: boolean; push?: boolean },
+): Promise<{ email: number; push: number }> {
+	const changed = { email: 0, push: 0 };
+	if (messageIds.length === 0) return changed;
+
+	const failedAt = new Date();
+	if (channels.email) {
+		const result = await db.updateTable('message')
+			.set({ email_status: 'failed', emailed_at: failedAt })
+			.where('id', 'in', messageIds)
+			.where('email_status', '=', 'queued')
+			.executeTakeFirst();
+		changed.email = Number(result.numUpdatedRows);
+	}
+	if (channels.push) {
+		const result = await db.updateTable('message')
+			.set({ push_status: 'failed', pushed_at: failedAt })
+			.where('id', 'in', messageIds)
+			.where('push_status', '=', 'queued')
+			.executeTakeFirst();
+		changed.push = Number(result.numUpdatedRows);
+	}
+	return changed;
+}
+
 export default {
 	getMessage,
 	getMessages,
 	createMessage,
+	recordDelivery,
+	failQueued,
 };

@@ -1,9 +1,19 @@
-import { createContext } from '../../../../tests/httpMocks.js';
-import { getSession } from './session.js';
+import { createContext } from '../../../tests/httpMocks.js';
+import { getSession } from './sessions.js';
+import type { SessionPerson } from '../../middleware/auth/types.js';
+
+const person = (overrides: Partial<SessionPerson> = {}): SessionPerson => ({
+	id: 123,
+	first: 'Test',
+	last: 'User',
+	email: 'test@example.com',
+	site_admin: 0,
+	...overrides,
+});
 
 describe('getSession', () => {
 	it('should return session data if session exists', async () => {
-		const Person = { id: 123, first: 'Test', last: 'User' };
+		const Person = person();
 		const { req, res } = createContext({
 			auth: { method: 'cookie', sessionId: 7, su: null },
 			person: Person,
@@ -14,10 +24,10 @@ describe('getSession', () => {
 	});
 
 	it('includes the su admin while su\'d', async () => {
-		const Su = { id: 1, first: 'Admin', last: 'Person' };
+		const Su = person({ id: 1, first: 'Admin', last: 'Person', site_admin: 1 });
 		const { req, res } = createContext({
 			auth: { method: 'cookie', sessionId: 7, su: Su },
-			person: { id: 123 },
+			person: person(),
 		});
 		await getSession(req, res);
 		expect(res.body).toMatchObject({ person: 123, su: 1, Su });

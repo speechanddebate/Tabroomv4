@@ -90,4 +90,69 @@ describe('messageRepo',() => {
 			expect(message[0]?.Email?.content).toBe(Email.content);
 		});
 	});
+	describe('recordDelivery', () => {
+		const delivery = (id: number) => db.selectFrom('message')
+			.select(['email_status', 'emailed_at', 'push_status', 'pushed_at'])
+			.where('id', '=', id)
+			.executeTakeFirstOrThrow();
+
+		it('records how a queued delivery ended and when', async () => {
+			const Message = await factories.message.create({ email_status: 'queued', push_status: 'queued' });
+
+			await expect(messageRepo.recordDelivery(db, Message.id, 'email', 'sent')).resolves.toBe(true);
+
+			const row = await delivery(Message.id);
+			expect(row.email_status).toBe('sent');
+			expect(row.emailed_at).toBeInstanceOf(Date);
+			// The other channel is its own record
+			expect(row).toMatchObject({ push_status: 'queued', pushed_at: null });
+
+			await messageRepo.recordDelivery(db, Message.id, 'push', 'rejected');
+			expect(await delivery(Message.id)).toMatchObject({ email_status: 'sent', push_status: 'rejected', pushed_at: expect.any(Date) });
+		});
+		it('records a delivery queued before the status was kept', async () => {
+			const Message = await factories.message.create();
+
+			await expect(messageRepo.recordDelivery(db, Message.id, 'push', 'sent')).resolves.toBe(true);
+			expect((await delivery(Message.id)).push_status).toBe('sent');
+		});
+		it('leaves a delivery that already ended alone', async () => {
+			const sentAt = new Date('2026-10-01T12:00:00Z');
+			const Message = await factories.message.create({ email_status: 'sent', emailed_at: sentAt });
+
+			await expect(messageRepo.recordDelivery(db, Message.id, 'email', 'failed')).resolves.toBe(false);
+			expect(await delivery(Message.id)).toMatchObject({ email_status: 'sent', emailed_at: sentAt });
+		});
+	});
+	describe('failQueued', () => {
+		const delivery = (id: number) => db.selectFrom('message')
+			.select(['email_status', 'emailed_at', 'push_status', 'pushed_at'])
+			.where('id', '=', id)
+			.executeTakeFirstOrThrow();
+
+		it('fails the queued deliveries of the named channels and says how many', async () => {
+			const Queued = await factories.message.create({ email_status: 'queued', push_status: 'queued' });
+			const EmailOnly = await factories.message.create({ email_status: 'queued', push_status: null });
+
+			await expect(messageRepo.failQueued(db, [Queued.id, EmailOnly.id], { email: true, push: true })).resolves.toEqual({ email: 2, push: 1 });
+
+			expect(await delivery(Queued.id)).toMatchObject({ email_status: 'failed', emailed_at: expect.any(Date), push_status: 'failed', pushed_at: expect.any(Date) });
+			expect(await delivery(EmailOnly.id)).toMatchObject({ email_status: 'failed', push_status: null, pushed_at: null });
+		});
+		it('leaves a channel alone when it is not named', async () => {
+			const Message = await factories.message.create({ email_status: 'queued', push_status: 'queued' });
+
+			await expect(messageRepo.failQueued(db, [Message.id], { email: true })).resolves.toEqual({ email: 1, push: 0 });
+			expect(await delivery(Message.id)).toMatchObject({ email_status: 'failed', push_status: 'queued', pushed_at: null });
+		});
+		it('leaves a delivery that already ended alone', async () => {
+			const Sent = await factories.message.create({ email_status: 'sent', push_status: 'skipped' });
+
+			await expect(messageRepo.failQueued(db, [Sent.id], { email: true, push: true })).resolves.toEqual({ email: 0, push: 0 });
+			expect(await delivery(Sent.id)).toMatchObject({ email_status: 'sent', push_status: 'skipped' });
+		});
+		it('does nothing with no ids', async () => {
+			await expect(messageRepo.failQueued(db, [], { email: true, push: true })).resolves.toEqual({ email: 0, push: 0 });
+		});
+	});
 });

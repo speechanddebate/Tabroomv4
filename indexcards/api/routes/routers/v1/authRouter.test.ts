@@ -106,6 +106,32 @@ describe('Auth Router', () => {
 			expect(session).toBeUndefined();
 		});
 
+		it('removes the session\'s push subscription', async () => {
+			const Person = await factories.person.create();
+			const { id: sessionId, userkey } = await factories.session.create({ person: Person.id });
+			const endpoint = `https://fcm.googleapis.com/fcm/send/logout-${sessionId}`;
+			await db.updateTable('session').set({
+				push_endpoint: endpoint,
+				push_p256dh: 'p256dh',
+				push_auth: 'auth',
+				push_vapid_key: '0123456789abcdef',
+			}).where('id', '=', sessionId).execute();
+
+			await request(server)
+				.post('/v1/auth/logout')
+				.asPerson(userkey)
+				.expect(204);
+
+			const remaining = await db.selectFrom('session')
+				.select('id')
+				.where((eb) => eb.or([
+					eb('id', '=', sessionId),
+					eb('push_endpoint', '=', endpoint),
+				]))
+				.execute();
+			expect(remaining).toEqual([]);
+		});
+
 	});
 	describe('/register' , () => {
 		it('Registers a new user', async () => {

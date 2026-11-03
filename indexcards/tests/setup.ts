@@ -3,6 +3,10 @@ import z from 'zod';
 import request from 'supertest';
 import config from '../api/config.js';
 
+// No test run can mail anyone, whatever config.test.json says: a test that forgets to mock
+// nodemailer only logs. Tests of the other modes set them in-test and restore
+config.mail.mode = 'log';
+
 /**
  * authenticate a supertest request as the person owning the session userkey, via the session cookie.
  * also sets a trusted Origin so cookie-authed mutations pass CSRF validation.

@@ -1,6 +1,6 @@
 import moment from 'moment-timezone';
 import { getFollowers, getPairingFollowers } from '../../../helpers/followers.js';
-import { notify } from '../../../helpers/blast.js';
+import { notify } from '../../../services/notifications/notify.js';
 import { sendPairingBlast, formatPairingBlast } from '../../../helpers/pairing.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
