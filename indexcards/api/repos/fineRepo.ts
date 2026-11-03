@@ -6,6 +6,7 @@ async function getFines(db: Database, person: number, tourn: number){
 		.selectFrom('fine')
 		.innerJoin('tourn', 'tourn.id', 'fine.tourn')
 		.leftJoin('school', 'fine.school', 'school.id')
+		.leftJoin('judge', 'fine.judge', 'judge.id')
 		.leftJoin('tourn_setting as currency', (join) => join
 			.onRef('currency.tourn', '=', 'tourn.id')
 			.on('currency.tag', '=', 'currency')
@@ -19,13 +20,17 @@ async function getFines(db: Database, person: number, tourn: number){
 			'currency.value as currency',
 			'fine.school as school',
 			'school.name as schoolName',
+			'fine.judge as judge',
+			'judge.first as judgeFirst',
+			'judge.last as judgeLast',
 		])
+		// The person's own fines, and every fine billed to a school whose chapter they coach
 		.where((eb) => eb.or([
 			eb('fine.person', '=', person),
 			eb.exists(
 				eb.selectFrom('permission')
 					.select('permission.id')
-					.whereRef('permission.person', '=', eb.ref('fine.person'))
+					.where('permission.person', '=', person)
 					.whereRef('permission.chapter', '=', 'school.chapter')
 					.where('permission.tag', '=', 'chapter')
 			),
