@@ -122,4 +122,59 @@ describe('tournRepo', () => {
 			expect(deletedTourn).toBeUndefined();
 		});
 	});
+
+	describe('getPersonTourns', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+		const daysFromNow = (days: number) => new Date(Math.floor((Date.now() + days * DAY) / 1000) * 1000);
+
+		// One full tourn at each edge of the home page window: ended 8 days ago (out), ended
+		// 6 days ago (in), running, upcoming, and a hidden running one (out)
+		async function createHomeWindow() {
+			const [endedLongAgo, endedRecently, running, upcoming, hidden] = await Promise.all([
+				factories.tourn.createFull({ start: daysFromNow(-10), end: daysFromNow(-8) }),
+				factories.tourn.createFull({ start: daysFromNow(-7), end: daysFromNow(-6) }),
+				factories.tourn.createFull({ start: daysFromNow(-1), end: daysFromNow(1) }),
+				factories.tourn.createFull({ start: daysFromNow(3), end: daysFromNow(5) }),
+				factories.tourn.createFull({ start: daysFromNow(-1), end: daysFromNow(1), hidden: 1 }),
+			]);
+			return { endedLongAgo, endedRecently, running, upcoming, hidden };
+		}
+
+		it('returns the tournaments in the window the person has any role at', async () => {
+			const Person = await factories.person.create();
+			const window = await createHomeWindow();
+			// one role per tourn: judge, competitor, coach, tab staff, and a judge at the hidden one
+			await factories.person.createJudge({ person: Person.id, Judge: { category: window.endedLongAgo.Category.id } });
+			const Student = await factories.student.create({ person: Person.id });
+			await factories.entry.create({ event: window.endedRecently.Event.id, students: [Student.id] });
+			const Chapter = await factories.chapter.create();
+			await factories.permission.create({ person: Person.id, chapter: Chapter.id, tag: 'chapter' });
+			await factories.school.create({ tourn: window.running.Tourn.id, chapter: Chapter.id });
+			await factories.permission.create({ person: Person.id, tourn: window.upcoming.Tourn.id, tag: 'tabber' });
+			await factories.person.createJudge({ person: Person.id, Judge: { category: window.hidden.Category.id } });
+			// a tournament in the window the person has no role at
+			await factories.tourn.createFull();
+
+			const tourns = await tournRepo.getPersonTourns(db, Person.id, { endAfter: new Date(Date.now() - 7 * DAY) });
+
+			expect(tourns.map(tourn => tourn.id).sort()).toEqual([
+				window.endedRecently.Tourn.id,
+				window.running.Tourn.id,
+				window.upcoming.Tourn.id,
+			].sort());
+		});
+
+		it('returns only running tournaments with startBefore and endAfter at now', async () => {
+			const Person = await factories.person.create();
+			const window = await createHomeWindow();
+			for (const tourn of Object.values(window)) {
+				await factories.person.createJudge({ person: Person.id, Judge: { category: tourn.Category.id } });
+			}
+			const now = new Date();
+
+			const tourns = await tournRepo.getPersonTourns(db, Person.id, { startBefore: now, endAfter: now });
+
+			expect(tourns.map(tourn => tourn.id)).toEqual([window.running.Tourn.id]);
+		});
+	});
 });

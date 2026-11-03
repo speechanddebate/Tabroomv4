@@ -287,6 +287,13 @@ async function getPersonTourns(db: Database, personId: number, opts: queryOpts =
 					.where('permission.person', '=', personId)
 					.whereRef('school.tourn', '=', 'tourn.id')
 			),
+			// Person is tab staff at this tournament
+			exists(
+				selectFrom('permission')
+					.select('permission.id')
+					.where('permission.person', '=', personId)
+					.whereRef('permission.tourn', '=', 'tourn.id')
+			),
 		]))
 		.orderBy('tourn.start', 'desc')
 		.execute();

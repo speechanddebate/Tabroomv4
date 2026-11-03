@@ -1,45 +1,56 @@
 import type { Database } from '../data/database.js';
 import type { Permission } from '../data/schema.js';
 import type { Insertable } from 'kysely';
-
 type CreatePermissionData = Omit<Insertable<Permission>, 'person'> & {
 	person: NonNullable<Insertable<Permission>['person']>;
 	tag: NonNullable<Insertable<Permission>['tag']>;
 };
 
-export const getPermission = async (db: Database, id: number) => {
-	return db.selectFrom('permission')
-		.selectAll()
-		.where('id', '=', id)
+type queryOpts = {
+	tourn?: number;
+	tourns?: number[];
+	chapter?: number;
+	person?: number;
+};
+
+function buildPermissionQuery(db: Database, opts: queryOpts = {}) {
+	let query = db.selectFrom('permission');
+
+	if (opts.tourn !== undefined) {
+		query = query.where('permission.tourn', '=', opts.tourn);
+	}
+	if (opts.tourns) {
+		query = query.where('permission.tourn', 'in', opts.tourns);
+	}
+	if (opts.chapter !== undefined) {
+		query = query.where('permission.chapter', '=', opts.chapter);
+	}
+	if (opts.person !== undefined) {
+		query = query.where('permission.person', '=', opts.person);
+	}
+	return query;
+}
+
+async function getPermission(db: Database, id: number) {
+	return await buildPermissionQuery(db)
+		.selectAll('permission')
+		.where('permission.id', '=', id)
 		.executeTakeFirst();
-};
+}
 
-export const getPermissions = async (db: Database, scope: {
-	tourn?: number,
-	chapter?: number,
-	person?: number,
-} = {}) => {
-	let query = db.selectFrom('permission').selectAll();
+async function getPermissions(db: Database, opts: queryOpts = {}) {
+	return await buildPermissionQuery(db, opts)
+		.selectAll('permission')
+		.execute();
+}
 
-	if (scope.tourn !== undefined) {
-		query = query.where('tourn', '=', scope.tourn);
-	}
-	if (scope.chapter !== undefined) {
-		query = query.where('chapter', '=', scope.chapter);
-	}
-	if (scope.person !== undefined) {
-		query = query.where('person', '=', scope.person);
-	}
-	return await query.execute();
-};
-
-export const createPermission = async (db: Database, data: CreatePermissionData) => {
+export async function createPermission(db: Database, data: CreatePermissionData) {
 	const [row] = await db.insertInto('permission')
 		.values(data)
 		.returning('id')
 		.execute();
 	return row.id;
-};
+}
 
 export default {
 	getPermission,

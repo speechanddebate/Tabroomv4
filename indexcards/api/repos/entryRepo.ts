@@ -9,6 +9,9 @@ type entryOpts = {
 	offset?: number,
 	settings?: boolean | string[],
 	ids?: number[],
+	tourns?: number[],
+	/** entries one of the person's unretired students is on */
+	person?: number,
 }
 function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 	let query = db.selectFrom('entry')
@@ -20,6 +23,25 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 
 	query = opts.ids
 		? query.where('entry.id', 'in', opts.ids)
+		: query;
+
+	// through the event: entry.tourn is null or wrong on a share of rows
+	query = opts.tourns
+		? query.where('entry.event', 'in', (eb) => eb
+			.selectFrom('event')
+			.select('event.id')
+			.where('event.tourn', 'in', opts.tourns!)
+		)
+		: query;
+
+	query = opts.person
+		? query.where('entry.id', 'in', (eb) => eb
+			.selectFrom('entry_student')
+			.innerJoin('student', 'student.id', 'entry_student.student')
+			.select('entry_student.entry')
+			.where('student.person', '=', opts.person!)
+			.where('student.retired', '=', 0)
+		)
 		: query;
 
 	query = opts.limit
@@ -90,9 +112,46 @@ async function createEntry(db: Database, data: Insertable<Entry> & { settings?: 
 	return res;
 }
 
+/**
+ * The entries the person's students are in, with the event and the student row that puts
+ * the person on each. Pass tourns to limit them to those tournaments. The optimizer starts
+ * from the person's students on its own here (checked with EXPLAIN on a 700-student
+ * person), unlike the one-tourn query in getPersonTournSummary that needs a straight_join
+ */
+async function getPersonEntries(db: Database, personId: number, opts: entryOpts = {}) {
+	return await buildEntryQuery(db, { ...opts, person: personId })
+		// the person's own student row on the entry, not a partner's
+		.innerJoin('entry_student', 'entry_student.entry', 'entry.id')
+		.innerJoin('student', (join) => join
+			.onRef('student.id', '=', 'entry_student.student')
+			.on('student.person', '=', personId)
+			.on('student.retired', '=', 0)
+		)
+		.innerJoin('event', 'event.id', 'entry.event')
+		.select([
+			'entry.id',
+			'entry.code',
+			'entry.name',
+			'entry.active',
+			'entry.dropped',
+			'entry.waitlist',
+			'entry.unconfirmed',
+			'entry.school',
+			'event.id as event',
+			'event.name as eventName',
+			'event.abbr as eventAbbr',
+			'event.type as eventType',
+			'event.category',
+			'event.tourn as tourn',
+			'student.id as student',
+		])
+		.execute();
+}
+
 export default {
 	getEntry,
 	getEntries,
 	getEntryStudents,
+	getPersonEntries,
 	createEntry,
 };

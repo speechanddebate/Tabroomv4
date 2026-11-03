@@ -386,4 +386,32 @@ describe('judgeRepo', () => {
 			expect(res.length).toBe(0);
 		});
 	});
+
+	describe('getPersonJudges', () => {
+		it("returns the person's judge rows at the given tournaments with their category and school", async () => {
+			const { Person } = await factories.person.createJudge();
+			const first = await factories.tourn.createFull();
+			const second = await factories.tourn.createFull();
+			const other = await factories.tourn.createFull();
+			const School = await factories.school.create({ tourn: first.Tourn.id, name: 'Lincoln' });
+			const { Judge: hired } = await factories.person.createJudge({ person: Person.id, Judge: { category: first.Category.id, school: School.id } });
+			const { Judge: hire } = await factories.person.createJudge({ person: Person.id, Judge: { category: second.Category.id } });
+			await factories.person.createJudge({ person: Person.id, Judge: { category: other.Category.id } });
+			// another person's judge row at one of the tournaments
+			await factories.person.createJudge({ Judge: { category: first.Category.id } });
+
+			const rows = await judgeRepo.getPersonJudges(db, Person.id, { tourns: [first.Tourn.id, second.Tourn.id] });
+
+			expect(rows.map(row => row.id).sort()).toEqual([hired.id, hire.id].sort());
+			expect(rows.find(row => row.id === hired.id)).toMatchObject({
+				tourn: first.Tourn.id,
+				category: first.Category.id,
+				categoryName: first.Category.name,
+				categoryAbbr: first.Category.abbr,
+				school: School.id,
+				schoolName: 'Lincoln',
+			});
+			expect(rows.find(row => row.id === hire.id)).toMatchObject({ tourn: second.Tourn.id, school: null, schoolName: null });
+		});
+	});
 });

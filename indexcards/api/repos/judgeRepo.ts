@@ -9,7 +9,8 @@ type queryOpts = {
 	offset?: number;
 	person?: number;
 	person_request?: number;
-	settings?: boolean | string[]
+	settings?: boolean | string[];
+	tourns?: number[];
 }
 function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('judge')
@@ -22,6 +23,11 @@ function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	if(opts.offset) query = query.offset(opts.offset);
 	if(opts.person) query = query.where('judge.person', '=', opts.person);
 	if(opts.person_request) query = query.where('judge.person_request', '=', opts.person_request);
+	if(opts.tourns) query = query.where('judge.category', 'in', (eb) => eb
+		.selectFrom('category')
+		.select('category.id')
+		.where('category.tourn', 'in', opts.tourns!)
+	);
 
 	return query;
 }
@@ -356,9 +362,34 @@ export async function getJudgesForPersons(db: Database, personIds: number[]) {
 				return acc;
 			}, {});
 }
+/**
+ * The person's judge rows, with the category and the school that entered them (null for a
+ * tournament hire). Pass tourns to limit them to those tournaments
+ */
+async function getPersonJudges(db: Database, personId: number, opts: queryOpts = {}) {
+	return await buildJudgeQuery(db, { ...opts, person: personId })
+		.innerJoin('category', 'category.id', 'judge.category')
+		.leftJoin('school', 'school.id', 'judge.school')
+		.select([
+			'judge.id',
+			'judge.code',
+			'judge.obligation',
+			'judge.hired',
+			'judge.active',
+			'category.id as category',
+			'category.name as categoryName',
+			'category.abbr as categoryAbbr',
+			'school.id as school',
+			'school.name as schoolName',
+			'category.tourn as tourn',
+		])
+		.execute();
+}
+
 export default {
 	getJudge,
 	getJudges,
+	getPersonJudges,
 	createJudge,
 	updateJudge,
 	unlinkedSearch,

@@ -64,3 +64,27 @@ describe('createPermission', () => {
 		expect(permission?.id).not.toBeNull();
 	});
 });
+describe('getPermissions with tourns', () => {
+	it("returns the person's permissions at the given tournaments", async () => {
+		const Person = await factories.person.create();
+		const first = await factories.tourn.create();
+		const second = await factories.tourn.create();
+		const elsewhere = await factories.tourn.create();
+		const { permissionId: tabber } = await factories.permission.create({ person: Person.id, tourn: first.id, tag: 'tabber', details: '{"events":[1]}' });
+		const { permissionId: owner } = await factories.permission.create({ person: Person.id, tourn: second.id, tag: 'owner' });
+		await factories.permission.create({ person: Person.id, tourn: elsewhere.id, tag: 'owner' });
+		// a chapter permission has no tourn, and another person's tourn permission is not mine
+		const Chapter = await factories.chapter.create();
+		await factories.permission.create({ person: Person.id, chapter: Chapter.id, tag: 'chapter' });
+		await factories.permission.create({ tourn: first.id, tag: 'owner' });
+
+		const rows = await permissionRepo.getPermissions(db, { person: Person.id, tourns: [first.id, second.id] });
+
+		expect(rows.map(row => row.id).sort()).toEqual([tabber, owner].sort());
+		expect(rows.find(row => row.id === tabber)).toMatchObject({
+			tag: 'tabber',
+			details: '{"events":[1]}',
+			tourn: first.id,
+		});
+	});
+});

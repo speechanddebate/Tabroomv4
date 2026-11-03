@@ -191,3 +191,50 @@ describe('deleteSchool', () => {
 		expect(fetchedSchool).toBeUndefined();
 	});
 });
+describe('getCoachedSchools', () => {
+	it("returns the schools of the person's chapters at the given tournaments with the permission tag", async () => {
+		const Person = await factories.person.create();
+		const coached = await factories.chapter.create();
+		const prefsOnly = await factories.chapter.create();
+		const other = await factories.chapter.create();
+		await factories.permission.create({ person: Person.id, chapter: coached.id, tag: 'chapter' });
+		await factories.permission.create({ person: Person.id, chapter: prefsOnly.id, tag: 'prefs' });
+		// another person coaches the other chapter
+		await factories.permission.create({ chapter: other.id, tag: 'chapter' });
+		const first = await factories.tourn.create();
+		const second = await factories.tourn.create();
+		const elsewhere = await factories.tourn.create();
+		const coachedSchool = await factories.school.create({ tourn: first.id, chapter: coached.id, name: 'Lincoln', onsite: 1 });
+		const secondSchool = await factories.school.create({ tourn: second.id, chapter: coached.id });
+		await factories.school.create({ tourn: elsewhere.id, chapter: coached.id });
+		const prefsSchool = await factories.school.create({ tourn: first.id, chapter: prefsOnly.id });
+		await factories.school.create({ tourn: first.id, chapter: other.id });
+
+		const rows = await schoolRepo.getCoachedSchools(db, Person.id, { tourns: [first.id, second.id] });
+
+		expect(rows.map(row => row.id).sort()).toEqual([coachedSchool.id, secondSchool.id, prefsSchool.id].sort());
+		expect(rows.find(row => row.id === coachedSchool.id)).toEqual({
+			id: coachedSchool.id,
+			name: 'Lincoln',
+			onsite: 1,
+			chapter: coached.id,
+			tourn: first.id,
+			tag: 'chapter',
+		});
+		expect(rows.find(row => row.id === prefsSchool.id)).toMatchObject({ chapter: prefsOnly.id, tag: 'prefs' });
+	});
+
+	it('returns one row per school, with chapter winning over prefs', async () => {
+		const Person = await factories.person.create();
+		const Chapter = await factories.chapter.create();
+		await factories.permission.create({ person: Person.id, chapter: Chapter.id, tag: 'prefs' });
+		await factories.permission.create({ person: Person.id, chapter: Chapter.id, tag: 'chapter' });
+		const Tourn = await factories.tourn.create();
+		const School = await factories.school.create({ tourn: Tourn.id, chapter: Chapter.id });
+
+		const rows = await schoolRepo.getCoachedSchools(db, Person.id, { tourns: [Tourn.id] });
+
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({ id: School.id, tag: 'chapter' });
+	});
+});

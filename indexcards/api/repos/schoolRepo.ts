@@ -6,10 +6,11 @@ import type { School } from '../data/schema.js';
 type queryOpts = {
 	ids?: number[];
 	tourn?: number;
+	tourns?: number[];
 	chapter?: number;
 	region?: number;
 	district?: number;
-	settings?: boolean | string[]
+	settings?: boolean | string[];
 };
 function buildSchoolQuery(db: Database, opts: queryOpts = {}){
 	let query = db.selectFrom('school')
@@ -20,19 +21,22 @@ function buildSchoolQuery(db: Database, opts: queryOpts = {}){
 		}))
 	)
 	if (opts.ids) {
-		query = query.where('id', 'in', opts.ids);
+		query = query.where('school.id', 'in', opts.ids);
 	}
 	if (opts.tourn) {
-		query = query.where('tourn', '=', opts.tourn);
+		query = query.where('school.tourn', '=', opts.tourn);
+	}
+	if (opts.tourns) {
+		query = query.where('school.tourn', 'in', opts.tourns);
 	}
 	if (opts.chapter) {
-		query = query.where('chapter', '=', opts.chapter);
+		query = query.where('school.chapter', '=', opts.chapter);
 	}
 	if (opts.region) {
-		query = query.where('region', '=', opts.region);
+		query = query.where('school.region', '=', opts.region);
 	}
 	if (opts.district) {
-		query = query.where('district', '=', opts.district);
+		query = query.where('school.district', '=', opts.district);
 	}
 	return query;
 }
@@ -102,9 +106,41 @@ async function deleteSchool(db: Database, id: number) {
 		.executeTakeFirst();
 }
 
+/** The permission tags that put a chapter's schools on a person's home page */
+const COACH_TAGS = ['chapter', 'prefs'] as const;
+
+/**
+ * The schools of the chapters the person holds a chapter or prefs permission for. Pass
+ * tourns to limit them to those tournaments. One row per school; a person holding both
+ * tags for a chapter gets the chapter one
+ */
+async function getCoachedSchools(db: Database, personId: number, opts: queryOpts = {}) {
+	const rows = await buildSchoolQuery(db, opts)
+		.innerJoin('permission', 'permission.chapter', 'school.chapter')
+		.select([
+			'school.id',
+			'school.name',
+			'school.onsite',
+			'school.chapter',
+			'school.tourn',
+			'permission.tag',
+		])
+		.where('permission.person', '=', personId)
+		.where('permission.tag', 'in', COACH_TAGS)
+		.execute();
+
+	const schools = new Map<number, (typeof rows)[number]>();
+	for (const row of rows) {
+		const seen = schools.get(row.id);
+		if (!seen || row.tag === 'chapter') schools.set(row.id, row);
+	}
+	return [...schools.values()];
+}
+
 export default {
 	getSchool,
 	getSchools,
+	getCoachedSchools,
 	createSchool,
 	updateSchool,
 	deleteSchool,
