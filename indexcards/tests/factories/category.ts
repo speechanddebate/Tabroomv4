@@ -8,9 +8,10 @@ import type { Selectable } from 'kysely';
 
 export function createCategoryData(overrides = {}) {
 	const category = fakeCategory();
+	const suffix = Math.random().toString(36).substring(2, 6);
 	return {
-		name: category.name,
-		abbr: category.abbr + (Math.random().toString(36).substring(2, 6)), // ensure uniqueness
+		name: `${category.name} ${suffix}`,
+		abbr: category.abbr + suffix,
 		...overrides,
 	};
 }

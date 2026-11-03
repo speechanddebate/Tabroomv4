@@ -7,6 +7,7 @@ import { db, type Database } from '../../../../data/database.js';
 import { ballotRules, ballotStatus, flipStatus } from '../../../../services/ballots/ballotRules.js';
 import { loadBallotInputs } from '../../../../services/ballots/loadBallotInputs.js';
 import { saveBallot, saveBallotFeedback } from '../../../../services/ballots/saveBallot.js';
+import { getSectionRoom } from '../../../../services/onlineRooms/onlineRoomService.js';
 import config from '../../../../config.js';
 import logger from '../../../../helpers/logger.js';
 import sessionRepo from '../../../../repos/sessionRepo.js';
@@ -25,7 +26,7 @@ export async function getBallotContext(req: ValidatedRequest, res: Response) {
 	if (!inputs) return NotFound(req, res, `Panel ${panelId} not found`);
 
 	const rules = ballotRules(inputs);
-	const { tourn, event, round, room, judge } = inputs;
+	const { tourn, event, round, judge } = inputs;
 
 	// Ballots the beta can't render yet go to the classic ballot
 	const context: BallotContext = rules.unsupported.length > 0
@@ -49,8 +50,7 @@ export async function getBallotContext(req: ValidatedRequest, res: Response) {
 			Event: { abbr: event.abbr },
 			Round: { id: round.id, name: round.name, label: rules.roundLabel, notes: rules.roundNotes },
 			flight: rules.flight,
-			// Most rooms store an empty url, which classic treats as none
-			Room: room ? { name: room.name, url: room.url || null } : null,
+			Room: (await getSectionRoom(db, tourn.id, panelId, req.actor))?.display ?? null,
 			Judge: { code: judge.code, first: judge.first, middle: judge.middle, last: judge.last },
 			ballotHeader: rules.ballotHeader,
 			roundStart: rules.roundStart.toISOString(),

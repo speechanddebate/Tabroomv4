@@ -3,6 +3,7 @@ import { getPerson } from '../../../middleware/auth/authorization.js';
 import type { CurrentBallot } from '@tabroom/types';
 import panelRepo from '../../../repos/panelRepo.js';
 import { db } from '../../../data/database.js';
+import { getSectionRoom } from '../../../services/onlineRooms/onlineRoomService.js';
 
 export async function getCurrent(req: Request,res: Response) {
 	const person = getPerson(req);
@@ -66,11 +67,11 @@ export async function getCurrent(req: Request,res: Response) {
 			start: new Date(s.Round.start ? addFlightOffset(s.Round.start,s): addFlightOffset(s.Round.Timeslot.start,s)).toISOString(),
 			deadline: new Date(s.Round.end ? addFlightOffset(s.Round.end,s): addFlightOffset(s.Round.Timeslot.end,s)).toISOString(),
 			roomId: s.Room.id,
-			roomName: s.Room.name,
-			roomUrl: s.Room.url,
+			Room: null,
 			roomNotes: s.Round.settings.judges_ballots_visible ? s.Room.notes : null,
 			chair: s.Ballots.some((b: { chair: number }) => b.chair),
 			audited: s.Ballots.some((b: { audit: number }) => b.audit),
+			tourn: s.Judge.Category.Tourn.id,
 			TournTz: s.Judge.Category.Tourn.tz,
 			eventName: s.Judge.Category.Event.name,
 			eventAbbr: s.Judge.Category.Event.abbr,
@@ -101,6 +102,11 @@ export async function getCurrent(req: Request,res: Response) {
 		});
 		return;
 	});
+
+	// Each ballot's room as this person sees it, so the join button needs no request of its own
+	await Promise.all(ballots.map(async (ballot) => {
+		ballot.Room = (await getSectionRoom(db, ballot.tourn, ballot.id, req.actor))?.display ?? null;
+	}));
 
 	return res.json(ballots);
 }

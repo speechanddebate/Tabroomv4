@@ -5,6 +5,8 @@ import type { Insertable, ExpressionBuilder } from 'kysely';
 
 type queryOpts = {
 	settings?: boolean | string[];
+	/** also select the settings' created_at and timestamp as settingsTimestamps */
+	withTimestamps?: boolean;
 	excludeBanned?: boolean;
 	excludeUnconfirmedEmail?: boolean;
 	hasValidParadigm?: boolean;
@@ -15,10 +17,17 @@ type queryOpts = {
 
 async function buildPersonQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('person')
-	.$if(opts.settings !== undefined && opts.settings !== false, (qb) => 
+	.$if(opts.settings !== undefined && opts.settings !== false && !opts.withTimestamps, (qb) =>
 		qb.select(selectSettings({
 			table: 'person',
 			settings: opts.settings ?? false
+		}))
+	)
+	.$if(opts.settings !== undefined && opts.settings !== false && !!opts.withTimestamps, (qb) =>
+		qb.select(selectSettings({
+			table: 'person',
+			settings: opts.settings ?? false,
+			withTimestamps: true,
 		}))
 	)
 	if(opts.excludeBanned)

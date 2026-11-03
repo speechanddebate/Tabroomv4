@@ -70,6 +70,7 @@ async function getParadigmByPersonId(req: ValidatedRequest, res: Response) {
 		excludeUnconfirmedEmail: true,
 		hasValidParadigm: true,
 		settings: ['paradigm'],
+		withTimestamps: true,
 	});
 	
 	if (!person) {

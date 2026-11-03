@@ -9,6 +9,11 @@ export const FineSchema = z.object({
 	currency: z.string().nullable().meta({ description: 'The currency symbol for the tournament, if it is set' }),
 	school: utils.id,
 	schoolName: z.string().nullable(),
+	judge: utils.id.nullable().meta({ description: 'The judge the fine was assessed against, if any' }),
+	Judge: z.object({
+		first: z.string().nullable(),
+		last: z.string().nullable(),
+	}).strict().nullable().meta({ description: 'The judge the fine was assessed against, if any' }),
 	leviedAt: z.iso.datetime(),
 }).strict().meta({
 	id: 'Fine',

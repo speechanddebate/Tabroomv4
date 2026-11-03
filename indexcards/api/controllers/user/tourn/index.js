@@ -263,6 +263,8 @@ export async function getTournFines(req,res){
 		currency: row.currency,
 		school: row.school,
 		schoolName: row.schoolName,
+		judge: row.judge,
+		Judge: row.judge === null ? null : { first: row.judgeFirst, last: row.judgeLast },
 		leviedAt: row.leviedAt,
 	})));
 };

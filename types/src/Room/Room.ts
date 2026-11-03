@@ -1,7 +1,7 @@
 
 	import { z } from 'zod';
 	import type { ZodOpenApiSchemaObject } from 'zod-openapi';
-	import * as utils from './utils.js';
+	import * as utils from '../utils.js';
 	export const RoomSchema = z.object({
 		id: utils.id,
 		name: z.string().max(127),

@@ -55,6 +55,8 @@ import type {
 	LoginRequest,
 	LoginResponse,
 	NotFoundResponse,
+	OnlineRoom,
+	OnlineRoomJoin,
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
 	PersonTournSummary,
@@ -71,6 +73,9 @@ import type {
 	RestQuizzesParams,
 	RestStudentsUnlinkedSearchParams,
 	RestTournsParams,
+	RestTournsRoomJoinBody,
+	RestTournsSectionsRoomGetParams,
+	RestTournsSectionsRoomJoinParams,
 	ResultSetSchema,
 	ServiceUnavailableResponse,
 	Session,
@@ -91,6 +96,7 @@ import type {
 	UserStudentsClaimParams,
 	UserTournsBallotsParams,
 	UserTournsParams,
+	UtilityRoom,
 } from './schemas';
 
 // https://stackoverflow.com/questions/49579094/typescript-conditional-types-filter-out-readonly-properties-pick-only-requir/49579497#49579497
@@ -2843,6 +2849,1747 @@ export const prefetchRestTournsQuery = async <
 	await queryClient.prefetchQuery(queryOptions);
 
 	return queryClient;
+};
+
+export type restTournsSectionsRoomGetResponse200 = {
+	data: OnlineRoom;
+	status: 200;
+};
+
+export type restTournsSectionsRoomGetResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsSectionsRoomGetResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsSectionsRoomGetResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsSectionsRoomGetResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsSectionsRoomGetResponseSuccess =
+	restTournsSectionsRoomGetResponse200 & {
+		headers: Headers;
+	};
+export type restTournsSectionsRoomGetResponseError = (
+	| restTournsSectionsRoomGetResponse400
+	| restTournsSectionsRoomGetResponse401
+	| restTournsSectionsRoomGetResponse404
+	| restTournsSectionsRoomGetResponse500
+) & {
+	headers: Headers;
+};
+
+export type restTournsSectionsRoomGetResponse =
+	| restTournsSectionsRoomGetResponseSuccess
+	| restTournsSectionsRoomGetResponseError;
+
+export const getRestTournsSectionsRoomGetUrl = (
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomGetParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/sections/${sectionId}/room?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/sections/${sectionId}/room`;
+};
+
+/**
+ * The section's online room as the person sees it: whether they can join, and the room to show if not
+ * @summary Get section room
+ */
+export const restTournsSectionsRoomGet = async (
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomGetParams,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsSectionsRoomGetResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsSectionsRoomGetUrl(tournId, sectionId, params),
+		{
+			credentials: 'include',
+			...options,
+			method: 'GET',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsSectionsRoomGetResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsSectionsRoomGetResponse;
+};
+
+export const getRestTournsSectionsRoomGetQueryKey = (
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomGetParams,
+) => {
+	return [
+		`${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/sections/${sectionId}/room`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getRestTournsSectionsRoomGetQueryOptions = <
+	TData = Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomGetParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getRestTournsSectionsRoomGetQueryKey(tournId, sectionId, params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restTournsSectionsRoomGet>>
+	> = ({ signal }) =>
+		restTournsSectionsRoomGet(
+			tournId,
+			sectionId,
+			params,
+			{ signal, ...fetchOptions },
+			fetcherFn,
+		);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled:
+			tournId !== null &&
+			tournId !== undefined &&
+			sectionId !== null &&
+			sectionId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestTournsSectionsRoomGetQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsSectionsRoomGet>>
+>;
+export type RestTournsSectionsRoomGetQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get section room
+ */
+
+export function createRestTournsSectionsRoomGet<
+	TData = Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: () => number,
+	sectionId: () => number,
+	params?: () => RestTournsSectionsRoomGetParams,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() =>
+			getRestTournsSectionsRoomGetQueryOptions(
+				tournId(),
+				sectionId(),
+				params?.(),
+				options?.(),
+			),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get section room
+ */
+export const prefetchRestTournsSectionsRoomGetQuery = async <
+	TData = Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomGetParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSectionsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestTournsSectionsRoomGetQueryOptions(
+		tournId,
+		sectionId,
+		params,
+		options,
+	);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restTournsSectionsRoomJoinResponse201 = {
+	data: OnlineRoomJoin;
+	status: 201;
+};
+
+export type restTournsSectionsRoomJoinResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsSectionsRoomJoinResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsSectionsRoomJoinResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsSectionsRoomJoinResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type restTournsSectionsRoomJoinResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsSectionsRoomJoinResponse503 = {
+	data: ProblemSchema;
+	status: 503;
+};
+
+export type restTournsSectionsRoomJoinResponseSuccess =
+	restTournsSectionsRoomJoinResponse201 & {
+		headers: Headers;
+	};
+export type restTournsSectionsRoomJoinResponseError = (
+	| restTournsSectionsRoomJoinResponse400
+	| restTournsSectionsRoomJoinResponse401
+	| restTournsSectionsRoomJoinResponse404
+	| restTournsSectionsRoomJoinResponse409
+	| restTournsSectionsRoomJoinResponse500
+	| restTournsSectionsRoomJoinResponse503
+) & {
+	headers: Headers;
+};
+
+export type restTournsSectionsRoomJoinResponse =
+	| restTournsSectionsRoomJoinResponseSuccess
+	| restTournsSectionsRoomJoinResponseError;
+
+export const getRestTournsSectionsRoomJoinUrl = (
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomJoinParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/sections/${sectionId}/room/join?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/sections/${sectionId}/room/join`;
+};
+
+/**
+ * Logs the join and returns the link to open, or for NSDA Campus the signed token to post to it
+ * @summary Join section room
+ */
+export const restTournsSectionsRoomJoin = async (
+	tournId: number,
+	sectionId: number,
+	params?: RestTournsSectionsRoomJoinParams,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsSectionsRoomJoinResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsSectionsRoomJoinUrl(tournId, sectionId, params),
+		{
+			credentials: 'include',
+			...options,
+			method: 'POST',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsSectionsRoomJoinResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsSectionsRoomJoinResponse;
+};
+
+export const getRestTournsSectionsRoomJoinMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>,
+		TError,
+		{
+			tournId: number;
+			sectionId: number;
+			params?: RestTournsSectionsRoomJoinParams;
+		},
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>,
+	TError,
+	{
+		tournId: number;
+		sectionId: number;
+		params?: RestTournsSectionsRoomJoinParams;
+	},
+	TContext
+> => {
+	const mutationKey = ['restTournsSectionsRoomJoin'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>,
+		{
+			tournId: number;
+			sectionId: number;
+			params?: RestTournsSectionsRoomJoinParams;
+		}
+	> = (props) => {
+		const { tournId, sectionId, params } = props ?? {};
+
+		return restTournsSectionsRoomJoin(
+			tournId,
+			sectionId,
+			params,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestTournsSectionsRoomJoinMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>
+>;
+
+export type RestTournsSectionsRoomJoinMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| ErrorResponseResponse
+	| ProblemSchema;
+
+/**
+ * @summary Join section room
+ */
+export const createRestTournsSectionsRoomJoin = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>,
+			TError,
+			{
+				tournId: number;
+				sectionId: number;
+				params?: RestTournsSectionsRoomJoinParams;
+			},
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restTournsSectionsRoomJoin>>,
+	TError,
+	{
+		tournId: number;
+		sectionId: number;
+		params?: RestTournsSectionsRoomJoinParams;
+	},
+	TContext
+> => {
+	return createMutation(
+		() => ({
+			...getRestTournsSectionsRoomJoinMutationOptions(options?.()),
+		}),
+		queryClient,
+	);
+};
+
+export type restTournsSchoolsRoomGetResponse200 = {
+	data: OnlineRoom;
+	status: 200;
+};
+
+export type restTournsSchoolsRoomGetResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsSchoolsRoomGetResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsSchoolsRoomGetResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsSchoolsRoomGetResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsSchoolsRoomGetResponseSuccess =
+	restTournsSchoolsRoomGetResponse200 & {
+		headers: Headers;
+	};
+export type restTournsSchoolsRoomGetResponseError = (
+	| restTournsSchoolsRoomGetResponse400
+	| restTournsSchoolsRoomGetResponse401
+	| restTournsSchoolsRoomGetResponse404
+	| restTournsSchoolsRoomGetResponse500
+) & {
+	headers: Headers;
+};
+
+export type restTournsSchoolsRoomGetResponse =
+	| restTournsSchoolsRoomGetResponseSuccess
+	| restTournsSchoolsRoomGetResponseError;
+
+export const getRestTournsSchoolsRoomGetUrl = (
+	tournId: number,
+	schoolId: number,
+) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/schools/${schoolId}/room`;
+};
+
+/**
+ * The school's NSDA Campus squad room, for its coaches and students
+ * @summary Get school squad room
+ */
+export const restTournsSchoolsRoomGet = async (
+	tournId: number,
+	schoolId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsSchoolsRoomGetResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsSchoolsRoomGetUrl(tournId, schoolId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'GET',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsSchoolsRoomGetResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsSchoolsRoomGetResponse;
+};
+
+export const getRestTournsSchoolsRoomGetQueryKey = (
+	tournId: number,
+	schoolId: number,
+) => {
+	return [
+		`${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/schools/${schoolId}/room`,
+	] as const;
+};
+
+export const getRestTournsSchoolsRoomGetQueryOptions = <
+	TData = Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: number,
+	schoolId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getRestTournsSchoolsRoomGetQueryKey(tournId, schoolId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>
+	> = ({ signal }) =>
+		restTournsSchoolsRoomGet(
+			tournId,
+			schoolId,
+			{ signal, ...fetchOptions },
+			fetcherFn,
+		);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled:
+			tournId !== null &&
+			tournId !== undefined &&
+			schoolId !== null &&
+			schoolId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestTournsSchoolsRoomGetQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>
+>;
+export type RestTournsSchoolsRoomGetQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get school squad room
+ */
+
+export function createRestTournsSchoolsRoomGet<
+	TData = Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: () => number,
+	schoolId: () => number,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() =>
+			getRestTournsSchoolsRoomGetQueryOptions(
+				tournId(),
+				schoolId(),
+				options?.(),
+			),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get school squad room
+ */
+export const prefetchRestTournsSchoolsRoomGetQuery = async <
+	TData = Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	tournId: number,
+	schoolId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsSchoolsRoomGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestTournsSchoolsRoomGetQueryOptions(
+		tournId,
+		schoolId,
+		options,
+	);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restTournsSchoolsRoomJoinResponse201 = {
+	data: OnlineRoomJoin;
+	status: 201;
+};
+
+export type restTournsSchoolsRoomJoinResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsSchoolsRoomJoinResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsSchoolsRoomJoinResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsSchoolsRoomJoinResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsSchoolsRoomJoinResponse503 = {
+	data: ProblemSchema;
+	status: 503;
+};
+
+export type restTournsSchoolsRoomJoinResponseSuccess =
+	restTournsSchoolsRoomJoinResponse201 & {
+		headers: Headers;
+	};
+export type restTournsSchoolsRoomJoinResponseError = (
+	| restTournsSchoolsRoomJoinResponse400
+	| restTournsSchoolsRoomJoinResponse401
+	| restTournsSchoolsRoomJoinResponse404
+	| restTournsSchoolsRoomJoinResponse500
+	| restTournsSchoolsRoomJoinResponse503
+) & {
+	headers: Headers;
+};
+
+export type restTournsSchoolsRoomJoinResponse =
+	| restTournsSchoolsRoomJoinResponseSuccess
+	| restTournsSchoolsRoomJoinResponseError;
+
+export const getRestTournsSchoolsRoomJoinUrl = (
+	tournId: number,
+	schoolId: number,
+) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/schools/${schoolId}/room/join`;
+};
+
+/**
+ * Logs the join and returns the signed NSDA Campus token to post
+ * @summary Join school squad room
+ */
+export const restTournsSchoolsRoomJoin = async (
+	tournId: number,
+	schoolId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsSchoolsRoomJoinResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsSchoolsRoomJoinUrl(tournId, schoolId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'POST',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsSchoolsRoomJoinResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsSchoolsRoomJoinResponse;
+};
+
+export const getRestTournsSchoolsRoomJoinMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>,
+		TError,
+		{ tournId: number; schoolId: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>,
+	TError,
+	{ tournId: number; schoolId: number },
+	TContext
+> => {
+	const mutationKey = ['restTournsSchoolsRoomJoin'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>,
+		{ tournId: number; schoolId: number }
+	> = (props) => {
+		const { tournId, schoolId } = props ?? {};
+
+		return restTournsSchoolsRoomJoin(
+			tournId,
+			schoolId,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestTournsSchoolsRoomJoinMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>
+>;
+
+export type RestTournsSchoolsRoomJoinMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse
+	| ProblemSchema;
+
+/**
+ * @summary Join school squad room
+ */
+export const createRestTournsSchoolsRoomJoin = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>,
+			TError,
+			{ tournId: number; schoolId: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restTournsSchoolsRoomJoin>>,
+	TError,
+	{ tournId: number; schoolId: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestTournsSchoolsRoomJoinMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type restTournsPrepRoomsGetResponse200 = {
+	data: OnlineRoom;
+	status: 200;
+};
+
+export type restTournsPrepRoomsGetResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsPrepRoomsGetResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsPrepRoomsGetResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsPrepRoomsGetResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsPrepRoomsGetResponseSuccess =
+	restTournsPrepRoomsGetResponse200 & {
+		headers: Headers;
+	};
+export type restTournsPrepRoomsGetResponseError = (
+	| restTournsPrepRoomsGetResponse400
+	| restTournsPrepRoomsGetResponse401
+	| restTournsPrepRoomsGetResponse404
+	| restTournsPrepRoomsGetResponse500
+) & {
+	headers: Headers;
+};
+
+export type restTournsPrepRoomsGetResponse =
+	| restTournsPrepRoomsGetResponseSuccess
+	| restTournsPrepRoomsGetResponseError;
+
+export const getRestTournsPrepRoomsGetUrl = (
+	tournId: number,
+	entryId: number,
+) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/prep-rooms/${entryId}`;
+};
+
+/**
+ * The entry's NSDA Campus prep room, for events that use them
+ * @summary Get entry prep room
+ */
+export const restTournsPrepRoomsGet = async (
+	tournId: number,
+	entryId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsPrepRoomsGetResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsPrepRoomsGetUrl(tournId, entryId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'GET',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsPrepRoomsGetResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsPrepRoomsGetResponse;
+};
+
+export const getRestTournsPrepRoomsGetQueryKey = (
+	tournId: number,
+	entryId: number,
+) => {
+	return [
+		`${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/prep-rooms/${entryId}`,
+	] as const;
+};
+
+export const getRestTournsPrepRoomsGetQueryOptions = <
+	TData = Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: number,
+	entryId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ??
+		getRestTournsPrepRoomsGetQueryKey(tournId, entryId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restTournsPrepRoomsGet>>
+	> = ({ signal }) =>
+		restTournsPrepRoomsGet(
+			tournId,
+			entryId,
+			{ signal, ...fetchOptions },
+			fetcherFn,
+		);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled:
+			tournId !== null &&
+			tournId !== undefined &&
+			entryId !== null &&
+			entryId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestTournsPrepRoomsGetQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsPrepRoomsGet>>
+>;
+export type RestTournsPrepRoomsGetQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get entry prep room
+ */
+
+export function createRestTournsPrepRoomsGet<
+	TData = Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: () => number,
+	entryId: () => number,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() =>
+			getRestTournsPrepRoomsGetQueryOptions(
+				tournId(),
+				entryId(),
+				options?.(),
+			),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get entry prep room
+ */
+export const prefetchRestTournsPrepRoomsGetQuery = async <
+	TData = Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	tournId: number,
+	entryId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsPrepRoomsGet>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestTournsPrepRoomsGetQueryOptions(
+		tournId,
+		entryId,
+		options,
+	);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restTournsPrepRoomsJoinResponse201 = {
+	data: OnlineRoomJoin;
+	status: 201;
+};
+
+export type restTournsPrepRoomsJoinResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsPrepRoomsJoinResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsPrepRoomsJoinResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsPrepRoomsJoinResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsPrepRoomsJoinResponse503 = {
+	data: ProblemSchema;
+	status: 503;
+};
+
+export type restTournsPrepRoomsJoinResponseSuccess =
+	restTournsPrepRoomsJoinResponse201 & {
+		headers: Headers;
+	};
+export type restTournsPrepRoomsJoinResponseError = (
+	| restTournsPrepRoomsJoinResponse400
+	| restTournsPrepRoomsJoinResponse401
+	| restTournsPrepRoomsJoinResponse404
+	| restTournsPrepRoomsJoinResponse500
+	| restTournsPrepRoomsJoinResponse503
+) & {
+	headers: Headers;
+};
+
+export type restTournsPrepRoomsJoinResponse =
+	| restTournsPrepRoomsJoinResponseSuccess
+	| restTournsPrepRoomsJoinResponseError;
+
+export const getRestTournsPrepRoomsJoinUrl = (
+	tournId: number,
+	entryId: number,
+) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/prep-rooms/${entryId}/join`;
+};
+
+/**
+ * Logs the join and returns the signed NSDA Campus token to post
+ * @summary Join entry prep room
+ */
+export const restTournsPrepRoomsJoin = async (
+	tournId: number,
+	entryId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsPrepRoomsJoinResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsPrepRoomsJoinUrl(tournId, entryId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'POST',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsPrepRoomsJoinResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsPrepRoomsJoinResponse;
+};
+
+export const getRestTournsPrepRoomsJoinMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>,
+		TError,
+		{ tournId: number; entryId: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>,
+	TError,
+	{ tournId: number; entryId: number },
+	TContext
+> => {
+	const mutationKey = ['restTournsPrepRoomsJoin'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>,
+		{ tournId: number; entryId: number }
+	> = (props) => {
+		const { tournId, entryId } = props ?? {};
+
+		return restTournsPrepRoomsJoin(
+			tournId,
+			entryId,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestTournsPrepRoomsJoinMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>
+>;
+
+export type RestTournsPrepRoomsJoinMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse
+	| ProblemSchema;
+
+/**
+ * @summary Join entry prep room
+ */
+export const createRestTournsPrepRoomsJoin = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>,
+			TError,
+			{ tournId: number; entryId: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restTournsPrepRoomsJoin>>,
+	TError,
+	{ tournId: number; entryId: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestTournsPrepRoomsJoinMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type restTournsRoomsListResponse200 = {
+	data: UtilityRoom[];
+	status: 200;
+};
+
+export type restTournsRoomsListResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsRoomsListResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsRoomsListResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsRoomsListResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsRoomsListResponseSuccess =
+	restTournsRoomsListResponse200 & {
+		headers: Headers;
+	};
+export type restTournsRoomsListResponseError = (
+	| restTournsRoomsListResponse400
+	| restTournsRoomsListResponse401
+	| restTournsRoomsListResponse404
+	| restTournsRoomsListResponse500
+) & {
+	headers: Headers;
+};
+
+export type restTournsRoomsListResponse =
+	| restTournsRoomsListResponseSuccess
+	| restTournsRoomsListResponseError;
+
+export const getRestTournsRoomsListUrl = (tournId: number) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/rooms`;
+};
+
+/**
+ * The tournament's utility rooms the person can see, such as a judge lounge or tab help desk
+ * @summary List utility rooms
+ */
+export const restTournsRoomsList = async (
+	tournId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsRoomsListResponse> => {
+	const res = await (fetchFn ?? fetch)(getRestTournsRoomsListUrl(tournId), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsRoomsListResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsRoomsListResponse;
+};
+
+export const getRestTournsRoomsListQueryKey = (tournId: number) => {
+	return [`${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/rooms`] as const;
+};
+
+export const getRestTournsRoomsListQueryOptions = <
+	TData = Awaited<ReturnType<typeof restTournsRoomsList>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsRoomsList>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getRestTournsRoomsListQueryKey(tournId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restTournsRoomsList>>
+	> = ({ signal }) =>
+		restTournsRoomsList(tournId, { signal, ...fetchOptions }, fetcherFn);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: tournId !== null && tournId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restTournsRoomsList>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestTournsRoomsListQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsRoomsList>>
+>;
+export type RestTournsRoomsListQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary List utility rooms
+ */
+
+export function createRestTournsRoomsList<
+	TData = Awaited<ReturnType<typeof restTournsRoomsList>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	tournId: () => number,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsRoomsList>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getRestTournsRoomsListQueryOptions(tournId(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary List utility rooms
+ */
+export const prefetchRestTournsRoomsListQuery = async <
+	TData = Awaited<ReturnType<typeof restTournsRoomsList>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	tournId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restTournsRoomsList>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestTournsRoomsListQueryOptions(tournId, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restTournsRoomJoinResponse201 = {
+	data: OnlineRoomJoin;
+	status: 201;
+};
+
+export type restTournsRoomJoinResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restTournsRoomJoinResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restTournsRoomJoinResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restTournsRoomJoinResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type restTournsRoomJoinResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restTournsRoomJoinResponse503 = {
+	data: ProblemSchema;
+	status: 503;
+};
+
+export type restTournsRoomJoinResponseSuccess =
+	restTournsRoomJoinResponse201 & {
+		headers: Headers;
+	};
+export type restTournsRoomJoinResponseError = (
+	| restTournsRoomJoinResponse400
+	| restTournsRoomJoinResponse401
+	| restTournsRoomJoinResponse404
+	| restTournsRoomJoinResponse409
+	| restTournsRoomJoinResponse500
+	| restTournsRoomJoinResponse503
+) & {
+	headers: Headers;
+};
+
+export type restTournsRoomJoinResponse =
+	| restTournsRoomJoinResponseSuccess
+	| restTournsRoomJoinResponseError;
+
+export const getRestTournsRoomJoinUrl = (tournId: number, roomId: number) => {
+	return `${indexcardsApiBaseUrl()}/rest/tourns/${tournId}/rooms/${roomId}/join`;
+};
+
+/**
+ * Logs the join and returns the link to open, or for NSDA Campus the signed token to post to it. Utility room ids change when the tournament saves its rooms, so the body names the room expected at that id
+ * @summary Join utility room
+ */
+export const restTournsRoomJoin = async (
+	tournId: number,
+	roomId: number,
+	restTournsRoomJoinBody?: RestTournsRoomJoinBody,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restTournsRoomJoinResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestTournsRoomJoinUrl(tournId, roomId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				...options?.headers,
+			},
+			body: JSON.stringify(restTournsRoomJoinBody),
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restTournsRoomJoinResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restTournsRoomJoinResponse;
+};
+
+export const getRestTournsRoomJoinMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restTournsRoomJoin>>,
+		TError,
+		{ tournId: number; roomId: number; data?: RestTournsRoomJoinBody },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restTournsRoomJoin>>,
+	TError,
+	{ tournId: number; roomId: number; data?: RestTournsRoomJoinBody },
+	TContext
+> => {
+	const mutationKey = ['restTournsRoomJoin'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restTournsRoomJoin>>,
+		{ tournId: number; roomId: number; data?: RestTournsRoomJoinBody }
+	> = (props) => {
+		const { tournId, roomId, data } = props ?? {};
+
+		return restTournsRoomJoin(
+			tournId,
+			roomId,
+			data,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestTournsRoomJoinMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restTournsRoomJoin>>
+>;
+export type RestTournsRoomJoinMutationBody = RestTournsRoomJoinBody | undefined;
+export type RestTournsRoomJoinMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| ErrorResponseResponse
+	| ProblemSchema;
+
+/**
+ * @summary Join utility room
+ */
+export const createRestTournsRoomJoin = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse
+		| ProblemSchema,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restTournsRoomJoin>>,
+			TError,
+			{ tournId: number; roomId: number; data?: RestTournsRoomJoinBody },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restTournsRoomJoin>>,
+	TError,
+	{ tournId: number; roomId: number; data?: RestTournsRoomJoinBody },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestTournsRoomJoinMutationOptions(options?.()) }),
+		queryClient,
+	);
 };
 
 export type getTournResultSetsResponse200 = {

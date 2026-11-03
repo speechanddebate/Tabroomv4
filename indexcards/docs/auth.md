@@ -151,4 +151,8 @@ It would be inefficient to build the entire parent-child relationship of permiss
 stuff about how roles and actions and parent relationships should be defined and how they work.
 
 > [!WARNING]
-> Every perm `role` must have an entry in `ROLES`, or `checkAccess` throws. The `checker` tag in the permission table currently has no role definition.
+> Every perm `role` must have an entry in `ROLES`, or `checkAccess` throws.
+
+Actions rank `write > read > check`. `owner` and `tabber` allow `*/*`, so they pass every `check`. `checker` allows only `*/check`, for checking rooms.
+
+Parents come from `CHILDREN`, where category and event are siblings under tourn, so a category perm doesn't reach that category's events. A role can add its own edges with `children`. `checker` sets `{ category: ['event'] }`, so a category checker can check the events (and their rounds and panels) in that category, while a category tabber still can't.

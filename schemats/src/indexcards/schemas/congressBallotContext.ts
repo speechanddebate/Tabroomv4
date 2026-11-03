@@ -14,12 +14,12 @@ import type { CongressBallotContextJudge } from './congressBallotContextJudge';
 import type { CongressBallotContextOnlineMode } from './congressBallotContextOnlineMode';
 import type { CongressBallotContextOtherJudgesItem } from './congressBallotContextOtherJudgesItem';
 import type { CongressBallotContextPointScaleItem } from './congressBallotContextPointScaleItem';
-import type { CongressBallotContextRoom } from './congressBallotContextRoom';
 import type { CongressBallotContextRound } from './congressBallotContextRound';
 import type { CongressBallotContextSpeechTimesItem } from './congressBallotContextSpeechTimesItem';
 import type { CongressBallotContextTimers } from './congressBallotContextTimers';
 import type { CongressBallotContextTopic } from './congressBallotContextTopic';
 import type { CongressBallotContextTourn } from './congressBallotContextTourn';
+import type { OnlineRoom } from './onlineRoom';
 
 export interface CongressBallotContext {
 	eventType: CongressBallotContextEventType;
@@ -41,8 +41,8 @@ export interface CongressBallotContext {
 	Round: CongressBallotContextRound;
 	/** The panel's flight. null when the round is not flighted */
 	flight: number | null;
-	/** null when no room is assigned */
-	Room: CongressBallotContextRoom;
+	/** The section's room as this person sees it, and whether they can join it online */
+	Room: OnlineRoom | null;
 	Judge: CongressBallotContextJudge;
 	/** The topic shown on the ballot. null when there is none */
 	topic: CongressBallotContextTopic;

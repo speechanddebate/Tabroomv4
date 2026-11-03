@@ -186,10 +186,15 @@ export const ConfigSchema = z.object({
 		region: z.string().default('us-east-1'),
 		Bucket: z.string().default('tabroom-files'),
 	}).prefault({}),
-	jitsi: z.object({
-		key: z.string(),
+	/** NSDA Campus, the video service online rooms join through */
+	campus: z.object({
+		/** HS256 secret Campus room tokens are signed with. Without it (or when empty) the app runs, but Campus joins fail */
+		key: z.string().optional(),
+		/** URL the join form posts the signed token to */
 		uri: z.string().default('https://campus.speechanddebate.org'),
-	}).optional(),
+		/** Campus server for tourns whose time zone isn't mapped to one and that set no campus_zone */
+		defaultServer: z.string().min(1).default('us-east-2'),
+	}).prefault({}),
 	/** Classic Tabroom, which the API calls for the steps it hasn't ported yet (confirming a ballot) */
 	classic: z.object({
 		/** Base URL indexcards can reach classic at. */
@@ -291,6 +296,13 @@ async function loadRuntimeConfig(): Promise<RuntimeConfig> {
 
   // Merge: base → env-specific
   const mergedData = { ...baseConfig, ...envConfig };
+
+  // campus was called jitsi. Accept the old name so an unmigrated config still boots
+  if ('jitsi' in mergedData) {
+    if (!('campus' in mergedData)) mergedData.campus = mergedData.jitsi;
+    delete mergedData.jitsi;
+    console.warn('Config key "jitsi" is deprecated, rename it to "campus"');
+  }
 
   // Validate against schema
   try {

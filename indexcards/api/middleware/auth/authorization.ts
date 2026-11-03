@@ -192,6 +192,8 @@ type RoleDef = {
 		notActions?: string[];
 	}[];
 	parentAccess?: Record<string, string[]>;
+	/** extra parent -> child edges for this role only, on top of CHILDREN */
+	children?: Record<string, string[]>;
 };
 const ROLES: Record<string, RoleDef> = {
 	owner: {
@@ -218,6 +220,18 @@ const ROLES: Record<string, RoleDef> = {
 		parentAccess: {
 			tourn: ['timeslot/read'],
 			category: ['category/read', 'jpool/read'],
+		},
+	},
+	checker: {
+		description: 'Room Checker - can access campus rooms for a resource',
+		permissions: [
+			{
+				actions: ['*/check'],
+			},
+		],
+		// a category checker checks in the events in that category too
+		children: {
+			category: ['event'],
 		},
 	},
 	circuit: {
@@ -342,8 +356,9 @@ function hasPermissionForResource(resource: string, action: string, target: Targ
 	}
 
 	//Check parent resources recursively
-	for (const parent of Object.keys(CHILDREN)) {
-		if (!CHILDREN[parent].includes(resource)) continue;
+	for (const parent of new Set([...Object.keys(CHILDREN), ...Object.keys(roleDef.children ?? {})])) {
+		const children = [...(CHILDREN[parent] ?? []), ...(roleDef.children?.[parent] ?? [])];
+		if (!children.includes(resource)) continue;
 
 		const idsKey = parent + 'Ids' as keyof Target;
 

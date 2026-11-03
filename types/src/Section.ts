@@ -6,7 +6,8 @@ import { EventSchema } from './Event.js';
 import { EntrySchema } from './Entry.js';
 import { RoundSchema } from './Round.js';
 import { TournSchema } from './Tourn.js';
-import { RoomSchema } from './Room.js';
+import { RoomSchema } from './Room/Room.js';
+import { OnlineRoomSchema } from './Room/OnlineRoom.js';
 import * as utils from './utils.js';
 
 export const CurrentBallotSchema = z.object({
@@ -21,8 +22,7 @@ export const CurrentBallotSchema = z.object({
 	start: z.iso.datetime(),
 	deadline: z.iso.datetime(),
 	roomId: RoomSchema.shape.id.nullable(),
-	roomName: RoomSchema.shape.name.nullable(),
-	roomUrl: RoomSchema.shape.url.nullable(),
+	Room: OnlineRoomSchema.nullable().meta({ description: 'The section\'s room as this person sees it, and whether they can join it online' }),
 	roomNotes: RoomSchema.shape.notes.nullable(),
 	JudgeId: JudgeSchema.shape.id,
 	RoundId: RoundSchema.shape.id,
@@ -31,6 +31,7 @@ export const CurrentBallotSchema = z.object({
 	ballotText: z.string().max(127).nullable(),
 	chair: z.boolean(),
 	audited: z.boolean(),
+	tourn: TournSchema.shape.id,
 	TournTz: TournSchema.shape.tz,
 	eventName: EventSchema.shape.name.meta({ description: 'The name of the event' }),
 	eventAbbr: EventSchema.shape.abbr.meta({ description: 'The abbreviation of the event' }),

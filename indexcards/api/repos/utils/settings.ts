@@ -1,4 +1,4 @@
-import { sql } from 'kysely';
+import { sql, type AliasedRawBuilder } from 'kysely';
 
 import type { Database } from '../../data/database.js';
 /** Possible types for a setting value. Can be a string, a Date, an object, or null.*/
@@ -43,7 +43,15 @@ type SettingsSelectArgs = {
 	settings: boolean | string[];
 	/** what alias to use for the resulting settings column default: settings */
 	as?: string;
+	/** also select each setting's created_at and timestamp as settingsTimestamps. default: false */
+	withTimestamps?: boolean;
 };
+
+type SettingsColumn<A extends string> = AliasedRawBuilder<Record<string, string> | null, A>;
+type SettingsTimestampsColumn = AliasedRawBuilder<Record<string, {
+	created_at?: Date | null;
+	timestamp?: Date | null;
+}> | null, 'settingsTimestamps'>;
 /**
  * Represents an insertable row in a *_setting table
  */
@@ -201,17 +209,21 @@ export async function saveSettings({
 	}
 }
 
-/** 
+/**
  * Generates a SQL snippet for selecting settings as a JSON object from a *_setting table.
+ * With withTimestamps, also selects their timestamps as settingsTimestamps, so only one call per query can use it.
  */
+export function selectSettings<A extends string = 'settings'>(args: SettingsSelectArgs & { as?: A, withTimestamps: true }): [SettingsColumn<A>, SettingsTimestampsColumn];
+export function selectSettings<A extends string = 'settings'>(args: SettingsSelectArgs & { as?: A, withTimestamps?: false }): [SettingsColumn<A>];
 export function selectSettings<A extends string = 'settings'>(
 	{
 		table,
 		tableAs,
 		settings,
 		as,
+		withTimestamps = false,
 	}: SettingsSelectArgs & { as?: A },
-) {
+): [SettingsColumn<A>] | [SettingsColumn<A>, SettingsTimestampsColumn] {
 	const config = settingConfig[table];
 	const ownerRefResolved = tableAs ? `${tableAs}.id` : `${table}.id`;
 	const alias = as ?? 'settings';
@@ -236,8 +248,7 @@ export function selectSettings<A extends string = 'settings'>(
 			: undefined,
 	].filter((field): field is NonNullable<typeof field> => field !== undefined);
 
-	return [
-		sql<Record<string, string> | null>`
+	const settingsColumn = sql<Record<string, string> | null>`
 			(
 				SELECT JSON_OBJECTAGG(
 					setting_row_internal.tag,
@@ -257,8 +268,12 @@ export function selectSettings<A extends string = 'settings'>(
 				FROM ${sql.table(config.table)} setting_row_internal
 				${where}
 			)
-		`.as(alias as A),
+		`.as(alias as A);
 
+	if (!withTimestamps) return [settingsColumn];
+
+	return [
+		settingsColumn,
 		sql<Record<string, {
 			created_at?: Date | null;
 			timestamp?: Date | null;

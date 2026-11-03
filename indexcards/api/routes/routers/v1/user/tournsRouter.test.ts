@@ -100,6 +100,50 @@ describe('GET /user/tourns/{tournId}/fines', () => {
 		expect(res.body).toMatchSchema(z.array(FineSchema));
 		const fine = res.body.find((fine: { id: number }) => fine.id === Fine.id);
 		expect(fine.currency).toBe('€');
+		expect(fine.judge).toBeNull();
+		expect(fine.Judge).toBeNull();
+	});
+	it('Returns the judge a fine was assessed against', async () => {
+		const { Tourn, Judge } = await factories.person.createBallot({ person: personId });
+		const School = await factories.school.create({ tourn: Tourn.id });
+		const Fine = await factories.fine.create({ person: personId, judge: Judge.id, tourn: Tourn.id, school: School.id });
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${Tourn.id}/fines`)
+			.set('Accept', 'application/json')
+			.asPerson(userkey)
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(FineSchema));
+		const fine = res.body.find((fine: { id: number }) => fine.id === Fine.id);
+		expect(fine.judge).toBe(Judge.id);
+		expect(fine.Judge).toEqual({ first: Judge.first, last: Judge.last });
+	});
+	it('Returns the fines of the schools the person coaches and no other school', async () => {
+		const Tourn = await factories.tourn.create();
+		const myChapter = await factories.chapter.create();
+		const otherChapter = await factories.chapter.create();
+		const mySchool = await factories.school.create({ tourn: Tourn.id, chapter: myChapter.id });
+		const otherSchool = await factories.school.create({ tourn: Tourn.id, chapter: otherChapter.id });
+		await factories.permission.create({ person: personId, chapter: myChapter.id, tag: 'chapter' });
+		// The other school's coach was fined; their chapter permission must not make the fine visible to me
+		const otherCoach = await factories.person.create();
+		await factories.permission.create({ person: otherCoach.id, chapter: otherChapter.id, tag: 'chapter' });
+		const mine = await factories.fine.create({ tourn: Tourn.id, school: mySchool.id });
+		const theirs = await factories.fine.create({ tourn: Tourn.id, school: otherSchool.id, person: otherCoach.id });
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${Tourn.id}/fines`)
+			.set('Accept', 'application/json')
+			.asPerson(userkey)
+			.expect('Content-Type', /json/)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(FineSchema));
+		const ids = res.body.map((fine: { id: number }) => fine.id);
+		expect(ids).toContain(mine.id);
+		expect(ids).not.toContain(theirs.id);
 	});
 });
 
@@ -115,6 +159,22 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect(200);
 
 		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: null, joinable: false, hybrid: false, mapUrl: null });
+	});
+	it('Returns the room to join for an online round', async () => {
+		const { Tourn } = await factories.person.createBallot({
+			person: personId,
+			Event: { settings: { online_mode: 'sync' } },
+			Round: { settings: { override_link: 'https://zoom.test/room' } },
+		});
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${Tourn.id}/ballots/current`)
+			.asPerson(userkey)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: null, joinable: true, hybrid: false, mapUrl: null });
 	});
 	// Classic's rule: published, or released to judges only (judges_ballots_visible, "Publish ballots but not schematic")
 	it.each([
