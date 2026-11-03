@@ -32,7 +32,7 @@
 		},
 		flight: 2,
 		onlineMode: 'sync',
-		Room: { name: 'Zoom 3', url: 'https://zoom.example.com/j/12345678901' },
+		Room: { name: 'Zoom 3', joinable: true, hybrid: false, mapUrl: null },
 		docShare: 'https://share.tabroom.com/quarters-flt2-room3',
 		logo: '/img/tabroom-sparky.png',
 		ballotHeader: '<p>Tabroom.com and the tournament are committed to fair and equitable judging. Please evaluate each debater on the arguments made in the round, without bias based on identity, appearance, school, or style of delivery.</p><p>Judges who observe or experience harassment should contact tab immediately. Your ballot is reviewed by tab staff before results are published.</p>',

@@ -4,7 +4,7 @@ import * as utils from '../utils.js';
 import { JudgeSchema } from '../Judge.js';
 import { TournSchema } from '../Tourn.js';
 import { EventSchema } from '../Event.js';
-import { RoomSchema } from '../Room.js';
+import { OnlineRoomSchema } from '../Room/OnlineRoom.js';
 import { RoundSchema } from '../Round.js';
 import { EntrySchema } from '../Entry.js';
 import { StudentSchema } from '../Student.js';
@@ -123,10 +123,7 @@ const BallotBaseSchema = z.object({
 		notes: z.string().nullable().meta({ description: 'Notes from tab for this round (plain text)' }),
 	}).strict(),
 	flight: z.int().positive().nullable().meta({ description: 'The panel\'s flight. null when the round is not flighted' }),
-	Room: z.object({
-		name: RoomSchema.shape.name,
-		url: RoomSchema.shape.url,
-	}).strict().nullable().meta({ description: 'null when no room is assigned' }),
+	Room: OnlineRoomSchema.nullable().meta({ description: 'The section\'s room as this person sees it, and whether they can join it online' }),
 	Judge: z.object({
 		code: JudgeSchema.shape.code,
 		first: JudgeSchema.shape.first,

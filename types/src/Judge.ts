@@ -5,7 +5,7 @@ import { TournSchema } from './Tourn.js';
 import { WeekendSchema } from './Weekend.js';
 import { RoundSchema } from './Round.js';
 import { EventSchema } from './Event.js';
-import { RoomSchema } from './Room.js';
+import { RoomSchema } from './Room/Room.js';
 import { EntrySchema } from './Entry.js';
 
 export const JudgeSchema = z.object({

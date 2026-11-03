@@ -3,11 +3,16 @@ import z from 'zod';
 
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import * as controller from '../../../../controllers/rest/tournsController.js';
-import { requirePublicTourn } from '../../../../policy/tournPolicy.js';
+import { requirePublicForAttn, requirePublicTourn } from '../../../../policy/tournPolicy.js';
+import { loadTournAuthContext } from '../../../../middleware/auth/authContext.js';
 import roundRouter from './roundRouter.js';
 import resultSetRouter from './resultSetRouter.js';
 import eventRouter from './eventRouter.js';
 import entryRouter from './entryRouter.js';
+import sectionsRouter from './tourns/sectionsRouter.js';
+import schoolsRouter from './tourns/schoolsRouter.js';
+import prepRoomsRouter from './tourns/prepRoomsRouter.js';
+import roomsRouter from './tourns/roomsRouter.js';
 
 import { FileSchema, ScheduleRoundSchema, TournInviteSchema, TournSchema } from '@tabroom/types';
 const router = Router({ mergeParams: true });
@@ -44,6 +49,14 @@ router.route('/').get(ValidateRequest,controller.getTourns).openapi = {
 		},
 	},
 };
+
+router.param('tournId', loadTournAuthContext);
+
+// Online rooms are mounted before requirePublicTourn so tab staff can use them in a hidden tourn
+router.use('/:tournId/sections'  , requirePublicForAttn, sectionsRouter);
+router.use('/:tournId/schools'   , requirePublicForAttn, schoolsRouter);
+router.use('/:tournId/prep-rooms', requirePublicForAttn, prepRoomsRouter);
+router.use('/:tournId/rooms'     , requirePublicForAttn, roomsRouter);
 
 router.use('/:tournId', requirePublicTourn);
 

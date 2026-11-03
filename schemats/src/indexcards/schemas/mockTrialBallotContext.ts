@@ -14,12 +14,12 @@ import type { MockTrialBallotContextJudge } from './mockTrialBallotContextJudge'
 import type { MockTrialBallotContextOnlineMode } from './mockTrialBallotContextOnlineMode';
 import type { MockTrialBallotContextOtherJudgesItem } from './mockTrialBallotContextOtherJudgesItem';
 import type { MockTrialBallotContextPointScaleItem } from './mockTrialBallotContextPointScaleItem';
-import type { MockTrialBallotContextRoom } from './mockTrialBallotContextRoom';
 import type { MockTrialBallotContextRound } from './mockTrialBallotContextRound';
 import type { MockTrialBallotContextSpeechTimesItem } from './mockTrialBallotContextSpeechTimesItem';
 import type { MockTrialBallotContextTimers } from './mockTrialBallotContextTimers';
 import type { MockTrialBallotContextTopic } from './mockTrialBallotContextTopic';
 import type { MockTrialBallotContextTourn } from './mockTrialBallotContextTourn';
+import type { OnlineRoom } from './onlineRoom';
 
 export interface MockTrialBallotContext {
 	eventType: MockTrialBallotContextEventType;
@@ -41,8 +41,8 @@ export interface MockTrialBallotContext {
 	Round: MockTrialBallotContextRound;
 	/** The panel's flight. null when the round is not flighted */
 	flight: number | null;
-	/** null when no room is assigned */
-	Room: MockTrialBallotContextRoom;
+	/** The section's room as this person sees it, and whether they can join it online */
+	Room: OnlineRoom | null;
 	Judge: MockTrialBallotContextJudge;
 	/** The topic shown on the ballot. null when there is none */
 	topic: MockTrialBallotContextTopic;

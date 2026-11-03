@@ -14,13 +14,13 @@ import type { DebateBallotContextJudge } from './debateBallotContextJudge';
 import type { DebateBallotContextOnlineMode } from './debateBallotContextOnlineMode';
 import type { DebateBallotContextOtherJudgesItem } from './debateBallotContextOtherJudgesItem';
 import type { DebateBallotContextPointScaleItem } from './debateBallotContextPointScaleItem';
-import type { DebateBallotContextRoom } from './debateBallotContextRoom';
 import type { DebateBallotContextRound } from './debateBallotContextRound';
 import type { DebateBallotContextSpeechTimesItem } from './debateBallotContextSpeechTimesItem';
 import type { DebateBallotContextTimers } from './debateBallotContextTimers';
 import type { DebateBallotContextTopic } from './debateBallotContextTopic';
 import type { DebateBallotContextTourn } from './debateBallotContextTourn';
 import type { DebateDetails } from './debateDetails';
+import type { OnlineRoom } from './onlineRoom';
 
 export interface DebateBallotContext {
 	eventType: DebateBallotContextEventType;
@@ -42,8 +42,8 @@ export interface DebateBallotContext {
 	Round: DebateBallotContextRound;
 	/** The panel's flight. null when the round is not flighted */
 	flight: number | null;
-	/** null when no room is assigned */
-	Room: DebateBallotContextRoom;
+	/** The section's room as this person sees it, and whether they can join it online */
+	Room: OnlineRoom | null;
 	Judge: DebateBallotContextJudge;
 	/** The topic shown on the ballot. null when there is none */
 	topic: DebateBallotContextTopic;

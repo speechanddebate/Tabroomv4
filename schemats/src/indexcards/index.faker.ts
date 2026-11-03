@@ -30,6 +30,8 @@ import type {
 	JudgeTournHistory,
 	LoginResponse,
 	MockTrialBallotContext,
+	OnlineRoom,
+	OnlineRoomJoin,
 	OtherBallotContext,
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
@@ -44,6 +46,7 @@ import type {
 	UnlinkedStudentSearchSchema,
 	UserChapter,
 	UserParadigmOutput,
+	UtilityRoom,
 } from './schemas';
 
 export const getRestAdsResponseMock = (): HomepageAd[] =>
@@ -217,9 +220,14 @@ export const getRestJudgesBallotContextResponseDebateBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -544,9 +552,14 @@ export const getRestJudgesBallotContextResponseMockTrialBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -849,9 +862,14 @@ export const getRestJudgesBallotContextResponseCongressBallotContextMock = (
 		]),
 		Room: faker.helpers.arrayElement([
 			{
-				name: faker.string.alpha({ length: { min: 10, max: 127 } }),
-				url: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 255 } }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
 			},
@@ -1375,6 +1393,132 @@ export const getRestTournsResponseMock = (): Tourn[] =>
 		]),
 	}));
 
+export const getRestTournsSectionsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSectionsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsSchoolsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsGetResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
+): OnlineRoom => ({
+	name: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	joinable: faker.datatype.boolean(),
+	hybrid: faker.datatype.boolean(),
+	mapUrl: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsPrepRoomsJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getRestTournsRoomsListResponseMock = (): UtilityRoom[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		name: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		joinable: faker.datatype.boolean(),
+		hybrid: faker.datatype.boolean(),
+		mapUrl: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	}));
+
+export const getRestTournsRoomJoinResponseMock = (
+	overrideResponse: Partial<Extract<OnlineRoomJoin, object>> = {},
+): OnlineRoomJoin => ({
+	url: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	token: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	password: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	...overrideResponse,
+});
+
 export const getGetTournResultSetsResponseMock = (): GetTournResultSets200 => ({
 	[faker.string.alphanumeric(5)]: {
 		id: faker.number.int({ min: 0, max: 9007199254740991 }),
@@ -1880,15 +2024,19 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
 		]),
-		roomName: faker.helpers.arrayElement([
-			faker.string.alpha({ length: { min: 10, max: 127 } }),
-			null,
-		]),
-		roomUrl: faker.helpers.arrayElement([
-			faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 255 } }),
-				null,
-			]),
+		Room: faker.helpers.arrayElement([
+			{
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		roomNotes: faker.helpers.arrayElement([
@@ -1915,6 +2063,7 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 		]),
 		chair: faker.datatype.boolean(),
 		audited: faker.datatype.boolean(),
+		tourn: faker.number.int({ min: 0, max: 9007199254740991 }),
 		TournTz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 		eventName: faker.string.alpha({ length: { min: 10, max: 20 } }),
 		eventAbbr: faker.helpers.arrayElement([
@@ -1991,15 +2140,19 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
 		]),
-		roomName: faker.helpers.arrayElement([
-			faker.string.alpha({ length: { min: 10, max: 127 } }),
-			null,
-		]),
-		roomUrl: faker.helpers.arrayElement([
-			faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 255 } }),
-				null,
-			]),
+		Room: faker.helpers.arrayElement([
+			{
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				joinable: faker.datatype.boolean(),
+				hybrid: faker.datatype.boolean(),
+				mapUrl: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
 			null,
 		]),
 		roomNotes: faker.helpers.arrayElement([
@@ -2026,6 +2179,7 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 		]),
 		chair: faker.datatype.boolean(),
 		audited: faker.datatype.boolean(),
+		tourn: faker.number.int({ min: 0, max: 9007199254740991 }),
 		TournTz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 		eventName: faker.string.alpha({ length: { min: 10, max: 20 } }),
 		eventAbbr: faker.helpers.arrayElement([

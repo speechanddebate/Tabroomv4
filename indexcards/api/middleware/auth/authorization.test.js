@@ -234,4 +234,34 @@ describe('Authorization Middleware', () => {
 			expect(granted).toBe(true);
 		});
 	});
+	describe('checker', () => {
+		// a panel in event 12 (category 7) of tourn 42
+		const panel = { id: 99, roundId: 50, eventId: 12, categoryId: 7, tournId: 42 };
+
+		it.each([
+			['tourn', 42],
+			['event', 12],
+			['category', 7],
+		])('allows a %s checker to check a panel under it', (scope, id) => {
+			const perm = { scope, id, role: 'checker' };
+			expect(checkAccess('panel', 'check', panel, [perm])).toBe(true);
+		});
+		it('denies a checker of another category', () => {
+			const perm = { scope: 'category', id: 8, role: 'checker' };
+			expect(checkAccess('panel', 'check', panel, [perm])).toBe(false);
+		});
+		it('denies a checker read and write', () => {
+			const perm = { scope: 'tourn', id: 42, role: 'checker' };
+			expect(checkAccess('panel', 'read', panel, [perm])).toBe(false);
+			expect(checkAccess('panel', 'write', panel, [perm])).toBe(false);
+		});
+		it.each(['owner', 'tabber'])('allows a tourn %s to check', (role) => {
+			const perm = { scope: 'tourn', id: 42, role };
+			expect(checkAccess('panel', 'check', panel, [perm])).toBe(true);
+		});
+		it('denies a category tabber the events in that category', () => {
+			const perm = { scope: 'category', id: 7, role: 'tabber' };
+			expect(checkAccess('panel', 'check', panel, [perm])).toBe(false);
+		});
+	});
 });
