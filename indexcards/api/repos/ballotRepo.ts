@@ -5,15 +5,34 @@ import type { Ballot } from '../data/schema.js';
 type queryOpts = {
 	winnerBallot?: boolean;
 	panel?: number;
+	panels?: number[];
 	judge?: number;
+	judges?: number[];
+	entries?: number[];
+	/** only ballots whose round is published at any level or has primary results posted */
+	roundVisible?: boolean;
+	/** only audited (entered and confirmed) ballots */
+	audited?: boolean;
 	// Locks the rows until the transaction ends. Only use inside a transaction
 	forUpdate?: boolean;
 };
 function buildBallotQuery(db: Database, opts: queryOpts = {}){
 	let query  = db.selectFrom('ballot');
 
-	query = opts.panel ? query.where('panel', '=', opts.panel) : query;
-	query = opts.judge ? query.where('judge', '=', opts.judge) : query;
+	query = opts.panel ? query.where('ballot.panel', '=', opts.panel) : query;
+	query = opts.panels ? query.where('ballot.panel', 'in', opts.panels) : query;
+	query = opts.judge ? query.where('ballot.judge', '=', opts.judge) : query;
+	query = opts.judges ? query.where('ballot.judge', 'in', opts.judges) : query;
+	query = opts.entries ? query.where('ballot.entry', 'in', opts.entries) : query;
+	query = opts.audited ? query.where('ballot.audit', '=', 1) : query;
+	query = opts.roundVisible
+		? query.where('ballot.panel', 'in', (eb) => eb
+			.selectFrom('panel')
+			.innerJoin('round', 'round.id', 'panel.round')
+			.select('panel.id')
+			.where((rb) => rb.or([rb('round.published', '>', 0), rb('round.post_primary', '>', 0)]))
+		)
+		: query;
 	query = opts.forUpdate ? query.forUpdate() : query;
 	if (opts.winnerBallot) {
 		query = query.innerJoin('score', 'ballot.id', 'score.ballot')
@@ -71,9 +90,125 @@ export async function deleteBallots(db: Database, ids: number[]) {
 	return result.numDeletedRows > 0;
 }
 
+/** Per judge, the distinct panels and the ballots they have had audited, keyed by judge id */
+export async function getJudgeBallotCounts(db: Database, opts: queryOpts & { judges: number[] }) {
+	const rows = await buildBallotQuery(db, { ...opts, audited: true })
+		.select(({ fn }) => [
+			'ballot.judge',
+			fn.count<number>('ballot.panel').distinct().as('panels'),
+			fn.countAll<number>().as('ballots'),
+		])
+		.groupBy('ballot.judge')
+		.execute();
+	return new Map(rows.map(row => [row.judge, { panels: Number(row.panels), ballots: Number(row.ballots) }]));
+}
+
+/** The ballot query joined to its panel, round, event, entry, timeslot, and room, in schedule order */
+function joinPanelContext(query: ReturnType<typeof buildBallotQuery>) {
+	return query
+		.innerJoin('panel', 'panel.id', 'ballot.panel')
+		.innerJoin('round', 'round.id', 'panel.round')
+		.innerJoin('event', 'event.id', 'round.event')
+		.innerJoin('entry', 'entry.id', 'ballot.entry')
+		.leftJoin('timeslot', 'timeslot.id', 'round.timeslot')
+		.leftJoin('room', 'room.id', 'panel.room')
+		.orderBy('timeslot.start')
+		.orderBy('round.name')
+		.orderBy('panel.flight')
+		.orderBy('ballot.side')
+		.orderBy('ballot.speakerorder');
+}
+
+/** The judges' ballots with what their panel card shows: the round, its time, the room, and each entry */
+export async function getJudgePanels(db: Database, opts: queryOpts & { judges: number[] }) {
+	return await joinPanelContext(buildBallotQuery(db, opts))
+		.select([
+			'ballot.id',
+			'ballot.judge',
+			'ballot.side',
+			'ballot.speakerorder',
+			'ballot.audit',
+			'ballot.judge_started',
+			'ballot.chair',
+			'panel.id as panel',
+			'panel.letter as panelLetter',
+			'panel.flight as panelFlight',
+			'round.id as round',
+			'round.name as roundName',
+			'round.label as roundLabel',
+			'round.type as roundType',
+			'round.published as roundPublished',
+			'round.flighted as roundFlighted',
+			'round.start_time as roundStart',
+			'timeslot.start as timeslotStart',
+			'timeslot.end as timeslotEnd',
+			'room.id as room',
+			'room.name as roomName',
+			'room.url as roomUrl',
+			'room.notes as roomNotes',
+			'event.id as event',
+			'event.name as eventName',
+			'event.abbr as eventAbbr',
+			'event.type as eventType',
+			'event.category',
+			'event.tourn',
+			'entry.id as entry',
+			'entry.code as entryCode',
+			'entry.active as entryActive',
+		])
+		.execute();
+}
+
+/**
+ * The ballots on the entries' or panels' rounds with what the round table shows: the round
+ * and its publish levels, the panel, the room, the entry, and the judge on each ballot
+ */
+export async function getEntryRounds(db: Database, opts: queryOpts = {}) {
+	return await joinPanelContext(buildBallotQuery(db, opts))
+		.leftJoin('judge', 'judge.id', 'ballot.judge')
+		.select([
+			'ballot.id',
+			'ballot.side',
+			'ballot.speakerorder',
+			'ballot.audit',
+			'panel.id as panel',
+			'panel.letter as panelLetter',
+			'panel.flight as panelFlight',
+			'panel.bye as panelBye',
+			'round.id as round',
+			'round.name as roundName',
+			'round.label as roundLabel',
+			'round.type as roundType',
+			'round.published as roundPublished',
+			'round.post_primary as roundPostPrimary',
+			'round.post_secondary as roundPostSecondary',
+			'round.post_feedback as roundPostFeedback',
+			'round.flighted as roundFlighted',
+			'round.start_time as roundStart',
+			'timeslot.start as timeslotStart',
+			'room.name as roomName',
+			'room.url as roomUrl',
+			'event.id as event',
+			'event.type as eventType',
+			'event.category',
+			'event.tourn',
+			'entry.id as entry',
+			'entry.code as entryCode',
+			'entry.school as entrySchool',
+			'judge.id as judge',
+			'judge.first as judgeFirst',
+			'judge.last as judgeLast',
+			'judge.code as judgeCode',
+		])
+		.execute();
+}
+
 export default {
 	getBallot,
 	getBallots,
+	getJudgeBallotCounts,
+	getJudgePanels,
+	getEntryRounds,
 	createBallot,
 	updateBallots,
 	markBallotsStarted,

@@ -6,6 +6,7 @@ import type { Category } from '../data/schema.js';
 import type { Updateable, Insertable } from 'kysely';
 
 type CategoryOpts = {
+	ids?: number[];
 	tourn?: number;
 	settings?: boolean | string[];
 };
@@ -16,6 +17,7 @@ function buildCategoryQuery<TOpts extends CategoryOpts>(db: Database, opts: TOpt
 		table: 'category',
 		settings: opts.settings!,
 	})))
+	if(opts.ids) query = query.where('category.id', 'in', opts.ids);
 	if(opts.tourn) query = query.where('category.tourn', '=', opts.tourn);
 	return query;
 }

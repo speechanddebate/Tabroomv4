@@ -8,6 +8,7 @@ import { flightStart } from '../helpers/flight.js';
 
 type queryOpts = {
 	settings?: boolean | string[];
+	ids?: number[];
 	round?: number;
 }
 function buildPanelQuery(db: Database, opts: queryOpts){
@@ -17,6 +18,7 @@ function buildPanelQuery(db: Database, opts: queryOpts){
 		settings: opts.settings ?? false,
 	})))
 
+	query = opts.ids ? query.where('panel.id', 'in', opts.ids) : query;
 	query = opts.round ? query.where('panel.round', '=', opts.round) : query;
 
 	return query;

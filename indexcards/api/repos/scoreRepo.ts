@@ -5,6 +5,7 @@ import type { Score } from '../data/schema.js';
 
 type queryOpts = {
 	winloss?: boolean;
+	tags?: string[];
 	limit?: number;
 	offset?: number;
 	ballot?: number;
@@ -12,9 +13,10 @@ type queryOpts = {
 };
 function buildScoreQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('score');
-	query = opts.ballot ? query.where('ballot', '=', opts.ballot) : query;
-	query = opts.ballots ? query.where('ballot', 'in', opts.ballots) : query;
-	query = opts.winloss ? query.where('tag', '=', 'winloss') : query;
+	query = opts.ballot ? query.where('score.ballot', '=', opts.ballot) : query;
+	query = opts.ballots ? query.where('score.ballot', 'in', opts.ballots) : query;
+	query = opts.winloss ? query.where('score.tag', '=', 'winloss') : query;
+	query = opts.tags ? query.where('score.tag', 'in', opts.tags) : query;
 	query = opts.limit ? query.limit(opts.limit) : query;
 	query = opts.offset ? query.offset(opts.offset) : query;
 
@@ -63,9 +65,9 @@ async function deleteScores(db: Database, opts: { ballots: number[], tags: strin
 	return result.numDeletedRows > 0;
 }
 
-// Every judge's decision, rank, and point scores on the sections, with the ballot they came from
-async function getPanelScores(db: Database, panelIds: number[]) {
-	const rows = await db.selectFrom('score')
+/** Every judge's scores on the sections with the ballot they came from. tags defaults to winloss, rank, and point */
+async function getPanelScores(db: Database, panelIds: number[], opts: queryOpts = {}) {
+	const rows = await buildScoreQuery(db, { tags: ['winloss', 'rank', 'point'], ...opts })
 	.innerJoin('ballot', 'ballot.id', 'score.ballot')
 	.select([
 		'score.tag',
@@ -80,7 +82,6 @@ async function getPanelScores(db: Database, panelIds: number[]) {
 		'ballot.bye',
 	])
 	.where('ballot.panel', 'in', panelIds)
-	.where('score.tag', 'in', ['winloss', 'rank', 'point'])
 	.execute();
 	// DECIMAL columns come back as strings
 	return rows.map(row => ({ ...row, value: Number(row.value) }));

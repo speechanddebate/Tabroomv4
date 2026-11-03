@@ -78,6 +78,7 @@ describe('entryRepo', () => {
 			const rows = await entryRepo.getPersonEntries(db, Person.id, { tourns: [first.Tourn.id, second.Tourn.id] });
 
 			expect(rows.map(row => row.id).sort()).toEqual([mine.id, partner.id].sort());
+			expect(await entryRepo.getEntries(db, { person: Person.id, tourns: [first.Tourn.id] })).toHaveLength(1);
 			expect(rows.find(row => row.id === mine.id)).toMatchObject({
 				code: 'first code',
 				name: 'first name',
@@ -94,6 +95,36 @@ describe('entryRepo', () => {
 				tourn: first.Tourn.id,
 				student: Student.id,
 			});
+		});
+	});
+
+	describe('getEntries with schools and active', () => {
+		it("returns the schools' entries, and only the active ones with active", async () => {
+			const { Event } = await factories.tourn.createFull();
+			const School = await factories.school.create();
+			const active = await factories.entry.create({ event: Event.id, school: School.id });
+			const dropped = await factories.entry.create({ event: Event.id, school: School.id, active: 0, dropped: 1 });
+			await factories.entry.create({ event: Event.id, school: (await factories.school.create()).id });
+
+			expect((await entryRepo.getEntries(db, { schools: [School.id] })).map(entry => entry.id).sort()).toEqual([active.id, dropped.id].sort());
+			expect((await entryRepo.getEntries(db, { schools: [School.id], active: true })).map(entry => entry.id)).toEqual([active.id]);
+		});
+	});
+
+	describe('countByTourn', () => {
+		it('counts the entries at each tourn through their event', async () => {
+			const first = await factories.tourn.createFull();
+			const second = await factories.tourn.createFull();
+			await factories.entry.create({ event: first.Event.id });
+			await factories.entry.create({ event: first.Event.id });
+			// a dropped entry: a trigger derives active from dropped and waitlist
+			await factories.entry.create({ event: first.Event.id, dropped: 1 });
+			await factories.entry.create({ event: second.Event.id });
+
+			const counts = await entryRepo.countByTourn(db, { tourns: [first.Tourn.id, second.Tourn.id], active: true });
+
+			expect(counts.get(first.Tourn.id)).toBe(2);
+			expect(counts.get(second.Tourn.id)).toBe(1);
 		});
 	});
 });

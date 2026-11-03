@@ -176,5 +176,28 @@ describe('tournRepo', () => {
 
 			expect(tourns.map(tourn => tourn.id)).toEqual([window.running.Tourn.id]);
 		});
+
+		it('returns the settings asked for by name', async () => {
+			const Person = await factories.person.create();
+			const { Tourn, Category } = await factories.tourn.createFull({ settings: { currency: '€', hide_codes: 1, other: 'x' } });
+			await factories.person.createJudge({ person: Person.id, Judge: { category: Category.id } });
+
+			const [tourn] = await tournRepo.getPersonTourns(db, Person.id, { ids: [Tourn.id], settings: ['currency', 'hide_codes'] });
+
+			expect(tourn?.settings).toEqual({ currency: '€', hide_codes: '1' });
+		});
+	});
+
+	describe('getTourns with ids', () => {
+		it('returns the tourns with the given ids, and only those with published results when asked', async () => {
+			const published = await factories.tourn.createFull();
+			const unpublished = await factories.tourn.createFull();
+			await factories.resultSet.create({ tourn: published.Tourn.id, event: published.Event.id, published: 1 });
+			await factories.resultSet.create({ tourn: unpublished.Tourn.id, event: unpublished.Event.id, published: 0 });
+			const ids = [published.Tourn.id, unpublished.Tourn.id];
+
+			expect((await tournRepo.getTourns(db, { ids })).map(tourn => tourn.id).sort()).toEqual(ids.sort());
+			expect((await tournRepo.getTourns(db, { ids, hasPublishedResults: true })).map(tourn => tourn.id)).toEqual([published.Tourn.id]);
+		});
 	});
 });

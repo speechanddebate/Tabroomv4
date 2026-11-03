@@ -238,3 +238,17 @@ describe('getCoachedSchools', () => {
 		expect(rows[0]).toMatchObject({ id: School.id, tag: 'chapter' });
 	});
 });
+describe('countByTourn', () => {
+	it('counts the schools at each tourn', async () => {
+		const first = await factories.tourn.create();
+		const second = await factories.tourn.create();
+		await factories.school.create({ tourn: first.id });
+		await factories.school.create({ tourn: first.id });
+		await factories.school.create({ tourn: second.id });
+
+		const counts = await schoolRepo.countByTourn(db, { tourns: [first.id, second.id] });
+
+		expect(counts.get(first.id)).toBe(2);
+		expect(counts.get(second.id)).toBe(1);
+	});
+});

@@ -128,3 +128,15 @@ describe('deleteCategory', () => {
 		expect(fetchedResult).toBeUndefined();
 	});
 });
+describe('getCategories with ids', () => {
+	it('returns the categories with the given ids and the settings asked for', async () => {
+		const first = await factories.category.create({ settings: { livedoc_url: 'https://docs.example.com/ld', livedoc_caption: 'Schedule', other: 'x' } });
+		const second = await factories.category.create();
+		await factories.category.create();
+
+		const rows = await categoryRepo.getCategories(db, { ids: [first.id, second.id], settings: ['livedoc_url', 'livedoc_caption'] });
+
+		expect(rows.map(category => category.id).sort()).toEqual([first.id, second.id].sort());
+		expect(rows.find(category => category.id === first.id)?.settings).toEqual({ livedoc_url: 'https://docs.example.com/ld', livedoc_caption: 'Schedule' });
+	});
+});

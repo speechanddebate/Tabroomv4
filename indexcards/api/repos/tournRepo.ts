@@ -4,11 +4,12 @@ import { sql, type Insertable, type Updateable } from 'kysely';
 import type { Tourn } from '../data/schema.js';
 
 type queryOpts = {
+	ids?: number[];
 	limit?: number;
 	offset?: number;
 	unpublished?: boolean;
 	hasPublishedResults?: boolean;
-	settings?: boolean;
+	settings?: boolean | string[];
 	circuit?: number;
 	startBefore?: Date;
 	endBefore?: Date;
@@ -24,6 +25,7 @@ function buildTournQuery(db: Database, opts: queryOpts = {}) {
 			settings: opts.settings ?? false,
 		}))
 	);
+	if(opts.ids) query = query.where('tourn.id', 'in', opts.ids);
 	if(opts.limit) query = query.limit(opts.limit);
 	if(opts.offset) query = query.offset(opts.offset);
 	if (!opts.unpublished) query = query.where('tourn.hidden', '=', 0);

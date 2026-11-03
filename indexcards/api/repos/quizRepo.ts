@@ -3,6 +3,7 @@ import type { Quiz } from '../data/schema.js';
 import type { Insertable } from 'kysely';
 
 type queryOpts = {
+	ids?: number[];
 	limit?: number;
 	offset?: number;
 	/** returns only quizzes with hidden: false, sitewide: true, and admin_only: false */
@@ -11,6 +12,7 @@ type queryOpts = {
 function buildQuizQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('quiz');
 
+	if (opts.ids) query = query.where('quiz.id', 'in', opts.ids);
 	if (opts.limit) query = query.limit(Number(opts.limit));
 	if (opts.offset) query = query.offset(Number(opts.offset));
 	if (opts.publicOnly) {

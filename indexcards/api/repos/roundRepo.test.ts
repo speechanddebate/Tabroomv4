@@ -1,4 +1,5 @@
 import roundRepo from './roundRepo.js';
+import factories from '../../tests/factories/index.js';
 import { db } from '../data/database.js';
 
 describe('getRounds', () => {
@@ -40,5 +41,35 @@ describe('getRounds', () => {
 			assert.typeOf(round.id, 'number', `Round at index ${i} has no id`);
 			assert.isObject(round.settings, `Round at index ${i} (id=${round.id}) should have settings object`);
 		});
+	});
+});
+describe('getSchoolStrikeCards', () => {
+	it("returns the rounds with an open strike card for each school's entries", async () => {
+		const { Tourn, Event, Timeslot } = await factories.tourn.createFull();
+		const mySchool = await factories.school.create({ tourn: Tourn.id });
+		const otherSchool = await factories.school.create({ tourn: Tourn.id });
+		const mine = await factories.entry.create({ event: Event.id, school: mySchool.id });
+		const theirs = await factories.entry.create({ event: Event.id, school: otherSchool.id });
+		const due = new Date('2026-03-01T12:00:00Z');
+		const open = await factories.round.create({ event: Event.id, timeslot: Timeslot.id, name: 3, label: 'Quarters', published: 2, settings: { strikes_published: 1, strikes_due: due } });
+		// out: strike cards not published; pairing fully published; my entry on a bye panel
+		const unpublished = await factories.round.create({ event: Event.id, timeslot: Timeslot.id, published: 2 });
+		const published = await factories.round.create({ event: Event.id, timeslot: Timeslot.id, published: 1, settings: { strikes_published: 1 } });
+		const byes = await factories.round.create({ event: Event.id, timeslot: Timeslot.id, published: 0, settings: { strikes_published: 1 } });
+		for (const [round, bye] of [[open, 0], [unpublished, 0], [published, 0], [byes, 1]] as const) {
+			const panel = await factories.panel.create({ round: round.id, bye });
+			await factories.ballot.create({ panel: panel.id, entry: mine.id });
+			await factories.ballot.create({ panel: panel.id, entry: theirs.id });
+		}
+
+		const rows = await roundRepo.getSchoolStrikeCards(db, { schools: [mySchool.id] });
+
+		expect(rows).toEqual([{
+			id: open.id,
+			name: 3,
+			label: 'Quarters',
+			school: mySchool.id,
+			settings: { strikes_due: '2026-03-01 12:00:00' },
+		}]);
 	});
 });

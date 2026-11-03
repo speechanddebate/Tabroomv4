@@ -298,4 +298,18 @@ describe('panelRepo', () => {
 			expect(after.Judge.Category.Event.settings.online_ballots).toBe(true);
 		});
 	});
+
+	describe('getPanels with ids', () => {
+		it('returns the panels with the given ids and the settings asked for', async () => {
+			const { Round } = await factories.tourn.createFull();
+			const first = await factories.panel.create({ round: Round.id, settings: { flip_status: 'done', flip_at: new Date('2026-03-01T10:00:00Z'), other: 'x' } });
+			const second = await factories.panel.create({ round: Round.id });
+			await factories.panel.create({ round: Round.id });
+
+			const rows = await panelRepo.getPanels(db, { ids: [first.id, second.id], settings: ['flip_status', 'flip_at'] });
+
+			expect(rows.map(panel => panel.id).sort()).toEqual([first.id, second.id].sort());
+			expect(rows.find(panel => panel.id === first.id)?.settings).toEqual({ flip_status: 'done', flip_at: '2026-03-01 10:00:00' });
+		});
+	});
 });

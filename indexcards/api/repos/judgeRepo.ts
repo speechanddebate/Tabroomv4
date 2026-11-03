@@ -11,6 +11,7 @@ type queryOpts = {
 	person_request?: number;
 	settings?: boolean | string[];
 	tourns?: number[];
+	schools?: number[];
 }
 function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('judge')
@@ -23,6 +24,7 @@ function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	if(opts.offset) query = query.offset(opts.offset);
 	if(opts.person) query = query.where('judge.person', '=', opts.person);
 	if(opts.person_request) query = query.where('judge.person_request', '=', opts.person_request);
+	if(opts.schools) query = query.where('judge.school', 'in', opts.schools);
 	if(opts.tourns) query = query.where('judge.category', 'in', (eb) => eb
 		.selectFrom('category')
 		.select('category.id')

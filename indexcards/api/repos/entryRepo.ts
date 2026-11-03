@@ -10,6 +10,8 @@ type entryOpts = {
 	settings?: boolean | string[],
 	ids?: number[],
 	tourns?: number[],
+	schools?: number[],
+	active?: boolean,
 	/** entries one of the person's unretired students is on */
 	person?: number,
 }
@@ -32,6 +34,14 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 			.select('event.id')
 			.where('event.tourn', 'in', opts.tourns!)
 		)
+		: query;
+
+	query = opts.schools
+		? query.where('entry.school', 'in', opts.schools)
+		: query;
+
+	query = opts.active
+		? query.where('entry.active', '=', 1)
 		: query;
 
 	query = opts.person
@@ -148,10 +158,21 @@ async function getPersonEntries(db: Database, personId: number, opts: entryOpts 
 		.execute();
 }
 
+/** How many entries are at each tourn, keyed by tourn id. Counted through the event, like the tourns filter */
+async function countByTourn(db: Database, opts: entryOpts = {}) {
+	const rows = await buildEntryQuery(db, opts)
+		.innerJoin('event', 'event.id', 'entry.event')
+		.select(({ fn }) => ['event.tourn', fn.countAll<number>().as('count')])
+		.groupBy('event.tourn')
+		.execute();
+	return new Map(rows.map(row => [row.tourn, Number(row.count)]));
+}
+
 export default {
 	getEntry,
 	getEntries,
 	getEntryStudents,
 	getPersonEntries,
+	countByTourn,
 	createEntry,
 };

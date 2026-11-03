@@ -414,4 +414,17 @@ describe('judgeRepo', () => {
 			expect(rows.find(row => row.id === hire.id)).toMatchObject({ tourn: second.Tourn.id, school: null, schoolName: null });
 		});
 	});
+
+	describe('getJudges with schools', () => {
+		it("returns the schools' judges", async () => {
+			const { Category } = await factories.tourn.createFull();
+			const School = await factories.school.create();
+			const { Judge: mine } = await factories.person.createJudge({ Judge: { category: Category.id, school: School.id } });
+			await factories.person.createJudge({ Judge: { category: Category.id } });
+
+			const rows = await judgeRepo.getJudges(db, { schools: [School.id] });
+
+			expect(rows.map(judge => judge.id)).toEqual([mine.id]);
+		});
+	});
 });

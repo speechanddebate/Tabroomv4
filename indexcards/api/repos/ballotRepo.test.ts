@@ -170,4 +170,148 @@ describe('ballotRepo', async () => {
 		});
 	});
 
+	describe('getJudgeBallotCounts', () => {
+		it('counts the distinct panels and the ballots each judge has had audited', async () => {
+			const { Round } = await factories.tourn.createFull();
+			const { Judge: busy } = await factories.person.createJudge();
+			const { Judge: idle } = await factories.person.createJudge();
+			const { Judge: other } = await factories.person.createJudge();
+			const first = await factories.panel.create({ round: Round.id });
+			const second = await factories.panel.create({ round: Round.id });
+			// two audited ballots on the first panel (a debate), one on the second, one not yet audited
+			await factories.ballot.create({ panel: first.id, judge: busy.id, entry: (await factories.entry.create()).id, side: 1, audit: 1 });
+			await factories.ballot.create({ panel: first.id, judge: busy.id, entry: (await factories.entry.create()).id, side: 2, audit: 1 });
+			await factories.ballot.create({ panel: second.id, judge: busy.id, entry: (await factories.entry.create()).id, audit: 1 });
+			await factories.ballot.create({ panel: second.id, judge: idle.id, entry: (await factories.entry.create()).id, audit: 0 });
+			await factories.ballot.create({ panel: second.id, judge: other.id, entry: (await factories.entry.create()).id, audit: 1 });
+
+			const counts = await ballotRepo.getJudgeBallotCounts(db, { judges: [busy.id, idle.id] });
+
+			expect(counts.get(busy.id)).toEqual({ panels: 2, ballots: 3 });
+			expect(counts.has(idle.id)).toBe(false);
+			expect(counts.has(other.id)).toBe(false);
+		});
+	});
+
+	describe('getJudgePanels and getEntryRounds', () => {
+		// one panel: the judge, two entries, a room
+		async function createPanel() {
+			const tourn = await factories.tourn.createFull();
+			const { Judge } = await factories.person.createJudge({ Judge: { category: tourn.Category.id, first: 'Jo', last: 'Judge', code: 'J1' } });
+			const Room = await factories.room.create({ name: '101' });
+			const Panel = await factories.panel.create({ round: tourn.Round.id, room: Room.id, letter: 'A', flight: 2 });
+			const mine = await factories.entry.create({ event: tourn.Event.id, code: 'AB' });
+			const opponent = await factories.entry.create({ event: tourn.Event.id, code: 'CD' });
+			const started = new Date('2026-03-01T09:30:00Z');
+			const myBallot = await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: mine.id, side: 1, judge_started: started });
+			const theirBallot = await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: opponent.id, side: 2 });
+			return { ...tourn, Judge, Room, Panel, mine, opponent, myBallot, theirBallot };
+		}
+
+		it("getJudgePanels returns the judges' ballots with the round, time, room, and entry their panel card shows", async () => {
+			const { Tourn, Category, Event, Timeslot, Round, Judge, Room, Panel, mine, myBallot, theirBallot } = await createPanel();
+			// the judge's ballot on another panel of the round
+			const elsewhere = await factories.panel.create({ round: Round.id });
+			await factories.ballot.create({ panel: elsewhere.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+
+			const rows = await ballotRepo.getJudgePanels(db, { judges: [Judge.id] });
+
+			expect(rows).toHaveLength(3);
+			expect(rows.map(row => row.id)).toContain(theirBallot.id);
+			expect(rows.find(row => row.id === myBallot.id)).toEqual({
+				id: myBallot.id,
+				judge: Judge.id,
+				side: 1,
+				speakerorder: 0,
+				audit: 0,
+				judge_started: new Date('2026-03-01T09:30:00Z'),
+				chair: 0,
+				panel: Panel.id,
+				panelLetter: 'A',
+				// panel.flight is a string column
+				panelFlight: '2',
+				round: Round.id,
+				roundName: Round.name,
+				roundLabel: Round.label,
+				roundType: Round.type,
+				roundPublished: Round.published,
+				roundFlighted: Round.flighted,
+				roundStart: Round.start_time,
+				timeslotStart: Timeslot.start,
+				timeslotEnd: Timeslot.end,
+				room: Room.id,
+				roomName: '101',
+				roomUrl: Room.url,
+				roomNotes: Room.notes,
+				event: Event.id,
+				eventName: Event.name,
+				eventAbbr: Event.abbr,
+				eventType: Event.type,
+				category: Category.id,
+				tourn: Tourn.id,
+				entry: mine.id,
+				entryCode: 'AB',
+				entryActive: 1,
+			});
+		});
+
+		it("getEntryRounds returns the entries' or panels' ballots with the round's publish levels and the judge", async () => {
+			const { Tourn, Category, Event, Timeslot, Round, Judge, Room, Panel, mine, myBallot, theirBallot } = await createPanel();
+
+			const byEntry = await ballotRepo.getEntryRounds(db, { entries: [mine.id] });
+			expect(byEntry).toEqual([{
+				id: myBallot.id,
+				side: 1,
+				speakerorder: 0,
+				audit: 0,
+				panel: Panel.id,
+				panelLetter: 'A',
+				panelFlight: '2',
+				panelBye: 0,
+				round: Round.id,
+				roundName: Round.name,
+				roundLabel: Round.label,
+				roundType: Round.type,
+				roundPublished: Round.published,
+				roundPostPrimary: Round.post_primary,
+				roundPostSecondary: Round.post_secondary,
+				roundPostFeedback: Round.post_feedback,
+				roundFlighted: Round.flighted,
+				roundStart: Round.start_time,
+				timeslotStart: Timeslot.start,
+				roomName: '101',
+				roomUrl: Room.url,
+				event: Event.id,
+				eventType: Event.type,
+				category: Category.id,
+				tourn: Tourn.id,
+				entry: mine.id,
+				entryCode: 'AB',
+				entrySchool: null,
+				judge: Judge.id,
+				judgeFirst: 'Jo',
+				judgeLast: 'Judge',
+				judgeCode: 'J1',
+			}]);
+
+			const byPanel = await ballotRepo.getEntryRounds(db, { panels: [Panel.id] });
+			expect(byPanel.map(row => [row.id, row.entryCode])).toEqual([[myBallot.id, 'AB'], [theirBallot.id, 'CD']]);
+		});
+
+		it('keeps only ballots in rounds published at any level or with primary results posted when roundVisible is set', async () => {
+			const { Event, Timeslot } = await factories.tourn.createFull();
+			const Entry = await factories.entry.create({ event: Event.id });
+			const visible: number[] = [];
+			for (const [published, postPrimary, shown] of [[0, 0, false], [2, 0, true], [0, 1, true], [1, 0, true]] as const) {
+				const round = await factories.round.create({ event: Event.id, timeslot: Timeslot.id, published, post_primary: postPrimary });
+				const panel = await factories.panel.create({ round: round.id });
+				const ballot = await factories.ballot.create({ panel: panel.id, entry: Entry.id });
+				if (shown) visible.push(ballot.id);
+			}
+
+			const rows = await ballotRepo.getEntryRounds(db, { entries: [Entry.id], roundVisible: true });
+
+			expect(rows.map(row => row.id).sort()).toEqual(visible.sort());
+		});
+	});
 });

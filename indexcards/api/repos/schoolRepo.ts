@@ -137,10 +137,20 @@ async function getCoachedSchools(db: Database, personId: number, opts: queryOpts
 	return [...schools.values()];
 }
 
+/** How many schools are at each tourn, keyed by tourn id */
+async function countByTourn(db: Database, opts: queryOpts = {}) {
+	const rows = await buildSchoolQuery(db, opts)
+		.select(({ fn }) => ['school.tourn', fn.countAll<number>().as('count')])
+		.groupBy('school.tourn')
+		.execute();
+	return new Map(rows.map(row => [row.tourn, Number(row.count)]));
+}
+
 export default {
 	getSchool,
 	getSchools,
 	getCoachedSchools,
+	countByTourn,
 	createSchool,
 	updateSchool,
 	deleteSchool,

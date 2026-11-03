@@ -169,3 +169,18 @@ describe('deleteScores', async () => {
 		expect(await scoreRepo.getScore(db, firstWin)).toBeDefined();
 	});
 });
+describe('getPanelScores tags', () => {
+	it('returns winloss, rank, and point by default and the tags asked for otherwise', async () => {
+		const Panel = await factories.panel.create();
+		const ballot = await factories.ballot.create({ panel: Panel.id });
+		await factories.score.create({ ballot: ballot.id, tag: 'winloss', value: 1 });
+		await factories.score.create({ ballot: ballot.id, tag: 'refute', value: 2 });
+		await factories.score.create({ ballot: ballot.id, tag: 'speech', value: 3 });
+
+		const byDefault = await scoreRepo.getPanelScores(db, [Panel.id]);
+		expect(byDefault.map(score => score.tag)).toEqual(['winloss']);
+
+		const withRefute = await scoreRepo.getPanelScores(db, [Panel.id], { tags: ['winloss', 'refute'] });
+		expect(withRefute.map(score => [score.tag, score.value]).sort()).toEqual([['refute', 2], ['winloss', 1]]);
+	});
+});
