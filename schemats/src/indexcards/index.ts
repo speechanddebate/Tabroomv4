@@ -45,6 +45,7 @@ import type {
 	ForbiddenResponse,
 	GetResultSetParams,
 	GetTournResultSets200,
+	HomeResponse,
 	HomepageAd,
 	InboxMessage,
 	InboxUnreadCount,
@@ -88,6 +89,7 @@ import type {
 	UnsubscribeResponse,
 	UnsubscribeStatus,
 	UserChapter,
+	UserHomeParams,
 	UserJudgesClaimParams,
 	UserJudgesHistoryParams,
 	UserParadigm,
@@ -7452,6 +7454,187 @@ export const createAuthRegister = <
 		() => ({ ...getAuthRegisterMutationOptions(options?.()) }),
 		queryClient,
 	);
+};
+
+export type userHomeResponse200 = {
+	data: HomeResponse;
+	status: 200;
+};
+
+export type userHomeResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userHomeResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userHomeResponseSuccess = userHomeResponse200 & {
+	headers: Headers;
+};
+export type userHomeResponseError = (
+	| userHomeResponse401
+	| userHomeResponse500
+) & {
+	headers: Headers;
+};
+
+export type userHomeResponse = userHomeResponseSuccess | userHomeResponseError;
+
+export const getUserHomeUrl = (params?: UserHomeParams) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/user/home?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/user/home`;
+};
+
+/**
+ * Everything the user home page shows: account alerts and one card per tournament the person is running, upcoming, or just finished at.
+ * @summary Get the user home page
+ */
+export const userHome = async (
+	params?: UserHomeParams,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userHomeResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserHomeUrl(params), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userHomeResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userHomeResponse;
+};
+
+export const getUserHomeQueryKey = (params?: UserHomeParams) => {
+	return [
+		`${indexcardsApiBaseUrl()}/user/home`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getUserHomeQueryOptions = <
+	TData = Awaited<ReturnType<typeof userHome>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: UserHomeParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userHome>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserHomeQueryKey(params);
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof userHome>>> = ({
+		signal,
+	}) => userHome(params, { signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userHome>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserHomeQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userHome>>
+>;
+export type UserHomeQueryError = UnauthorizedResponse | ErrorResponseResponse;
+
+/**
+ * @summary Get the user home page
+ */
+
+export function createUserHome<
+	TData = Awaited<ReturnType<typeof userHome>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: () => UserHomeParams,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userHome>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserHomeQueryOptions(params?.(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get the user home page
+ */
+export const prefetchUserHomeQuery = async <
+	TData = Awaited<ReturnType<typeof userHome>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	params?: UserHomeParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userHome>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserHomeQueryOptions(params, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
 };
 
 export type userTournsResponse200 = {

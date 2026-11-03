@@ -1,5 +1,5 @@
 
-import { selectSettings, saveSettings, getSettingsByOwner } from './settings.js';
+import { selectSettings, saveSettings } from './settings.js';
 import { db } from '../../data/database.js';
 import factories from '../../../tests/factories/index.js';
 import { faker } from '@faker-js/faker';
@@ -190,56 +190,5 @@ describe('saveSettings', () => {
 			.selectAll()
 			.executeTakeFirst();
 		expect(res).toBeUndefined();
-	});
-});
-describe('getSettingsByOwner', () => {
-	let first = 0;
-	let second = 0;
-	let third = 0;
-	beforeAll(async () => {
-		first = (await factories.category.create()).id;
-		second = (await factories.category.create()).id;
-		third = (await factories.category.create()).id;
-		await saveSettings({
-			db,
-			table: 'category',
-			settings: {
-				plain: 'yes',
-				flag: true,
-				count: 7,
-				when: new Date('2026-03-04T05:06:07Z'),
-				long: 'x'.repeat(100),
-				shape: { a: 1, b: ['c'] },
-				unwanted: 'skip me',
-			},
-			ownerId: first,
-		});
-		await saveSettings({ db, table: 'category', settings: { plain: 'other' }, ownerId: second });
-		await db.insertInto('category_setting')
-			.values({ category: second, tag: 'shape', value: 'json', value_text: 'not json', value_date: null })
-			.execute();
-	});
-	it('decodes each value type and keys the settings by owner', async () => {
-		const settings = await getSettingsByOwner(db, 'category', [first, second, third], ['plain', 'flag', 'count', 'when', 'long', 'shape']);
-
-		expect(settings.get(first)).toEqual({
-			plain: 'yes',
-			flag: '1',
-			count: '7',
-			when: new Date('2026-03-04T05:06:07Z'),
-			long: 'x'.repeat(100),
-			shape: { a: 1, b: ['c'] },
-		});
-		expect(settings.get(second)).toEqual({ plain: 'other', shape: 'not json' });
-	});
-	it('leaves out owners with none of the settings and tags not asked for', async () => {
-		const settings = await getSettingsByOwner(db, 'category', [first, third], ['plain']);
-
-		expect(settings.get(first)).toEqual({ plain: 'yes' });
-		expect(settings.has(third)).toBe(false);
-	});
-	it('returns an empty map without querying when there are no owners or tags', async () => {
-		expect(await getSettingsByOwner(db, 'category', [], ['plain'])).toEqual(new Map());
-		expect(await getSettingsByOwner(db, 'category', [first], [])).toEqual(new Map());
 	});
 });

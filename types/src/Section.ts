@@ -42,7 +42,7 @@ export const CurrentBallotSchema = z.object({
 		code: EntrySchema.shape.code,
 		side: z.string().nullable(),
 		speakerOrder: BallotSchema.shape.speakerOrder.nullable(),
-	})),
+	}).strict()),
 }).strict().meta({
 	id: 'CurrentBallot',
 }) satisfies ZodOpenApiSchemaObject;

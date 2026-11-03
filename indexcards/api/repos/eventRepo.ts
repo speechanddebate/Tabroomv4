@@ -9,6 +9,7 @@ import { saveSettings, selectSettings, withTransaction, type Settings } from './
 type queryOpts = {
 	ids?: number[];
 	tourn?: number;
+	tourns?: number[];
 	settings?: boolean | string[];
 };
 
@@ -19,6 +20,7 @@ function buildEventQuery(db:Database, opts: queryOpts = {}) {
 		settings: opts.settings ?? false,
 	})));
 	if (opts.tourn) query = query.where('event.tourn', '=', opts.tourn);
+	if (opts.tourns) query = query.where('event.tourn', 'in', opts.tourns);
 	if (opts.ids && opts.ids.length > 0) query = query.where('event.id', 'in', opts.ids);
 	return query;
 }

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import homeRouter from './homeRouter.js';
 import inboxRouter from './inboxRouter.js';
 import notifyRouter from './notify/indexRouter.js';
 import tournsRouter from './tournsRouter.js';
@@ -10,6 +11,7 @@ import sectionsRouter from './sectionsRouter.js';
 
 const router = Router();
 
+router.use('/home', homeRouter);
 router.use('/tourns', tournsRouter);
 router.use('/inbox', inboxRouter);
 router.use('/notify', notifyRouter);

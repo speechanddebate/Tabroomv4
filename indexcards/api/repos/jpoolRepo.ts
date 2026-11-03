@@ -18,11 +18,12 @@ function buildJpoolQuery(db: Database, opts: queryOpts = {}) {
 
 	if (opts.ids) query = query.where('jpool.id', 'in', opts.ids);
 	if (opts.category) query = query.where('jpool.category', '=', opts.category);
-	if (opts.judges) query = query.where('jpool.id', 'in', (eb) => eb
+	// the empty list goes in directly: the empty IN plugin rewrites it there, not inside a subquery
+	if (opts.judges) query = query.where('jpool.id', 'in', opts.judges.length ? (eb) => eb
 		.selectFrom('jpool_judge')
 		.select('jpool_judge.jpool')
 		.where('jpool_judge.judge', 'in', opts.judges!)
-	);
+	: []);
 
 	return query;
 }

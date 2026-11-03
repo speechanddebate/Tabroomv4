@@ -25,11 +25,11 @@ function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	if(opts.person) query = query.where('judge.person', '=', opts.person);
 	if(opts.person_request) query = query.where('judge.person_request', '=', opts.person_request);
 	if(opts.schools) query = query.where('judge.school', 'in', opts.schools);
-	if(opts.tourns) query = query.where('judge.category', 'in', (eb) => eb
+	if(opts.tourns) query = query.where('judge.category', 'in', opts.tourns.length ? (eb) => eb
 		.selectFrom('category')
 		.select('category.id')
 		.where('category.tourn', 'in', opts.tourns!)
-	);
+	: []);
 
 	return query;
 }

@@ -25,7 +25,7 @@ export const HomeAlertsSchema = z.object({
 		lastReviewed: z.iso.datetime().nullable().meta({ description: 'When the person last saved or approved their paradigm' }),
 	}).strict().nullable().meta({ description: 'Present when a paradigm review window is open and the paradigm is older than its start' }),
 	emailUnconfirmed: z.boolean().meta({ description: 'Whether the account email is still unconfirmed' }),
-	tzMissing: z.boolean().meta({ description: 'Whether the person has no time zone set while holding an upcoming entry' }),
+	tzMissing: z.boolean().meta({ description: 'Whether the person has no time zone set while they have a running or upcoming tournament' }),
 }).strict().meta({
 	id: 'HomeAlerts',
 }) satisfies ZodOpenApiSchemaObject;

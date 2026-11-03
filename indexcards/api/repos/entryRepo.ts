@@ -27,13 +27,14 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 		? query.where('entry.id', 'in', opts.ids)
 		: query;
 
-	// through the event: entry.tourn is null or wrong on a share of rows
+	// through the event: entry.tourn is null or wrong on a share of rows. The empty list goes
+	// in directly: the empty IN plugin rewrites it there, not inside a subquery
 	query = opts.tourns
-		? query.where('entry.event', 'in', (eb) => eb
+		? query.where('entry.event', 'in', opts.tourns.length ? (eb) => eb
 			.selectFrom('event')
 			.select('event.id')
 			.where('event.tourn', 'in', opts.tourns!)
-		)
+		: [])
 		: query;
 
 	query = opts.schools
