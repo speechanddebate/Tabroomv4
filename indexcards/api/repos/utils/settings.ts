@@ -291,6 +291,76 @@ export function selectSettings<A extends string = 'settings'>(
 		`.as('settingsTimestamps'),
 	];
 }
+/** A *_setting row's value columns, before decoding */
+type SettingRow = {
+	tag: string | null;
+	value: string | null;
+	value_text: string | null;
+	value_date: Date | null;
+};
+
+/**
+ * The value a settings row holds, decoded the same way the CASE in selectSettings does:
+ * the value column names the type (date, text, json) or holds the value itself
+ */
+function decodeSettingValue(row: SettingRow): SettingValue {
+	switch (row.value) {
+		case 'date':
+			return row.value_date;
+		case 'text':
+			return row.value_text;
+		case 'json':
+			try {
+				return JSON.parse(row.value_text ?? '');
+			} catch {
+				return row.value_text;
+			}
+		default:
+			return row.value;
+	}
+}
+
+/**
+ * Reads the given settings for many owners in one query, keyed by owner id. Owners with none
+ * of the settings are absent from the map. Settings values come back as selectSettings
+ * returns them: strings, with dates as Dates and json parsed.
+ */
+export async function getSettingsByOwner(
+	db: Database,
+	table: SettingsTable,
+	ownerIds: number[],
+	tags: string[],
+): Promise<Map<number, Settings>> {
+	const settings = new Map<number, Settings>();
+	if (!ownerIds.length || !tags.length) return settings;
+
+	const config = settingConfig[table];
+	const rows = await db
+		.selectFrom(config.table)
+		.select([
+			sql<number>`${sql.ref(config.ownerKey)}`.as('owner'),
+			'tag',
+			'value',
+			'value_text',
+			'value_date',
+		])
+		.where(config.ownerKey, 'in', ownerIds)
+		.where('tag', 'in', tags)
+		.execute();
+
+	for (const row of rows) {
+		if (row.tag === null) continue;
+		let owned = settings.get(row.owner);
+		if (!owned) {
+			owned = {};
+			settings.set(row.owner, owned);
+		}
+		owned[row.tag] = decodeSettingValue(row);
+	}
+
+	return settings;
+}
+
 /**
  * Build rows for bulk upsert into a *_setting table
  */

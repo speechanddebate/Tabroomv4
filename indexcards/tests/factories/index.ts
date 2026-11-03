@@ -11,6 +11,7 @@ import entry from './entry.js';
 import event from './event.js';
 import file from './file.js';
 import fine from './fine.js';
+import jpool from './jpool.js';
 import judge from './judge.js';
 import message from './message.js';
 import permission from './permission.js';
@@ -28,6 +29,7 @@ import tourn from './tourn.js';
 import person from './person.js';
 import personQuiz from './personQuiz.js';
 import quiz from './quiz.js';
+import strike from './strike.js';
 import student from './student.js';
 import webpage from './webpage.js';
 import weekend from './weekend.js';
@@ -45,6 +47,7 @@ const factories = {
 	event,
 	file,
 	fine,
+	jpool,
 	judge,
 	message,
 	permission,
@@ -63,6 +66,7 @@ const factories = {
 	person,
 	personQuiz,
 	quiz,
+	strike,
 	student,
 	webpage,
 	weekend,
