@@ -52,11 +52,11 @@ async function onlineRooms(tournId: number, actor: Actor, mine: { schools: numbe
 }
 
 // The settings each card reads, fetched once per table for every tourn on the page
-const TOURN_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.tourn, 'currency', 'onsite_registration', 'onsite_starts', 'onsite_ends', 'hide_codes', 'mock_trial_registration', 'nsda_nats', 'online_rooms', 'campus_zone']);
-const EVENT_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.event, 'supp', 'anonymous_public', 'sidelock_elims']);
+const TOURN_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.tourn, 'currency', 'onsite_registration', 'onsite_starts', 'onsite_ends', 'onsite_registration_nodash', 'hide_codes', 'ncfl', 'mock_trial_registration', 'nsda_nats', 'online_rooms', 'campus_zone']);
+const EVENT_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.event, 'supp', 'anonymous_public', 'no_anon_dashboard']);
 const CATEGORY_SETTINGS = ['livedoc_url', 'livedoc_caption', 'rounds_per', 'prefs', 'strike_start', 'strike_end', 'required_quizzes', 'paradigm_quiz', 'show_training', 'conflicts'];
 const JPOOL_SETTINGS = ['registrant', 'show_judges', 'standby', 'required_quizzes', 'paradigm_quiz'];
-const ROUND_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.round, 'strikes_published', 'strikes_due', 'flip_published', 'include_room_notes']);
+const ROUND_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.round, 'strikes_published', 'strikes_due', 'flip_published']);
 const PANEL_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.panel, 'flip_at']);
 
 /**

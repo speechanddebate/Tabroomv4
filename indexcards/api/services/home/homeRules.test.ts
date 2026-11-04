@@ -1,5 +1,5 @@
 import logger from '../../helpers/logger.js';
-import { compareTourns, homeWindow, isOnline, isRunning, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow } from './homeRules.js';
+import { compareTourns, flipOpen, homeWindow, isOnline, isRunning, judgeAnonymous, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sideVisible, sqlDatetime, strikeWindow } from './homeRules.js';
 
 const now = new Date('2026-03-07T12:00:00Z');
 
@@ -124,10 +124,64 @@ describe('roundListed and roundVisibility', () => {
 		expect(roundVisibility(levels(0, 2, 0, 2), true)).toEqual({ pairing: true, judges: true, primary: true, secondary: false, feedback: true });
 	});
 
-	it('shows decision and rank at the primary level and points and refutation at the secondary', () => {
+	it('releases each event type\'s tags at the primary and secondary levels like classic', () => {
 		const primaryOnly = roundVisibility(levels(1, 2), false);
-		expect(['winloss', 'rank', 'point', 'refute', null].map((tag) => scoreVisible(tag, primaryOnly))).toEqual([true, true, false, false, false]);
-		expect(scoreVisible('point', roundVisibility(levels(1, 2, 2), false))).toBe(true);
+		const both = roundVisibility(levels(1, 2, 2), false);
+		const tags = ['winloss', 'rank', 'point', 'refute', null];
+		const at = (visibility: ReturnType<typeof roundVisibility>, type: string | null) => tags.filter((tag) => scoreVisible(tag, visibility, type));
+
+		expect(at(primaryOnly, 'debate')).toEqual(['winloss']);
+		expect(at(both, 'debate')).toEqual(['winloss', 'rank', 'point', 'refute']);
+		expect(at(primaryOnly, 'speech')).toEqual(['rank']);
+		expect(at(both, 'speech')).toEqual(['rank', 'point']);
+		expect(at(primaryOnly, 'congress')).toEqual(['rank']);
+		expect(at(primaryOnly, 'wudc')).toEqual(['winloss', 'rank', 'point']);
+		expect(at(primaryOnly, null)).toEqual(['winloss']);
+		expect(at(roundVisibility(levels(1, 1, 2), false), 'debate')).toEqual(['rank', 'point', 'refute']);
+	});
+});
+
+describe('sideVisible', () => {
+	const prelim = { type: 'prelim' };
+	const elim = { type: 'elim' };
+
+	it('shows prelim sides unless a flip is pending or the event has no side constraints', () => {
+		expect(sideVisible(prelim, null, {})).toBe(true);
+		expect(sideVisible(prelim, 'done', {})).toBe(true);
+		expect(sideVisible(prelim, 'winner', {})).toBe(false);
+		expect(sideVisible(prelim, null, { no_side_constraints: '1' })).toBe(false);
+	});
+
+	it('hides elim and final sides until the flip is done unless elims are sidelocked', () => {
+		expect(sideVisible(elim, null, {})).toBe(false);
+		expect(sideVisible({ type: 'final' }, 'anyone', {})).toBe(false);
+		expect(sideVisible(elim, 'done', {})).toBe(true);
+		expect(sideVisible(elim, null, { sidelock_elims: '1' })).toBe(true);
+		expect(sideVisible(elim, null, { sidelock_elims: '1', no_side_constraints: '1' })).toBe(false);
+	});
+
+	it('shows a competitor their own audited ballot\'s side regardless', () => {
+		expect(sideVisible(elim, 'winner', { no_side_constraints: '1' }, true)).toBe(true);
+	});
+});
+
+describe('flipOpen', () => {
+	it('needs the flip released, a paired panel, and an unfinished flip', () => {
+		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: 'winner' })).toBe(true);
+		expect(flipOpen({}, { bye: 0, flip_status: 'winner' })).toBe(false);
+		expect(flipOpen({ flip_published: '1' }, { bye: 1, flip_status: 'winner' })).toBe(false);
+		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: 'done' })).toBe(false);
+		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: null })).toBe(false);
+	});
+});
+
+describe('judgeAnonymous', () => {
+	it('hides names for anonymous_public events and ncfl tourns unless the event opts out', () => {
+		expect(judgeAnonymous({}, { anonymous_public: '1' })).toBe(true);
+		expect(judgeAnonymous({ ncfl: '1' }, {})).toBe(true);
+		expect(judgeAnonymous({ ncfl: '1' }, { no_anon_dashboard: '1' })).toBe(false);
+		expect(judgeAnonymous({}, {})).toBe(false);
+		expect(judgeAnonymous(null, null)).toBe(false);
 	});
 });
 

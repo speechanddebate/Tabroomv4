@@ -4,6 +4,7 @@ import { flightStart } from '../../helpers/flight.js';
 import logger from '../../helpers/logger.js';
 import { groupBy } from '../../helpers/objectify.js';
 import { isOn } from '../ballots/ballotRules.js';
+import { sideVisible } from '../home/homeRules.js';
 import { sideLabel } from './judgeHistory.js';
 
 export type JudgePanelRow = Awaited<ReturnType<typeof ballotRepo.getJudgePanels>>[number];
@@ -14,8 +15,8 @@ type SettingsById = Map<number, Settings>;
 /** The settings the current ballot card reads, by table */
 export const CURRENT_BALLOT_SETTINGS = {
 	tourn: ['legion'],
-	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label'],
-	round: ['judges_ballots_visible'],
+	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label', 'sidelock_elims', 'no_side_constraints'],
+	round: ['judges_ballots_visible', 'include_room_notes'],
 	panel: ['flip_status', 'show_async'],
 };
 
@@ -70,6 +71,7 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 
 		const flightOffset = first.roundFlighted ? event?.flight_offset : 0;
 		const flipStatus = FLIP_STATUSES.includes(panel?.flip_status ?? '') ? panel?.flip_status as CurrentBallot['flipStatus'] : null;
+		const sided = sideVisible({ type: first.roundType }, panel?.flip_status, event);
 
 		ballots.push({
 			id: first.panel,
@@ -87,7 +89,7 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 			deadline: flightStart(first.timeslotEnd, first.panelFlight, flightOffset).toISOString(),
 			roomId: first.room,
 			Room: null,
-			roomNotes: isOn(round?.judges_ballots_visible) ? first.roomNotes : null,
+			roomNotes: isOn(round?.include_room_notes) ? first.roomNotes : null,
 			chair,
 			audited,
 			tourn: first.tourn,
@@ -101,8 +103,8 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 			Entries: panelRows.map((row) => ({
 				id: row.entry,
 				code: row.entryCode,
-				side: !flipStatus || flipStatus === 'done' ? sideLabel(first.eventType, row.side, row.speakerorder, event?.aff_label ?? null, event?.neg_label ?? null) : null,
-				speakerOrder: row.speakerorder,
+				side: sided ? sideLabel(first.eventType, row.side, row.speakerorder, event?.aff_label ?? null, event?.neg_label ?? null) : null,
+				speakerOrder: sided ? row.speakerorder : null,
 			})),
 		});
 	}

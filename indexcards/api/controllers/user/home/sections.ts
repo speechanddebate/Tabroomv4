@@ -15,7 +15,7 @@ import type schoolRepo from '../../../repos/schoolRepo.js';
 import type scoreRepo from '../../../repos/scoreRepo.js';
 import type strikeRepo from '../../../repos/strikeRepo.js';
 import { isOn } from '../../../services/ballots/ballotRules.js';
-import { isRunning, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, type QuizRequirement } from '../../../services/home/homeRules.js';
+import { flipOpen, isRunning, judgeAnonymous, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sideVisible, sqlDatetime, strikeWindow, type QuizRequirement } from '../../../services/home/homeRules.js';
 
 type Rows<T extends (...args: never[]) => Promise<unknown[]>> = Awaited<ReturnType<T>>;
 type Settings = Record<string, string> | null | undefined;
@@ -95,7 +95,9 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 				const panel = panelSettings.get(row.panel);
 				const round = roundSettings.get(row.round);
 				const start = row.roundStart ?? row.timeslotStart;
-				const anonymous = isOn(event?.anonymous_public);
+				const anonymous = judgeAnonymous(tourn.settings, event);
+				const sided = visible.pairing && sideVisible({ type: row.roundType }, panel?.flip_status, event, row.audit === 1);
+				const flip = flipOpen(round, { bye: row.panelBye, flip_status: panel?.flip_status });
 
 				Rounds.push({
 					id: row.round,
@@ -107,15 +109,15 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 					post_secondary: row.roundPostSecondary,
 					post_feedback: row.roundPostFeedback,
 					start: start ? flightStart(start, row.panelFlight, row.roundFlighted ? event?.flight_offset : 0).toISOString() : null,
-					side: visible.pairing ? row.side : null,
-					speakerorder: row.speakerorder,
+					side: sided ? row.side : null,
+					speakerorder: sided ? row.speakerorder : null,
 					Panel: {
 						id: row.panel,
 						letter: row.panelLetter,
 						flight: row.panelFlight === null ? null : Number(row.panelFlight),
 						bye: row.panelBye,
-						flip_at: iso(panel?.flip_at),
-						flip_status: panel?.flip_status ?? null,
+						flip_at: flip ? iso(panel?.flip_at) : null,
+						flip_status: flip ? panel?.flip_status ?? null : null,
 					},
 					Room: visible.pairing && row.roomName !== null ? { name: row.roomName, url: row.roomUrl } : null,
 					Opponents: visible.pairing
@@ -131,7 +133,7 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 						: [],
 					Scores: results
 						? (scoresByPanel.get(row.panel) ?? [])
-							.filter((score) => score.entry === entry.id && scoreVisible(score.tag, visible))
+							.filter((score) => score.entry === entry.id && scoreVisible(score.tag, visible, row.eventType))
 							.map((score) => ({ judge: score.judge, tag: score.tag, value: score.value, student: score.student || null }))
 						: [],
 					strikesDue: isOn(round?.strikes_published) ? iso(round?.strikes_due) : null,

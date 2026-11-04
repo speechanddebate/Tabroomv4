@@ -3,6 +3,9 @@
 
 import type { HomeAlerts, HomeJudge, HomeRole } from '@tabroom/types';
 import logger from '../../helpers/logger.js';
+import { isOn } from '../ballots/ballotRules.js';
+
+type Settings = Record<string, string> | null | undefined;
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -157,13 +160,41 @@ export function roundVisibility(round: RoundLevels, tournEnded: boolean): RoundV
 	};
 }
 
-const PRIMARY_SCORES: readonly string[] = ['winloss', 'rank'];
-const SECONDARY_SCORES: readonly string[] = ['point', 'refute'];
+// Which tags each result level releases, by event type (classic's user/student/show_entry.mas)
+const SCORE_LEVELS: Record<string, { primary: readonly string[]; secondary: readonly string[] }> = {
+	speech: { primary: ['rank'], secondary: ['point'] },
+	congress: { primary: ['rank'], secondary: ['point'] },
+	wudc: { primary: ['rank', 'winloss', 'point'], secondary: [] },
+	debate: { primary: ['winloss'], secondary: ['point', 'rank', 'refute'] },
+};
 
-/** Whether a score tag is shown at the round's result levels */
-export function scoreVisible(tag: string | null, visibility: RoundVisibility): boolean {
+/** Whether a score tag is shown at the round's result levels. Event types without their own levels use debate's */
+export function scoreVisible(tag: string | null, visibility: RoundVisibility, eventType: string | null): boolean {
 	if (tag === null) return false;
-	return (visibility.primary && PRIMARY_SCORES.includes(tag)) || (visibility.secondary && SECONDARY_SCORES.includes(tag));
+	const levels = SCORE_LEVELS[eventType ?? ''] ?? SCORE_LEVELS.debate;
+	return (visibility.primary && levels.primary.includes(tag)) || (visibility.secondary && levels.secondary.includes(tag));
+}
+
+/**
+ * Whether a ballot's side and speaker order are shown, classic's rule: hidden while a flip is
+ * pending, on elims without sidelock_elims until the flip is done, and always on
+ * no_side_constraints events. A competitor sees their own audited ballot's side regardless
+ */
+export function sideVisible(round: { type: string | null }, flipStatus: string | null | undefined, event: Settings, audited = false): boolean {
+	if (audited) return true;
+	const pending = !!flipStatus && flipStatus !== 'done';
+	const elim = (round.type === 'elim' || round.type === 'final') && !isOn(event?.sidelock_elims) && flipStatus !== 'done';
+	return !pending && !elim && !isOn(event?.no_side_constraints);
+}
+
+/** Whether a panel's flip is open to its entries: released with flip_published, not a bye, and not done */
+export function flipOpen(round: Settings, panel: { bye: number; flip_status: string | null | undefined }): boolean {
+	return isOn(round?.flip_published) && panel.bye === 0 && !!panel.flip_status && panel.flip_status !== 'done';
+}
+
+/** Whether judges are shown by code only: the tourn's ncfl or the event's anonymous_public, unless no_anon_dashboard */
+export function judgeAnonymous(tourn: Settings, event: Settings): boolean {
+	return !isOn(event?.no_anon_dashboard) && (isOn(event?.anonymous_public) || isOn(tourn?.ncfl));
 }
 
 /**

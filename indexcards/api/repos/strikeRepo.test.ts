@@ -14,11 +14,13 @@ describe('strikeRepo', () => {
 			const base = { judge: Judge.id, tourn: Tourn.id };
 			const schoolConflict = await factories.strike.create({ ...base, type: 'school', school: School.id, conflict: 1, registrant: 1 });
 			const entryConflict = await factories.strike.create({ ...base, type: 'entry', entry: Entry.id, conflict: 1, registrant: 1 });
-			const departure = await factories.strike.create({ ...base, type: 'departure', start: new Date('2026-03-01T18:00:00Z'), conflict: 0, registrant: 0 });
-			const unavailable = await factories.strike.create({ ...base, type: 'time', start: new Date('2026-03-01T09:00:00Z'), end: new Date('2026-03-01T11:00:00Z'), conflict: 0, registrant: 0 });
-			// hidden: a school conflict tab entered (registrant 0), a school strike without the conflict flag, and another judge's conflict
+			const departure = await factories.strike.create({ ...base, type: 'departure', start: new Date('2026-03-01T18:00:00Z'), conflict: 1, registrant: 0 });
+			const unavailable = await factories.strike.create({ ...base, type: 'time', start: new Date('2026-03-01T09:00:00Z'), end: new Date('2026-03-01T11:00:00Z'), conflict: 1, registrant: 0 });
+			// hidden: a school conflict tab entered (registrant 0), a school strike without the conflict flag, a tab-entered
+			// unavailable time without it, and another judge's conflict
 			await factories.strike.create({ ...base, type: 'school', school: School.id, conflict: 1, registrant: 0 });
 			await factories.strike.create({ ...base, type: 'school', school: School.id, conflict: 0, registrant: 1 });
+			await factories.strike.create({ ...base, type: 'time', start: new Date('2026-03-02T09:00:00Z'), end: new Date('2026-03-02T11:00:00Z'), conflict: 0, registrant: 0 });
 			const { Judge: otherJudge } = await factories.person.createJudge({ Judge: { category: Category.id } });
 			await factories.strike.create({ judge: otherJudge.id, tourn: Tourn.id, type: 'school', school: School.id, conflict: 1, registrant: 1 });
 

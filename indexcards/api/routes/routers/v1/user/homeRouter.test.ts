@@ -271,10 +271,10 @@ describe('GET /user/home', () => {
 
 		// a paired round at the given publish levels, with scored ballots. Round names are unique per event
 		let roundName = 2;
-		async function pair(t: Awaited<ReturnType<typeof setup>>, levels: Levels, opts: { audit?: number; settings?: Settings } = {}) {
-			const round = await factories.round.create({ event: t.Event.id, timeslot: t.Timeslot.id, name: roundName++, label: 'Round 2', ...levels, settings: opts.settings });
+		async function pair(t: Awaited<ReturnType<typeof setup>>, levels: Levels, opts: { audit?: number; settings?: Settings; type?: string; panel?: Settings } = {}) {
+			const round = await factories.round.create({ event: t.Event.id, timeslot: t.Timeslot.id, name: roundName++, label: 'Round 2', type: opts.type ?? 'prelim', ...levels, settings: opts.settings });
 			const Room = await factories.room.create({ name: '204', url: 'https://maps.test/204' });
-			const panel = await factories.panel.create({ round: round.id, room: Room.id, letter: 'B', flight: 1, settings: { flip_status: 'done', flip_at: new Date('2026-03-01T10:00:00Z') } });
+			const panel = await factories.panel.create({ round: round.id, room: Room.id, letter: 'B', flight: 1, settings: opts.panel ?? { flip_status: 'done', flip_at: new Date('2026-03-01T10:00:00Z') } });
 			const myBallot = await factories.ballot.create({ panel: panel.id, judge: t.Judge.id, entry: t.mine.id, side: 1, audit: opts.audit ?? 1 });
 			await factories.ballot.create({ panel: panel.id, judge: t.Judge.id, entry: t.opponent.id, side: 2, audit: 1 });
 			await factories.score.create({ ballot: myBallot.id, tag: 'winloss', value: 1 });
@@ -318,7 +318,7 @@ describe('GET /user/home', () => {
 				start: t.Timeslot.start?.toISOString(),
 				side: 1,
 				speakerorder: 0,
-				Panel: { id: panel.id, letter: 'B', flight: 1, bye: 0, flip_at: '2026-03-01T10:00:00.000Z', flip_status: 'done' },
+				Panel: { id: panel.id, letter: 'B', flight: 1, bye: 0, flip_at: null, flip_status: null },
 				Room: { name: '204', url: 'https://maps.test/204' },
 				Opponents: [{ entry: t.opponent.id, code: 'CD' }],
 				Judges: [{ id: t.Judge.id, first: 'Jo', last: 'Judge', code: 'J1' }],
@@ -357,6 +357,23 @@ describe('GET /user/home', () => {
 			]);
 		});
 
+		it('hides the side while a flip is pending or an elim is unflipped, and sends flip details only once released', async () => {
+			const t = await setup();
+			const flipAt = new Date('2026-03-01T10:00:00Z');
+			const pendingReleased = await pair(t, { published: 1 }, { audit: 0, settings: { flip_published: 1 }, panel: { flip_status: 'winner', flip_at: flipAt } });
+			const pendingUnreleased = await pair(t, { published: 1 }, { audit: 0, panel: { flip_status: 'winner', flip_at: flipAt } });
+			const unflippedElim = await pair(t, { published: 1 }, { audit: 0, type: 'elim', panel: {} });
+			const auditedElim = await pair(t, { published: 1 }, { type: 'elim', panel: {} });
+
+			const rounds: { id: number; side: number | null; speakerorder: number | null; Panel: { flip_at: string | null; flip_status: string | null } }[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
+			const byRound = (round: { round: { id: number } }) => rounds.find((row) => row.id === round.round.id);
+
+			expect(byRound(pendingReleased)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: flipAt.toISOString(), flip_status: 'winner' } });
+			expect(byRound(pendingUnreleased)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: null, flip_status: null } });
+			expect(byRound(unflippedElim)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: null, flip_status: null } });
+			expect(byRound(auditedElim)).toMatchObject({ side: 1, speakerorder: 0 });
+		});
+
 		it('hides codes and judge names when the tourn and event say so', async () => {
 			const t = await setup({ tourn: { settings: { hide_codes: 1 } }, event: { anonymous_public: 1 } });
 			await pair(t, { published: 1, post_primary: 2 });
@@ -366,6 +383,18 @@ describe('GET /user/home', () => {
 			expect(entry.code).toBeNull();
 			expect(entry.Rounds[0].Opponents).toEqual([{ entry: t.opponent.id, code: null }]);
 			expect(entry.Rounds[0].Judges).toEqual([{ id: t.Judge.id, first: null, last: null, code: 'J1' }]);
+		});
+
+		it('hides judge names at an ncfl tourn unless the event shows them on dashboards', async () => {
+			const ncfl = await setup({ tourn: { settings: { ncfl: 1 } } });
+			await pair(ncfl, { published: 1 });
+			const optedOut = await setup({ tourn: { settings: { ncfl: 1 } }, event: { no_anon_dashboard: 1 } });
+			await pair(optedOut, { published: 1 });
+
+			const res = await home(userkey);
+
+			expect(entryOf(res, ncfl.Tourn.id).Rounds[0].Judges).toEqual([{ id: ncfl.Judge.id, first: null, last: null, code: 'J1' }]);
+			expect(entryOf(res, optedOut.Tourn.id).Rounds[0].Judges).toEqual([{ id: optedOut.Judge.id, first: 'Jo', last: 'Judge', code: 'J1' }]);
 		});
 
 		it('opens every round\'s pairing and judges once the tourn has ended but keeps results to their post levels, and no rounds before it starts', async () => {
@@ -381,7 +410,7 @@ describe('GET /user/home', () => {
 			const unposted = rounds.find((round) => round.post_primary === 0);
 			expect(unposted).toMatchObject({ published: 0, Room: { name: '204' }, Opponents: [{ code: 'CD' }], Judges: [{ code: 'J1' }], Scores: [] });
 			const posted = rounds.find((round) => round.post_primary === 2);
-			expect(posted?.Scores.map((score) => score.tag).sort()).toEqual(['rank', 'winloss']);
+			expect(posted?.Scores.map((score) => score.tag).sort()).toEqual(['winloss']);
 			expect(entryOf(res, upcoming.Tourn.id).Rounds).toEqual([]);
 		});
 	});

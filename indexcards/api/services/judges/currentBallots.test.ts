@@ -82,11 +82,11 @@ describe('buildCurrentBallots', () => {
 	});
 
 	// Classic's rule: published, or released to judges only (judges_ballots_visible, "Publish ballots but not schematic")
-	it('shows published rounds and unpublished rounds released to judges, with room notes only when released', () => {
+	it('shows published rounds and unpublished rounds released to judges, with room notes only when the round includes them', () => {
 		const rows = [row({ panel: 1, round: 1, roundPublished: 1 }), row({ panel: 2, round: 2, roundPublished: 0 }), row({ panel: 3, round: 3, roundPublished: 0 })];
-		const ballots = buildCurrentBallots(rows, context({ rounds: new Map([[2, { judges_ballots_visible: '1' }]]) }));
+		const ballots = buildCurrentBallots(rows, context({ rounds: new Map<number, Record<string, string>>([[1, { include_room_notes: '1' }], [2, { judges_ballots_visible: '1' }]]) }));
 
-		expect(ballots.map((ballot) => [ballot.id, ballot.roomNotes])).toEqual([[1, null], [2, 'back of the gym']]);
+		expect(ballots.map((ballot) => [ballot.id, ballot.roomNotes])).toEqual([[1, 'back of the gym'], [2, null]]);
 	});
 
 	it('starts each flight later by the flight offset when the round is flighted', () => {
@@ -96,15 +96,22 @@ describe('buildCurrentBallots', () => {
 		expect(ballots[1]).toMatchObject({ flight: null, start: start.toISOString() });
 	});
 
-	it('labels sides unless a flip is still open', () => {
-		const sides = (flipStatus: string | null) => buildCurrentBallots(
-			[row({ side: 1 }), row({ id: 2, entry: 701, side: 2 })],
-			context({ panels: new Map<number, Record<string, string>>([[100, flipStatus ? { flip_status: flipStatus } : {}]]) }),
-		)[0].Entries.map((entry) => entry.side);
+	it('labels sides unless a flip is still open, on elims until the flip is done, and never without side constraints', () => {
+		const sides = (flipStatus: string | null, overrides: Partial<JudgePanelRow> = {}, event: Record<string, string> = {}) => buildCurrentBallots(
+			[row({ side: 1, speakerorder: 1, ...overrides }), row({ id: 2, entry: 701, side: 2, speakerorder: 2, ...overrides })],
+			context({
+				events: new Map([[400, { online_mode: 'sync', aff_label: 'Pro', ...event }]]),
+				panels: new Map<number, Record<string, string>>([[100, flipStatus ? { flip_status: flipStatus } : {}]]),
+			}),
+		)[0].Entries.map((entry) => [entry.side, entry.speakerOrder]);
 
-		expect(sides(null)).toEqual(['Pro', 'Neg']);
-		expect(sides('done')).toEqual(['Pro', 'Neg']);
-		expect(sides('winner')).toEqual([null, null]);
+		expect(sides(null)).toEqual([['Pro', 1], ['Neg', 2]]);
+		expect(sides('done')).toEqual([['Pro', 1], ['Neg', 2]]);
+		expect(sides('winner')).toEqual([[null, null], [null, null]]);
+		expect(sides(null, { roundType: 'elim' })).toEqual([[null, null], [null, null]]);
+		expect(sides('done', { roundType: 'elim' })).toEqual([['Pro', 1], ['Neg', 2]]);
+		expect(sides(null, { roundType: 'elim' }, { sidelock_elims: '1' })).toEqual([['Pro', 1], ['Neg', 2]]);
+		expect(sides('done', {}, { no_side_constraints: '1' })).toEqual([[null, null], [null, null]]);
 	});
 
 	it('drops an audited panel until the slot ends, except for chairs and for mock trial and congress', () => {
