@@ -126,12 +126,64 @@ describe('panelRepo', () => {
 			await factories.ballot.create({ panel: panel.id, judge: chair.id, chair: 1, side: 2 });
 			await factories.ballot.create({ panel: panel.id, judge: other.id });
 
-			const judges = await panelRepo.getPanelJudges(db, panel.id);
+			const judges = await panelRepo.getPanelJudges(db, [panel.id]);
 
 			expect(judges).toHaveLength(2);
 			expect(judges).toEqual(expect.arrayContaining([
 				expect.objectContaining({ id: chair.id, first: 'Cleo', last: 'Chair', pronoun: 'she/her', chair: 1 }),
 				expect.objectContaining({ id: other.id, first: 'Otto', last: 'Other', pronoun: null, chair: 0 }),
+			]));
+		});
+
+		it('returns a row per panel for a judge on several, with that panel\'s chair', async () => {
+			const [first, second] = await Promise.all([factories.panel.create(), factories.panel.create()]);
+			const judge = await factories.judge.create();
+			const other = await factories.judge.create();
+			await factories.ballot.create({ panel: first.id, judge: judge.id, chair: 1 });
+			await factories.ballot.create({ panel: second.id, judge: judge.id, chair: 0 });
+			await factories.ballot.create({ panel: second.id, judge: other.id });
+
+			const judges = await panelRepo.getPanelJudges(db, [first.id, second.id]);
+
+			expect(judges.map(({ panel, id, chair }) => ({ panel, id, chair }))).toEqual(expect.arrayContaining([
+				{ panel: first.id, id: judge.id, chair: 1 },
+				{ panel: second.id, id: judge.id, chair: 0 },
+				{ panel: second.id, id: other.id, chair: 0 },
+			]));
+			expect(judges).toHaveLength(3);
+		});
+	});
+	describe('getPanelEntryStudents', () => {
+		it('returns each entry student on the panels with their panel, and a null student row for an entry without students', async () => {
+			const [first, second] = await Promise.all([factories.panel.create(), factories.panel.create()]);
+			const student = await factories.student.create({ first: 'Sam', last: 'Student' });
+			const withStudent = await factories.entry.create({ code: 'AB', students: [student.id] });
+			const withoutStudents = await factories.entry.create({ code: 'CD' });
+			await factories.ballot.create({ panel: first.id, entry: withStudent.id });
+			await factories.ballot.create({ panel: second.id, entry: withoutStudents.id });
+
+			const rows = await panelRepo.getPanelEntryStudents(db, [first.id, second.id]);
+
+			expect(rows).toHaveLength(2);
+			expect(rows).toEqual(expect.arrayContaining([
+				expect.objectContaining({ panel: first.id, entryId: withStudent.id, entryCode: 'AB', studentId: student.id, first: 'Sam', last: 'Student' }),
+				expect.objectContaining({ panel: second.id, entryId: withoutStudents.id, entryCode: 'CD', studentId: null }),
+			]));
+		});
+	});
+	describe('getSectionRoomContext', () => {
+		it('returns a row per section with its own room, event and tourn', async () => {
+			const { Tourn, Event, Round } = await factories.tourn.createFull({ Event: { abbr: 'PF' } });
+			const [roomA, roomB] = await Promise.all([factories.room.create({ name: 'Room A' }), factories.room.create({ name: 'Room B' })]);
+			const first = await factories.panel.create({ round: Round.id, room: roomA.id, letter: 'A' });
+			const second = await factories.panel.create({ round: Round.id, room: roomB.id, letter: 'B' });
+
+			const rows = await panelRepo.getSectionRoomContext(db, [first.id, second.id]);
+
+			expect(rows).toHaveLength(2);
+			expect(rows).toEqual(expect.arrayContaining([
+				expect.objectContaining({ panelId: first.id, panelLetter: 'A', roomName: 'Room A', eventId: Event.id, eventAbbr: 'PF', tournId: Tourn.id, matchPanelId: null }),
+				expect.objectContaining({ panelId: second.id, panelLetter: 'B', roomName: 'Room B', eventId: Event.id, eventAbbr: 'PF', tournId: Tourn.id, matchPanelId: null }),
 			]));
 		});
 	});
@@ -272,33 +324,6 @@ describe('panelRepo', () => {
 			expect(posted.Room).toBeNull();
 		});
 	});
-	describe('getCurrentBallots', async () => {
-		it('returns a current ballot when one exists', async () => {
-			const data = await factories.person.createBallot();
-
-			const result = await panelRepo.getCurrentBallots(db,data.Person.id,data.Tourn.id);
-
-			expect(result).toBeInstanceOf(Array);
-			const ballot = result[0];
-			expect(ballot).toBeDefined();
-			expect(ballot.Judge.id).toBe(data.Judge.id);
-		});
-
-		it('includes the event online_ballots setting', async () => {
-			const data = await factories.person.createBallot();
-
-			const [before] = await panelRepo.getCurrentBallots(db, data.Person.id, data.Tourn.id);
-			expect(before.Judge.Category.Event.settings.online_ballots).toBe(false);
-
-			await db.insertInto('event_setting')
-				.values({ event: before.Judge.Category.Event.id, tag: 'online_ballots', value: '1' })
-				.execute();
-
-			const [after] = await panelRepo.getCurrentBallots(db, data.Person.id, data.Tourn.id);
-			expect(after.Judge.Category.Event.settings.online_ballots).toBe(true);
-		});
-	});
-
 	describe('getPanels with ids', () => {
 		it('returns the panels with the given ids and the settings asked for', async () => {
 			const { Round } = await factories.tourn.createFull();

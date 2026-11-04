@@ -176,6 +176,24 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(res.body[0].Room).toEqual({ name: null, joinable: true, hybrid: false, mapUrl: null });
 	});
+	it('Returns the room of each ballot\'s own section', async () => {
+		const tourn = await factories.tourn.createFull();
+		const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
+		const rooms = new Map<number, string>();
+		for (const name of ['204', '205']) {
+			const panel = await factories.panel.create({ round: tourn.Round.id, room: (await factories.room.create({ name })).id });
+			await factories.ballot.create({ panel: panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+			rooms.set(panel.id, name);
+		}
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${tourn.Tourn.id}/ballots/current`)
+			.asPerson(userkey)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(new Map(res.body.map((ballot: { id: number; Room: { name: string } }) => [ballot.id, ballot.Room.name]))).toEqual(rooms);
+	});
 	// Classic's rule: published, or released to judges only (judges_ballots_visible, "Publish ballots but not schematic")
 	it.each([
 		['an unpublished round', 0, 0, 0],

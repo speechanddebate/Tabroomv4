@@ -10,6 +10,7 @@ type queryOpts = {
 	tourn?: number;
 	tourns?: number[];
 	chapter?: number;
+	chapters?: number[];
 	person?: number;
 };
 
@@ -24,6 +25,9 @@ function buildPermissionQuery(db: Database, opts: queryOpts = {}) {
 	}
 	if (opts.chapter !== undefined) {
 		query = query.where('permission.chapter', '=', opts.chapter);
+	}
+	if (opts.chapters) {
+		query = query.where('permission.chapter', 'in', opts.chapters);
 	}
 	if (opts.person !== undefined) {
 		query = query.where('permission.person', '=', opts.person);

@@ -1940,10 +1940,6 @@ export const getUserHomeResponseHomeFullSchoolMock = (
 				min: -9007199254740991,
 				max: 9007199254740991,
 			}),
-			judgesRequired: faker.number.int({
-				min: -9007199254740991,
-				max: 9007199254740991,
-			}),
 		},
 		Signups: Array.from(
 			{ length: faker.number.int({ min: 1, max: 10 }) },
@@ -2020,7 +2016,10 @@ export const getUserHomeResponseHomeFullSchoolMock = (
 				faker.string.alpha({ length: { min: 10, max: 20 } }),
 				null,
 			]),
-			school: faker.number.int({ min: 0, max: 9007199254740991 }),
+			school: faker.helpers.arrayElement([
+				faker.number.int({ min: 0, max: 9007199254740991 }),
+				null,
+			]),
 			schoolName: faker.helpers.arrayElement([
 				faker.string.alpha({ length: { min: 10, max: 20 } }),
 				null,
@@ -2484,7 +2483,10 @@ export const getUserHomeResponseMock = (
 					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
 				]),
-				school: faker.number.int({ min: 0, max: 9007199254740991 }),
+				school: faker.helpers.arrayElement([
+					faker.number.int({ min: 0, max: 9007199254740991 }),
+					null,
+				]),
 				schoolName: faker.helpers.arrayElement([
 					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
@@ -2920,7 +2922,10 @@ export const getUserTournsFinesResponseMock = (): Fine[] =>
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
-		school: faker.number.int({ min: 0, max: 9007199254740991 }),
+		school: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
 		schoolName: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,

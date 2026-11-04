@@ -210,7 +210,7 @@ export const ConfigSchema = z.object({
 		 * log: logged and dropped, nothing is handed to a relay. The default, so a machine with no mail config sends nothing.
 		 * redirect: every recipient is replaced by redirectTo, for reading real mail in your own inbox.
 		 * live: handed to the relay as addressed. Outside production only with allowLiveOutsideProduction,
-		 * for a relay that delivers nothing, such as the Mailpit container.
+		 * for a relay that delivers nothing.
 		 */
 		mode: z.enum(['log', 'redirect', 'live']).default('log'),
 		/** Where every message goes in redirect mode */

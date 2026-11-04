@@ -156,6 +156,12 @@ export async function getJudgePanels(db: Database, opts: queryOpts & { judges: n
 			'entry.code as entryCode',
 			'entry.active as entryActive',
 		])
+		.select((eb) => eb.exists(
+			eb.selectFrom('score')
+				.select('score.id')
+				.whereRef('score.ballot', '=', 'ballot.id')
+				.where('score.tag', 'in', ['winloss', 'rank', 'point', 'refute'])
+		).as('scored'))
 		.execute();
 }
 

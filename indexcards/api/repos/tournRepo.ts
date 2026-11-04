@@ -62,7 +62,7 @@ function buildTournQuery(db: Database, opts: queryOpts = {}) {
 /**
  * Fetch a single tournament by ID or webname.	
  */
-async function getTourn(db: Database, id: number| string,opts = {}) {
+async function getTourn(db: Database, id: number| string, opts: queryOpts = {}) {
 	let query = buildTournQuery(db, opts);
 
 	// ---- ID vs webname ----

@@ -12,6 +12,7 @@ import panelRepo from '../../repos/panelRepo.js';
 import permissionRepo from '../../repos/permissionRepo.js';
 import schoolRepo from '../../repos/schoolRepo.js';
 import tournRepo from '../../repos/tournRepo.js';
+import { groupBy } from '../../helpers/objectify.js';
 import { isOn } from '../ballots/ballotRules.js';
 import { campusServer, campusUuid, signCampusToken } from './campus.js';
 
@@ -60,6 +61,11 @@ export type ResolvedRoom = {
 type SectionRoomOpts = {
 	/** an entry in the section the person is observing as its coach */
 	observer?: number;
+};
+
+type SectionRoomsOpts = {
+	/** by section, an entry in it the person is observing as its coach */
+	observers?: Map<number, number>;
 };
 
 const CAMPUS_MODES = ['nsda_campus', 'nsda_campus_observers'];
@@ -112,49 +118,94 @@ function displayName(role: Role, eventSettings: Record<string, string> | null, p
 	return prefix + name;
 }
 
+type SectionRoomContext = Awaited<ReturnType<typeof panelRepo.getSectionRoomContext>>[number];
+
+type SectionPart = {
+	room: SectionRoomContext;
+	roles: PanelRoles;
+	/** the entry the person observes as its coach */
+	observed: PanelEntryStudent | undefined;
+	/** tab staff (checker or higher) get in and get the host link */
+	isStaff: boolean;
+	mode: string | null;
+};
+
 /**
- * A section's room for a person: what to show, what joining opens, and the log a join writes.
- * null when the section isn't in the tourn or the person has no part in it
+ * Sections' rooms for a person, by section: what to show, what joining opens, and the log a join writes.
+ * Leaves out the sections that aren't in the tourn or that the person has no part in
  */
-export async function getSectionRoom(db: Database, tournId: number, sectionId: number, actor: Actor, opts: SectionRoomOpts = {}): Promise<ResolvedRoom | null> {
+export async function getSectionRooms(db: Database, tournId: number, sectionIds: number[], actor: Actor, opts: SectionRoomsOpts = {}): Promise<Map<number, ResolvedRoom>> {
+	const resolved = new Map<number, ResolvedRoom>();
 	const person = actor.Person;
-	if (!person) return null;
+	if (!person || !sectionIds.length) return resolved;
 
-	const room = await panelRepo.getSectionRoomContext(db, sectionId);
-	if (!room || room.tournId !== tournId) return null;
+	const contexts = new Map<number, SectionRoomContext>();
+	for (const room of await panelRepo.getSectionRoomContext(db, sectionIds)) {
+		// the online_event_match joins can give a section more than one row. The first one wins
+		if (room.tournId === tournId && !contexts.has(room.panelId)) contexts.set(room.panelId, room);
+	}
+	if (!contexts.size) return resolved;
 
-	// tab staff (checker or higher) get in and get the host link
-	const isStaff = await actor.can('panel', 'check', sectionId);
-
-	const { eventSettings, roundSettings, panelSettings, tournSettings } = room;
-
-	const [judges, entryStudents] = await Promise.all([
-		panelRepo.getPanelJudges(db, sectionId),
-		panelRepo.getPanelEntryStudents(db, sectionId),
+	const panelIds = [...contexts.keys()];
+	const [staff, judges, entryStudents] = await Promise.all([
+		Promise.all(panelIds.map(id => actor.can('panel', 'check', id))),
+		panelRepo.getPanelJudges(db, panelIds),
+		panelRepo.getPanelEntryStudents(db, panelIds),
 	]);
-	const roles: PanelRoles = {
-		judge: judges.find(judge => judge.person === person.id),
-		entry: entryStudents.find(student => student.person === person.id),
-	};
-	const mode = isOn(roundSettings?.use_normal_rooms) ? 'sync' : eventSettings?.online_mode ?? null;
+	const judgesByPanel = groupBy(judges, judge => judge.panel);
+	const studentsByPanel = groupBy(entryStudents, student => student.panel);
 
-	let observed = null;
-	if (!roles.judge && !roles.entry && opts.observer && mode === 'nsda_campus_observers') {
-		// a coach of the entry's school can observe it
-		const entry = entryStudents.find(student => student.entryId === opts.observer);
-		if (entry?.chapter) {
-			const perms = await permissionRepo.getPermissions(db, { person: person.id, chapter: entry.chapter });
-			if (perms.some(perm => perm.tag === 'chapter')) observed = entry;
-		}
+	const sections = [...contexts.values()].map((room, i) => {
+		const students = studentsByPanel.get(room.panelId) ?? [];
+		const roles: PanelRoles = {
+			judge: judgesByPanel.get(room.panelId)?.find(judge => judge.person === person.id),
+			entry: students.find(student => student.person === person.id),
+		};
+		const mode = isOn(room.roundSettings?.use_normal_rooms) ? 'sync' : room.eventSettings?.online_mode ?? null;
+		const observer = opts.observers?.get(room.panelId);
+		const observing = !roles.judge && !roles.entry && observer && mode === 'nsda_campus_observers'
+			? students.find(student => student.entryId === observer)
+			: undefined;
+		return { room, roles, mode, observing, isStaff: staff[i] };
+	});
+
+	// a coach of the entry's school can observe it
+	const chapters = [...new Set(sections.flatMap(section => section.observing?.chapter ?? []))];
+	const coached = new Set(chapters.length
+		? (await permissionRepo.getPermissions(db, { person: person.id, chapters }))
+			.filter(perm => perm.tag === 'chapter')
+			.map(perm => perm.chapter)
+		: []);
+
+	const parts = sections.flatMap(({ observing, ...section }) => {
+		const observed = observing?.chapter && coached.has(observing.chapter) ? observing : undefined;
+		const role: Role | 'staff' | null = section.roles.judge ? 'judge'
+			: section.roles.entry ? 'competitor'
+			: observed ? 'observer'
+			: section.isStaff ? 'staff'
+			: null;
+		return role ? [{ ...section, observed, role }] : [];
+	});
+
+	const adminLabel = parts.some(part => part.role === 'staff') && await isAdminLabel(db, tournId, person);
+
+	for (const { role, ...part } of parts) {
+		resolved.set(part.room.panelId, sectionRoom(person, role !== 'staff' ? role : adminLabel ? 'admin' : 'tab', part));
 	}
 
-	const role: Role | null = roles.judge ? 'judge'
-		: roles.entry ? 'competitor'
-		: observed ? 'observer'
-		: !isStaff ? null
-		: await isAdminLabel(db, tournId, person) ? 'admin'
-		: 'tab';
-	if (!role) return null;
+	return resolved;
+}
+
+/** A section's room for a person. null when the section isn't in the tourn or the person has no part in it */
+export async function getSectionRoom(db: Database, tournId: number, sectionId: number, actor: Actor, opts: SectionRoomOpts = {}): Promise<ResolvedRoom | null> {
+	return (await getSectionRooms(db, tournId, [sectionId], actor, {
+		observers: opts.observer ? new Map([[sectionId, opts.observer]]) : undefined,
+	})).get(sectionId) ?? null;
+}
+
+/** The section's room for a person taking part in it as role */
+function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed, isStaff, mode }: SectionPart): ResolvedRoom {
+	const { eventSettings, roundSettings, panelSettings, tournSettings } = room;
 
 	// Events that share rooms (online_event_match) meet in the other event's section
 	const panelId = room.matchPanelId ?? room.panelId;
@@ -296,45 +347,56 @@ function campusLaunch(claims: CampusPayload): RoomLaunch {
 }
 
 /**
- * A school's squad room, for its coaches, its students and tab staff. null when the school isn't in the tourn,
- * opted out (no_squad_room), the tourn has no Campus events, or the person has no part in it
+ * Schools' squad rooms, by school, for their coaches, their students and tab staff. Leaves out the schools that
+ * aren't in the tourn, opted out (no_squad_room), or the person has no part in, and all of them when the tourn
+ * has no Campus events
  */
-export async function getSchoolRoom(db: Database, tournId: number, schoolId: number, actor: Actor): Promise<ResolvedRoom | null> {
+export async function getSchoolRooms(db: Database, tournId: number, schoolIds: number[], actor: Actor): Promise<Map<number, ResolvedRoom>> {
+	const resolved = new Map<number, ResolvedRoom>();
 	const person = actor.Person;
-	if (!person) return null;
+	if (!person || !schoolIds.length) return resolved;
 
-	const school = await schoolRepo.getSchool(db, schoolId, { settings: ['no_squad_room'] });
-	if (school?.tourn !== tournId || isOn(school.settings?.no_squad_room)) return null;
+	const schools = (await schoolRepo.getSchools(db, { ids: schoolIds, settings: ['no_squad_room'] }))
+		.filter(school => school.tourn === tournId && !isOn(school.settings?.no_squad_room));
+	if (!schools.length) return resolved;
 
 	const tourn = await tournRepo.getTourn(db, tournId, { settings: true, unpublished: true });
-	if (!tourn) return null;
+	if (!tourn) return resolved;
 	// tab staff (checker or higher) and site admins see every school's room
 	const seesAll = await actor.can('tourn', 'check', tourn.id);
 
 	const events = await eventRepo.getEvents(db, { tourn: tourn.id, settings: ['online_mode'] });
-	if (!events.some(event => CAMPUS_MODES.includes(String(event.settings?.online_mode)))) return null;
+	if (!events.some(event => CAMPUS_MODES.includes(String(event.settings?.online_mode)))) return resolved;
 
-	if (!seesAll) {
-		const { entries, coachedSchools } = await tournMembership(db, tourn.id, person.id);
-		if (!coachedSchools.has(school.id) && !entries.some(entry => entry.school === school.id)) return null;
+	const membership = seesAll ? null : await tournMembership(db, tourn.id, person.id);
+
+	for (const school of schools) {
+		if (membership && !membership.coachedSchools.has(school.id) && !membership.entries.some(entry => entry.school === school.id)) continue;
+
+		const name = `${school.name} Squad Room`;
+
+		resolved.set(school.id, {
+			display: { name, joinable: true, hybrid: false, mapUrl: null },
+			launch: campusLaunch({
+				person_id: person.id,
+				uuid: campusUuid('school', school.id),
+				tourn_id: tourn.id,
+				roomName: name,
+				displayName: personName(person),
+				panel_id: school.id,
+				panel_type: 'school',
+				server: campusServer(tourn.settings?.campus_zone, tourn.tz),
+			}),
+			log: { tag: 'school', tourn: tourn.id, school: school.id, description: `Entered ${name} from Tabroom` },
+		});
 	}
 
-	const name = `${school.name} Squad Room`;
+	return resolved;
+}
 
-	return {
-		display: { name, joinable: true, hybrid: false, mapUrl: null },
-		launch: campusLaunch({
-			person_id: person.id,
-			uuid: campusUuid('school', school.id),
-			tourn_id: tourn.id,
-			roomName: name,
-			displayName: personName(person),
-			panel_id: school.id,
-			panel_type: 'school',
-			server: campusServer(tourn.settings?.campus_zone, tourn.tz),
-		}),
-		log: { tag: 'school', tourn: tourn.id, school: school.id, description: `Entered ${name} from Tabroom` },
-	};
+/** A school's squad room. null when the school isn't in the tourn, opted out, or the person has no part in it */
+export async function getSchoolRoom(db: Database, tournId: number, schoolId: number, actor: Actor): Promise<ResolvedRoom | null> {
+	return (await getSchoolRooms(db, tournId, [schoolId], actor)).get(schoolId) ?? null;
 }
 
 export async function joinSchoolRoom(db: Database, tournId: number, schoolId: number, actor: Actor): Promise<JoinRoomResult> {
@@ -342,46 +404,63 @@ export async function joinSchoolRoom(db: Database, tournId: number, schoolId: nu
 }
 
 /**
- * An entry's prep room, for its students, their coaches and tab staff. null when the entry isn't in the tourn,
- * its event doesn't use prep rooms (online_prep), or the person has no part in it
+ * Entries' prep rooms, by entry, for their students, their coaches and tab staff. Leaves out the entries that
+ * aren't in the tourn, whose event doesn't use prep rooms (online_prep), or the person has no part in
  */
-export async function getEntryPrepRoom(db: Database, tournId: number, entryId: number, actor: Actor): Promise<ResolvedRoom | null> {
+export async function getEntryPrepRooms(db: Database, tournId: number, entryIds: number[], actor: Actor): Promise<Map<number, ResolvedRoom>> {
+	const resolved = new Map<number, ResolvedRoom>();
 	const person = actor.Person;
-	if (!person) return null;
+	if (!person || !entryIds.length) return resolved;
 
-	const entry = await entryRepo.getEntry(db, entryId);
-	if (!entry?.event) return null;
-
-	const event = await eventRepo.getEvent(db, entry.event, { settings: ['online_prep'] });
-	if (event?.tourn !== tournId || !isOn(event.settings?.online_prep)) return null;
+	const entries = await entryRepo.getEntries(db, { ids: entryIds });
+	const events = new Map((await eventRepo.getEvents(db, { ids: [...new Set(entries.flatMap(entry => entry.event ?? []))], settings: ['online_prep'] }))
+		.filter(event => event.tourn === tournId && isOn(event.settings?.online_prep))
+		.map(event => [event.id, event]));
+	const prepEntries = entries.flatMap(entry => {
+		const event = entry.event ? events.get(entry.event) : undefined;
+		return event ? [{ entry, event }] : [];
+	});
+	if (!prepEntries.length) return resolved;
 
 	const tourn = await tournRepo.getTourn(db, tournId, { settings: true, unpublished: true });
-	if (!tourn) return null;
+	if (!tourn) return resolved;
 	// tab staff (checker or higher) and site admins see every entry's room
 	const seesAll = await actor.can('tourn', 'check', tourn.id);
 
-	if (!seesAll) {
-		const { entries, coachedSchools } = await tournMembership(db, tourn.id, person.id);
-		if (!entries.some(mine => mine.id === entry.id) && !(entry.school && coachedSchools.has(entry.school))) return null;
+	const membership = seesAll ? null : await tournMembership(db, tourn.id, person.id);
+
+	for (const { entry, event } of prepEntries) {
+		if (
+			membership
+			&& !membership.entries.some(mine => mine.id === entry.id)
+			&& !(entry.school && membership.coachedSchools.has(entry.school))
+		) continue;
+
+		const name = `${entry.code ?? ''} Prep Room`.trim();
+
+		resolved.set(entry.id, {
+			display: { name, joinable: true, hybrid: false, mapUrl: null },
+			launch: campusLaunch({
+				person_id: person.id,
+				uuid: campusUuid('entry', entry.id),
+				tourn_id: tourn.id,
+				event_id: event.id,
+				roomName: name,
+				displayName: personName(person),
+				panel_id: entry.id,
+				panel_type: 'entry',
+				server: campusServer(tourn.settings?.campus_zone, tourn.tz),
+			}),
+			log: { tag: 'prep', tourn: tourn.id, entry: entry.id, description: `Entered ${name} from Tabroom` },
+		});
 	}
 
-	const name = `${entry.code ?? ''} Prep Room`.trim();
+	return resolved;
+}
 
-	return {
-		display: { name, joinable: true, hybrid: false, mapUrl: null },
-		launch: campusLaunch({
-			person_id: person.id,
-			uuid: campusUuid('entry', entry.id),
-			tourn_id: tourn.id,
-			event_id: event.id,
-			roomName: name,
-			displayName: personName(person),
-			panel_id: entry.id,
-			panel_type: 'entry',
-			server: campusServer(tourn.settings?.campus_zone, tourn.tz),
-		}),
-		log: { tag: 'prep', tourn: tourn.id, entry: entry.id, description: `Entered ${name} from Tabroom` },
-	};
+/** An entry's prep room. null when the entry isn't in the tourn, its event has no prep rooms, or the person has no part in it */
+export async function getEntryPrepRoom(db: Database, tournId: number, entryId: number, actor: Actor): Promise<ResolvedRoom | null> {
+	return (await getEntryPrepRooms(db, tournId, [entryId], actor)).get(entryId) ?? null;
 }
 
 export async function joinEntryPrepRoom(db: Database, tournId: number, entryId: number, actor: Actor): Promise<JoinRoomResult> {

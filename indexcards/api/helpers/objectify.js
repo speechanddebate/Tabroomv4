@@ -30,6 +30,24 @@ export const multiObjectify = (array) => {
 	return dest;
 };
 
+/**
+ * Groups rows into a Map by key, keeping their order
+ * @template T, K
+ * @param {T[]} rows
+ * @param {(row: T) => K} key
+ * @returns {Map<K, T[]>}
+ */
+export const groupBy = (rows, key) => {
+	const groups = new Map();
+	for (const row of rows) {
+		const k = key(row);
+		const group = groups.get(k);
+		if (group) group.push(row);
+		else groups.set(k, [row]);
+	}
+	return groups;
+};
+
 export const arrayify = (destroyMe, key) => {
 	const dest = [];
 	destroyMe.forEach( (individual) => {

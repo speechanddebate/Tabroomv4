@@ -21,7 +21,7 @@ function buildEventQuery(db:Database, opts: queryOpts = {}) {
 	})));
 	if (opts.tourn) query = query.where('event.tourn', '=', opts.tourn);
 	if (opts.tourns) query = query.where('event.tourn', 'in', opts.tourns);
-	if (opts.ids && opts.ids.length > 0) query = query.where('event.id', 'in', opts.ids);
+	if (opts.ids) query = query.where('event.id', 'in', opts.ids);
 	return query;
 }
 

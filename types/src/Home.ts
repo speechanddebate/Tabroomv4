@@ -228,7 +228,6 @@ export const HomeFullSchoolSchema = z.object({
 		entries: z.int(),
 		events: z.int(),
 		judges: z.int(),
-		judgesRequired: z.int(),
 	}).strict(),
 	Signups: z.array(z.object({
 		entry: utils.id,

@@ -42,7 +42,7 @@ export async function loadBallotInputs(db: Database, judgeId: number, panelId: n
 		entryRepo.getEntries(db, { ids: entryIds, settings: ['ballot_notes', 'positions', 'title'] }),
 		entryRepo.getEntryStudents(db, entryIds),
 		panelRepo.getDoubledEntries(db, panelId),
-		panelRepo.getPanelJudges(db, panelId),
+		panelRepo.getPanelJudges(db, [panelId]),
 	]);
 
 	// For the school code and name on the comments' entry labels

@@ -7,7 +7,7 @@ export const FineSchema = z.object({
 	reason: z.string().max(255).nullable(),
 	amount: z.number().nullable(),
 	currency: z.string().nullable().meta({ description: 'The currency symbol for the tournament, if it is set' }),
-	school: utils.id,
+	school: utils.id.nullable(),
 	schoolName: z.string().nullable(),
 	judge: utils.id.nullable().meta({ description: 'The judge the fine was assessed against, if any' }),
 	Judge: z.object({

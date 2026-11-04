@@ -828,7 +828,7 @@ describe('entryLabel', () => {
 });
 
 describe('otherJudges', () => {
-	const panelJudge = (id: number, last: string, chair: number, pronoun: string | null = null) => ({ id, code: null, first: 'J', middle: null, last, person: null, pronoun, chair });
+	const panelJudge = (id: number, last: string, chair: number, pronoun: string | null = null) => ({ panel: 1, id, code: null, first: 'J', middle: null, last, person: null, pronoun, chair });
 	const panelJudges = [panelJudge(1, 'Me', 0), panelJudge(2, 'Zed', 0), panelJudge(3, 'Able', 0, 'he/him'), panelJudge(4, 'Moss', 1)];
 	const panelRound = round({ settings: { num_judges: '3' } });
 

@@ -21,11 +21,7 @@ export interface Fine {
 	 * @nullable
 	 */
 	currency: string | null;
-	/**
-	 * @maximum 9007199254740991
-	 * @exclusiveMinimum 0
-	 */
-	school: number;
+	school: number | null;
 	/** @nullable */
 	schoolName: string | null;
 	/** The judge the fine was assessed against, if any */

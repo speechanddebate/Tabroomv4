@@ -1,4 +1,5 @@
-import { compareTourns, groupBy, homeWindow, isOnline, isRunning, paradigmReview, rolesFor, sqlDatetime } from './homeRules.js';
+import logger from '../../helpers/logger.js';
+import { compareTourns, homeWindow, isOnline, isRunning, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow } from './homeRules.js';
 
 const now = new Date('2026-03-07T12:00:00Z');
 
@@ -11,11 +12,19 @@ describe('homeWindow', () => {
 	});
 });
 
+describe('strikeWindow', () => {
+	it('needs both ends of the window', () => {
+		expect(strikeWindow({ strike_start: '2026-03-01 08:00:00', strike_end: '2026-03-02 08:00:00' })).toEqual({ start: new Date('2026-03-01T08:00:00Z'), end: new Date('2026-03-02T08:00:00Z') });
+		expect(strikeWindow({ strike_start: '2026-03-01 08:00:00' })).toBeNull();
+		expect(strikeWindow(null)).toBeNull();
+	});
+});
+
 describe('rolesFor', () => {
 	const scope = {
 		judges: [{ tourn: 1 }],
 		entries: [{ tourn: 1 }, { tourn: 2 }],
-		schools: [{ tourn: 2, tag: 'chapter' }, { tourn: 3, tag: 'prefs' }],
+		schools: [{ tourn: 2 }, { tourn: 3 }],
 		permissions: [{ tourn: 1 }],
 	};
 	it('lists the roles the person holds at the tourn in display order', () => {
@@ -65,10 +74,60 @@ describe('sqlDatetime', () => {
 	});
 });
 
-describe('groupBy', () => {
-	it('groups rows by a key, keeping their order', () => {
-		const groups = groupBy([{ t: 1, n: 'a' }, { t: 2, n: 'b' }, { t: 1, n: 'c' }], (row) => row.t);
-		expect([...groups.entries()]).toEqual([[1, [{ t: 1, n: 'a' }, { t: 1, n: 'c' }]], [2, [{ t: 2, n: 'b' }]]]);
+describe('requiredQuizIds', () => {
+	it('reads the json list and the paradigm quiz, without duplicates or junk', () => {
+		expect(requiredQuizIds({ required_quizzes: '[3, 4, 3]', paradigm_quiz: '4' })).toEqual([3, 4]);
+		expect(requiredQuizIds({ required_quizzes: [5], paradigm_quiz: '0' })).toEqual([5]);
+		expect(requiredQuizIds({ required_quizzes: 'not json' })).toEqual([]);
+		expect(requiredQuizIds(null)).toEqual([]);
+	});
+});
+
+describe('judgeQuizzes', () => {
+	it("pairs each required quiz with the person's attempt, once, and drops quizzes that no longer exist", () => {
+		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger);
+		const quizzes = new Map([[1, { id: 1, label: 'Ethics', approval: 0 }], [2, { id: 2, label: 'Paradigm', approval: 1 }]]);
+		const attempts = new Map([[1, { completed: 1, approved_by: null, pending: 0 }]]);
+
+		const result = judgeQuizzes([{ quiz: 1, requiredBy: 'LD' }, { quiz: 2, requiredBy: 'Pool A' }, { quiz: 1, requiredBy: 'Pool A' }, { quiz: 9, requiredBy: 'LD' }], quizzes, attempts);
+
+		expect(result).toEqual([
+			{ Quiz: { id: 1, label: 'Ethics', approval: 0 }, requiredBy: 'LD', PersonQuiz: { completed: 1, approved_by: null, pending: 0 } },
+			{ Quiz: { id: 2, label: 'Paradigm', approval: 1 }, requiredBy: 'Pool A', PersonQuiz: null },
+		]);
+		expect(warn).toHaveBeenCalledWith('Required quiz does not exist', { quiz: 9, requiredBy: 'LD' });
+		warn.mockRestore();
+	});
+});
+
+describe('roundListed and roundVisibility', () => {
+	const levels = (published: number, post_primary = 0, post_secondary = 0, post_feedback = 0) => ({ published, post_primary, post_secondary, post_feedback });
+
+	it('lists a round once published at any level or with primary results posted', () => {
+		expect(roundListed(levels(0), false)).toBe(false);
+		expect(roundListed(levels(2), false)).toBe(true);
+		expect(roundListed(levels(0, 1), false)).toBe(true);
+		expect(roundListed(levels(0), true)).toBe(true);
+	});
+
+	it('opens the pairing at published 1 or 2, judges and results at 1 with their post levels past 1', () => {
+		expect(roundVisibility(levels(2), false)).toEqual({ pairing: true, judges: false, primary: false, secondary: false, feedback: false });
+		expect(roundVisibility(levels(3), false)).toEqual({ pairing: false, judges: false, primary: false, secondary: false, feedback: false });
+		expect(roundVisibility(levels(1, 1, 1, 1), false)).toEqual({ pairing: true, judges: true, primary: false, secondary: false, feedback: false });
+		expect(roundVisibility(levels(1, 2, 3, 2), false)).toEqual({ pairing: true, judges: true, primary: true, secondary: true, feedback: true });
+		expect(roundVisibility(levels(0, 2), false)).toEqual({ pairing: false, judges: false, primary: false, secondary: false, feedback: false });
+	});
+
+	it('opens the pairing and judges once the tourn has ended, but results only at their post levels', () => {
+		expect(roundVisibility(levels(0), true)).toEqual({ pairing: true, judges: true, primary: false, secondary: false, feedback: false });
+		expect(roundVisibility(levels(3, 1, 1, 1), true)).toEqual({ pairing: true, judges: true, primary: false, secondary: false, feedback: false });
+		expect(roundVisibility(levels(0, 2, 0, 2), true)).toEqual({ pairing: true, judges: true, primary: true, secondary: false, feedback: true });
+	});
+
+	it('shows decision and rank at the primary level and points and refutation at the secondary', () => {
+		const primaryOnly = roundVisibility(levels(1, 2), false);
+		expect(['winloss', 'rank', 'point', 'refute', null].map((tag) => scoreVisible(tag, primaryOnly))).toEqual([true, true, false, false, false]);
+		expect(scoreVisible('point', roundVisibility(levels(1, 2, 2), false))).toBe(true);
 	});
 });
 

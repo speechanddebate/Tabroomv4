@@ -88,3 +88,20 @@ describe('getPermissions with tourns', () => {
 		});
 	});
 });
+describe('getPermissions with chapters', () => {
+	it("returns the person's permissions at the given chapters", async () => {
+		const Person = await factories.person.create();
+		const first = await factories.chapter.create();
+		const second = await factories.chapter.create();
+		const elsewhere = await factories.chapter.create();
+		const { permissionId: coach } = await factories.permission.create({ person: Person.id, chapter: first.id, tag: 'chapter' });
+		const { permissionId: prefs } = await factories.permission.create({ person: Person.id, chapter: second.id, tag: 'prefs' });
+		await factories.permission.create({ person: Person.id, chapter: elsewhere.id, tag: 'chapter' });
+		await factories.permission.create({ chapter: first.id, tag: 'chapter' });
+
+		const rows = await permissionRepo.getPermissions(db, { person: Person.id, chapters: [first.id, second.id] });
+
+		expect(rows.map(row => row.id).sort()).toEqual([coach, prefs].sort());
+		expect(rows.find(row => row.id === prefs)).toMatchObject({ tag: 'prefs', chapter: second.id });
+	});
+});

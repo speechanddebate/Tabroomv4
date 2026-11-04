@@ -1,16 +1,22 @@
 import factories from '../../../tests/factories/index.js';
 import { db } from '../../data/database.js';
 import config from '../../config.js';
+import entryRepo from '../../repos/entryRepo.js';
 import eventRepo from '../../repos/eventRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
+import permissionRepo from '../../repos/permissionRepo.js';
+import schoolRepo from '../../repos/schoolRepo.js';
 import type { Settings } from '../../repos/utils/index.js';
 import { createActor } from '../../middleware/auth/authorization.js';
 import type { Actor } from '../../middleware/auth/types.js';
 import { campusUuid } from './campus.js';
 import {
 	getEntryPrepRoom,
+	getEntryPrepRooms,
 	getSchoolRoom,
+	getSchoolRooms,
 	getSectionRoom,
+	getSectionRooms,
 	getUtilityRooms,
 	joinUtilityRoom,
 } from './onlineRoomService.js';
@@ -374,6 +380,73 @@ describe('getSectionRoom', () => {
 	});
 });
 
+describe('getSectionRooms', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	// another section in the round, in its own room, with a ballot for the judge and entry given
+	async function addSection(roundId: number, letter: string, ballot: { judge?: number; entry?: number }) {
+		const room = await factories.room.create({ name: `Room ${letter}`, url: `https://zoom.test/${letter}` });
+		const panel = await factories.panel.create({ round: roundId, room: room.id, letter });
+		await factories.ballot.create({ panel: panel.id, ...ballot });
+		return panel;
+	}
+
+	it('resolves each section the person is in, and leaves out the others', async () => {
+		const { Tourn, Round, panel, judge, judgePerson, entry } = await createSection({ eventSettings: { online_mode: 'sync' } });
+		const second = await addSection(Round.id, 'B', { judge: judge.id });
+		const hidden = await addSection(Round.id, 'C', { entry: entry.id });
+		const elsewhere = await createSection({ eventSettings: { online_mode: 'sync' } });
+		await factories.ballot.create({ panel: elsewhere.panel.id, judge: judge.id });
+
+		const rooms = await getSectionRooms(db, Tourn.id, [panel.id, second.id, hidden.id, elsewhere.panel.id], asPerson(judgePerson));
+
+		expect([...rooms.keys()].sort()).toEqual([panel.id, second.id].sort());
+		expect(rooms.get(panel.id)?.launch?.url).toBe('https://zoom.test/host');
+		expect(rooms.get(second.id)).toMatchObject({ display: { name: 'Room B' }, log: { panel: second.id, judge: judge.id } });
+	});
+
+	it('labels a site admin once for all their sections', async () => {
+		const { Tourn, Round, panel } = await createSection({ eventSettings: { online_mode: 'nsda_campus' } });
+		const second = await addSection(Round.id, 'B', {});
+		const person = await factories.person.create();
+		const getPermissions = vi.spyOn(permissionRepo, 'getPermissions');
+
+		const rooms = await getSectionRooms(db, Tourn.id, [panel.id, second.id], asPerson(person, 1));
+
+		expect([...rooms.values()].map(room => room.launch?.campus?.role)).toEqual(['admin', 'admin']);
+		expect(getPermissions.mock.calls.filter(([, opts]) => opts?.tourn === Tourn.id)).toHaveLength(1);
+	});
+
+	it('lets a coach observe the entry given for each section', async () => {
+		const { Tourn, Event, Round, panel, school, entry } = await createSection({ eventSettings: { online_mode: 'nsda_campus_observers' } });
+		const chapter = await factories.chapter.create();
+		await db.updateTable('school').set({ chapter: chapter.id }).where('id', '=', school.id).execute();
+		const coach = await factories.person.create();
+		await factories.permission.create({ person: coach.id, chapter: chapter.id, tag: 'chapter' });
+		const other = await factories.entry.create({ event: Event.id, school: school.id });
+		const second = await addSection(Round.id, 'B', { entry: other.id });
+		const unobserved = await addSection(Round.id, 'C', { entry: other.id });
+
+		const rooms = await getSectionRooms(db, Tourn.id, [panel.id, second.id, unobserved.id], asPerson(coach), {
+			observers: new Map([[panel.id, entry.id], [second.id, other.id]]),
+		});
+
+		expect([...rooms.keys()].sort()).toEqual([panel.id, second.id].sort());
+		expect(rooms.get(panel.id)?.log).toMatchObject({ tag: 'observer', entry: entry.id });
+		expect(rooms.get(second.id)?.log).toMatchObject({ tag: 'observer', entry: other.id });
+	});
+
+	it('returns an empty map for no sections without querying', async () => {
+		const person = await factories.person.create();
+		const getContext = vi.spyOn(panelRepo, 'getSectionRoomContext');
+
+		expect(await getSectionRooms(db, 1, [], asPerson(person))).toEqual(new Map());
+		expect(getContext).not.toHaveBeenCalled();
+	});
+});
+
 type TournOverrides = {
 	tournSettings?: Settings;
 	eventSettings?: Settings;
@@ -452,6 +525,43 @@ describe('getSchoolRoom', () => {
 	});
 });
 
+describe('getSchoolRooms', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('resolves each school the person coaches in the tourn, and leaves out the others', async () => {
+		const { Tourn, school, coach } = await createTourn();
+		const second = await factories.school.create({ tourn: Tourn.id, chapter: school.chapter, name: 'Lincoln B' });
+		const hidden = await factories.school.create({ tourn: Tourn.id, name: 'Douglas HS' });
+		const elsewhere = await factories.school.create({ tourn: (await factories.tourn.create()).id, chapter: school.chapter });
+
+		const rooms = await getSchoolRooms(db, Tourn.id, [school.id, second.id, hidden.id, elsewhere.id], asPerson(coach));
+
+		expect([...rooms.keys()].sort()).toEqual([school.id, second.id].sort());
+		expect(rooms.get(school.id)?.display.name).toBe('Lincoln HS Squad Room');
+		expect(rooms.get(second.id)?.log).toEqual({ tag: 'school', tourn: Tourn.id, school: second.id, description: 'Entered Lincoln B Squad Room from Tabroom' });
+	});
+
+	it('leaves out schools in another tourn even for a site admin', async () => {
+		const { Tourn, school } = await createTourn();
+		const elsewhere = await createTourn();
+		const admin = await factories.person.create();
+
+		const rooms = await getSchoolRooms(db, Tourn.id, [school.id, elsewhere.school.id], asPerson(admin, 1));
+
+		expect([...rooms.keys()]).toEqual([school.id]);
+	});
+
+	it('returns an empty map for no schools without querying', async () => {
+		const person = await factories.person.create();
+		const getSchools = vi.spyOn(schoolRepo, 'getSchools');
+
+		expect(await getSchoolRooms(db, 1, [], asPerson(person))).toEqual(new Map());
+		expect(getSchools).not.toHaveBeenCalled();
+	});
+});
+
 describe('getEntryPrepRoom', () => {
 	it('opens the prep room in Campus for the entry\'s students', async () => {
 		const { Tourn, Event, entry, studentPerson } = await createTourn({ eventSettings: { online_prep: 1 } });
@@ -486,6 +596,44 @@ describe('getEntryPrepRoom', () => {
 		const person = await factories.person.create();
 
 		expect(await prepRoom(entry, asPerson(person))).toBeNull();
+	});
+});
+
+describe('getEntryPrepRooms', () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it('resolves each entry the person coaches in the tourn, and leaves out the others', async () => {
+		const { Tourn, Event, school, coach, entry } = await createTourn({ eventSettings: { online_prep: 1 } });
+		const second = await factories.entry.create({ event: Event.id, school: school.id, code: 'CD' });
+		const hidden = await factories.entry.create({ event: Event.id, school: (await factories.school.create({ tourn: Tourn.id })).id });
+		const elsewhere = await createTourn({ eventSettings: { online_prep: 1 } });
+
+		const rooms = await getEntryPrepRooms(db, Tourn.id, [entry.id, second.id, hidden.id, elsewhere.entry.id], asPerson(coach));
+
+		expect([...rooms.keys()].sort()).toEqual([entry.id, second.id].sort());
+		expect(rooms.get(entry.id)?.display.name).toBe('AB Prep Room');
+		expect(rooms.get(second.id)?.log).toEqual({ tag: 'prep', tourn: Tourn.id, entry: second.id, description: 'Entered CD Prep Room from Tabroom' });
+	});
+
+	it('gives tab staff every entry\'s room in the tourn, and only in the tourn', async () => {
+		const { Tourn, Event, entry } = await createTourn({ eventSettings: { online_prep: 1 } });
+		const second = await factories.entry.create({ event: Event.id });
+		const elsewhere = await createTourn({ eventSettings: { online_prep: 1 } });
+		const person = await factories.person.create();
+
+		const rooms = await getEntryPrepRooms(db, Tourn.id, [entry.id, second.id, elsewhere.entry.id], asPerson(person, 1));
+
+		expect([...rooms.keys()].sort()).toEqual([entry.id, second.id].sort());
+	});
+
+	it('returns an empty map for no entries without querying', async () => {
+		const person = await factories.person.create();
+		const getEntries = vi.spyOn(entryRepo, 'getEntries');
+
+		expect(await getEntryPrepRooms(db, 1, [], asPerson(person))).toEqual(new Map());
+		expect(getEntries).not.toHaveBeenCalled();
 	});
 });
 
