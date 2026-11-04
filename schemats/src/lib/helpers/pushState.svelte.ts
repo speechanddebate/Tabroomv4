@@ -147,8 +147,8 @@ export function createPushState() {
 	});
 
 	/**
-	 * Has the API send one push to this login. The API's problem detail (no subscription, expired,
-	 * push service down, rate limit) is shown as the error toast. Returns whether it was sent
+	 * Has the API queue one push to this login. The API's problem detail (no subscription, push
+	 * not configured, queue down, rate limit) is shown as the error toast. Returns whether it was queued
 	 */
 	const sendTest = async (): Promise<boolean> => {
 		let conflict = false;

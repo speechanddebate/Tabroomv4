@@ -57,7 +57,7 @@ describe('processPush', () => {
 		const job = fakeJob<PushJobData>({ message: 5 });
 
 		await expect(processPush(job)).resolves.toEqual({ sent: 2, gone: 1, rejected: 2 });
-		expect(pushMessage).toHaveBeenCalledWith(5, []);
+		expect(pushMessage).toHaveBeenCalledWith(5, [], undefined);
 		expect(job.updateData).not.toHaveBeenCalled();
 		// Any login reaching it makes the message sent, whatever the others did
 		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 5, 'push', 'sent');
@@ -68,7 +68,17 @@ describe('processPush', () => {
 		const job = fakeJob<PushJobData>({ message: 5, sent: [11, 12] });
 
 		await expect(processPush(job)).resolves.toEqual({ sent: 3, gone: 0, rejected: 0 });
-		expect(pushMessage).toHaveBeenCalledWith(5, [11, 12]);
+		expect(pushMessage).toHaveBeenCalledWith(5, [11, 12], undefined);
+	});
+
+	it('forwards the push options and keeps them across a retry', async () => {
+		pushMessage.mockResolvedValue(outcome({ retry: { sessions: [12] } }));
+		const push = { sessions: [12], ttl: 60, urgency: 'high' as const };
+		const job = fakeJob<PushJobData>({ message: 5, push });
+
+		await expect(processPush(job)).rejects.toThrow(RetryAfterError);
+		expect(pushMessage).toHaveBeenCalledWith(5, [], push);
+		expect(job.data.push).toEqual(push);
 	});
 
 	it('records sent when an earlier attempt reached a login and this one found nothing left', async () => {

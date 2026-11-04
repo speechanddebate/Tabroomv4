@@ -9,6 +9,9 @@ import { db } from '../../../../../data/database.js';
 import { getVapid, initWebPush } from '../../../../../services/notifications/channels/webpush.js';
 import { PushStatusSchema } from '@tabroom/types';
 
+const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+vi.mock('../../../../../services/queue/index.js', async (original) => ({ ...await original(), addJobs }));
+
 const vapidKeys = webPush.generateVAPIDKeys();
 const originalWebpush = config.webpush;
 
@@ -481,25 +484,50 @@ describe('Push Router', () => {
 			return { ...session, sub };
 		}
 
-		const pushServiceError = (statusCode: number) =>
-			new webPush.WebPushError('Received unexpected response code', statusCode, {}, '', 'https://fcm.googleapis.com/fcm/send/x');
+		const messageRow = (id: number) => db.selectFrom('message')
+			.select(['person', 'subject', 'body', 'url', 'visible_at', 'push_status', 'email_status'])
+			.where('id', '=', id)
+			.executeTakeFirstOrThrow();
 
-		it('sends a test push to this login\'s subscription', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification').mockResolvedValue({ statusCode: 201, body: '', headers: {} });
-			const { userkey, sub } = await subscribedSession();
+		beforeEach(() => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+		});
 
-			await request(server).post(TEST_PATH).asPerson(userkey).expect(204);
+		it('queues a push for this login only, kept out of the inbox', async () => {
+			const { id, userkey } = await subscribedSession();
 
-			expect(send).toHaveBeenCalledTimes(1);
-			const [target, payload, options] = send.mock.calls[0];
-			expect(target).toEqual({ endpoint: sub.endpoint, keys: sub.keys });
-			expect(JSON.parse(payload as string)).toEqual({
-				title: 'Test notification',
+			await request(server).post(TEST_PATH).asPerson(userkey).expect(202);
+
+			expect(addJobs).toHaveBeenCalledOnce();
+			const jobs = addJobs.mock.calls[0][0];
+			expect(jobs).toHaveLength(1);
+			expect(jobs[0]).toMatchObject({
+				queueName: 'push',
+				data: { message: expect.any(Number), push: { sessions: [id], ttl: 60, urgency: 'high' } },
+			});
+			expect(await messageRow(jobs[0].data.message)).toEqual({
+				person: personId,
+				subject: 'Test notification',
 				body: 'Notifications from Tabroom are working on this browser.',
 				url: '/user/profile',
-				tag: 'push-test',
+				visible_at: null,
+				push_status: 'queued',
+				email_status: null,
 			});
-			expect(options).toMatchObject({ TTL: 60, urgency: 'high' });
+		});
+
+		it('returns 503 and marks the push failed when the queue will not take it', async () => {
+			vi.spyOn(logger, 'error').mockImplementation(() => logger);
+			vi.spyOn(logger, 'warn').mockImplementation(() => logger);
+			addJobs.mockRejectedValue(new Error('Redis is down'));
+			const { userkey } = await subscribedSession();
+
+			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(503);
+			expect(res).toBeProblemResponse(503);
+
+			const message = await db.selectFrom('message').select('push_status')
+				.where('person', '=', personId).orderBy('id', 'desc').executeTakeFirstOrThrow();
+			expect(message.push_status).toBe('failed');
 		});
 
 		it('returns 401 without a cookie', async () => {
@@ -508,7 +536,6 @@ describe('Push Router', () => {
 		});
 
 		it('returns 403 without a trusted Origin', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification');
 			const { userkey } = await subscribedSession();
 
 			const res = await request(server)
@@ -516,87 +543,64 @@ describe('Push Router', () => {
 				.set('Cookie', [`${config.cookie.name}=${userkey}`])
 				.expect(403);
 			expect(res).toBeProblemResponse(403);
-			expect(send).not.toHaveBeenCalled();
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('returns 403 while su\'d', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification');
 			const { userkey } = await newSession(personId, adminId);
 
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(403);
 			expect(res).toBeProblemResponse(403);
-			expect(send).not.toHaveBeenCalled();
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
-		it('returns 503 when push is not configured', async () => {
+		it('returns 503 when push is not configured, rather than queue a job that would skip', async () => {
 			const { userkey } = await subscribedSession();
 			unconfigurePush();
 
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(503);
 			expect(res).toBeProblemResponse(503);
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('returns 409 when this login has no subscription', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification');
 			const { userkey } = await newSession(personId);
 
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(409);
 			expect(res).toBeProblemResponse(409);
-			expect(send).not.toHaveBeenCalled();
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('returns 409 when push is turned off for this login', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification');
 			const { userkey } = await subscribedSession();
 			await request(server).delete('/v1/user/notify/push').asPerson(userkey).expect(204);
 
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(409);
 			expect(res).toBeProblemResponse(409);
-			expect(send).not.toHaveBeenCalled();
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('returns 409 when the subscription was saved under another key', async () => {
-			const send = vi.spyOn(webPush, 'sendNotification');
 			const { id, userkey } = await subscribedSession();
 			await db.updateTable('session').set({ push_vapid_key: 'fedcba9876543210' }).where('id', '=', id).execute();
 
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(409);
 			expect(res).toBeProblemResponse(409);
-			expect(send).not.toHaveBeenCalled();
-		});
-
-		it('clears a gone subscription and returns 409', async () => {
-			vi.spyOn(webPush, 'sendNotification').mockRejectedValue(pushServiceError(410));
-			const { id, userkey } = await subscribedSession();
-
-			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(409);
-			expect(res).toBeProblemResponse(409);
-			expect(await pushRow(id)).toMatchObject({ push_endpoint: null, push_disabled: 0 });
-		});
-
-		it('returns 503 and keeps the subscription when the push service fails', async () => {
-			vi.spyOn(logger, 'warn').mockImplementation(() => logger);
-			vi.spyOn(webPush, 'sendNotification').mockRejectedValue(pushServiceError(500));
-			const { id, userkey, sub } = await subscribedSession();
-
-			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(503);
-			expect(res).toBeProblemResponse(503);
-			expect((await pushRow(id)).push_endpoint).toBe(sub.endpoint);
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('returns 429 after five tests in a minute from one login', async () => {
-			vi.spyOn(webPush, 'sendNotification').mockResolvedValue({ statusCode: 201, body: '', headers: {} });
 			const { userkey } = await subscribedSession();
 			const other = await subscribedSession();
 
 			for (let i = 0; i < 5; i++) {
-				await request(server).post(TEST_PATH).asPerson(userkey).expect(204);
+				await request(server).post(TEST_PATH).asPerson(userkey).expect(202);
 			}
 			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(429);
 			expect(res).toBeProblemResponse(429);
 
 			// The limit is per login
-			await request(server).post(TEST_PATH).asPerson(other.userkey).expect(204);
+			await request(server).post(TEST_PATH).asPerson(other.userkey).expect(202);
 		});
 	});
 });

@@ -3,7 +3,8 @@ import sessionRepo from '../../repos/sessionRepo.js';
 import { db } from '../../data/database.js';
 import logger from '../../helpers/logger.js';
 import { getPerson } from '../../middleware/auth/authorization.js';
-import { checkPushHost, getVapid, sendPush } from '../../services/notifications/channels/webpush.js';
+import { checkPushHost, getVapid } from '../../services/notifications/channels/webpush.js';
+import { notify } from '../../services/notifications/notify.js';
 
 import type { Request, Response } from 'express';
 import type { PushStatus, PushSubscribeRequest } from '@tabroom/types';
@@ -84,11 +85,13 @@ export const disablePush = async (req: Request, res: Response) => {
 };
 
 /**
- * Sends one push straight to this login's subscription so the person can see push working.
- * Skips notify() and the queue: no inbox message, and the answer says whether the push
- * service took it. sendPush logs any failure itself
+ * Queues one push to this login through notify(), so the test runs the same path as real
+ * notifications. The message row stays out of the inbox. The answer only says it was queued:
+ * whether the push service took it is the job's to record. notify() never checks VAPID
+ * keys (the job skips quietly without them), so that check stays here
  */
 export const sendTestPush = async (req: Request, res: Response) => {
+	const person = getPerson(req);
 	const vapid = getVapid();
 	if (!vapid) return ServiceUnavailable(req, res, UNAVAILABLE);
 	if (req.auth.su) return Forbidden(req, res, SU_FORBIDDEN);
@@ -99,29 +102,23 @@ export const sendTestPush = async (req: Request, res: Response) => {
 	const session = await sessionRepo.getPushSubscription(db, sessionId, vapid.fingerprint);
 	if (!session) return Conflict(req, res, 'Push notifications aren\'t on for this browser');
 
-	const result = await sendPush({
-		endpoint: session.push_endpoint,
-		keys: { p256dh: session.push_p256dh, auth: session.push_auth },
-	}, {
-		title: 'Test notification',
-		body: 'Notifications from Tabroom are working on this browser.',
-		url: '/user/profile',
-		tag: 'push-test',
-	}, {
-		// A test that turns up an hour later is no use
-		ttl: 60,
-		urgency: 'high',
-	});
-
-	switch (result.status) {
-		case 'sent':
-			return res.status(204).end();
-		case 'gone':
-			await sessionRepo.clearPushEndpoint(db, session.id, session.push_endpoint);
-			return Conflict(req, res, 'This browser\'s subscription has expired. Turn notifications on again.');
-		default:
-			return ServiceUnavailable(req, res, 'The push service didn\'t accept the test notification. Try again later.');
+	try {
+		await notify({
+			ids: [person.id],
+			subject: 'Test notification',
+			text: 'Notifications from Tabroom are working on this browser.',
+			body: null,
+			url: '/user/profile',
+			channels: { inbox: false, email: false },
+			// A test that turns up an hour later is no use
+			push: { sessions: [sessionId], ttl: 60, urgency: 'high' },
+		});
+	} catch {
+		// notify() has logged it and marked the row failed
+		return ServiceUnavailable(req, res, 'The test notification couldn\'t be sent right now. Try again later.');
 	}
+
+	return res.status(202).end();
 };
 
 export const disableSessionPush = async (req: ValidatedRequest, res: Response) => {

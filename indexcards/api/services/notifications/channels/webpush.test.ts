@@ -504,6 +504,28 @@ describe('pushMessage', () => {
 		await expect(pushMessage(message.id, [done.id])).resolves.toMatchObject({ skipped: 'no subscriptions' });
 	});
 
+	it('sends only to the listed logins, with the given send options', async () => {
+		const Owner = await factories.person.create();
+		const chosen = await factories.session.create({ person: Owner.id, ...subscription() });
+		await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+
+		const result = await pushMessage(message.id, [], { sessions: [chosen.id], ttl: 60, urgency: 'high' });
+
+		expect(result.sent).toEqual([chosen.id]);
+		expect(sentTo()).toEqual([chosen.push_endpoint]);
+		expect(sendNotification.mock.calls[0][2]).toMatchObject({ TTL: 60, urgency: 'high' });
+	});
+
+	it('skips when none of the listed logins is subscribed', async () => {
+		const Owner = await factories.person.create();
+		await factories.session.create({ person: Owner.id, ...subscription() });
+		const message = await newMessage({ person: Owner.id });
+
+		await expect(pushMessage(message.id, [], { sessions: [-1] })).resolves.toMatchObject({ skipped: 'no subscriptions' });
+		expect(sendNotification).not.toHaveBeenCalled();
+	});
+
 	it('removes a subscription the push service says is gone', async () => {
 		const Owner = await factories.person.create();
 		const dead = await factories.session.create({ person: Owner.id, ...subscription() });

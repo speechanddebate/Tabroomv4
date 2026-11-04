@@ -4,11 +4,13 @@ import logger from "../../helpers/logger.js";
 import messageRepo from "../../repos/messageRepo.js";
 import { addJobs, type FlowNode } from "../queue/index.js";
 import { emailQueue, pushQueue } from "./queues.js";
+import type { PushMessageOptions } from "./channels/webpush.js";
 
 export type inputData = {
 	ids     : number[]
 	text    : string // Text of the message to send
 	subject? : string // Subject line of the emails/blasts.  Optional.
+	body?    : string | null // The schema requires the key (null is fine) though the message body comes from html or text
 	url?     : string // URL appended to the email or where the click-through of
 			  // notification lands.  Optional.
 	append?  : string // Text appended to the message as a footer. Optional.
@@ -20,6 +22,7 @@ export type inputData = {
 	tourn?         : number
 	email?         : string[]
 	ignoreNoEmail? : boolean
+	push?          : PushMessageOptions
 	/** Each channel has its own default (see the schema); a caller names only the channels it wants different */
 	channels?: {
 		inbox?   : boolean
@@ -47,6 +50,11 @@ export const NotificationRequestSchema = z.object({
 	tourn         : z.number().optional(),
 	email         : z.array(z.string()).optional(),
 	ignoreNoEmail  : z.boolean().optional(),
+	push: z.object({
+		sessions : z.array(z.number()).optional(),
+		ttl      : z.int().min(0).optional(),
+		urgency  : z.enum(['very-low', 'low', 'normal', 'high']).optional(),
+	}).optional(),
 	// Each channel carries its own default, so a caller names only the ones it wants different.
 	// The general-purpose channels default on; a channel for particular cases (SMS, say) would default off
 	channels: z.object({
@@ -143,7 +151,7 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 	const deliveries: FlowNode[] = [];
 	if (request.channels.webpush) {
 		for (const message of messages) {
-			deliveries.push(pushQueue.job('push', { message: message.id }, {
+			deliveries.push(pushQueue.job('push', { message: message.id, ...(request.push ? { push: request.push } : {}) }, {
 				jobId: `message-${message.id}`,
 				// Whatever a caller runs after the deliveries still runs when a recipient's push fails
 				ignoreDependencyOnFailure: true,

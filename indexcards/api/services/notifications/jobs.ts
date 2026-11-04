@@ -5,14 +5,14 @@ import logger from '../../helpers/logger.js';
 import messageRepo, { type DeliveryStatus } from '../../repos/messageRepo.js';
 import { RetryAfterError } from '../queue/backoff.js';
 import { emailMessage, type EmailMessageResult } from './channels/email.js';
-import { isPushConfigured, pushMessage, type PushMessageResult } from './channels/webpush.js';
+import { isPushConfigured, pushMessage, type PushMessageOptions, type PushMessageResult } from './channels/webpush.js';
 
 // Job data is ids only; the job loads the rest from the database
 
 /** ignoreNoEmail is the one piece of request context the job can't reload: mail about the person's own account goes out even to someone opted out */
 export type EmailJobData = { message: number, ignoreNoEmail?: boolean };
-/** sent lists the logins earlier attempts reached */
-export type PushJobData = { message: number, sent?: number[] };
+/** sent lists the logins earlier attempts reached; push is the request's narrowing and send options, which the job can't reload */
+export type PushJobData = { message: number, sent?: number[], push?: PushMessageOptions };
 
 /** What a set of delivery jobs added up to, for whatever runs after them */
 export type DeliveryTotals = {
@@ -167,7 +167,7 @@ export const processPush: Processor<PushJobData, PushJobResult> = async (job) =>
 	warnedUnconfigured = false;
 
 	const before = job.data.sent ?? [];
-	const result = await pushMessage(job.data.message, before);
+	const result = await pushMessage(job.data.message, before, job.data.push);
 	const sent = [...before, ...result.sent];
 
 	if (result.retry.sessions.length > 0) {

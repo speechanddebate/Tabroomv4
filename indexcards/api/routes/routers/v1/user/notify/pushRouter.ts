@@ -88,10 +88,10 @@ router.route('/test').post(ValidateRequest, testLimiter, controller.sendTestPush
 	path: '/user/notify/push/test',
 	operationId: 'UserNotifyPushTest',
 	summary: 'Send a test notification',
-	description: `Send one push notification to the current login's subscription, so the person can check push works on this browser. Creates no inbox message. Limited to ${TEST_LIMIT} a minute per login`,
+	description: `Queue one push notification to the current login's subscription, so the person can check push works on this browser. Goes through the notification queue like any other push but stays out of the inbox. Limited to ${TEST_LIMIT} a minute per login`,
 	tags: ['Orval', 'user:push'],
 	responses: {
-		204: { description: 'The push service accepted the test notification' },
+		202: { description: 'The test notification is queued for this login' },
 		403: forbiddenWhileSu,
 		409: { $ref: '#/components/responses/Conflict' },
 		429: { $ref: '#/components/responses/TooManyRequests' },

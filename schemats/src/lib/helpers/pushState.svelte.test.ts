@@ -91,7 +91,7 @@ describe('createPushState', () => {
 		mocks.invalidateQueries.mockResolvedValue(undefined);
 		mocks.subscribeMutateAsync.mockResolvedValue({ status: 200, data: {} });
 		mocks.unsubscribeMutateAsync.mockResolvedValue({ status: 204, data: {} });
-		mocks.testMutateAsync.mockResolvedValue({ status: 204, data: undefined });
+		mocks.testMutateAsync.mockResolvedValue({ status: 202, data: undefined });
 		mocks.webpush.isPushSupported.mockReturnValue(true);
 		mocks.webpush.subscribeBrowser.mockResolvedValue(browserSubscription);
 		mocks.webpush.unsubscribeBrowser.mockResolvedValue(true);
@@ -233,27 +233,27 @@ describe('createPushState', () => {
 			cleanup();
 		});
 
-		it('shows the API\'s reason and refreshes the status when the subscription is gone', async () => {
+		it('shows the API\'s reason and refreshes the status when push isn\'t on for this browser', async () => {
 			mocks.testMutateAsync.mockResolvedValue({
 				status: 409,
-				data: { title: 'Conflict', status: 409, detail: 'This browser\'s subscription has expired. Turn notifications on again.' },
+				data: { title: 'Conflict', status: 409, detail: 'Push notifications aren\'t on for this browser' },
 			});
 			const { push, cleanup } = setup();
 
 			await expect(push.sendTest()).resolves.toBe(false);
 
 			expect(mocks.toastWarning).toHaveBeenCalledWith(expect.objectContaining({
-				detail: 'This browser\'s subscription has expired. Turn notifications on again.',
+				detail: 'Push notifications aren\'t on for this browser',
 			}));
 			expect(mocks.toastSuccess).not.toHaveBeenCalled();
 			expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['userNotifyPush'] });
 			cleanup();
 		});
 
-		it('shows the API\'s reason without refreshing when the push service fails', async () => {
+		it('shows the API\'s reason without refreshing when the test can\'t be queued', async () => {
 			mocks.testMutateAsync.mockResolvedValue({
 				status: 503,
-				data: { title: 'Service Unavailable', status: 503, detail: 'The push service didn\'t accept the test notification. Try again later.' },
+				data: { title: 'Service Unavailable', status: 503, detail: 'The test notification couldn\'t be sent right now. Try again later.' },
 			});
 			const { push, cleanup } = setup();
 

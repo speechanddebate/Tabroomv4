@@ -231,6 +231,12 @@ export type PushMessageResult = {
 	skipped?: 'unconfigured' | 'no message' | 'already delivered' | 'deleted' | 'no subscriptions';
 };
 
+/** Narrows one message's push to some of its person's logins and sets how the push service handles it */
+export type PushMessageOptions = PushSendOptions & {
+	/** Only these logins, when set */
+	sessions?: number[];
+};
+
 const DEFAULT_TITLE = 'Message from Tabroom.com';
 const DEFAULT_URL = '/user/home';
 
@@ -243,6 +249,7 @@ export async function pushMessage(
 	messageId: number,
 	/** Sessions not to send to, such as ones an earlier attempt already reached */
 	skip: number[] = [],
+	options: PushMessageOptions = {},
 ): Promise<PushMessageResult> {
 	const result: PushMessageResult = { sent: [], gone: 0, rejected: 0, retry: { sessions: [] } };
 
@@ -275,7 +282,7 @@ export async function pushMessage(
 	}
 
 	const subscriptions = (await sessionRepo.getPushSubscriptions(db, message.person, vapid.fingerprint))
-		.filter(session => !skip.includes(session.id));
+		.filter(session => !skip.includes(session.id) && (!options.sessions || options.sessions.includes(session.id)));
 	if (subscriptions.length === 0) {
 		logger.debug(`Push for message ${messageId} skipped, person ${message.person} has no subscriptions`);
 		return { ...result, skipped: 'no subscriptions' };
@@ -294,7 +301,7 @@ export async function pushMessage(
 		outcome: await sendPush({
 			endpoint: session.push_endpoint,
 			keys: { p256dh: session.push_p256dh, auth: session.push_auth },
-		}, payload),
+		}, payload, { ttl: options.ttl, urgency: options.urgency }),
 	})));
 
 	for (const { session, outcome } of outcomes) {

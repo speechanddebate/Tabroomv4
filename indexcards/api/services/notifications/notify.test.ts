@@ -132,6 +132,21 @@ describe('notify', () => {
 		expect(addJobs).toHaveBeenCalledWith([]);
 	});
 
+	it('carries the push options into each push job', async () => {
+		const push = { sessions: [41], ttl: 60, urgency: 'high' as const };
+
+		await notify({ ...base, ids: people, channels: { email: false }, push });
+
+		const messages = await messageRows(people);
+		expect(addJobs.mock.calls[0][0].map((job: { data: unknown }) => job.data))
+			.toEqual(messages.map(message => ({ message: message.id, push })));
+	});
+
+	it('rejects an urgency the push service does not know', async () => {
+		await expect(prepNotify({ ...base, ids: people, push: { urgency: 'urgent' as 'high' } }))
+			.rejects.toThrow('Invalid notification request');
+	});
+
 	describe('email deliveries', () => {
 		const emailJobs = () => (addJobs.mock.calls[0][0] as { queueName: string; name: string; data: unknown; opts: Record<string, unknown> }[])
 			.filter((delivery) => delivery.queueName === 'email');

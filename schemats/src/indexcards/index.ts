@@ -9966,9 +9966,9 @@ export const createUserNotifyPushUnsubscribe = <
 	);
 };
 
-export type userNotifyPushTestResponse204 = {
+export type userNotifyPushTestResponse202 = {
 	data: void;
-	status: 204;
+	status: 202;
 };
 
 export type userNotifyPushTestResponse401 = {
@@ -10002,7 +10002,7 @@ export type userNotifyPushTestResponse503 = {
 };
 
 export type userNotifyPushTestResponseSuccess =
-	userNotifyPushTestResponse204 & {
+	userNotifyPushTestResponse202 & {
 		headers: Headers;
 	};
 export type userNotifyPushTestResponseError = (
@@ -10025,7 +10025,7 @@ export const getUserNotifyPushTestUrl = () => {
 };
 
 /**
- * Send one push notification to the current login's subscription, so the person can check push works on this browser. Creates no inbox message. Limited to 5 a minute per login
+ * Queue one push notification to the current login's subscription, so the person can check push works on this browser. Goes through the notification queue like any other push but stays out of the inbox. Limited to 5 a minute per login
  * @summary Send a test notification
  */
 export const userNotifyPushTest = async (

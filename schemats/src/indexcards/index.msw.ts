@@ -4501,7 +4501,7 @@ export const getUserNotifyPushTestMockHandler = (
 				await overrideResponse(info);
 			}
 
-			return new HttpResponse(null, { status: 204 });
+			return new HttpResponse(null, { status: 202 });
 		},
 		options,
 	);
