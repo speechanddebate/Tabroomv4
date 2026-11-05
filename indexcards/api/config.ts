@@ -249,10 +249,6 @@ export const ConfigSchema = z.object({
 		/** Hide in-progress endpoints */
 		HIDE_DEV_ENDPOINTS: z.boolean().default(true)
 	}).prefault({}),
-	ip: z.object({
-		locationDB: z.string().default('/var/lib/GeoIP/GeoLite2-City.mmdb'),
-		ispDB: z.string().default('/var/lib/GeoIP/GeoIP2-ISP.mmdb'),
-	}).prefault({}),
 });
 
 type RuntimeConfig = z.infer<typeof ConfigSchema>;

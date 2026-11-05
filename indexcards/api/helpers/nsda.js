@@ -1,4 +1,3 @@
-import CryptoJS from 'crypto-js';
 import { sql } from 'kysely';
 import { db as kdb } from '../data/database.js';
 import changeLogRepo from '../repos/changeLogRepo.js';
@@ -20,15 +19,13 @@ export const getNSDAMemberId = async (email) => {
 export const getNSDA  = async (path) => {
 
 	const uri = `${config.nsda.endpoint}${config.nsda.path}${path}`;
-	const words = CryptoJS.enc.Utf8.parse(`${config.nsda.user_id}:${config.nsda.key}`);
-	const authToken = CryptoJS.enc.Base64.stringify(words);
 
 	try {
 		const response = await fetch(
 			uri,
 			{
 				headers : {
-					Authorization  : `Basic ${authToken}`,
+					Authorization  : `Basic ${Buffer.from(`${config.nsda.user_id}:${config.nsda.key}`).toString('base64')}`,
 					'Content-Type' : 'application/json',
 					Accept         : 'application/json',
 				},

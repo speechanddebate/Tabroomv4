@@ -1,5 +1,14 @@
 #!/bin/sh
 set -e
+
+staged=$(git diff --cached --name-only)
+for pair in "indexcards/package.json indexcards/docs/dependencies.md" "schemats/package.json schemats/doc/dependencies.md"; do
+	set -- $pair
+	if echo "$staged" | grep -qx "$1" && ! echo "$staged" | grep -qx "$2"; then
+		echo "WARNING: $1 is staged but $2 is not. Update the guide if dependencies changed."
+	fi
+done
+
 echo "Linting"
 npm run lint
 echo "Typecheck"

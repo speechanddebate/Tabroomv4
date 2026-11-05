@@ -1,9 +1,8 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
-import { v4 as uuid } from 'uuid';
-import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
+import { randomUUID } from 'node:crypto';
 
 import config from './api/config.js';
 import errorHandler from './api/helpers/errors/errorHandler.js';
@@ -64,7 +63,7 @@ app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
 	req.db = db;
-	req.uuid   = uuid();
+	req.uuid   = randomUUID();
 	req.config = config;
 	return next();
 });
@@ -73,16 +72,9 @@ app.use(setupRequest);
 
 app.get('/v1/ip', (request, response) => response.send(request.ip));
 
-// Parse body
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json({ type: ['json', 'application/*json'], limit: '10mb' }));
-app.use(bodyParser.text({ type: '*/*', limit: '10mb' }));
-
-if (process.env.NODE_ENV === 'development') {
-	// Pretty print JSON in the dev environment
-	app.use(bodyParser.json());
-	app.set('json spaces', 4);
-}
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ type: ['json', 'application/*json'], limit: '10mb' }));
+app.use(express.text({ type: '*/*', limit: '10mb' }));
 
 // Parse cookies and add them to the session
 app.use(cookieParser());

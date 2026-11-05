@@ -96,9 +96,5 @@
   "webpush": {},
   "features": {
     "HIDE_DEV_ENDPOINTS": true
-  },
-  "ip": {
-    "locationDB": "/var/lib/GeoIP/GeoLite2-City.mmdb",
-    "ispDB": "/var/lib/GeoIP/GeoIP2-ISP.mmdb"
   }
 }

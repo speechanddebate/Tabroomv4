@@ -1,11 +1,6 @@
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
+import { DateTime } from 'luxon';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
-
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 // This function will auto populate a pool with standby judges selected
 // for school/geographic diversity.
@@ -33,17 +28,15 @@ export async function placeJudgesStandby(req, res) {
 
 		if (times && times.length > 0) {
 
-			dayStart = dayjs(times[0].start)
-				.tz(times[0].tz)
+			dayStart = DateTime.fromJSDate(times[0].start, { zone: times[0].tz })
 				.startOf('day')
-				.utc()
-				.format('YYYY-MM-DD HH:mm:ss');
+				.toUTC()
+				.toFormat('yyyy-MM-dd HH:mm:ss');
 
-			dayEnd = dayjs(times[0].start)
-				.tz(times[0].tz)
+			dayEnd = DateTime.fromJSDate(times[0].start, { zone: times[0].tz })
 				.endOf('day')
-				.utc()
-				.format('YYYY-MM-DD HH:mm:ss');
+				.toUTC()
+				.toFormat('yyyy-MM-dd HH:mm:ss');
 
 			const standbyJudgeQuery = sql`
 				select

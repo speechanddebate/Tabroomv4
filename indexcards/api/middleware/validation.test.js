@@ -2,7 +2,6 @@
 import express from 'express';
 import z from 'zod';
 import request from 'supertest';
-import bodyParser from 'body-parser';
 import { ValidateRequest } from './validation.js';
 import { createContext } from '../../tests/httpMocks.js';
 
@@ -45,7 +44,7 @@ async function makeApp() {
 	vi.resetModules();
 
 	const app = express();
-	app.use(bodyParser.json());
+	app.use(express.json());
 
 	const params = {
 		path: z.object({
@@ -77,7 +76,7 @@ async function makeMethodSpecificOpenApiApp() {
 	vi.resetModules();
 
 	const app = express();
-	app.use(bodyParser.json());
+	app.use(express.json());
 
 	const route = app.route('/v1/test-method/:paramValue');
 	route.get(ValidateRequest, (req, res) => res.json({ ok: true }));
