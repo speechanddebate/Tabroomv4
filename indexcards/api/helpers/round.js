@@ -1,5 +1,4 @@
 // Common helper functions that attach to rounds & schematics
-import fetch from 'node-fetch';
 import logger from './logger.js';
 import objectify from './objectify.js';
 import { sql } from 'kysely';
@@ -295,13 +294,7 @@ export const invalidateCache = async (tournId, roundId) => {
 		const serverName = `tabweb${server}`;
 
 		try {
-			const promise = fetch(
-				`http://${serverName}:8001${urlPath}`,
-				{
-					Method: 'GET',
-				}
-			);
-			promises.push(promise);
+			promises.push(fetch(`http://${serverName}:8001${urlPath}`));
 		} catch (err) {
 			logger.error(err);
 		}

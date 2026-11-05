@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { sql } from 'kysely';
 import { db as kdb } from '../../data/database.js';
 import { summon } from '../../repos/utils/index.js';
@@ -50,7 +49,7 @@ export async function getTabroomUsage(req, res) {
 // Show data about an individual machine; this is useful mostly in bringing up
 // machines.
 export async function getTabroomInstance(req, res) {
-	const linodeData = await axios.get(
+	const response = await fetch(
 		`${config.linode.api_url}/instances/${req.params.linodeId}`,
 		{
 			headers : {
@@ -61,11 +60,17 @@ export async function getTabroomInstance(req, res) {
 		},
 	);
 
-	if (req.returnToSender) {
-		return linodeData.data;
+	if (!response.ok) {
+		throw new Error(`Linode ${response.status} ${response.statusText}`);
 	}
 
-	return res.status(200).json(linodeData.data);
+	const linodeData = await response.json();
+
+	if (req.returnToSender) {
+		return linodeData;
+	}
+
+	return res.status(200).json(linodeData);
 };
 
 // Simple counter of how many servers are currently running to display in the
@@ -141,28 +146,36 @@ export async function rebootInstance(req, res) {
 
 	try {
 
-		const rebootReply = await axios.post(
+		const rebootReply = await fetch(
 			`${config.linode.api_url}/instances/${machine.id}/reboot`,
-			{},
 			{
+				method  : 'POST',
 				headers : {
 					Authorization  : `Bearer ${config.linode.api_token}`,
 					'Content-Type' : 'application/json',
 					Accept         : 'application/json',
 				},
+				body : JSON.stringify({}),
 			},
 		);
 
-		if (parseInt(rebootReply.status) === 200) {
-			resultMessages.push(`Machine ${machine.label} reboot request successful. This operation will take a few minutes.`);
+		if (!rebootReply.ok) {
+			const errors = await rebootReply.text();
+			logger.error(errors);
+
+			return res.status(200).json({
+				message: `Rebooting ${machine.label} failed with response code ${rebootReply.status} ${rebootReply.statusText} and errors ${errors}`,
+			});
 		}
+
+		resultMessages.push(`Machine ${machine.label} reboot request successful. This operation will take a few minutes.`);
 
 	} catch (err) {
 
-		logger.error(err.response.data);
+		logger.error(err.message);
 
 		return res.status(200).json({
-			message: `Deleting ${machine.label} failed with response code ${err.response.status} ${err.response.statusText} and errors ${err.response?.data?.errors}`,
+			message: `Rebooting ${machine.label} failed: ${err.message}`,
 		});
 	}
 

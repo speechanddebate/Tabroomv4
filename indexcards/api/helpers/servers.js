@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { sql } from 'kysely';
 import { db } from '../data/database.js';
 import { summon } from '../repos/utils/index.js';
@@ -160,7 +159,7 @@ export const getLinodeInstances = async ( limit ) => {
 	let existingMachines = {};
 
 	try {
-		existingMachines = await axios.get(
+		const response = await fetch(
 			`${config.linode.api_url}/instances`,
 			{
 				headers : {
@@ -170,6 +169,12 @@ export const getLinodeInstances = async ( limit ) => {
 				},
 			},
 		);
+
+		if (!response.ok) {
+			throw new Error(`Linode ${response.status} ${response.statusText}`);
+		}
+
+		existingMachines = await response.json();
 	} catch (err) {
 		logger.error(`Error from Linode when polling new instances`);
 		logger.error(err.message);
@@ -186,7 +191,7 @@ export const getLinodeInstances = async ( limit ) => {
 
 	const databaseSyncs = [];
 
-	const tabroomMachines = existingMachines.data.data.filter( machine => {
+	const tabroomMachines = existingMachines.data.filter( machine => {
 
 		if (limit) {
 			if (
@@ -360,15 +365,16 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 
 		try {
 
-			const creationReply = axios.post(
+			const creationReply = fetch(
 				`${config.linode.api_url}/instances`,
-				machineDefinition,
 				{
+					method  : 'POST',
 					headers : {
 						Authorization  : `Bearer ${config.linode.api_token}`,
 						'Content-Type' : 'application/json',
 						Accept         : 'application/json',
 					},
+					body : JSON.stringify(machineDefinition),
 				},
 			);
 
@@ -376,10 +382,10 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 
 		} catch (err) {
 
-			logger.error(`Error returned by creation request: ${JSON.stringify(err)} `);
+			logger.error(`Error returned by creation request: ${err.message}`);
 
 			return {
-				message: `Machine creation ${hostname} failed with response code ${err.response?.status} ${err.response?.statusText} and errors`,
+				message: `Machine creation ${hostname} failed: ${err.message}`,
 			};
 		}
 		serialNumber++;
@@ -389,9 +395,9 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 
 	for (const creationReply of replies) {
 
-		if (parseInt(creationReply.status) === 200) {
+		if (creationReply.ok) {
 
-			const data = creationReply.data;
+			const data = await creationReply.json();
 
 			await db.insertInto('server').values({
 				hostname   : data.label,
@@ -405,6 +411,9 @@ export const increaseLinodeCount = async (whodunnit, countNumber, silent) => {
 			resultMessages.push(`IPv4 ${data.ipv4[0]} IPv6 ${data.ipv6}\n`);
 			resultMessages.push(`Linode ID ${data.id} UUID ${data.host_uuid}\n`);
 			resultMessages.push(`Machine now queued for ansible deployment\n`);
+		} else {
+			resultMessages.push('');
+			resultMessages.push(`Machine creation failed with response code ${creationReply.status} ${creationReply.statusText} and errors ${await creationReply.text()}\n`);
 		}
 	}
 
@@ -470,9 +479,10 @@ export const decreaseLinodeCount = async (whodunnit, countNumber, silent) => {
 			const machine = matches[0];
 
 			try {
-				const deletionReply = await axios.delete(
+				const deletionReply = await fetch(
 					`${config.linode.api_url}/instances/${machine.linode_id}`,
 					{
+						method  : 'DELETE',
 						headers : {
 							Authorization  : `Bearer ${config.linode.api_token}`,
 							'Content-Type' : 'application/json',
@@ -481,23 +491,27 @@ export const decreaseLinodeCount = async (whodunnit, countNumber, silent) => {
 					},
 				);
 
-				if (parseInt(deletionReply.status) === 200) {
+				if (deletionReply.ok) {
 					resultMessages.push('');
 					resultMessages.push(`Machine ${hostname} deletion request successful.<br />`);
 					resultMessages.push(`Linode ID ${machine.linode_id}. UUID ${machine.uuid} terminating<br />`);
-					resultMessages.push(`${JSON.stringify(deletionReply.data)} <br />`);
+					resultMessages.push(`${JSON.stringify(await deletionReply.json())} <br />`);
 
 					destroyMe.push(hostname);
 
 					await db.deleteFrom('server')
 						.where('linode_id', '=', machine.linode_id)
 						.execute();
+				} else {
+					return {
+						message: `Deleting ${hostname} failed with response code ${deletionReply.status} ${deletionReply.statusText} and errors ${await deletionReply.text()}`,
+					};
 				}
 
 			} catch (err) {
 
 				return {
-					message: `Deleting ${hostname} failed with response code ${err.response.status} ${err.response.statusText} and errors ${err.response?.data?.errors}`,
+					message: `Deleting ${hostname} failed: ${err.message}`,
 				};
 			}
 		}
@@ -582,20 +596,24 @@ export const getProxyStatus = async(existingMachines) => {
 	const parsedProxyData = {};
 
 	try {
-		haproxyData = await axios.get(
-			`http://haproxy.${config.internal_domain}:9000/;json`,
-		);
+		const response = await fetch(`http://haproxy.${config.internal_domain}:9000/;json`);
+
+		if (!response.ok) {
+			throw new Error(`HAProxy ${response.status} ${response.statusText}`);
+		}
+
+		haproxyData = await response.json();
 	} catch (err) {
-		return `Could not connect to HAProxy.  Try again later. Error: ${JSON.stringify(err)} `;
+		return `Could not connect to HAProxy.  Try again later. Error: ${err.message} `;
 	}
 
-	allStatus.haproxyData = haproxyData.data;
+	allStatus.haproxyData = haproxyData;
 
 	// HAproxy's export format is so convoluted I swear Jon Bruschke designed
 	// it. Parse it down to a key value store organized by host that an actual
 	// human might find useful.
 
-	for (const proxy of haproxyData.data) {
+	for (const proxy of haproxyData) {
 
 		for (const row of proxy) {
 
@@ -621,10 +639,12 @@ export const getProxyStatus = async(existingMachines) => {
 	const metrics = [];
 
 	checkMachines.forEach( (machine) => {
-		const metric = axios.get(
-			`http://${machine.label}.${config.internal_domain}:9100/metrics`,
-		);
-		metrics.push(metric);
+		metrics.push(fetch(`http://${machine.label}.${config.internal_domain}:9100/metrics`).then((response) => {
+			if (!response.ok) {
+				throw new Error(`${machine.label} metrics ${response.status} ${response.statusText}`);
+			}
+			return response.text();
+		}));
 	});
 
 	let resolvedMetrics = [];
@@ -633,14 +653,14 @@ export const getProxyStatus = async(existingMachines) => {
 		resolvedMetrics = await Promise.all(metrics);
 	} catch (err) {
 		return {
-			message: `Not all machines could be connected to. Error: ${JSON.stringify(err)}`,
+			message: `Not all machines could be connected to. Error: ${err.message}`,
 		};
 	}
 	const metricsByMachine = {};
 
 	resolvedMetrics.forEach( (metric) => {
 		// Whoever designed this API without an easy hostname key should be set on fire
-		const outputArray = metric.data.split('\n');
+		const outputArray = metric.split('\n');
 		const hostnameValues = outputArray.filter( line => line.includes('node_uname_info'));
 
 		const splitHost = hostnameValues[2].split(/,/);

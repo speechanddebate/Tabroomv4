@@ -1,5 +1,4 @@
 import CryptoJS from 'crypto-js';
-import axios from 'axios';
 import { sql } from 'kysely';
 import { db as kdb } from '../data/database.js';
 import changeLogRepo from '../repos/changeLogRepo.js';
@@ -25,7 +24,7 @@ export const getNSDA  = async (path) => {
 	const authToken = CryptoJS.enc.Base64.stringify(words);
 
 	try {
-		const response = await axios.get(
+		const response = await fetch(
 			uri,
 			{
 				headers : {
@@ -36,7 +35,11 @@ export const getNSDA  = async (path) => {
 			},
 		);
 
-		return response.data;
+		if (!response.ok) {
+			throw new Error(`NSDA ${response.status} ${response.statusText}`);
+		}
+
+		return await response.json();
 
 	} catch (err) {
 		return {
