@@ -4,7 +4,7 @@
 	 * from ./fixtures.ts, and the page states outside tournament cards.
 	 */
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { fn } from 'storybook/test';
+	import { fn, within } from 'storybook/test';
 	import type { HomeResponse } from '@tabroom/types';
 	import { getUserHomeMockHandler } from '$indexcards/index.msw';
 	import AppShell from '$lib/layouts/AppShell.svelte';
@@ -39,6 +39,11 @@
 
 	const logoutFn = fn(async () => {});
 	const suEndFn = fn(async () => {});
+
+	// Until /user/home resolves the page's last heading is an h2, so the sidebar's h4s fail heading-order
+	const loaded = async ({ canvasElement }: { canvasElement: HTMLElement }) => {
+		await within(canvasElement).findByRole('heading', { name: 'Happening now' });
+	};
 </script>
 
 {#snippet userSidebar()}
@@ -47,7 +52,7 @@
 	<UserAccount />
 {/snippet}
 
-<Story name="Full page: coach, judge, and tab staff" parameters={{ ...shell, ...serve(fx.averyHome) }}>
+<Story name="Full page: coach, judge, and tab staff" parameters={{ ...shell, ...serve(fx.averyHome) }} play={loaded}>
 	{#snippet template()}
 		<AppShell {logoutFn} {suEndFn}>
 			<WithSidebar canvas>
@@ -58,7 +63,7 @@
 	{/snippet}
 </Story>
 
-<Story name="Full page: competitor" parameters={{ ...shell, session: session(fx.maya), ...serve(fx.mayaHome) }}>
+<Story name="Full page: competitor" parameters={{ ...shell, session: session(fx.maya), ...serve(fx.mayaHome) }} play={loaded}>
 	{#snippet template()}
 		<AppShell {logoutFn} {suEndFn}>
 			<WithSidebar canvas>

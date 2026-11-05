@@ -64,6 +64,15 @@
 			await userEvent.click(logoutButton);
 			expect(args.logoutFn).toHaveBeenCalled();
 		});
+
+		// Let the dropdown's slide finish so the a11y check doesn't see it half transparent.
+		// Closing cancels the intro (rejecting its finished) and starts an outro, so loop until none remain.
+		// Filled animations stay listed after finishing, and infinite ones (pulses, spinners) never finish.
+		const sliding = () => canvasElement.ownerDocument.getAnimations()
+			.filter((animation) => animation.playState === 'running' && animation.effect?.getTiming().iterations !== Infinity);
+		while (sliding().length > 0) {
+			await Promise.allSettled(sliding().map((animation) => animation.finished));
+		}
 	}}
 	/>
 
