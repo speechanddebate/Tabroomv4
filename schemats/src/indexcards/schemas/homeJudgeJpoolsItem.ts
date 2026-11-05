@@ -5,6 +5,7 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
+import type { HomeJudgeJpoolsItemSite } from './homeJudgeJpoolsItemSite';
 
 export type HomeJudgeJpoolsItem = {
 	/**
@@ -15,4 +16,10 @@ export type HomeJudgeJpoolsItem = {
 	/** @nullable */
 	name: string | null;
 	site: number | null;
+	Site: HomeJudgeJpoolsItemSite;
+	/**
+	 * The pool's instructions to its judges
+	 * @nullable
+	 */
+	message: string | null;
 };

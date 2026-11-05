@@ -2,7 +2,8 @@ import  judgeRepo from '../../repos/judgeRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
 import scoreRepo from '../../repos/scoreRepo.js';
 import entryRepo from '../../repos/entryRepo.js';
-import { entryScores, panelWinner, sideLabel, studentScores } from '../../services/judges/judgeHistory.js';
+import { entryScores, panelWinner, studentScores } from '../../services/judges/judgeHistory.js';
+import { sideLabel } from '../../services/ballots/ballotRules.js';
 import chapterJudgeRepo from '../../repos/chapterJudgeRepo.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import personRepo from '../../repos/personRepo.js';
@@ -164,7 +165,7 @@ async function historyTourn(req: ValidatedRequest, res: Response) {
 		id: entry.id,
 		code: entry.code,
 		name: entry.name,
-		side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.SideLabels.aff, panel.SideLabels.neg),
+		side: sideLabel(panel.Event.type, entry.side, entry.speakerorder, panel.SideLabels),
 		speakerOrder: entry.speakerorder,
 	});
 

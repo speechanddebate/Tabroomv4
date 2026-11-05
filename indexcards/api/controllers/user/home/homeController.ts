@@ -55,7 +55,7 @@ async function onlineRooms(tournId: number, actor: Actor, mine: { schools: numbe
 const TOURN_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.tourn, 'currency', 'onsite_registration', 'onsite_starts', 'onsite_ends', 'onsite_registration_nodash', 'hide_codes', 'ncfl', 'mock_trial_registration', 'nsda_nats', 'online_rooms', 'campus_zone']);
 const EVENT_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.event, 'supp', 'anonymous_public', 'no_anon_dashboard']);
 const CATEGORY_SETTINGS = ['livedoc_url', 'livedoc_caption', 'rounds_per', 'prefs', 'strike_start', 'strike_end', 'required_quizzes', 'paradigm_quiz', 'show_training', 'conflicts'];
-const JPOOL_SETTINGS = ['registrant', 'show_judges', 'standby', 'required_quizzes', 'paradigm_quiz'];
+const JPOOL_SETTINGS = ['registrant', 'show_judges', 'standby', 'required_quizzes', 'paradigm_quiz', 'message'];
 const ROUND_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.round, 'strikes_published', 'strikes_due', 'flip_published']);
 const PANEL_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.panel, 'flip_at']);
 
@@ -74,7 +74,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 	const tournIds = tourns.map((tourn) => tourn.id);
 
 	const [judges, entries, schools, permissions, events, Person, tabroomSettings, attempts] = await Promise.all([
-		judgeRepo.getPersonJudges(db, person.id, { tourns: tournIds }),
+		judgeRepo.getPersonJudges(db, person.id, { tourns: tournIds, settings: ['ballot_trained'] }),
 		entryRepo.getPersonEntries(db, person.id, { tourns: tournIds }),
 		schoolRepo.getCoachedSchools(db, person.id, { tourns: tournIds }),
 		permissionRepo.getPermissions(db, { person: person.id, tourns: tournIds }),
@@ -135,6 +135,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		counts,
 		strikes,
 		categories,
+		events,
 		quizzes: new Map(quizzes.map((quiz) => [quiz.id, quiz])),
 		attempts: new Map(attempts.map((attempt) => [attempt.quiz, attempt])),
 		currentBallots,

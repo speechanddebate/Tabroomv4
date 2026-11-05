@@ -216,7 +216,7 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 		rules: rulesText(input),
 		ballotHeader: ballotHeader(input),
 		roundLabel: roundLabel(input),
-		flight: (round.flighted ?? 0) > 1 ? Number(panel.flight) || null : null,
+		flight: flightNumber(input),
 		roundNotes: isOn(round.settings?.notes) ? String(round.settings?.notes) : null,
 		roundStart: roundStart(input),
 		decisionDeadline: decisionDeadline(input),
@@ -239,8 +239,8 @@ export function ballotRules(input: BallotRulesInput): BallotRules {
 		docShare: isOn(panel.settings?.share) ? `https://share.tabroom.com/${panel.settings?.share}` : null,
 		logo: isOn(tourn.settings?.logo) ? `${config.aws.s3_url}/${tourn.id}/${tourn.settings?.logo}` : null,
 		debate: {
-			affLabel: isOn(event.settings?.aff_label) ? String(event.settings?.aff_label) : 'Aff',
-			negLabel: isOn(event.settings?.neg_label) ? String(event.settings?.neg_label) : 'Neg',
+			affLabel: sideNames(event.settings).aff,
+			negLabel: sideNames(event.settings).neg,
 			sides,
 			flipStatus: sides === 'flip' ? flipStatus(panel) : null,
 			winner: savedWinner(input),
@@ -491,24 +491,75 @@ export function flipStatus(panel: Pick<BallotRulesInput['panel'], 'settings'>): 
 	return FLIP_STATUSES.find(value => value === status) ?? null;
 }
 
+// The score tags that make a ballot scored, as classic's panels.mhtml counts them
+export const SCORE_TAGS: readonly string[] = ['winloss', 'rank', 'point', 'refute'];
+
 /**
  * Returns where the judge is with this ballot. Confirmed once every one of the judge's
  * ballot rows is audited (ballot.mhtml $audit), which locks its scores for everyone; changes
  * then go through tab. Scored once a winner, points or ranks are
  * saved, and started once the judge has opened it. Comments don't count, since they're
  * saved as drafts before the ballot is submitted. */
-export function ballotStatus({ ballots, scores }: Pick<BallotRulesInput, 'ballots' | 'scores'>): BallotRules['status'] {
-	const SCORE_TAGS = ['winloss', 'point', 'rank'];
-
+export function ballotStatus({ ballots, scores }: {
+	ballots: Pick<BallotRulesInput['ballots'][number], 'audit' | 'judge_started'>[];
+	scores: Pick<BallotRulesInput['scores'][number], 'tag'>[];
+}): BallotRules['status'] {
 	if (ballots.length > 0 && ballots.every(ballot => ballot.audit)) return 'confirmed';
 	if (scores.some(score => score.tag && SCORE_TAGS.includes(score.tag))) return 'scored';
 	if (ballots.some(ballot => ballot.judge_started)) return 'started';
 	return 'not_started';
 }
 
+/** Returns the event's names for side 1 and side 2: its aff_label and neg_label, else Aff and Neg */
+export function sideNames(settings: Settings | null | undefined): { aff: string; neg: string } {
+	return {
+		aff: isOn(settings?.aff_label) ? String(settings?.aff_label) : 'Aff',
+		neg: isOn(settings?.neg_label) ? String(settings?.neg_label) : 'Neg',
+	};
+}
+
+// British Parliamentary positions by speaker order
+const WUDC_POSITIONS: Record<number, string> = {
+	1: '1G',
+	2: '1O',
+	3: '2G',
+	4: '2O',
+};
+
+/**
+ * Returns the side or position label next to an entry: the event's side names for two-sided
+ * events, the BP position for WUDC, nothing for speech. */
+export function sideLabel(eventType: string | null, side: number | null, speakerorder: number | null, names: { aff: string; neg: string }): string | null {
+	if (eventType === 'wudc') {
+		return (speakerorder && WUDC_POSITIONS[speakerorder]) || null;
+	}
+	if (side === 1) return names.aff;
+	if (side === 2) return names.neg;
+	return null;
+}
+
+/**
+ * Returns whether a ballot's side and speaker order are shown, classic's rule: hidden while a
+ * flip is pending, on elims without sidelock_elims until the flip is done, and always on
+ * no_side_constraints events. A competitor sees their own audited ballot's side regardless. */
+export function sideVisible(round: { type: string | null }, flipStatus: string | null | undefined, event: Settings | null | undefined, audited = false): boolean {
+	if (audited) return true;
+	const pending = !!flipStatus && flipStatus !== 'done';
+	const elim = (round.type === 'elim' || round.type === 'final') && !isOn(event?.sidelock_elims) && flipStatus !== 'done';
+	return !pending && !elim && !isOn(event?.no_side_constraints);
+}
+
 /** Returns whether the judge chairs the panel: any of their ballot rows is marked chair. */
-export function isChair({ ballots }: Pick<BallotRulesInput, 'ballots'>): boolean {
+export function isChair({ ballots }: { ballots: Pick<BallotRulesInput['ballots'][number], 'chair'>[] }): boolean {
 	return ballots.some(ballot => ballot.chair);
+}
+
+/**
+ * Returns whether judges can see a round, as classic's judge pages decide (panels.mhtml 393,
+ * current_panels.mas 95-103): published (1), or judges_ballots_visible set ("Publish ballots
+ * but not schematic"). Other published values (2, 3) are for brackets and listings, not judges. */
+export function judgesSeeRound(round: Pick<Selectable<Round>, 'published'> & { settings?: Settings | null }): boolean {
+	return round.published === 1 || isOn(round.settings?.judges_ballots_visible);
 }
 
 /**
@@ -633,17 +684,31 @@ export function winlossScoring({ event, tbTypes }: Pick<BallotRulesInput, 'event
 /**
  * Returns when this panel's flight starts: the round's start_time, else its timeslot's start,
  * plus flight_offset minutes for each flight after the first. */
-export function roundStart({ round, timeslot, panel, event }: Pick<BallotRulesInput, 'round' | 'timeslot' | 'panel' | 'event'>): Date {
+export function roundStart({ round, timeslot, panel, event }: {
+	round: Pick<BallotRulesInput['round'], 'start_time'>;
+	timeslot: BallotRulesInput['timeslot'];
+	panel: Pick<BallotRulesInput['panel'], 'flight'>;
+	event: Pick<BallotRulesInput['event'], 'settings'>;
+}): Date {
 	const start = round.start_time ?? timeslot.start;
 	if (!start) throw new Error('Round has no start_time and its timeslot has no start');
 	return flightStart(start, panel.flight, event.settings?.flight_offset);
 }
 
 /**
+ * Returns the panel's flight number, or null when the round has one flight. round.flighted is
+ * the round's flight count, and classic shows "Flt N" only when it's more than 1. */
+export function flightNumber({ round, panel }: { round: Pick<BallotRulesInput['round'], 'flighted'>; panel: Pick<BallotRulesInput['panel'], 'flight'> }): number | null {
+	return (round.flighted ?? 0) > 1 ? Number(panel.flight) || null : null;
+}
+
+/**
  * Returns when the judge's decision is due, or null if the event sets no deadline.
- * The deadline is the event's prelim or elim decision deadline in minutes after roundStart. */
-export function decisionDeadline(input: Pick<BallotRulesInput, 'round' | 'timeslot' | 'panel' | 'event'>): Date | null {
-	const ELIM_TYPES = ['elim', 'final', 'runoff'];
+ * The deadline is the event's decision deadline in minutes after roundStart: the elim
+ * deadline for elim and final rounds and the prelim one for every other type, with no
+ * fallback between them (classic's ballot.mhtml and show_debate.mas). */
+export function decisionDeadline(input: Parameters<typeof roundStart>[0] & { round: Pick<BallotRulesInput['round'], 'type' | 'start_time'> }): Date | null {
+	const ELIM_TYPES = ['elim', 'final'];
 	const { round, event } = input;
 
 	const setting = ELIM_TYPES.includes(round.type ?? '')

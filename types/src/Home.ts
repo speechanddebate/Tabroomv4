@@ -11,6 +11,7 @@ import { OnlineRoomSchema } from './Room/OnlineRoom.js';
 import { CurrentBallotSchema } from './Section.js';
 import { FineSchema } from './Fine.js';
 import { StrikeSchema } from './Strike.js';
+import { TimeslotResponseSchema } from './Timeslot.js';
 
 // Everything the user home page needs to draw one card per tournament, in one response.
 // Times are ISO UTC; the UI formats them in the tournament's time zone.
@@ -78,7 +79,23 @@ export const HomeJudgeSchema = z.object({
 		id: utils.id,
 		name: z.string().nullable(),
 		site: utils.id.nullable(),
+		Site: z.object({ name: z.string().nullable() }).strict().nullable(),
+		message: z.string().nullable().meta({ description: "The pool's instructions to its judges" }),
 	}).strict()).meta({ description: 'The judge pools shown to registrants; standby pools are left out' }),
+	Standbys: z.array(z.object({
+		jpool: utils.id,
+		name: z.string().nullable(),
+		Site: z.object({ name: z.string().nullable() }).strict().nullable(),
+		message: z.string().nullable().meta({ description: "The pool's instructions to its judges" }),
+		Timeslot: TimeslotResponseSchema.pick({ name: true, start: true, end: true }).strict().meta({ description: 'When the judge is on standby' }),
+	}).strict()).meta({ description: 'The standby pools the judge is in, at running tournaments, until their timeslot ends' }),
+	Training: z.object({
+		event: utils.id,
+		Event: z.object({
+			abbr: z.string().nullable(),
+			type: EventSchema.shape.type,
+		}).strict(),
+	}).strict().nullable().meta({ description: 'The event whose sample round the judge judges to finish ballot training; null when the category has no training or the judge has finished it' }),
 	roundsJudged: z.int().meta({ description: 'The number of distinct panels the judge has judged, by audited ballots' }),
 	ballotsEntered: z.int(),
 	ballotsOpen: z.iso.datetime().nullable().meta({ description: 'When online ballots open for the judge, before the tournament starts' }),

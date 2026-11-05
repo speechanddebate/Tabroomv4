@@ -1,6 +1,7 @@
 import type { Database } from '../data/database.js';
 import { sql, type Insertable, type Updateable } from 'kysely';
 import type { Ballot } from '../data/schema.js';
+import { SCORE_TAGS } from '../services/ballots/ballotRules.js';
 
 type queryOpts = {
 	winnerBallot?: boolean;
@@ -156,12 +157,12 @@ export async function getJudgePanels(db: Database, opts: queryOpts & { judges: n
 			'entry.code as entryCode',
 			'entry.active as entryActive',
 		])
-		.select((eb) => eb.exists(
-			eb.selectFrom('score')
-				.select('score.id')
-				.whereRef('score.ballot', '=', 'ballot.id')
-				.where('score.tag', 'in', ['winloss', 'rank', 'point', 'refute'])
-		).as('scored'))
+		.select((eb) => eb.selectFrom('score')
+			.select('score.tag')
+			.whereRef('score.ballot', '=', 'ballot.id')
+			.where('score.tag', 'in', SCORE_TAGS)
+			.limit(1)
+			.as('scoreTag'))
 		.execute();
 }
 

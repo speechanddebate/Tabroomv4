@@ -1,4 +1,4 @@
-import { entryScores, panelWinner, scoreCell, sideLabel, studentScores, type PanelScore } from './judgeHistory.js';
+import { entryScores, panelWinner, scoreCell, studentScores, type PanelScore } from './judgeHistory.js';
 
 const score = (overrides: Partial<PanelScore>): PanelScore => ({
 	tag: 'winloss',
@@ -26,18 +26,6 @@ const splitPanel = (overrides: Partial<PanelScore> = {}) => [
 	score({ ballot: 5, judge: 3, entry: 10, side: 1, value: 0, ...overrides }),
 	score({ ballot: 6, judge: 3, entry: 20, side: 2, value: 1, ...overrides }),
 ];
-
-describe('sideLabel', () => {
-	it('uses the event labels for two-sided debate', () => {
-		expect(sideLabel('debate', 1, null, null, null)).toBe('Aff');
-		expect(sideLabel('debate', 2, null, 'Pro', 'Con')).toBe('Con');
-		expect(sideLabel('debate', 0, null, null, null)).toBeNull();
-	});
-	it('uses the BP position for WUDC', () => {
-		expect(sideLabel('wudc', 0, 3, null, null)).toBe('2G');
-		expect(sideLabel('wudc', 0, 0, null, null)).toBeNull();
-	});
-});
 
 describe('scoreCell', () => {
 	it('maps a losing ballot to L and keeps rank and points', () => {

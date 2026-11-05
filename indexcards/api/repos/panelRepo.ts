@@ -4,7 +4,7 @@ import type { Database } from '../data/database.js';
 import type { Insertable, Updateable } from 'kysely';
 import { sql } from 'kysely';
 import type { Panel } from '../data/schema.js';
-import { flightStart } from '../helpers/flight.js';
+import { flightNumber, roundStart, sideNames } from '../services/ballots/ballotRules.js';
 
 type queryOpts = {
 	settings?: boolean | string[];
@@ -376,7 +376,7 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number) {
 		Round: { id: number; name: number | null; label: string | null; type: string | null };
 		Event: { id: number; abbr: string | null; type: string | null };
 		// The event's side names shown next to each entry
-		SideLabels: { aff: string | null; neg: string | null };
+		SideLabels: { aff: string; neg: string };
 		Room: { id: number; name: string } | null;
 		Entries: Entry[];
 	}>();
@@ -384,13 +384,13 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number) {
 	for (const row of rows) {
 		let panel = panels.get(row.panel_id);
 		if (!panel) {
-			const start = row.round_start_time ?? row.timeslot_start;
-			const flighted = (row.round_flighted ?? 0) > 1;
 			panel = {
 				id: row.panel_id,
 				stage: (row.round_post_primary ?? 0) >= 3 ? 'results' : 'assigned',
-				flight: flighted && row.panel_flight ? Number(row.panel_flight) : null,
-				start: start ? flightStart(start, row.panel_flight, row.flight_offset) : null,
+				flight: flightNumber({ round: { flighted: row.round_flighted }, panel: { flight: row.panel_flight } }),
+				start: row.round_start_time ?? row.timeslot_start
+					? roundStart({ round: { start_time: row.round_start_time }, timeslot: { start: row.timeslot_start }, panel: { flight: row.panel_flight }, event: { settings: { flight_offset: row.flight_offset } } })
+					: null,
 				Round: {
 					id: row.round_id,
 					name: row.round_name,
@@ -402,7 +402,7 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number) {
 					abbr: row.event_abbr,
 					type: row.event_type,
 				},
-				SideLabels: { aff: row.aff_label, neg: row.neg_label },
+				SideLabels: sideNames({ aff_label: row.aff_label, neg_label: row.neg_label }),
 				Room: row.room_id ? { id: row.room_id, name: row.room_name ?? '' } : null,
 				Entries: [],
 			};

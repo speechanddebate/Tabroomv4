@@ -37,7 +37,10 @@
 	const judgeFacts = (judge: HomeJudge): Fact[] => [
 		{ label: 'Judging for', value: judge.School?.name ?? 'Tournament hire' },
 		...(judge.code ? [{ label: 'Judge code', value: judge.code }] : []),
-		...(judge.Jpools.length > 0 ? [{ label: 'Pools', value: judge.Jpools.map(pool => pool.name).filter(Boolean).join(', ') }] : []),
+		...(judge.Jpools.length > 0 ? [{
+			label : 'Pools',
+			value : judge.Jpools.map(pool => `${pool.name ?? 'Pool'}${pool.Site?.name ? ` at ${pool.Site.name}` : ''}${pool.message ? `: ${pool.message}` : ''}`),
+		}] : []),
 		{
 			label : 'Rounds judged',
 			value : judge.obligation ? `${judge.roundsJudged} of ${judge.obligation} owed`
@@ -194,7 +197,7 @@
 				</div>
 
 				{#if judge.roundsJudged > 0}
-					{@const editable = judge.feedbackUntil && now < judge.feedbackUntil ? feedbackItems(judge.CurrentBallots) : []}
+					{@const editable = judge.feedbackUntil && now < judge.feedbackUntil ? feedbackItems(judge.CurrentBallots, now) : []}
 					<div class="flex flex-col gap-1 border-t border-border pt-2 text-sm">
 						<div>{ballotsEnteredText(judge)}</div>
 						{#if editable.length > 0}

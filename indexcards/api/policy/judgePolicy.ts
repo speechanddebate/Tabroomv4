@@ -1,7 +1,7 @@
 import ballotRepo from '../repos/ballotRepo.js';
 import panelRepo from '../repos/panelRepo.js';
 import { getRound } from '../repos/roundRepo.js';
-import { isOn } from '../services/ballots/ballotRules.js';
+import { judgesSeeRound } from '../services/ballots/ballotRules.js';
 import { NotFound } from '../helpers/problem.js';
 import type { Database } from '../data/database.js';
 
@@ -35,15 +35,11 @@ export async function requireJudgeOnPanel(req: Request, res: Response, next: Nex
 	}
 }
 
-/**
- * Whether judges can see the panel's round, as classic's judge pages decide
- * (panels.mhtml 393, current_panels.mas 95-103): published (1), or judges_ballots_visible set.
- * Other published values (2, 3) are for brackets and listings, not judges. */
+/** Whether judges can see the panel's round */
 async function roundOutToJudges(db: Database, panelId: number): Promise<boolean> {
 	const panel = await panelRepo.getPanel(db, panelId);
 	const round = panel?.round
 		? await getRound(db, panel.round, { settings: ['judges_ballots_visible'], unpublished: true })
 		: undefined;
-	if (!round) return false;
-	return round.published === 1 || isOn(round.settings?.judges_ballots_visible);
+	return !!round && judgesSeeRound(round);
 }

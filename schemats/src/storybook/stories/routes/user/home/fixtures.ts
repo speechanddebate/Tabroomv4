@@ -152,11 +152,11 @@ const baseBallot: CurrentBallot = {
 	tourn        : 31201,
 	start        : '2026-11-07T17:00:00Z',
 	deadline     : '2026-11-07T19:00:00Z',
+	end          : '2026-11-07T19:00:00Z',
 	status       : 'not_started',
 	startText    : null,
 	ballotText   : null,
 	chair        : true,
-	audited      : false,
 	TournTz      : 'America/Chicago',
 	eventName    : 'Lincoln-Douglas Debate',
 	eventAbbr    : 'LD',
@@ -184,12 +184,97 @@ export const ballots = {
 		Room     : { name: 'Room 210', joinable: false, hybrid: false, mapUrl: null },
 		start    : '2026-11-07T14:30:00Z',
 		deadline : '2026-11-07T16:00:00Z',
-		status   : 'scored',
-		audited  : true,
+		end      : '2026-11-07T16:00:00Z',
+		status   : 'confirmed',
 		Entries  : [
 			{ id: 3, side: 'Aff', speakerOrder: null, code: 'Plano East RS' },
 			{ id: 4, side: 'Neg', speakerOrder: null, code: 'Reagan MO' },
 		],
+	} satisfies CurrentBallot,
+	ldRound3Flight2 : {
+		...baseBallot,
+		id         : 90312,
+		flight     : 2,
+		roomNotes  : 'Back of the gym, use the side door',
+		ballotText : 'Submit your RFD before the next round.',
+	} satisfies CurrentBallot,
+	oiRound2 : {
+		...baseBallot,
+		id        : 90321,
+		name      : 2,
+		eventName : 'Oral Interpretation',
+		eventAbbr : 'OI',
+		eventType : 'speech',
+		chair     : false,
+		Entries   : [
+			{ id: 11, side: null, speakerOrder: 2, code: 'Lee KM' },
+			{ id: 12, side: null, speakerOrder: 1, code: 'Bush RS' },
+			{ id: 13, side: null, speakerOrder: 3, code: 'Tran AB' },
+		],
+	} satisfies CurrentBallot,
+	// Ballot in, still running the chamber until noon
+	congressChairSession : {
+		...baseBallot,
+		id        : 90331,
+		name      : 2,
+		eventName : 'Congressional Debate',
+		eventAbbr : 'CON',
+		eventType : 'congress',
+		status    : 'confirmed',
+		start     : '2026-11-07T15:00:00Z',
+		end       : '2026-11-07T18:00:00Z',
+		Entries   : [],
+	} satisfies CurrentBallot,
+	mockTrialChairSession : {
+		...baseBallot,
+		id        : 90341,
+		name      : 1,
+		eventName : 'Mock Trial',
+		eventAbbr : 'MT',
+		eventType : 'mock_trial',
+		status    : 'confirmed',
+		start     : '2026-11-07T15:00:00Z',
+		end       : '2026-11-07T18:00:00Z',
+		Entries   : [
+			{ id: 21, side: 'Prosecution', speakerOrder: null, code: 'Lakeside A' },
+			{ id: 22, side: 'Defense', speakerOrder: null, code: 'Westlake B' },
+		],
+	} satisfies CurrentBallot,
+	wudcPanelist : {
+		...baseBallot,
+		id        : 90351,
+		eventName : 'British Parliamentary',
+		eventAbbr : 'BP',
+		eventType : 'wudc',
+		chair     : false,
+		Entries   : [
+			{ id: 31, side: '1G', speakerOrder: 1, code: 'Lakeside AB' },
+			{ id: 32, side: '1O', speakerOrder: 2, code: 'Westlake CD' },
+			{ id: 33, side: '2G', speakerOrder: 3, code: 'Reagan EF' },
+			{ id: 34, side: '2O', speakerOrder: 4, code: 'Plano GH' },
+		],
+	} satisfies CurrentBallot,
+	ldRound3Async : {
+		...baseBallot,
+		id         : 90361,
+		onlineMode : 'async',
+		Room       : null,
+	} satisfies CurrentBallot,
+	ldRound3Paper : {
+		...baseBallot,
+		id            : 90371,
+		onlineBallots : false,
+	} satisfies CurrentBallot,
+	legionRound2Audited : {
+		...baseBallot,
+		id        : 90381,
+		name      : 2,
+		eventName : 'American Legion Oratorical',
+		eventAbbr : 'AL',
+		eventType : 'speech',
+		legion    : true,
+		status    : 'confirmed',
+		end       : '2026-11-07T16:00:00Z',
 	} satisfies CurrentBallot,
 };
 
@@ -271,7 +356,12 @@ const ldJudge: HomeJudge = {
 	Category       : ld,
 	school         : lakeside.id,
 	School         : lakeside,
-	Jpools         : [{ id: 601, name: 'LD Prelims', site: null }, { id: 602, name: 'LD Elims', site: null }],
+	Jpools         : [
+		{ id: 601, name: 'LD Prelims', site: null, Site: null, message: null },
+		{ id: 602, name: 'LD Elims', site: 81, Site: { name: 'Lakeside High' }, message: 'Check in at the judge table by 8:00 a.m.' },
+	],
+	Standbys       : [],
+	Training       : null,
 	roundsJudged   : 2,
 	ballotsEntered : 2,
 	ballotsOpen    : null,
@@ -359,7 +449,7 @@ const parts: Record<Phase, Record<HomeRole, RolePart>> = {
 				code           : null,
 				category       : pf.id,
 				Category       : pf,
-				Jpools         : [{ id: 611, name: 'PF Prelims', site: null }, { id: 612, name: 'PF Elims', site: null }],
+				Jpools         : [{ id: 611, name: 'PF Prelims', site: null, Site: null, message: null }, { id: 612, name: 'PF Elims', site: null, Site: null, message: null }],
 				roundsJudged   : 0,
 				ballotsEntered : 0,
 				ballotsOpen    : '2026-11-20T14:00:00Z',
@@ -580,7 +670,7 @@ export const bluebonnetTwoJudgeRows: HomeTourn = {
 		Category       : pf,
 		school         : null,
 		School         : null,
-		Jpools         : [{ id: 621, name: 'PF Prelims', site: null }],
+		Jpools         : [{ id: 621, name: 'PF Prelims', site: null, Site: null, message: null }],
 		roundsJudged   : 1,
 		ballotsEntered : 1,
 		Strikes        : [],
@@ -619,6 +709,48 @@ export const bluebonnetOnlineCoachJudge: HomeTourn = {
 	...online,
 	OnlineRooms : [room('school', lakeside.id, 'Lakeside squad room'), room('utility', 3, 'Judge lounge')],
 	Judges      : [{ ...ldJudge, CurrentBallots: [ballots.ldRound3Online] }],
+};
+
+// Judging only, online: the Campus ballot's row carries its join button
+export const bluebonnetOnlineJudge: HomeTourn = {
+	...tourn('running', ['judge']),
+	...online,
+	OnlineRooms : [room('utility', 3, 'Judge lounge')],
+	Judges      : [{ ...ldJudge, CurrentBallots: [ballots.ldRound3Online] }],
+};
+
+// On standby for round 4 this afternoon, and the sample ballot still to judge
+export const bluebonnetStandbyTraining: HomeTourn = {
+	...tourn('running', ['judge']),
+	Judges : [{
+		...ldJudge,
+		CurrentBallots : [],
+		Standbys       : [{
+			jpool    : 603,
+			name     : 'LD Standby R4',
+			Site     : { name: 'Lakeside High' },
+			message  : 'Wait in the judge lounge, room 112.',
+			Timeslot : { name: 'Round 4', start: '2026-11-07T19:00:00Z', end: '2026-11-07T21:00:00Z' },
+		}],
+		Training       : { event: 5101, Event: { abbr: 'LD', type: 'debate' } },
+	}],
+};
+
+// Every kind of ballot row at once, for the ballot rows story
+export const bluebonnetBallotRows: HomeTourn = {
+	...bluebonnetCoachJudge,
+	Judges : [{
+		...ldJudge,
+		CurrentBallots : [
+			ballots.ldRound3Flight2,
+			ballots.oiRound2,
+			ballots.congressChairSession,
+			ballots.mockTrialChairSession,
+			ballots.wudcPanelist,
+			ballots.ldRound3Async,
+			ballots.ldRound3Paper,
+		],
+	}],
 };
 
 export const bluebonnetOnlineCompetitor: HomeTourn = {

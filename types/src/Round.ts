@@ -8,7 +8,6 @@ export const RoundSchema = z.object({
 	type: z.string().max(15).nullable(),
 	name: z.int().nullable(),
 	label: z.string().max(31).nullable(),
-	flighted: z.boolean().nullable(),
 }).strict().meta({
 	id: 'Round',
 }) satisfies ZodOpenApiSchemaObject;

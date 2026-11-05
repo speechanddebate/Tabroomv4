@@ -252,7 +252,7 @@ describe('ballotRepo', async () => {
 				entry: mine.id,
 				entryCode: 'AB',
 				entryActive: 1,
-				scored: 0,
+				scoreTag: null,
 			});
 		});
 

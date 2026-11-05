@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env/public', () => ({ CLASSIC_URL: 'https://classic.example.com' }));
 
+import type { CurrentBallot } from '@tabroom/types';
 import * as fx from '../../../storybook/stories/routes/user/home/fixtures';
 import { dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
 
@@ -56,6 +57,107 @@ describe('openBallots', () => {
 	it('leaves out audited ballots', () => {
 		expect(openBallots([fx.ballots.ldRound3, fx.ballots.ldRound2Audited])).toEqual([fx.ballots.ldRound3]);
 	});
+
+	it('keeps a congress or mock trial chair presiding until the round ends, then moves it to feedback', () => {
+		const sessions = [fx.ballots.congressChairSession, fx.ballots.mockTrialChairSession];
+		const over = '2026-11-07T18:30:00Z';
+
+		expect(openBallots(sessions, fx.now)).toEqual(sessions);
+		expect(feedbackItems(sessions, fx.now)).toEqual([]);
+		expect(openBallots(sessions, over)).toEqual([]);
+		expect(feedbackItems(sessions, over).map(item => item.label)).toEqual(['Session 2 CON', 'Round 1 MT']);
+	});
+
+	it('sends Legion feedback to its classic comments page', () => {
+		expect(feedbackItems([fx.ballots.legionRound2Audited], fx.now)[0]!.action!.href)
+			.toBe('https://classic.example.com/user/judge/legion_comments.mhtml?panel_id=90381&judge_id=4410');
+	});
+});
+
+describe('standby and training rows', () => {
+	const judge = fx.bluebonnetStandbyTraining.Judges[0]!;
+
+	it('tells a standby judge when and where to stay ready, with no button', () => {
+		expect(homeTasks(fx.bluebonnetStandbyTraining, fx.now).find(task => task.title.startsWith('On standby'))).toEqual({
+			tone  : 'due',
+			title : 'On standby for Round 4',
+			when  : '1:00 PM to 3:00 PM',
+			lines : [
+				'LD Standby R4 · Lakeside High',
+				"You have no round, but you may be called in if a judge doesn't show. Stay ready.",
+				'Wait in the judge lounge, room 112.',
+			],
+		});
+	});
+
+	it('asks an untrained judge to judge the sample round on classic', () => {
+		expect(homeTasks(fx.bluebonnetStandbyTraining, fx.now).find(task => task.title.startsWith('Complete a training ballot'))).toMatchObject({
+			tone   : 'due',
+			title  : 'Complete a training ballot',
+			action : { label: 'Start training', href: `https://classic.example.com/user/judge/training.mhtml?sample=1&event_id=5101&judge_id=${judge.id}` },
+		});
+	});
+
+	it('names the category for training when the person judges in two', () => {
+		const twoRows = { ...fx.bluebonnetStandbyTraining, Judges: [judge, { ...judge, id: 4411, Standbys: [], Training: null }] };
+		expect(titles(twoRows)).toContain(`Complete a training ballot for ${judge.Category.abbr}`);
+	});
+});
+
+describe('ballot rows', () => {
+	const row = (ballot: CurrentBallot, now = fx.now, personTz: string | null = null) => homeTasks(
+		{ ...fx.bluebonnetCoachJudge, Schools: [], Judges: [{ ...fx.bluebonnetCoachJudge.Judges[0]!, Quizzes: [], CurrentBallots: [ballot] }] },
+		now,
+		personTz,
+	)[0]!;
+
+	it('lists the flight, room, entries with sides, room notes, and the event instructions', () => {
+		expect(row(fx.ballots.ldRound3Flight2)).toMatchObject({
+			title  : 'Round 3 LD starts at 11:00 AM',
+			lines  : ['Flight 2 · Room 214', 'Aff Westlake MR vs. Neg Cedar Park TJ', 'Room notes: Back of the gym, use the side door', 'Submit your RFD before the next round.'],
+			action : { label: 'Start round' },
+		});
+	});
+
+	it('lists speech entries in speaking order', () => {
+		expect(row(fx.ballots.oiRound2).lines).toEqual(['Room 214', '1. Bush RS · 2. Lee KM · 3. Tran AB']);
+	});
+
+	it('gives a presiding chair an info row back to the session, without entries for congress', () => {
+		expect(row(fx.ballots.congressChairSession)).toMatchObject({
+			tone   : 'info',
+			title  : 'Session 2 CON: presiding until 12:00 PM',
+			lines  : ['Room 214'],
+			action : { label: 'Session info' },
+		});
+		expect(row(fx.ballots.mockTrialChairSession)).toMatchObject({
+			tone   : 'info',
+			title  : 'Round 1 MT: presiding until 12:00 PM',
+			lines  : ['Room 214 · Presiding judge', 'Prosecution Lakeside A vs. Defense Westlake B'],
+			action : { label: 'Start round' },
+		});
+	});
+
+	it('gives a WUDC panelist and a paper ballot no button, and never makes them critical', () => {
+		const late = '2026-11-07T19:30:00Z';
+		expect(row(fx.ballots.wudcPanelist, late)).toMatchObject({
+			tone  : 'due',
+			lines : ['Room 214 · Panelist: only chairs enter ballots', '1G Lakeside AB · 1O Westlake CD · 2G Reagan EF · 2O Plano GH'],
+		});
+		expect(row(fx.ballots.wudcPanelist).action).toBeUndefined();
+		expect(row(fx.ballots.ldRound3Paper, late)).toMatchObject({ tone: 'due', lines: ['Room 214 · Paper ballot', 'Aff Westlake MR vs. Neg Cedar Park TJ'] });
+		expect(row(fx.ballots.ldRound3Paper).action).toBeUndefined();
+	});
+
+	it('gives an async round its judging deadline instead of a start time', () => {
+		expect(row(fx.ballots.ldRound3Async)).toMatchObject({ title: 'Round 3 LD ballot due 1:00 PM', lines: ['Video links are on the ballot', 'Aff Westlake MR vs. Neg Cedar Park TJ'] });
+	});
+
+	it("adds the judge's own time to an online round in another time zone", () => {
+		expect(row(fx.ballots.ldRound3Online, fx.now, 'America/New_York').title).toBe('Round 3 LD starts at 11:00 AM CST (12:00 PM EST your time)');
+		expect(row(fx.ballots.ldRound3Online, fx.now, 'America/Chicago').title).toBe('Round 3 LD starts at 11:00 AM');
+		expect(row(fx.ballots.ldRound3, fx.now, 'America/New_York').title).toBe('Round 3 LD starts at 11:00 AM');
+	});
 });
 
 describe('homeTasks', () => {
@@ -67,7 +169,7 @@ describe('homeTasks', () => {
 			'2 strike cards open',
 		]);
 		expect(tasks[0]).toMatchObject({ detail: '1 to complete, 1 waiting for NSDA Learn approval.' });
-		expect(tasks[1]).toMatchObject({ detail: 'Room 214. Westlake MR vs. Cedar Park TJ.', room: undefined });
+		expect(tasks[1]).toMatchObject({ lines: ['Room 214', 'Aff Westlake MR vs. Neg Cedar Park TJ'], room: undefined });
 		expect(tasks[2]).toMatchObject({ when: 'Due 12:30 PM' });
 		expect(tasks[2]!.items).toHaveLength(2);
 	});

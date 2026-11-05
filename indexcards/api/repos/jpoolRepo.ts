@@ -41,19 +41,29 @@ async function getJpools(db: Database, opts: queryOpts = {}) {
 		.execute();
 }
 
-/** The pools these judges are in, one row per pool and judge */
+/** The pools these judges are in, one row per pool and judge, with the pool's site and its standby timeslot */
 async function getJudgePools(db: Database, opts: queryOpts & { judges: number[] }) {
 	return await buildJpoolQuery(db, opts)
 		.innerJoin('jpool_judge', (join) => join
 			.onRef('jpool_judge.jpool', '=', 'jpool.id')
 			.on('jpool_judge.judge', 'in', opts.judges)
 		)
+		.leftJoin('site', 'site.id', 'jpool.site')
+		.leftJoin('jpool_setting as standby_timeslot', (join) => join
+			.onRef('standby_timeslot.jpool', '=', 'jpool.id')
+			.on('standby_timeslot.tag', '=', 'standby_timeslot')
+		)
+		.leftJoin('timeslot', 'timeslot.id', 'standby_timeslot.value')
 		.select([
 			'jpool.id',
 			'jpool.name',
 			'jpool.site',
 			'jpool.category',
 			'jpool_judge.judge',
+			'site.name as siteName',
+			'timeslot.name as standbyName',
+			'timeslot.start as standbyStart',
+			'timeslot.end as standbyEnd',
 		])
 		.execute();
 }

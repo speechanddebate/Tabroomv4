@@ -2239,7 +2239,76 @@ export const getUserHomeResponseMock = (
 					faker.number.int({ min: 0, max: 9007199254740991 }),
 					null,
 				]),
+				Site: faker.helpers.arrayElement([
+					{
+						name: faker.helpers.arrayElement([
+							faker.string.alpha({
+								length: { min: 10, max: 20 },
+							}),
+							null,
+						]),
+					},
+					null,
+				]),
+				message: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
 			})),
+			Standbys: Array.from(
+				{ length: faker.number.int({ min: 1, max: 10 }) },
+				(_, i) => i + 1,
+			).map(() => ({
+				jpool: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				Site: faker.helpers.arrayElement([
+					{
+						name: faker.helpers.arrayElement([
+							faker.string.alpha({
+								length: { min: 10, max: 20 },
+							}),
+							null,
+						]),
+					},
+					null,
+				]),
+				message: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				Timeslot: {
+					name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+					start: faker.date.past().toISOString().slice(0, 19) + 'Z',
+					end: faker.date.past().toISOString().slice(0, 19) + 'Z',
+				},
+			})),
+			Training: faker.helpers.arrayElement([
+				{
+					event: faker.number.int({ min: 0, max: 9007199254740991 }),
+					Event: {
+						abbr: faker.helpers.arrayElement([
+							faker.string.alpha({
+								length: { min: 10, max: 20 },
+							}),
+							null,
+						]),
+						type: faker.helpers.arrayElement([
+							'debate',
+							'speech',
+							'mock_trial',
+							'congress',
+							'wsdc',
+							'wudc',
+							'attendee',
+							'academic',
+						] as const),
+					},
+				},
+				null,
+			]),
 			roundsJudged: faker.number.int({
 				min: -9007199254740991,
 				max: 9007199254740991,
@@ -2376,6 +2445,7 @@ export const getUserHomeResponseMock = (
 				legion: faker.datatype.boolean(),
 				start: faker.date.past().toISOString().slice(0, 19) + 'Z',
 				deadline: faker.date.past().toISOString().slice(0, 19) + 'Z',
+				end: faker.date.past().toISOString().slice(0, 19) + 'Z',
 				roomId: faker.helpers.arrayElement([
 					faker.number.int({ min: 0, max: 9007199254740991 }),
 					null,
@@ -2412,6 +2482,7 @@ export const getUserHomeResponseMock = (
 					'not_started',
 					'started',
 					'scored',
+					'confirmed',
 				] as const),
 				startText: faker.helpers.arrayElement([
 					faker.string.alpha({ length: { min: 10, max: 127 } }),
@@ -2422,7 +2493,6 @@ export const getUserHomeResponseMock = (
 					null,
 				]),
 				chair: faker.datatype.boolean(),
-				audited: faker.datatype.boolean(),
 				tourn: faker.number.int({ min: 0, max: 9007199254740991 }),
 				TournTz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 				eventName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -2979,6 +3049,7 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 		legion: faker.datatype.boolean(),
 		start: faker.date.past().toISOString().slice(0, 19) + 'Z',
 		deadline: faker.date.past().toISOString().slice(0, 19) + 'Z',
+		end: faker.date.past().toISOString().slice(0, 19) + 'Z',
 		roomId: faker.helpers.arrayElement([
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
@@ -3011,6 +3082,7 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 			'not_started',
 			'started',
 			'scored',
+			'confirmed',
 		] as const),
 		startText: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 127 } }),
@@ -3021,7 +3093,6 @@ export const getUserTournsBallotsResponseMock = (): CurrentBallot[] =>
 			null,
 		]),
 		chair: faker.datatype.boolean(),
-		audited: faker.datatype.boolean(),
 		tourn: faker.number.int({ min: 0, max: 9007199254740991 }),
 		TournTz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 		eventName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3095,6 +3166,7 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 		legion: faker.datatype.boolean(),
 		start: faker.date.past().toISOString().slice(0, 19) + 'Z',
 		deadline: faker.date.past().toISOString().slice(0, 19) + 'Z',
+		end: faker.date.past().toISOString().slice(0, 19) + 'Z',
 		roomId: faker.helpers.arrayElement([
 			faker.number.int({ min: 0, max: 9007199254740991 }),
 			null,
@@ -3127,6 +3199,7 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 			'not_started',
 			'started',
 			'scored',
+			'confirmed',
 		] as const),
 		startText: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 127 } }),
@@ -3137,7 +3210,6 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 			null,
 		]),
 		chair: faker.datatype.boolean(),
-		audited: faker.datatype.boolean(),
 		tourn: faker.number.int({ min: 0, max: 9007199254740991 }),
 		TournTz: faker.string.alpha({ length: { min: 10, max: 31 } }),
 		eventName: faker.string.alpha({ length: { min: 10, max: 20 } }),

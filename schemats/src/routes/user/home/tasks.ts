@@ -30,6 +30,7 @@ export type Task = {
 	title       : string,
 	when?       : string,
 	detail?     : string,
+	lines?      : string[], // details that each take their own line under the title, e.g. a round's room and entries
 	action?     : Link,
 	tone        : Tone,
 	// The round's online room, joined beside the action; the target matches OnlineRoom.svelte's section target
@@ -41,6 +42,8 @@ export type Task = {
 // Classic has no per-entry results page and flip and strike cards are person-scoped, so those take no ids
 export const classic = {
 	quiz           : (quiz: number) => `${CLASSIC_URL}/user/judge/quiz_take.mhtml?quiz_id=${quiz}`,
+	training       : (event: number, judge: number) => `${CLASSIC_URL}/user/judge/training.mhtml?sample=1&event_id=${event}&judge_id=${judge}`,
+	legionComments : (panel: number, judge: number) => `${CLASSIC_URL}/user/judge/legion_comments.mhtml?panel_id=${panel}&judge_id=${judge}`,
 	conflicts      : (judge: number) => `${CLASSIC_URL}/user/judge/judge_conflicts.mhtml?judge_id=${judge}`,
 	flip           : () => `${CLASSIC_URL}/user/enter/flip.mhtml`,
 	entryPrefs     : (entry: number, school: number | null, type: string | null) =>
@@ -113,27 +116,78 @@ const ballotHref = (ballot: CurrentBallot): string => ballot.legion
 
 const matchup = (ballot: CurrentBallot) => ballot.eventType === 'debate' ? ballot.Entries.map(entry => entry.code).join(' vs. ') : '';
 
-// Audited ballots are done, so they never ask for action; until feedback closes they stay editable for comments and RFDs
-export const openBallots = (ballots: CurrentBallot[]) => ballots.filter(ballot => !ballot.audited);
+const ballotRound = (ballot: CurrentBallot) => `${ballot.eventType === 'congress' && !ballot.label ? `Session ${ballot.name ?? ''}` : roundLabel(ballot)} ${ballot.eventAbbr ?? ''}`.trim();
 
-export const feedbackItems = (ballots: CurrentBallot[]): TaskItem[] => ballots
-	.filter(ballot => ballot.audited)
+// A congress or mock trial chair keeps presiding after their ballot is audited, until the round ends
+export const presiding = (ballot: CurrentBallot, now = new Date().toISOString()) => ballot.status === 'confirmed'
+	&& ballot.chair
+	&& (ballot.eventType === 'congress' || ballot.eventType === 'mock_trial')
+	&& now < ballot.end;
+
+// Audited ballots are done, so they never ask for action, except a session the judge is still
+// presiding over; until feedback closes the rest stay editable for comments and RFDs
+export const openBallots = (ballots: CurrentBallot[], now = new Date().toISOString()) => ballots
+	.filter(ballot => ballot.status !== 'confirmed' || presiding(ballot, now));
+
+export const feedbackItems = (ballots: CurrentBallot[], now = new Date().toISOString()): TaskItem[] => ballots
+	.filter(ballot => ballot.status === 'confirmed' && !presiding(ballot, now))
 	.map(ballot => ({
-		label  : `${roundLabel(ballot)} ${ballot.eventAbbr ?? ''}`.trim(),
+		label  : ballotRound(ballot),
 		detail : matchup(ballot) || undefined,
-		action : { label: 'Edit feedback', href: ballotHref(ballot) },
+		action : { label: 'Edit feedback', href: ballot.legion ? classic.legionComments(ballot.id, ballot.JudgeId) : ballotHref(ballot) },
 	}));
 
-// An unstarted ballot is late once the round starts; a started one once its decision deadline passes
-function ballotTask(ballot: CurrentBallot, tz: string, now: string): Task {
-	const label = ballot.status === 'scored' ? 'Confirm result'
+// The entries as classic's panel card lists them: sides or positions for two-sided events and
+// WUDC, speaking order for speech, none for congress and Legion
+function entriesLine(ballot: CurrentBallot): string | undefined {
+	if (ballot.eventType === 'congress' || ballot.legion || ballot.Entries.length === 0) return undefined;
+	if (ballot.eventType === 'speech') {
+		return [...ballot.Entries]
+			.sort((a, b) => (a.speakerOrder ?? 0) - (b.speakerOrder ?? 0))
+			.map(entry => entry.speakerOrder ? `${entry.speakerOrder}. ${entry.code ?? ''}` : entry.code ?? '')
+			.join(' · ');
+	}
+	const entries = ballot.Entries.map(entry => `${entry.side ?? ''} ${entry.code ?? ''}`.trim());
+	return entries.join(entries.length === 2 ? ' vs. ' : ' · ');
+}
+
+/*
+ * One open panel as a task row. An unstarted ballot is late once the round starts and a started
+ * one once its decision deadline passes; a paper ballot, a WUDC panelist, and a chair still
+ * presiding owe nothing online, so they never turn critical.
+ */
+function ballotTask(ballot: CurrentBallot, tz: string, personTz: string | null, now: string): Task {
+	const isPresiding = presiding(ballot, now);
+	const panelist = ballot.eventType === 'wudc' && !ballot.chair;
+	const asynchronous = ballot.onlineMode === 'async' || ballot.show_async;
+	// Online rounds also give the judge's own time when they're in another zone, like classic
+	const online = !!ballot.onlineMode && ballot.onlineMode !== 'none';
+	const time = (iso: string) => online && personTz && personTz !== tz
+		? `${showTime({ dtISO: iso, tz, showTz: true })} (${showTime({ dtISO: iso, tz: personTz, showTz: true })} your time)`
+		: showTime({ dtISO: iso, tz });
+
+	const label = isPresiding ? (ballot.eventType === 'congress' ? 'Session info' : ballot.startText ?? 'Start round')
+		: ballot.status === 'scored' ? 'Confirm result'
 		: ballot.status === 'started' ? 'Enter ballot'
 		: ballot.startText ?? 'Start round';
+
+	const facts = [
+		ballot.flight ? `Flight ${ballot.flight}` : '',
+		asynchronous ? 'Video links are on the ballot' : ballot.Room?.name ?? '',
+		ballot.eventType === 'mock_trial' ? (ballot.chair ? 'Presiding judge' : 'Scorer') : '',
+		!ballot.onlineBallots ? 'Paper ballot' : panelist ? 'Panelist: only chairs enter ballots' : '',
+	].filter(Boolean).join(' · ');
+
 	return {
-		tone   : now < (ballot.status === 'not_started' ? ballot.start : ballot.deadline) ? 'due' : 'critical',
-		title  : `${roundLabel(ballot)} ${ballot.eventAbbr ?? ''} starts at ${showTime({ dtISO: ballot.start, tz })}`.replace(/\s+/g, ' '),
-		detail : [ballot.Room?.name, matchup(ballot)].filter(Boolean).map(part => `${part}.`).join(' '),
-		action : { label, href: ballotHref(ballot) },
+		tone   : isPresiding ? 'info'
+			: !ballot.onlineBallots || panelist ? 'due'
+			: now < (ballot.status === 'not_started' ? ballot.start : ballot.deadline) ? 'due' : 'critical',
+		title  : isPresiding ? `${ballotRound(ballot)}: presiding until ${time(ballot.end)}`
+			: asynchronous ? `${ballotRound(ballot)} ballot due ${time(ballot.end)}`
+			: `${ballotRound(ballot)} starts at ${time(ballot.start)}`,
+		lines  : [facts, entriesLine(ballot), ballot.roomNotes ? `Room notes: ${ballot.roomNotes}` : '', ballot.ballotText ?? '']
+			.filter((line): line is string => !!line),
+		action : ballot.onlineBallots && !panelist ? { label, href: ballotHref(ballot) } : undefined,
 		room   : ballot.Room?.joinable ? { room: ballot.Room, target: { type: 'section', tournId: ballot.tourn, sectionId: ballot.id } } : undefined,
 	};
 }
@@ -154,13 +208,35 @@ function quizTask(judge: HomeJudge, phase: Phase, many: boolean): Task | null {
 }
 
 /* Everything the person owes at the tourn, across their roles, most urgent first */
-export function homeTasks(tourn: HomeTourn, now = new Date().toISOString()): Task[] {
+// personTz is the judge's own zone, which online rounds show beside the tournament's
+export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), personTz: string | null = null): Task[] {
 	const phase = phaseOf(tourn, now);
 	const due = (iso: string) => `Due ${dueText(iso, tourn.tz, now)}`;
 	const tasks: Task[] = [];
 
 	for (const judge of tourn.Judges) {
-		tasks.push(...openBallots(judge.CurrentBallots).map(ballot => ballotTask(ballot, tourn.tz, now)));
+		tasks.push(...openBallots(judge.CurrentBallots, now).map(ballot => ballotTask(ballot, tourn.tz, personTz, now)));
+
+		// The server lists a standby until its timeslot ends; nothing to open, just be ready
+		tasks.push(...judge.Standbys.map(standby => ({
+			tone  : 'due' as const,
+			title : `On standby for ${standby.Timeslot.name}`,
+			when  : `${dueText(standby.Timeslot.start, tourn.tz, now)} to ${showTime({ dtISO: standby.Timeslot.end, tz: tourn.tz })}`,
+			lines : [
+				[standby.name, standby.Site?.name].filter(Boolean).join(' · '),
+				"You have no round, but you may be called in if a judge doesn't show. Stay ready.",
+				standby.message ?? '',
+			].filter(Boolean),
+		})));
+
+		if (judge.Training && phase !== 'past') {
+			tasks.push({
+				tone   : 'due',
+				title  : `Complete a training ballot${tourn.Judges.length > 1 ? ` for ${judge.Category.abbr ?? judge.Category.name}` : ''}`,
+				detail : 'Judge a sample round to learn how online ballots work.',
+				action : { label: 'Start training', href: classic.training(judge.Training.event, judge.id) },
+			});
+		}
 		const quiz = phase === 'past' ? null : quizTask(judge, phase, tourn.Judges.length > 1);
 		if (quiz) tasks.push(quiz);
 	}

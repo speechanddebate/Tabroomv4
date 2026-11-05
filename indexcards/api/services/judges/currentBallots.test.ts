@@ -38,7 +38,7 @@ function row(overrides: Partial<JudgePanelRow> = {}): JudgePanelRow {
 		entry: 700,
 		entryCode: 'AB',
 		entryActive: 1,
-		scored: 0,
+		scoreTag: null,
 		...overrides,
 	} as JudgePanelRow;
 }
@@ -62,7 +62,7 @@ describe('buildCurrentBallots', () => {
 		expect(ballots[0]).toMatchObject({
 			id: 100,
 			name: 1,
-			flight: 1,
+			flight: null,
 			status: 'not_started',
 			start: start.toISOString(),
 			deadline: end.toISOString(),
@@ -70,7 +70,6 @@ describe('buildCurrentBallots', () => {
 			Room: null,
 			roomNotes: null,
 			chair: false,
-			audited: false,
 			tourn: 600,
 			TournTz: 'America/Chicago',
 			eventType: 'debate',
@@ -89,28 +88,36 @@ describe('buildCurrentBallots', () => {
 		expect(ballots.map((ballot) => [ballot.id, ballot.roomNotes])).toEqual([[1, 'back of the gym'], [2, null]]);
 	});
 
-	it('starts each flight later by the flight offset when the round is flighted', () => {
-		const ballots = buildCurrentBallots([row({ panelFlight: '2', roundStart: start }), row({ panel: 101, panelFlight: '2', roundFlighted: 0 })], context({ events: new Map([[400, { flight_offset: '50' }]]) }));
+	// A two hour timeslot from 11:00 with two one hour flights
+	it('runs each flight from its offset start until the next flight starts, the last until the timeslot ends', () => {
+		const at = (minutes: number) => new Date(start.getTime() + minutes * 60_000).toISOString();
+		const flights = (event: Record<string, string>, overrides: Partial<JudgePanelRow> = {}) => buildCurrentBallots(
+			[row({ panel: 1, panelFlight: '1', roundFlighted: 2, ...overrides }), row({ panel: 2, panelFlight: '2', roundFlighted: 2, ...overrides })],
+			context({ events: new Map([[400, event]]) }),
+		).map((ballot) => [ballot.flight, ballot.start, ballot.deadline, ballot.end]);
 
-		expect(ballots[0]).toMatchObject({ flight: 2, start: new Date(start.getTime() + 50 * 60_000).toISOString(), deadline: new Date(end.getTime() + 50 * 60_000).toISOString() });
-		expect(ballots[1]).toMatchObject({ flight: null, start: start.toISOString() });
+		expect(flights({ flight_offset: '60', prelim_decision_deadline: '50' })).toEqual([[1, at(0), at(50), at(60)], [2, at(60), at(110), at(120)]]);
+		expect(flights({ flight_offset: '60' })).toEqual([[1, at(0), at(60), at(60)], [2, at(60), at(120), at(120)]]);
+		// an offset longer than the timeslot allows still ends the flight with the timeslot
+		expect(flights({ flight_offset: '90' })).toEqual([[1, at(0), at(90), at(90)], [2, at(90), at(120), at(120)]]);
+		expect(flights({})).toEqual([[1, at(0), at(120), at(120)], [2, at(0), at(120), at(120)]]);
+		expect(flights({ flight_offset: '60' }, { roundFlighted: 0, panelFlight: '1' })).toEqual([[null, at(0), at(120), at(120)], [null, at(0), at(120), at(120)]]);
 	});
 
-	it('sets the deadline from the prelim or elim decision deadline, per flight, falling back to the timeslot end', () => {
-		const events = new Map([[400, { prelim_decision_deadline: '90', elim_decision_deadline: '120', flight_offset: '50' }]]);
-		const ballots = buildCurrentBallots([
-			row({ panel: 1, roundType: 'prelim' }),
-			row({ panel: 2, roundType: 'elim' }),
-			row({ panel: 3, roundType: 'prelim', panelFlight: '2' }),
-		], context({ events }));
-		const unset = buildCurrentBallots([row()], context({ events: new Map([[400, { elim_decision_deadline: '120' }]]) }));
+	it('takes the elim deadline for elims and finals and the prelim one for every other type, else the flight end', () => {
+		const deadline = (roundType: string | null, event: Record<string, string>) => buildCurrentBallots([row({ roundType })], context({ events: new Map([[400, event]]) }))[0].deadline;
+		const after = (minutes: number) => new Date(start.getTime() + minutes * 60_000).toISOString();
+		const both = { prelim_decision_deadline: '90', elim_decision_deadline: '100' };
 
-		expect(ballots.map((ballot) => ballot.deadline)).toEqual([
-			new Date(start.getTime() + 90 * 60_000).toISOString(),
-			new Date(start.getTime() + 120 * 60_000).toISOString(),
-			new Date(start.getTime() + (90 + 50) * 60_000).toISOString(),
-		]);
-		expect(unset[0]!.deadline).toBe(end.toISOString());
+		expect(deadline('prelim', both)).toBe(after(90));
+		expect(deadline('highlow', both)).toBe(after(90));
+		expect(deadline('snaked_prelim', both)).toBe(after(90));
+		expect(deadline(null, both)).toBe(after(90));
+		expect(deadline('elim', both)).toBe(after(100));
+		expect(deadline('final', both)).toBe(after(100));
+		expect(deadline('runoff', both)).toBe(after(90));
+		expect(deadline('elim', { prelim_decision_deadline: '90' })).toBe(end.toISOString());
+		expect(deadline('prelim', { elim_decision_deadline: '100' })).toBe(end.toISOString());
 	});
 
 	it('labels sides unless a flip is still open, on elims until the flip is done, and never without side constraints', () => {
@@ -131,11 +138,19 @@ describe('buildCurrentBallots', () => {
 		expect(sides('done', {}, { no_side_constraints: '1' })).toEqual([[null, null], [null, null]]);
 	});
 
-	it('drops an audited panel until the slot ends, except for chairs and for mock trial and congress', () => {
-		expect(buildCurrentBallots([row({ audit: 1 })], context())).toHaveLength(0);
-		expect(buildCurrentBallots([row({ audit: 1, chair: 1 })], context())).toHaveLength(1);
-		expect(buildCurrentBallots([row({ audit: 1, eventType: 'congress' })], context())).toHaveLength(1);
-		expect(buildCurrentBallots([row({ audit: 1 })], context({ now: new Date('2026-03-07T14:00:00Z') }))).toHaveLength(1);
+	it('drops an audited panel until its flight ends, except for a congress or mock trial chair', () => {
+		const listed = (overrides: Partial<JudgePanelRow>, ctx = context()) => buildCurrentBallots([row({ audit: 1, ...overrides })], ctx).length;
+		const flighted = new Map([[400, { flight_offset: '30' }]]);
+
+		expect(listed({})).toBe(0);
+		expect(listed({ chair: 1 })).toBe(0);
+		expect(listed({ eventType: 'congress' })).toBe(0);
+		expect(listed({ eventType: 'congress', chair: 1 })).toBe(1);
+		expect(listed({ eventType: 'mock_trial', chair: 1 })).toBe(1);
+		expect(listed({}, context({ now: new Date('2026-03-07T14:00:00Z') }))).toBe(1);
+		// flight 1 of 2 ended at 11:30, before now at 12:00
+		expect(listed({ roundFlighted: 2 }, context({ events: flighted }))).toBe(1);
+		expect(listed({ roundFlighted: 2, panelFlight: '2' }, context({ events: flighted }))).toBe(0);
 	});
 
 	it('drops async panels past their deadline and inactive entries', () => {
@@ -153,7 +168,8 @@ describe('buildCurrentBallots', () => {
 		expect(buildCurrentBallots([row({ judge_started: start })], ctx)[0]).toMatchObject({
 			status: 'started', onlineBallots: true, legion: true, show_async: true, startText: 'Go', ballotText: 'When ready', TournTz: 'UTC',
 		});
-		expect(buildCurrentBallots([row({ scored: 1 })], ctx)[0].status).toBe('scored');
+		expect(buildCurrentBallots([row({ scoreTag: 'refute' })], ctx)[0].status).toBe('scored');
+		expect(buildCurrentBallots([row({ audit: 1, eventType: 'congress', chair: 1 })], ctx)[0].status).toBe('confirmed');
 	});
 });
 

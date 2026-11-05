@@ -11,13 +11,15 @@
 	import OnlineRoom, { type OnlineRoomTarget } from '$lib/components/OnlineRoom.svelte';
 	import { Tabs, TabItem } from '$lib/components/Tabs';
 	import { shortZone, showDateRange } from '$lib/helpers/dt';
+	import { getPerson } from '$lib/helpers/SessionContext.svelte';
 	import RoleSection from './RoleSection.svelte';
 	import TaskRow from './TaskRow.svelte';
 	import { homeTasks } from './tasks';
 
 	const { tourn }: { tourn: HomeTourn } = $props();
 
-	const tasks = $derived(homeTasks(tourn));
+	const person = $derived(getPerson());
+	const tasks = $derived(homeTasks(tourn, new Date().toISOString(), person?.tz ?? null));
 	const dates = $derived(showDateRange({ startISO: tourn.start, endISO: tourn.end, tz: tourn.tz, mode: 'date', format: 'long' }).dateOutput?.trim());
 	const location = $derived(tourn.city ? [tourn.city, tourn.state].filter(Boolean).join(', ') : tourn.online ? 'Online' : '');
 	const rooms = $derived(tourn.OnlineRooms.filter(room => room.joinable));

@@ -2,7 +2,7 @@ import type { MockInstance } from 'vitest';
 import factories from '../../../tests/factories/index.js';
 import logger from '../../helpers/logger.js';
 import type { Settings } from '../../repos/utils/index.js';
-import { ballotEntries, ballotTimers, bestPOScoring, otherJudges, settingLines, entryLabel, feedbackScoring, ballotHeader, ballotRules, ballotStatus, ballotTopic, chairLabel, decisionDeadline, flipStatus, isChair, isOn, pointsScoring, ranksScoring, roundLabel, roundStart, rulesText, savedWinner, sideLock, winlossScoring, type BallotRulesInput } from './ballotRules.js';
+import { ballotEntries, ballotTimers, bestPOScoring, otherJudges, settingLines, entryLabel, feedbackScoring, ballotHeader, ballotRules, ballotStatus, ballotTopic, chairLabel, decisionDeadline, flightNumber, flipStatus, isChair, isOn, judgesSeeRound, pointsScoring, ranksScoring, roundLabel, roundStart, rulesText, savedWinner, sideLabel, sideLock, sideNames, sideVisible, winlossScoring, type BallotRulesInput } from './ballotRules.js';
 
 const recent = new Date('2026-10-01T00:00:00Z');
 const old = new Date('2020-10-01T00:00:00Z');
@@ -280,6 +280,7 @@ describe('ballotStatus', () => {
 		'winloss',
 		'point',
 		'rank',
+		'refute',
 	])('is scored once a %s score is saved', (tag) => {
 		expect(ballotStatus({ ballots: [ballot({ judge_started: started }), ballot()], scores: [score(tag)] })).toBe('scored');
 	});
@@ -315,6 +316,64 @@ describe('isChair', () => {
 
 	it('counts the judge as chair when any of their ballot rows is', () => {
 		expect(isChair({ ballots: [ballot({ chair: 1 }), ballot()] })).toBe(true);
+	});
+});
+
+describe('sideNames and sideLabel', () => {
+	it('names the sides from the event, else Aff and Neg', () => {
+		expect(sideNames({ aff_label: 'Pro', neg_label: 'Con' })).toEqual({ aff: 'Pro', neg: 'Con' });
+		expect(sideNames({ aff_label: '' })).toEqual({ aff: 'Aff', neg: 'Neg' });
+		expect(sideNames(null)).toEqual({ aff: 'Aff', neg: 'Neg' });
+	});
+
+	it('labels two-sided events by side and WUDC by BP position', () => {
+		const names = { aff: 'Pro', neg: 'Con' };
+		expect(sideLabel('debate', 1, null, names)).toBe('Pro');
+		expect(sideLabel('mock_trial', 2, null, names)).toBe('Con');
+		expect(sideLabel('debate', 0, null, names)).toBeNull();
+		expect(sideLabel('wudc', 0, 3, names)).toBe('2G');
+		expect(sideLabel('wudc', 0, 0, names)).toBeNull();
+	});
+});
+
+describe('sideVisible', () => {
+	const prelim = { type: 'prelim' };
+	const elim = { type: 'elim' };
+
+	it('shows prelim sides unless a flip is pending or the event has no side constraints', () => {
+		expect(sideVisible(prelim, null, {})).toBe(true);
+		expect(sideVisible(prelim, 'done', {})).toBe(true);
+		expect(sideVisible(prelim, 'winner', {})).toBe(false);
+		expect(sideVisible(prelim, null, { no_side_constraints: '1' })).toBe(false);
+	});
+
+	it('hides elim and final sides until the flip is done unless elims are sidelocked', () => {
+		expect(sideVisible(elim, null, {})).toBe(false);
+		expect(sideVisible({ type: 'final' }, 'anyone', {})).toBe(false);
+		expect(sideVisible(elim, 'done', {})).toBe(true);
+		expect(sideVisible(elim, null, { sidelock_elims: '1' })).toBe(true);
+		expect(sideVisible(elim, null, { sidelock_elims: '1', no_side_constraints: '1' })).toBe(false);
+	});
+
+	it('shows a competitor their own audited ballot\'s side regardless', () => {
+		expect(sideVisible(elim, 'winner', { no_side_constraints: '1' }, true)).toBe(true);
+	});
+});
+
+describe('flightNumber', () => {
+	it('is the panel flight only when the round has more than one flight', () => {
+		expect(flightNumber({ round: { flighted: 2 }, panel: { flight: '2' } })).toBe(2);
+		expect(flightNumber({ round: { flighted: 1 }, panel: { flight: '1' } })).toBeNull();
+		expect(flightNumber({ round: { flighted: null }, panel: { flight: '1' } })).toBeNull();
+	});
+});
+
+describe('judgesSeeRound', () => {
+	it('lets judges see a round once published or released to judges only', () => {
+		expect(judgesSeeRound({ published: 1 })).toBe(true);
+		expect(judgesSeeRound({ published: 0, settings: { judges_ballots_visible: '1' } })).toBe(true);
+		expect(judgesSeeRound({ published: 2 })).toBe(false);
+		expect(judgesSeeRound({ published: 0, settings: { judges_ballots_visible: '0' } })).toBe(false);
 	});
 });
 
@@ -1262,7 +1321,6 @@ describe('decisionDeadline', () => {
 	it.each([
 		'elim',
 		'final',
-		'runoff',
 	])('uses the elim deadline for %s rounds', (type) => {
 		expect(decisionDeadline(input({ event: event(deadlines), round: round({ type }) }))).toEqual(new Date('2026-10-03T16:00:00Z'));
 	});
@@ -1270,6 +1328,7 @@ describe('decisionDeadline', () => {
 	it.each([
 		'highlow',
 		'snaked_prelim',
+		'runoff',
 		null,
 	])('uses the prelim deadline for %s rounds', (type) => {
 		expect(decisionDeadline(input({ event: event(deadlines), round: round({ type }) }))).toEqual(new Date('2026-10-03T15:30:00Z'));

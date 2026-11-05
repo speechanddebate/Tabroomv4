@@ -196,7 +196,10 @@ describe('GET /user/home', () => {
 				Category: { id: tourn.Category.id, name: tourn.Category.name, abbr: tourn.Category.abbr },
 				school: School.id,
 				School: { id: School.id, name: 'Lincoln' },
-				Jpools: [{ id: shown.id, name: 'Friday', site: null }],
+				Jpools: [{ id: shown.id, name: 'Friday', site: null, Site: null, message: null }],
+				// the standby pool has no standby timeslot
+				Standbys: [],
+				Training: null,
 				roundsJudged: 1,
 				ballotsEntered: 2,
 				ballotsOpen: null,
@@ -211,6 +214,52 @@ describe('GET /user/home', () => {
 			expect(judge.CurrentBallots[0].Room).toEqual({ name: null, joinable: false, hybrid: false, mapUrl: null });
 			expect(judge.Fines.map((fine: { id: number }) => fine.id).sort()).toEqual([mine.id, personal.id].sort());
 			expect(judge.Fines.find((fine: { id: number }) => fine.id === mine.id)).toMatchObject({ amount: 25, currency: '€', judge: Judge.id, Judge: { first: Judge.first, last: Judge.last } });
+		});
+
+		it("gives pools their site and message, and lists standby pools until their timeslot ends", async () => {
+			const tourn = await factories.tourn.createFull({ start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY) });
+			const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
+			const site = await factories.site.create({ name: 'North High' });
+			const pool = await factories.jpool.create({ category: tourn.Category.id, name: 'Elims', site: site.id, judges: [Judge.id], settings: { show_judges: 1, message: 'Report to the cafeteria' } });
+			const now = await factories.timeslot.create({ tourn: tourn.Tourn.id, name: 'Round 4', start: new Date(Date.now() - 3600000), end: new Date(Date.now() + 3600000) });
+			const over = await factories.timeslot.create({ tourn: tourn.Tourn.id, name: 'Round 1', start: new Date(Date.now() - 3 * 3600000), end: new Date(Date.now() - 2 * 3600000) });
+			const standby = await factories.jpool.create({ category: tourn.Category.id, name: 'Standby R4', site: site.id, judges: [Judge.id], settings: { show_judges: 1, standby: 1, standby_timeslot: now.id, message: 'Stay in the judge lounge' } });
+			await factories.jpool.create({ category: tourn.Category.id, name: 'Standby R1', judges: [Judge.id], settings: { show_judges: 1, standby: 1, standby_timeslot: over.id } });
+
+			const res = await home(userkey);
+
+			expect(res.body).toMatchSchema(HomeResponseSchema);
+			const [judge] = res.body.Tourns[0].Judges;
+			expect(judge.Jpools).toEqual([{ id: pool.id, name: 'Elims', site: site.id, Site: { name: 'North High' }, message: 'Report to the cafeteria' }]);
+			expect(judge.Standbys).toEqual([{
+				jpool: standby.id,
+				name: 'Standby R4',
+				Site: { name: 'North High' },
+				message: 'Stay in the judge lounge',
+				Timeslot: { name: 'Round 4', start: now.start?.toISOString(), end: now.end?.toISOString() },
+			}]);
+		});
+
+		it('asks an untrained judge for the training ballot, during their weekend at a tourn split into weekends', async () => {
+			const tourn = await factories.tourn.createFull({ start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY), Event: { type: 'debate', abbr: 'PF' } });
+			const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
+			const training = () => home(userkey).then((res) => res.body.Tourns[0].Judges[0].Training);
+
+			expect(await training()).toBeNull();
+
+			await saveSettings({ db, table: 'category', settings: { show_training: 1 }, ownerId: tourn.Category.id });
+			expect(await training()).toEqual({ event: tourn.Event.id, Event: { abbr: 'PF', type: 'debate' } });
+
+			const future = await factories.weekend.create({ tourn: tourn.Tourn.id, start: new Date(Date.now() + DAY), end: new Date(Date.now() + 2 * DAY) });
+			await saveSettings({ db, table: 'category', settings: { weekend: future.id }, ownerId: tourn.Category.id });
+			expect(await training()).toBeNull();
+
+			const current = await factories.weekend.create({ tourn: tourn.Tourn.id, start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY) });
+			await saveSettings({ db, table: 'category', settings: { weekend: current.id }, ownerId: tourn.Category.id });
+			expect(await training()).toMatchObject({ event: tourn.Event.id });
+
+			await saveSettings({ db, table: 'judge', settings: { ballot_trained: 1 }, ownerId: Judge.id });
+			expect(await training()).toBeNull();
 		});
 
 		it('gives each current ballot the room of its own section', async () => {
@@ -318,7 +367,7 @@ describe('GET /user/home', () => {
 				start: t.Timeslot.start?.toISOString(),
 				side: 1,
 				speakerorder: 0,
-				Panel: { id: panel.id, letter: 'B', flight: 1, bye: 0, flip_at: null, flip_status: null },
+				Panel: { id: panel.id, letter: 'B', flight: null, bye: 0, flip_at: null, flip_status: null },
 				Room: { name: '204', url: 'https://maps.test/204' },
 				Opponents: [{ entry: t.opponent.id, code: 'CD' }],
 				Judges: [{ id: t.Judge.id, first: 'Jo', last: 'Judge', code: 'J1' }],

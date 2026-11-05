@@ -52,6 +52,22 @@
 	{#snippet template()}<div class="max-w-4xl"><TournCard tourn={fx.bluebonnetOnlineCoachJudge} /></div>{/snippet}
 </Story>
 
+<Story name="Ballot rows">
+	{#snippet template()}<div class="max-w-4xl"><TournCard tourn={fx.bluebonnetBallotRows} /></div>{/snippet}
+</Story>
+
+<!-- The judge is on Eastern time, so the online round's start also shows their own time -->
+<Story
+	name="Online: judge with a Campus ballot"
+	parameters={{ ...online, session: { Person: { id: fx.avery.id, first: fx.avery.first, last: fx.avery.last, email: fx.avery.email, tz: 'America/New_York' } } }}
+>
+	{#snippet template()}<div class="max-w-4xl"><TournCard tourn={fx.bluebonnetOnlineJudge} /></div>{/snippet}
+</Story>
+
+<Story name="Standby and training">
+	{#snippet template()}<div class="max-w-4xl"><TournCard tourn={fx.bluebonnetStandbyTraining} /></div>{/snippet}
+</Story>
+
 <Story name="Online: competitor" parameters={online}>
 	{#snippet template()}<div class="max-w-4xl"><TournCard tourn={fx.bluebonnetOnlineCompetitor} /></div>{/snippet}
 </Story>

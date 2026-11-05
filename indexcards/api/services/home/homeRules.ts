@@ -176,15 +176,18 @@ export function scoreVisible(tag: string | null, visibility: RoundVisibility, ev
 }
 
 /**
- * Whether a ballot's side and speaker order are shown, classic's rule: hidden while a flip is
- * pending, on elims without sidelock_elims until the flip is done, and always on
- * no_side_constraints events. A competitor sees their own audited ballot's side regardless
+ * Whether the judge still owes the training ballot, classic's rule (user/judge/panels.mhtml): the
+ * category shows training, the judge isn't ballot_trained, and the tourn hasn't ended. At a tourn
+ * split into weekends, only while the category's weekend is running
  */
-export function sideVisible(round: { type: string | null }, flipStatus: string | null | undefined, event: Settings, audited = false): boolean {
-	if (audited) return true;
-	const pending = !!flipStatus && flipStatus !== 'done';
-	const elim = (round.type === 'elim' || round.type === 'final') && !isOn(event?.sidelock_elims) && flipStatus !== 'done';
-	return !pending && !elim && !isOn(event?.no_side_constraints);
+export function trainingDue(
+	judge: { settings?: Settings; tournWeekends: number | boolean; weekendStart: Date | null; weekendEnd: Date | null },
+	category: Settings,
+	tournEnd: Date,
+	now: Date,
+): boolean {
+	if (!isOn(category?.show_training) || isOn(judge.settings?.ballot_trained) || tournEnd <= now) return false;
+	return !judge.tournWeekends || (!!judge.weekendStart && !!judge.weekendEnd && judge.weekendStart < now && now < judge.weekendEnd);
 }
 
 /** Whether a panel's flip is open to its entries: released with flip_published, not a bye, and not done */

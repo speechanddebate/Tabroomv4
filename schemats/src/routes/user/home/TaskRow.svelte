@@ -28,18 +28,21 @@
 				{task.detail ?? ''}
 			</div>
 		{/if}
+		{#each task.lines ?? [] as line, idx (idx)}
+			<div class="mt-0.5 text-sm {level.detail}">{line}</div>
+		{/each}
 	</div>
 	{#if task.action || task.room}
 		<div class="flex flex-wrap items-center gap-2">
 			{#if task.room}
-				<OnlineRoom room={task.room.room} target={task.room.target} variant="text" />
+				<OnlineRoom room={task.room.room} size="md" target={task.room.target} variant="text" />
 			{/if}
 			{#if task.action}
 				<!-- Everything but info is owed, so only info gets the quieter outline button -->
 				<Button
 					color={level.button}
 					href={task.action.href}
-					size="sm"
+					size="md"
 					variant={task.tone === 'info' ? 'outline' : 'solid'}
 				>{task.action.label}</Button>
 			{/if}

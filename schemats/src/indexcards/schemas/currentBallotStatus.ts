@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.2.0
  */
 
+/**
+ * Where the judge is with the ballot; confirmed once tab has audited it
+ */
 export type CurrentBallotStatus =
 	(typeof CurrentBallotStatus)[keyof typeof CurrentBallotStatus];
 
@@ -13,4 +16,5 @@ export const CurrentBallotStatus = {
 	not_started: 'not_started',
 	started: 'started',
 	scored: 'scored',
+	confirmed: 'confirmed',
 } as const;

@@ -1,5 +1,6 @@
 <script lang="ts" module>
-	export type Fact = { label: string, value: string };
+	// A list value puts each item on its own line under the one label
+	export type Fact = { label: string, value: string | string[] };
 </script>
 
 <script lang="ts">
@@ -11,7 +12,11 @@
 	<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">
 		{#each facts as fact (fact.label)}
 			<dt class="text-muted">{fact.label}</dt>
-			<dd>{fact.value}</dd>
+			{#if Array.isArray(fact.value)}
+				<dd>{#each fact.value as item, idx (idx)}<span class="block">{item}</span>{/each}</dd>
+			{:else}
+				<dd>{fact.value}</dd>
+			{/if}
 		{/each}
 	</dl>
 {/if}

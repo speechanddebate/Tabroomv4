@@ -1,5 +1,4 @@
 import type { CurrentBallot, Fine, HomeEntry, HomeJudge, HomePrefSheet, HomeRound, HomeSchool, HomeTab, Strike } from '@tabroom/types';
-import { flightStart } from '../../../helpers/flight.js';
 import { groupBy } from '../../../helpers/objectify.js';
 import type ballotRepo from '../../../repos/ballotRepo.js';
 import type categoryRepo from '../../../repos/categoryRepo.js';
@@ -14,8 +13,8 @@ import type roundRepo from '../../../repos/roundRepo.js';
 import type schoolRepo from '../../../repos/schoolRepo.js';
 import type scoreRepo from '../../../repos/scoreRepo.js';
 import type strikeRepo from '../../../repos/strikeRepo.js';
-import { isOn } from '../../../services/ballots/ballotRules.js';
-import { flipOpen, isRunning, judgeAnonymous, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sideVisible, sqlDatetime, strikeWindow, type QuizRequirement } from '../../../services/home/homeRules.js';
+import { flightNumber, isOn, roundStart, sideVisible } from '../../../services/ballots/ballotRules.js';
+import { flipOpen, isRunning, judgeAnonymous, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue, type QuizRequirement } from '../../../services/home/homeRules.js';
 
 type Rows<T extends (...args: never[]) => Promise<unknown[]>> = Awaited<ReturnType<T>>;
 type Settings = Record<string, string> | null | undefined;
@@ -46,6 +45,7 @@ export type JudgeSectionData = {
 	counts: Awaited<ReturnType<typeof ballotRepo.getJudgeBallotCounts>>;
 	strikes: Rows<typeof strikeRepo.getJudgeStrikes>;
 	categories: Rows<typeof categoryRepo.getCategories>;
+	events: Rows<typeof eventRepo.getEvents>;
 	quizzes: Map<number, { id: number; label: string | null; approval: number }>;
 	attempts: Map<number, { completed: number; approved_by: number | null; pending: number }>;
 	currentBallots: CurrentBallot[];
@@ -94,7 +94,6 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 				const results = visible.judges && panelBallots.every((ballot) => ballot.audit === 1);
 				const panel = panelSettings.get(row.panel);
 				const round = roundSettings.get(row.round);
-				const start = row.roundStart ?? row.timeslotStart;
 				const anonymous = judgeAnonymous(tourn.settings, event);
 				const sided = visible.pairing && sideVisible({ type: row.roundType }, panel?.flip_status, event, row.audit === 1);
 				const flip = flipOpen(round, { bye: row.panelBye, flip_status: panel?.flip_status });
@@ -108,13 +107,15 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 					post_primary: row.roundPostPrimary,
 					post_secondary: row.roundPostSecondary,
 					post_feedback: row.roundPostFeedback,
-					start: start ? flightStart(start, row.panelFlight, row.roundFlighted ? event?.flight_offset : 0).toISOString() : null,
+					start: row.roundStart ?? row.timeslotStart
+						? roundStart({ round: { start_time: row.roundStart }, timeslot: { start: row.timeslotStart }, panel: { flight: row.panelFlight }, event: { settings: event } }).toISOString()
+						: null,
 					side: sided ? row.side : null,
 					speakerorder: sided ? row.speakerorder : null,
 					Panel: {
 						id: row.panel,
 						letter: row.panelLetter,
-						flight: row.panelFlight === null ? null : Number(row.panelFlight),
+						flight: flightNumber({ round: { flighted: row.roundFlighted }, panel: { flight: row.panelFlight } }),
 						bye: row.panelBye,
 						flip_at: flip ? iso(panel?.flip_at) : null,
 						flip_status: flip ? panel?.flip_status ?? null : null,
@@ -280,6 +281,17 @@ export function buildJudges(tourn: { id: number; start: Date; end: Date }, data:
 			requirements.push(...requiredQuizIds(pool.settings).map((quiz) => ({ quiz, requiredBy: pool.name ?? '' })));
 		}
 
+		const shown = pools
+			.filter((pool) => isOn(pool.settings?.registrant) || isOn(pool.settings?.show_judges))
+			.map((pool) => ({
+				...pool,
+				Site: pool.site ? { name: pool.siteName } : null,
+				message: isOn(pool.settings?.message) ? String(pool.settings?.message) : null,
+			}));
+		const trainingEvent = trainingDue(judge, category?.settings, tourn.end, data.now)
+			? data.events.find((event) => event.category === judge.category)
+			: undefined;
+
 		return {
 			id: judge.id,
 			code: judge.code,
@@ -290,9 +302,21 @@ export function buildJudges(tourn: { id: number; start: Date; end: Date }, data:
 			Category: { id: judge.category, name: judge.categoryName, abbr: judge.categoryAbbr },
 			school: judge.school,
 			School: judge.school === null ? null : { id: judge.school, name: judge.schoolName },
-			Jpools: pools
-				.filter((pool) => !isOn(pool.settings?.standby) && (isOn(pool.settings?.registrant) || isOn(pool.settings?.show_judges)))
-				.map((pool) => ({ id: pool.id, name: pool.name, site: pool.site || null })),
+			Jpools: shown
+				.filter((pool) => !isOn(pool.settings?.standby))
+				.map((pool) => ({ id: pool.id, name: pool.name, site: pool.site || null, Site: pool.Site, message: pool.message })),
+			Standbys: running
+				? shown
+					.filter((pool): pool is typeof pool & { standbyName: string; standbyStart: Date; standbyEnd: Date } => isOn(pool.settings?.standby) && !!pool.standbyEnd && data.now < pool.standbyEnd)
+					.map((pool) => ({
+						jpool: pool.id,
+						name: pool.name,
+						Site: pool.Site,
+						message: pool.message,
+						Timeslot: { name: pool.standbyName, start: pool.standbyStart.toISOString(), end: pool.standbyEnd.toISOString() },
+					}))
+				: [],
+			Training: trainingEvent ? { event: trainingEvent.id, Event: { abbr: trainingEvent.abbr, type: trainingEvent.type } } : null,
 			roundsJudged: data.counts.get(judge.id)?.panels ?? 0,
 			ballotsEntered: data.counts.get(judge.id)?.ballots ?? 0,
 			ballotsOpen: tourn.start > data.now ? tourn.start.toISOString() : null,

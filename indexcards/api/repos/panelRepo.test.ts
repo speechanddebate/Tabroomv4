@@ -312,7 +312,7 @@ describe('panelRepo', () => {
 				flight: 2,
 				Round: { id: rounds.assigned.id, name: 1 },
 				Room: { id: Room.id, name: Room.name },
-				SideLabels: { aff: null, neg: null },
+				SideLabels: { aff: 'Aff', neg: 'Neg' },
 			});
 			// Flight 2 starts flight_offset minutes after the timeslot
 			const timeslotStart = Timeslot.start?.getTime() ?? 0;

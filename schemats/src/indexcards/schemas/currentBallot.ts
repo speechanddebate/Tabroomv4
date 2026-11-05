@@ -30,6 +30,11 @@ export interface CurrentBallot {
 	start: string;
 	/** @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$ */
 	deadline: string;
+	/**
+	 * When the judge's flight of the round ends
+	 * @pattern ^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|(?:02)-(?:0[1-9]|1\d|2[0-8])))T(?:(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z))$
+	 */
+	end: string;
 	roomId: number | null;
 	/** The section's room as this person sees it, and whether they can join it online */
 	Room: OnlineRoom | null;
@@ -44,11 +49,11 @@ export interface CurrentBallot {
 	 * @exclusiveMinimum 0
 	 */
 	RoundId: number;
+	/** Where the judge is with the ballot; confirmed once tab has audited it */
 	status: CurrentBallotStatus;
 	startText: string | null;
 	ballotText: string | null;
 	chair: boolean;
-	audited: boolean;
 	/**
 	 * @maximum 9007199254740991
 	 * @exclusiveMinimum 0

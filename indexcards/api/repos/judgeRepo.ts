@@ -372,6 +372,12 @@ async function getPersonJudges(db: Database, personId: number, opts: queryOpts =
 	return await buildJudgeQuery(db, { ...opts, person: personId })
 		.innerJoin('category', 'category.id', 'judge.category')
 		.leftJoin('school', 'school.id', 'judge.school')
+		// the weekend the judge's category runs on, at a tourn split into weekends
+		.leftJoin('category_setting as weekend_setting', (join) => join
+			.onRef('weekend_setting.category', '=', 'category.id')
+			.on('weekend_setting.tag', '=', 'weekend')
+		)
+		.leftJoin('weekend', 'weekend.id', 'weekend_setting.value')
 		.select([
 			'judge.id',
 			'judge.code',
@@ -384,7 +390,14 @@ async function getPersonJudges(db: Database, personId: number, opts: queryOpts =
 			'school.id as school',
 			'school.name as schoolName',
 			'category.tourn as tourn',
+			'weekend.start as weekendStart',
+			'weekend.end as weekendEnd',
 		])
+		.select((eb) => eb.exists(
+			eb.selectFrom('weekend as tourn_weekend')
+				.select('tourn_weekend.id')
+				.whereRef('tourn_weekend.tourn', '=', 'category.tourn')
+		).as('tournWeekends'))
 		.execute();
 }
 

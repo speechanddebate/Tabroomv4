@@ -11,6 +11,8 @@ import type { HomeJudgeCategory } from './homeJudgeCategory';
 import type { HomeJudgeJpoolsItem } from './homeJudgeJpoolsItem';
 import type { HomeJudgeQuizzesItem } from './homeJudgeQuizzesItem';
 import type { HomeJudgeSchool } from './homeJudgeSchool';
+import type { HomeJudgeStandbysItem } from './homeJudgeStandbysItem';
+import type { HomeJudgeTraining } from './homeJudgeTraining';
 import type { Strike } from './strike';
 
 /**
@@ -41,6 +43,10 @@ export interface HomeJudge {
 	School: HomeJudgeSchool;
 	/** The judge pools shown to registrants; standby pools are left out */
 	Jpools: HomeJudgeJpoolsItem[];
+	/** The standby pools the judge is in, at running tournaments, until their timeslot ends */
+	Standbys: HomeJudgeStandbysItem[];
+	/** The event whose sample round the judge judges to finish ballot training; null when the category has no training or the judge has finished it */
+	Training: HomeJudgeTraining;
 	/**
 	 * The number of distinct panels the judge has judged, by audited ballots
 	 * @minimum -9007199254740991

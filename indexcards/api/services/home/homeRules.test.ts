@@ -1,5 +1,5 @@
 import logger from '../../helpers/logger.js';
-import { compareTourns, flipOpen, homeWindow, isOnline, isRunning, judgeAnonymous, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sideVisible, sqlDatetime, strikeWindow } from './homeRules.js';
+import { compareTourns, flipOpen, homeWindow, isOnline, isRunning, judgeAnonymous, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue } from './homeRules.js';
 
 const now = new Date('2026-03-07T12:00:00Z');
 
@@ -141,30 +141,6 @@ describe('roundListed and roundVisibility', () => {
 	});
 });
 
-describe('sideVisible', () => {
-	const prelim = { type: 'prelim' };
-	const elim = { type: 'elim' };
-
-	it('shows prelim sides unless a flip is pending or the event has no side constraints', () => {
-		expect(sideVisible(prelim, null, {})).toBe(true);
-		expect(sideVisible(prelim, 'done', {})).toBe(true);
-		expect(sideVisible(prelim, 'winner', {})).toBe(false);
-		expect(sideVisible(prelim, null, { no_side_constraints: '1' })).toBe(false);
-	});
-
-	it('hides elim and final sides until the flip is done unless elims are sidelocked', () => {
-		expect(sideVisible(elim, null, {})).toBe(false);
-		expect(sideVisible({ type: 'final' }, 'anyone', {})).toBe(false);
-		expect(sideVisible(elim, 'done', {})).toBe(true);
-		expect(sideVisible(elim, null, { sidelock_elims: '1' })).toBe(true);
-		expect(sideVisible(elim, null, { sidelock_elims: '1', no_side_constraints: '1' })).toBe(false);
-	});
-
-	it('shows a competitor their own audited ballot\'s side regardless', () => {
-		expect(sideVisible(elim, 'winner', { no_side_constraints: '1' }, true)).toBe(true);
-	});
-});
-
 describe('flipOpen', () => {
 	it('needs the flip released, a paired panel, and an unfinished flip', () => {
 		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: 'winner' })).toBe(true);
@@ -182,6 +158,28 @@ describe('judgeAnonymous', () => {
 		expect(judgeAnonymous({ ncfl: '1' }, { no_anon_dashboard: '1' })).toBe(false);
 		expect(judgeAnonymous({}, {})).toBe(false);
 		expect(judgeAnonymous(null, null)).toBe(false);
+	});
+});
+
+describe('trainingDue', () => {
+	const now = new Date('2026-03-07T12:00:00Z');
+	const later = new Date('2026-03-08T12:00:00Z');
+	const earlier = new Date('2026-03-06T12:00:00Z');
+	const untrained = { settings: {}, tournWeekends: 0, weekendStart: null, weekendEnd: null };
+	const training = { show_training: '1' };
+
+	it('is owed while the category shows training, the judge is untrained, and the tourn has not ended', () => {
+		expect(trainingDue(untrained, training, later, now)).toBe(true);
+		expect(trainingDue(untrained, {}, later, now)).toBe(false);
+		expect(trainingDue({ ...untrained, settings: { ballot_trained: '1' } }, training, later, now)).toBe(false);
+		expect(trainingDue(untrained, training, earlier, now)).toBe(false);
+	});
+
+	it("at a tourn split into weekends, is owed only during the category's weekend", () => {
+		const weekends = { ...untrained, tournWeekends: 1 };
+		expect(trainingDue({ ...weekends, weekendStart: earlier, weekendEnd: later }, training, later, now)).toBe(true);
+		expect(trainingDue({ ...weekends, weekendStart: later, weekendEnd: later }, training, later, now)).toBe(false);
+		expect(trainingDue(weekends, training, later, now)).toBe(false);
 	});
 });
 
