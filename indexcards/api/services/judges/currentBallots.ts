@@ -15,7 +15,7 @@ type SettingsById = Map<number, Settings>;
 /** The settings the current ballot card reads, by table */
 export const CURRENT_BALLOT_SETTINGS = {
 	tourn: ['legion'],
-	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label', 'sidelock_elims', 'no_side_constraints'],
+	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label', 'sidelock_elims', 'no_side_constraints', 'prelim_decision_deadline', 'elim_decision_deadline'],
 	round: ['judges_ballots_visible', 'include_room_notes'],
 	panel: ['flip_status', 'show_async'],
 };
@@ -70,6 +70,8 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 		}
 
 		const flightOffset = first.roundFlighted ? event?.flight_offset : 0;
+		// Classic's decision deadline (helpers/round.js flightTimes): minutes after the round starts, prelim or elim; the timeslot end when the event sets none
+		const deadlineMinutes = Number(['final', 'elim', 'runoff'].includes(first.roundType ?? '') ? event?.elim_decision_deadline : event?.prelim_decision_deadline) || 0;
 		const flipStatus = FLIP_STATUSES.includes(panel?.flip_status ?? '') ? panel?.flip_status as CurrentBallot['flipStatus'] : null;
 		const sided = sideVisible({ type: first.roundType }, panel?.flip_status, event);
 
@@ -86,7 +88,7 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 			onlineBallots: isOn(event?.online_ballots),
 			legion: isOn(tourn?.settings?.legion),
 			start: flightStart(start, first.panelFlight, flightOffset).toISOString(),
-			deadline: flightStart(first.timeslotEnd, first.panelFlight, flightOffset).toISOString(),
+			deadline: flightStart(deadlineMinutes > 0 ? new Date(start.getTime() + deadlineMinutes * 60_000) : first.timeslotEnd, first.panelFlight, flightOffset).toISOString(),
 			roomId: first.room,
 			Room: null,
 			roomNotes: isOn(round?.include_room_notes) ? first.roomNotes : null,

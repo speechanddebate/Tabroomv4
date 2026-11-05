@@ -124,7 +124,7 @@ export const feedbackItems = (ballots: CurrentBallot[]): TaskItem[] => ballots
 		action : { label: 'Edit feedback', href: ballotHref(ballot) },
 	}));
 
-// An unstarted ballot is late once the round starts; a started one once its deadline (the flight's timeslot end) passes
+// An unstarted ballot is late once the round starts; a started one once its decision deadline passes
 function ballotTask(ballot: CurrentBallot, tz: string, now: string): Task {
 	const label = ballot.status === 'scored' ? 'Confirm result'
 		: ballot.status === 'started' ? 'Enter ballot'

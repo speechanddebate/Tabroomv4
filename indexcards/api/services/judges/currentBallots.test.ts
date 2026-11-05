@@ -96,6 +96,23 @@ describe('buildCurrentBallots', () => {
 		expect(ballots[1]).toMatchObject({ flight: null, start: start.toISOString() });
 	});
 
+	it('sets the deadline from the prelim or elim decision deadline, per flight, falling back to the timeslot end', () => {
+		const events = new Map([[400, { prelim_decision_deadline: '90', elim_decision_deadline: '120', flight_offset: '50' }]]);
+		const ballots = buildCurrentBallots([
+			row({ panel: 1, roundType: 'prelim' }),
+			row({ panel: 2, roundType: 'elim' }),
+			row({ panel: 3, roundType: 'prelim', panelFlight: '2' }),
+		], context({ events }));
+		const unset = buildCurrentBallots([row()], context({ events: new Map([[400, { elim_decision_deadline: '120' }]]) }));
+
+		expect(ballots.map((ballot) => ballot.deadline)).toEqual([
+			new Date(start.getTime() + 90 * 60_000).toISOString(),
+			new Date(start.getTime() + 120 * 60_000).toISOString(),
+			new Date(start.getTime() + (90 + 50) * 60_000).toISOString(),
+		]);
+		expect(unset[0]!.deadline).toBe(end.toISOString());
+	});
+
 	it('labels sides unless a flip is still open, on elims until the flip is done, and never without side constraints', () => {
 		const sides = (flipStatus: string | null, overrides: Partial<JudgePanelRow> = {}, event: Record<string, string> = {}) => buildCurrentBallots(
 			[row({ side: 1, speakerorder: 1, ...overrides }), row({ id: 2, entry: 701, side: 2, speakerorder: 2, ...overrides })],
