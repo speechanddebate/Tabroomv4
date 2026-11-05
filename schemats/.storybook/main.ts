@@ -1,9 +1,10 @@
 import { dirname } from "node:path";
 import type { StorybookConfig } from '@storybook/sveltekit';
 import { fileURLToPath } from 'node:url';
+import { existsSync } from 'node:fs';
 import { mergeConfig } from 'vite';
-import { config as loadEnv } from 'dotenv';
-loadEnv({ quiet: true });
+
+if (existsSync('.env')) process.loadEnvFile();
 
 const config: StorybookConfig = {
 	// Both the Storybook server and its Vite server check the Host header against

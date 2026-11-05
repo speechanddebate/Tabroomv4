@@ -4,8 +4,9 @@ import { defineConfig } from 'vite';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import {svelteTesting} from '@testing-library/svelte/vite';
-import { config } from 'dotenv';
-config({ quiet: true });
+import { existsSync } from 'node:fs';
+
+if (existsSync('.env')) process.loadEnvFile();
 
 export default defineConfig( () => {
 

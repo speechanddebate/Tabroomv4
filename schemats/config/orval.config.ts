@@ -1,8 +1,6 @@
+/// <reference types="node" />
 import path from 'node:path';
 import { defineConfig } from 'orval';
-//need to import dotenv as this is a totally self contained module.
-import { config } from 'dotenv';
-config({ quiet: true});
 
 export default defineConfig({
 	indexcards: {

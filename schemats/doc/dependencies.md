@@ -22,18 +22,14 @@ Markers in the notes column:
 | svelte-check | dev ^4.3.6 | `npm run typecheck` | Gates TypeScript 7. |
 | @tsconfig/svelte | dev ^5.0.4 | Base tsconfig | None. |
 | @types/node | dev 24.13.1 | Node types | Pinned to the Node in the Dockerfiles (`node:24.13.1`). Bump it only with the runtime. |
-| dotenv | ^17.4.2 | Loads `.env` in `vite.config.ts`, `config/orval.config.ts`, and `.storybook/main.ts` | **Move** to dev, because only config files use it. Alternatively, replace it with `process.loadEnvFile()`, which throws when the file is missing. |
-| tsc-alias | dev ^1.8.10 | None | **Remove.** No script runs it. Delete its block in `tsconfig.json` with it. |
-| svelte-preprocess | dev ^6.0.5 | None | **Remove.** `svelte.config.js` uses `vitePreprocess`. |
-| sv | dev ^0.15.1 | Scaffolding CLI | **Remove.** No script or config uses it; run it with `npx sv` when needed. |
 
 ## Styling and UI
 
 | Package | Range | Purpose | Upgrade blockers and notes |
 |---|---|---|---|
-| tailwindcss, @tailwindcss/vite | ^4.3.3 | CSS (`src/app.css`) and its Vite plugin in `vite.config.ts` and `vitest.config.ts` | Upgrade both to the same version in one step. **Move** both to dev, because they only run at build time. |
-| @tailwindcss/forms | ^0.5.9 | `@plugin` in `app.css` | **Move** to dev. |
-| @tailwindcss/typography | ^0.5.15 | `@plugin` in `app.css` | **Move** to dev. |
+| tailwindcss, @tailwindcss/vite | dev ^4.3.3 | CSS (`src/app.css`) and its Vite plugin in `vite.config.ts` and `vitest.config.ts`; build time only | Upgrade both to the same version in one step. |
+| @tailwindcss/forms | dev ^0.5.9 | `@plugin` in `app.css`; build time only | None. |
+| @tailwindcss/typography | dev ^0.5.15 | `@plugin` in `app.css`; build time only | None. |
 | flowbite-svelte | dev ~1.33.1 | Header, footer, modals, toasts, tabs, and alerts (about 15 components); bundled | Peers: svelte ^5.40 and tailwindcss ^4.1.4. `app.css` loads `flowbite/plugin`, which is not declared and arrives through flowbite-svelte. **Declare** `flowbite` or keep the two in step. |
 | @lucide/svelte | ^1.20.0 | Icons | None. |
 | svelte-select-5 | dev ^7.0.4 | `src/lib/layouts/Select.svelte` (invite sidebar); bundled | Community fork with low activity. |
@@ -83,8 +79,7 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 | vitest, @vitest/browser, @vitest/browser-playwright, @vitest/coverage-v8 | dev ^5.0.1 | Unit and a11y projects, the a11y story run in Chromium, and coverage | Upgrade all four to the same version in one step. Keep them on the same version as the vitest packages in `indexcards/`. `@storybook/addon-vitest` accepts vitest 4 and 5. |
 | jsdom | dev ^29.0.1 | Unit test environment | None (v31 is out, and vitest accepts any version). |
 | @testing-library/svelte | dev ^5.4.2 | Component tests | None. |
-| @testing-library/jest-dom | dev ^6.9.1 | DOM matchers | v7 needs `@testing-library/dom` 10, which is already installed. |
-| @types/jest | dev ^30.0.0 | None | **Remove.** `tsconfig.json` loads `vitest/globals` and jest-dom types instead. |
+| @testing-library/jest-dom | dev ^6.9.1 | DOM matchers | v7 needs `@testing-library/dom` 10, which is already installed. Load the `/vitest` entry in both `config/testing/vitest-setup.ts` and the `tsconfig.json` `types` array; the bare entry only types Jest's `expect`. |
 | @faker-js/faker | dev ^10.3.0 | Fixtures | None. |
 | msw, msw-storybook-addon, @msw/playwright | dev ^2.13.3, ^2.0.6, ^0.6.7 | API mocks, MSW in Storybook, and the `network` fixture in `config/testing/playwright.setup.ts` | Upgrade all three in one step: msw 3 with msw-storybook-addon 3 and @msw/playwright 0.7, which needs msw >= 3. Regenerate the Orval mocks afterward. |
 | @playwright/test, playwright | dev ~1.63.0 | Schemats-local e2e and the a11y browser | Pinned. Upgrade both together with the `mcr.microsoft.com/playwright` image in `e2e/Dockerfile`, `e2e/package.json`, and the CI a11y image. |
@@ -106,9 +101,7 @@ ESLint lints only `.svelte` files. Everything else goes through oxlint from the 
 | eslint-plugin-svelte, svelte-eslint-parser | dev ^3.12.1, ^1.6.0 | Svelte rules and their parser | None. |
 | typescript-eslint | dev ^8.70.0 | TS in `.svelte` files | Gates TypeScript 7. |
 | globals | dev ^17.0.0 | Browser and Node globals | None. |
-| @vitest/eslint-plugin | dev ^1.1.25 | None | **Remove.** `eslint.config.js` does not load it, and oxlint uses its own vitest plugin. |
 | prettier | dev ^3.8.1 | Formatting (also used by `indexcards/`) | None. |
-| husky | dev ^9.0.11 | None | **Remove.** Hooks run from `.githooks` through the root `prepare` script. |
 
 ## Agent tooling
 
