@@ -9,7 +9,7 @@ import { parseDateTime, showDateTime, showTime } from '$lib/helpers/dt';
 export type Phase = 'running' | 'upcoming' | 'past';
 
 // now: do it now. due: has a deadline. info: nothing owed. problem: blocked.
-export type Tone = 'now' | 'due' | 'info' | 'problem';
+export type Tone = 'info' | 'due' | 'alert' | 'critical';
 
 type Link = { label: string, href: string };
 
@@ -54,7 +54,6 @@ export const classic = {
 	schoolPrefs    : (school: number) => `${CLASSIC_URL}/user/enter/ratings/index.mhtml?school_id=${school}`,
 	schoolResults  : (school: number) => `${CLASSIC_URL}/user/results/report.mhtml?school_id=${school}`,
 	tabRoom        : (tourn: number) => `${CLASSIC_URL}/user/tourn/select.mhtml?tourn_id=${tourn}`,
-	publish        : (tourn: number) => `${CLASSIC_URL}/tabbing/publish/index.mhtml?tourn_id=${tourn}`,
 	paradigmReview : () => `${CLASSIC_URL}/user/judge/paradigm_approve.mhtml`,
 	paradigm       : () => `${CLASSIC_URL}/user/judge/paradigm.mhtml`,
 	confirmEmail   : () => `${CLASSIC_URL}/user/login/confirm.mhtml`,
@@ -106,7 +105,7 @@ export const roundLabel = (round: { label: string | null, name: number | null })
 const isOpen = (window: { start: string | null, end: string | null }, now: string) =>
 	(!window.start || window.start <= now) && (!!window.end && now < window.end);
 
-const toneRank: Record<Tone, number> = { now: 0, problem: 1, due: 2, info: 3 };
+const toneRank: Record<Tone, number> = { critical: 0, alert: 1, due: 2, info: 3 };
 
 const ballotHref = (ballot: CurrentBallot): string => ballot.legion
 	? `${CLASSIC_URL}/user/judge/legion_ballot.mhtml?panel_id=${ballot.id}&judge_id=${ballot.JudgeId}`
@@ -125,12 +124,13 @@ export const feedbackItems = (ballots: CurrentBallot[]): TaskItem[] => ballots
 		action : { label: 'Edit feedback', href: ballotHref(ballot) },
 	}));
 
-function ballotTask(ballot: CurrentBallot, tz: string): Task {
+// An unstarted ballot is late once the round starts; a started one once its deadline (the flight's timeslot end) passes
+function ballotTask(ballot: CurrentBallot, tz: string, now: string): Task {
 	const label = ballot.status === 'scored' ? 'Confirm result'
 		: ballot.status === 'started' ? 'Enter ballot'
 		: ballot.startText ?? 'Start round';
 	return {
-		tone   : 'now',
+		tone   : now < (ballot.status === 'not_started' ? ballot.start : ballot.deadline) ? 'due' : 'critical',
 		title  : `${roundLabel(ballot)} ${ballot.eventAbbr ?? ''} starts at ${showTime({ dtISO: ballot.start, tz })}`.replace(/\s+/g, ' '),
 		detail : [ballot.Room?.name, matchup(ballot)].filter(Boolean).map(part => `${part}.`).join(' '),
 		action : { label, href: ballotHref(ballot) },
@@ -144,7 +144,7 @@ function quizTask(judge: HomeJudge, phase: Phase, many: boolean): Task | null {
 	const waiting = states.filter(state => state === 'unapproved').length;
 	if (todo + waiting === 0) return null;
 	return {
-		tone       : 'due',
+		tone       : phase === 'upcoming' ? 'due' : 'alert',
 		title      : `${states.length - todo - waiting} of ${states.length} questionnaires completed${many ? ` for ${judge.Category.abbr ?? judge.Category.name}` : ''}`,
 		when       : phase === 'upcoming' ? 'Before the tournament starts' : undefined,
 		detail     : `${[todo > 0 ? `${todo} to complete` : '', waiting > 0 ? `${waiting} waiting for NSDA Learn approval` : ''].filter(Boolean).join(', ')}.`,
@@ -160,7 +160,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString()): Tas
 	const tasks: Task[] = [];
 
 	for (const judge of tourn.Judges) {
-		tasks.push(...openBallots(judge.CurrentBallots).map(ballot => ballotTask(ballot, tourn.tz)));
+		tasks.push(...openBallots(judge.CurrentBallots).map(ballot => ballotTask(ballot, tourn.tz, now)));
 		const quiz = phase === 'past' ? null : quizTask(judge, phase, tourn.Judges.length > 1);
 		if (quiz) tasks.push(quiz);
 	}
@@ -170,7 +170,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString()): Tas
 			const { flip_at: flipAt, flip_status: flipStatus } = round.Panel;
 			if (!flipAt || flipAt < now || (flipStatus !== 'winner' && flipStatus !== 'anyone')) continue;
 			tasks.push({
-				tone   : 'now',
+				tone   : 'due',
 				title  : `Flip for ${roundLabel(round).toLowerCase()}`,
 				when   : due(flipAt),
 				detail : flipStatus === 'winner' ? 'You won the flip. Choose a side or speaking order.' : 'Either side may choose first.',
@@ -224,7 +224,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString()): Tas
 
 		if (school.Onsite?.end && !school.onsite && isOpen(school.Onsite, now)) {
 			tasks.push({
-				tone   : 'due',
+				tone   : 'alert',
 				title  : tourn.Schools.length > 1 ? `Check in ${school.name}` : 'Check in your school',
 				when   : due(school.Onsite.end),
 				detail : 'Online check-in tells the tournament your school has arrived. It may ask you to pay fees or name an adult contact first.',
@@ -233,22 +233,14 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString()): Tas
 		}
 
 		if (phase === 'upcoming' && isOpen({ start: tourn.reg_start, end: tourn.reg_end }, now)) {
+			// A school with no entries yet still owes registration; one with entries just has the option to change them
 			tasks.push({
-				tone   : 'due',
+				tone   : school.Counts.entries > 0 ? 'info' : 'due',
 				title  : `Registration closes ${dueText(tourn.reg_end, tourn.tz, now)}`,
 				detail : `${school.Counts.entries} entries and ${school.Counts.judges} judges so far.`,
 				action : { label: 'Edit entries', href: classic.entries(school.id) },
 			});
 		}
-	}
-
-	if (tourn.Tab && phase === 'past' && !tourn.Tab.resultsPublished) {
-		tasks.push({
-			tone   : 'due',
-			title  : 'Results are not published yet',
-			detail : 'Schools and competitors can’t see final results until you publish them.',
-			action : { label: 'Publish results', href: classic.publish(tourn.id) },
-		});
 	}
 
 	return tasks.sort((a, b) => toneRank[a.tone] - toneRank[b.tone]);

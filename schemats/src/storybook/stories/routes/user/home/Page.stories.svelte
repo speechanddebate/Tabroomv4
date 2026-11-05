@@ -50,7 +50,7 @@
 <Story name="Full page: coach, judge, and tab staff" parameters={{ ...shell, ...serve(fx.averyHome) }}>
 	{#snippet template()}
 		<AppShell {logoutFn} {suEndFn}>
-			<WithSidebar>
+			<WithSidebar canvas>
 				<HomePage />
 				{#snippet sidebar()}{@render userSidebar()}{/snippet}
 			</WithSidebar>
@@ -61,7 +61,7 @@
 <Story name="Full page: competitor" parameters={{ ...shell, session: session(fx.maya), ...serve(fx.mayaHome) }}>
 	{#snippet template()}
 		<AppShell {logoutFn} {suEndFn}>
-			<WithSidebar>
+			<WithSidebar canvas>
 				<HomePage />
 				{#snippet sidebar()}<UserAccount />{/snippet}
 			</WithSidebar>

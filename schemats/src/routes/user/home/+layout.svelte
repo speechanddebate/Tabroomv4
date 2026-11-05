@@ -8,7 +8,7 @@
 	let { data, children }: LayoutProps = $props();
 </script>
 
-<WithSidebar>
+<WithSidebar canvas>
 	{@render children()}
 	{#snippet sidebar()}
 		<Chapters chapters={data.chapters}/>

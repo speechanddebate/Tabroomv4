@@ -7,6 +7,7 @@
 	 */
 	import { ExternalLink, FileText } from '@lucide/svelte';
 	import type { HomeRole, HomeTourn } from '@tabroom/types';
+	import Button from '$lib/components/Button.svelte';
 	import OnlineRoom, { type OnlineRoomTarget } from '$lib/components/OnlineRoom.svelte';
 	import { Tabs, TabItem } from '$lib/components/Tabs';
 	import { shortZone, showDateRange } from '$lib/helpers/dt';
@@ -65,14 +66,16 @@
 		<ul class="flex flex-wrap gap-2" aria-label={rooms.length > 0 ? 'Live docs and online rooms' : 'Live documents'}>
 			{#each tourn.LiveDocs as doc (doc.url)}
 				<li>
-					<a
-						class="inline-flex items-center gap-1.5 rounded border border-border px-2 py-1 text-sm font-semibold text-primary-strong hover:border-primary-strong hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary-strong"
+					<Button
+						color="primary"
 						href={doc.url}
 						rel="noopener noreferrer"
+						size="sm"
 						target="_blank"
+						variant="outline"
 					>
 						<FileText aria-hidden="true" size="14" />{doc.caption ?? `${doc.Category.abbr ?? doc.Category.name ?? ''} live doc`.trim()}
-					</a>
+					</Button>
 				</li>
 			{/each}
 			{#each rooms as room (`${room.kind}-${room.id}`)}
@@ -82,14 +85,14 @@
 	{/if}
 {/snippet}
 
-<article class="overflow-hidden rounded-md border border-border-strong bg-surface" aria-label={tourn.name}>
+<article class="raised overflow-hidden" aria-label={tourn.name}>
 	<div class="flex flex-col gap-3 p-4">
 		{@render header()}
 		{@render liveDocs()}
 	</div>
 
 	{#if tasks.length > 0}
-		<div class="flex flex-col gap-px border-y border-border bg-border" aria-label="Due for {tourn.name}" role="group">
+		<div class="sunken flex flex-col divide-y divide-border border-y border-border" aria-label="Due for {tourn.name}" role="group">
 			{#each tasks as task, idx (idx)}
 				<TaskRow {task} />
 			{/each}

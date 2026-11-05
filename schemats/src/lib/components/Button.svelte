@@ -39,7 +39,8 @@
 			default  : 'border-muted bg-muted text-white hover:border-text hover:bg-text',
 			primary  : 'border-primary-strong bg-primary-strong text-white hover:border-primary-deep hover:bg-primary-deep',
 			success  : 'border-success bg-success text-white hover:bg-success-soft hover:text-success',
-			warning  : 'border-warning bg-warning text-white hover:bg-warning-soft hover:text-warning',
+			// Tabroom yellow can't hold white text, so warning fills yellow with dark text; outline and ghost keep mustard text for contrast on white
+			warning  : 'border-accent bg-accent text-text hover:border-warning',
 			danger   : 'border-danger bg-danger text-white hover:bg-danger-soft hover:text-danger',
 			tertiary : 'border-tertiary bg-tertiary text-white hover:bg-tertiary-soft hover:text-tertiary',
 		},
@@ -47,7 +48,7 @@
 			default  : 'border-border-strong bg-surface text-text hover:border-text hover:bg-surface-alt',
 			primary  : 'border-primary-strong bg-surface text-primary-strong hover:bg-primary-strong hover:text-white',
 			success  : 'border-success bg-surface text-success hover:bg-success hover:text-white',
-			warning  : 'border-warning bg-surface text-warning hover:bg-warning hover:text-white',
+			warning  : 'border-warning bg-surface text-warning hover:border-accent hover:bg-accent hover:text-text',
 			danger   : 'border-danger bg-surface text-danger hover:bg-danger hover:text-white',
 			tertiary : 'border-tertiary bg-surface text-tertiary hover:bg-tertiary hover:text-white',
 		},

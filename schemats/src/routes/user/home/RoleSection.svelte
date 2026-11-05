@@ -56,8 +56,8 @@
 	};
 
 	const entryStatus = (entry: HomeEntry): { label: string, tone: Tone } => {
-		if (entry.dropped) return { label: 'Dropped', tone: 'problem' };
-		if (entry.unconfirmed) return { label: 'No coach approval', tone: 'problem' };
+		if (entry.dropped) return { label: 'Dropped', tone: 'critical' };
+		if (entry.unconfirmed) return { label: 'No coach approval', tone: 'critical' };
 		if (entry.waitlist) return { label: 'Waitlisted', tone: 'due' };
 		return { label: phase === 'running' ? 'Competing' : phase === 'past' ? 'Competed' : 'Confirmed', tone: 'info' };
 	};
@@ -219,7 +219,7 @@
 					<span class="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-bold text-primary-strong" title={entry.Event.name ?? undefined}>{entry.Event.abbr}</span>
 					<span class="font-semibold">{entry.Event.name}</span>
 					<span class="text-sm text-muted">Your code: <span class="font-semibold text-text">{entry.code}</span></span>
-					<span class="rounded-sm px-1.5 py-0.5 text-xs font-semibold {status.tone === 'problem' ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success'}">
+					<span class="rounded-sm px-1.5 py-0.5 text-xs font-semibold {status.tone === 'critical' ? 'bg-danger-soft text-danger' : 'bg-success-soft text-success'}">
 						{status.label}
 					</span>
 				</div>

@@ -72,7 +72,7 @@
 
 <div class="flex flex-col gap-4">
 	<PushPrompt />
-	<div class="rounded-md border border-warning bg-warning-soft p-4">
+	<div class="rounded-md border border-warning bg-warning-soft p-4 shadow-sm">
 		<h2 class="text-lg font-semibold text-text">Page Under Development</h2>
 		<p class="mt-2 text-sm text-text">
 			This page is still in progress. If you don't see what you need, please visit the
@@ -91,7 +91,7 @@
 			{#if banners(home.Alerts).length > 0}
 				<div class="flex flex-col gap-2">
 					{#each banners(home.Alerts) as banner (banner.id)}
-					<div class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-sm border-l-4 px-4 py-3 {bannerTones[banner.tone]}" aria-label={banner.title} role="region">
+					<div class="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-sm border-l-4 px-4 py-3 shadow-sm {bannerTones[banner.tone]}" aria-label={banner.title} role="region">
 						<div class="min-w-0 flex-1 basis-80">
 							<div class="font-semibold text-text">{banner.title}</div>
 							<div class="mt-0.5 max-w-prose text-sm text-text">{banner.body}</div>

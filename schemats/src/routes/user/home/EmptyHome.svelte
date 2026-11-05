@@ -25,7 +25,7 @@
 	];
 </script>
 
-<div class="w-full">
+<div class="raised w-full p-4 sm:p-6">
 	<h2 class="m-0 font-display text-3xl tracking-normal text-primary-deep normal-case">Welcome to Tabroom.com</h2>
 	<div class="mt-1 text-text">Nothing is linked to your account yet. Start with the one that fits you.</div>
 	<ul class="mt-4 divide-y divide-border border-y border-border">

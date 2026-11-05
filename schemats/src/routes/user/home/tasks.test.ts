@@ -6,6 +6,7 @@ import * as fx from '../../../storybook/stories/routes/user/home/fixtures';
 import { dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
 
 const titles = (tourn: Parameters<typeof homeTasks>[0], now = fx.now) => homeTasks(tourn, now).map(task => task.title);
+const toneOf = (tourn: Parameters<typeof homeTasks>[0], title: string, now = fx.now) => homeTasks(tourn, now).find(task => task.title.startsWith(title))?.tone;
 
 describe('phaseOf', () => {
 	it('splits on start and end', () => {
@@ -58,21 +59,21 @@ describe('openBallots', () => {
 });
 
 describe('homeTasks', () => {
-	it('puts the open ballot first, then questionnaires and strike cards, never the audited ballot', () => {
+	it('puts questionnaires late at a running tournament first, then the ballot and strike cards, never the audited ballot', () => {
 		const tasks = homeTasks(fx.bluebonnetCoachJudge, fx.now);
 		expect(tasks.map(task => task.title)).toEqual([
-			'Round 3 LD starts at 11:00 AM',
 			'1 of 3 questionnaires completed',
+			'Round 3 LD starts at 11:00 AM',
 			'2 strike cards open',
 		]);
-		expect(tasks[0]).toMatchObject({ tone: 'now', detail: 'Room 214. Westlake MR vs. Cedar Park TJ.', room: undefined });
-		expect(tasks[1]).toMatchObject({ detail: '1 to complete, 1 waiting for NSDA Learn approval.' });
+		expect(tasks[0]).toMatchObject({ detail: '1 to complete, 1 waiting for NSDA Learn approval.' });
+		expect(tasks[1]).toMatchObject({ detail: 'Room 214. Westlake MR vs. Cedar Park TJ.', room: undefined });
 		expect(tasks[2]).toMatchObject({ when: 'Due 12:30 PM' });
 		expect(tasks[2]!.items).toHaveLength(2);
 	});
 
 	it('gives an online ballot its room to join', () => {
-		expect(homeTasks(fx.bluebonnetOnlineCoachJudge, fx.now)[0]!.room).toEqual({
+		expect(homeTasks(fx.bluebonnetOnlineCoachJudge, fx.now).find(task => task.room)!.room).toEqual({
 			room   : fx.ballots.ldRound3Online.Room,
 			target : { type: 'section', tournId: 31201, sectionId: 90311 },
 		});
@@ -111,13 +112,53 @@ describe('homeTasks', () => {
 	});
 
 
-	it('reminds tab staff to publish results after the tournament', () => {
-		expect(titles(fx.tourn('past', ['tab']))).toEqual(['Results are not published yet']);
+	it('gives tab staff no tasks', () => {
+		expect(titles(fx.tourn('past', ['tab']))).toEqual([]);
 		expect(titles(fx.tourn('running', ['tab']))).toEqual([]);
 	});
 
-	it('owes nothing at a finished tournament outside tab', () => {
+	it('owes nothing at a finished tournament', () => {
 		expect(titles(fx.cypressCoachJudge)).toEqual([]);
 		expect(titles(fx.cypressCompetitor)).toEqual([]);
+	});
+});
+
+describe('task levels', () => {
+	const startedBallot = {
+		...fx.bluebonnetCoachJudge,
+		Judges: fx.bluebonnetCoachJudge.Judges.map(judge => ({ ...judge, CurrentBallots: [{ ...fx.ballots.ldRound3, status: 'started' as const }] })),
+	};
+
+	const noEntries = {
+		...fx.gulfCoastCoachJudge,
+		Schools: fx.gulfCoastCoachJudge.Schools.map(school => school.access === 'full' ? { ...school, Counts: { ...school.Counts, entries: 0 } } : school),
+	};
+
+	it('makes an unstarted ballot critical once its round starts', () => {
+		expect(toneOf(fx.bluebonnetCoachJudge, 'Round 3 LD')).toBe('due');
+		expect(toneOf(fx.bluebonnetCoachJudge, 'Round 3 LD', '2026-11-07T17:05:00Z')).toBe('critical');
+	});
+
+	it('keeps a started ballot due until its deadline, then critical', () => {
+		expect(toneOf(startedBallot, 'Round 3 LD', '2026-11-07T18:00:00Z')).toBe('due');
+		expect(toneOf(startedBallot, 'Round 3 LD', '2026-11-07T19:05:00Z')).toBe('critical');
+	});
+
+	it('makes questionnaires due before the tournament and alert once it starts', () => {
+		expect(toneOf(fx.gulfCoastCoachJudge, '0 of 3 questionnaires')).toBe('due');
+		expect(toneOf(fx.bluebonnetCoachJudge, '1 of 3 questionnaires')).toBe('alert');
+	});
+
+	it('keeps flips due', () => {
+		expect(toneOf(fx.bluebonnetCompetitor, 'Flip for round 3')).toBe('due');
+	});
+
+	it('makes school check-in an alert', () => {
+		expect(toneOf(fx.gulfCoastCoachJudge, 'Check in your school', '2026-11-20T13:00:00Z')).toBe('alert');
+	});
+
+	it('makes registration info once the school has entries, due before', () => {
+		expect(toneOf(fx.gulfCoastCoachJudge, 'Registration closes')).toBe('info');
+		expect(toneOf(noEntries, 'Registration closes')).toBe('due');
 	});
 });

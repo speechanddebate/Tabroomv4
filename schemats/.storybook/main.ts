@@ -2,8 +2,16 @@ import { dirname } from "node:path";
 import type { StorybookConfig } from '@storybook/sveltekit';
 import { fileURLToPath } from 'node:url';
 import { mergeConfig } from 'vite';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ quiet: true });
 
 const config: StorybookConfig = {
+	// Both the Storybook server and its Vite server check the Host header against
+	// this, so a dev box reached at WEB_URL (dev.tabroom.com) is refused without it.
+	core: {
+		allowedHosts: [process.env.WEB_URL ?? 'localhost'],
+	},
+
     'stories': [
 		'../src/**/*.mdx',
 		'../src/**/*.stories.@(js|ts|svelte)',

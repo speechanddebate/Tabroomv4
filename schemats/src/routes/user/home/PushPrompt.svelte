@@ -53,7 +53,7 @@
 
 {#if visible}
 	<div
-		class="flex flex-wrap items-center gap-3 rounded-md border border-primary bg-primary-soft px-3 py-2 text-sm text-text"
+		class="flex flex-wrap items-center gap-3 rounded-md border border-primary bg-primary-soft px-3 py-2 text-sm text-text shadow-sm"
 		aria-label="Turn on notifications"
 		data-testid="push-prompt"
 		role="region"
