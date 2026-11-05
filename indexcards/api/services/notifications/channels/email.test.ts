@@ -190,7 +190,10 @@ describe('sendEmail', () => {
 		sendMail.mockRejectedValue(mailError("Can't send mail - all recipients were rejected", { code, responseCode, response, permanent: true }));
 
 		await expect(sendEmail(message)).resolves.toEqual({ status: 'rejected', reason: `relay responded ${responseCode}` });
-		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(response));
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(response), {
+			'event.name': 'notification.email.rejected',
+			'error.type': String(responseCode),
+		});
 		expect(logger.error).not.toHaveBeenCalled();
 	});
 
@@ -206,7 +209,10 @@ describe('sendEmail', () => {
 		sendMail.mockRejectedValue(mailError('Invalid login', { code: 'EAUTH', responseCode: 535, response: '535 5.7.8 Authentication credentials invalid', permanent: true }));
 
 		await expect(sendEmail(message)).resolves.toEqual({ status: 'rejected', reason: 'relay responded 535' });
-		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('check the relay settings'));
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('check the relay settings'), {
+			'event.name': 'notification.email.relay_misconfigured',
+			'error.type': '535',
+		});
 	});
 
 	it.each([
@@ -218,7 +224,10 @@ describe('sendEmail', () => {
 		sendMail.mockRejectedValue(mailError('Mail command failed', { code: 'EENVELOPE', responseCode, response, permanent: false }));
 
 		await expect(sendEmail(message)).resolves.toEqual({ status: 'retry', reason: `relay responded ${responseCode}` });
-		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('will retry'));
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('will retry'), {
+			'event.name': 'notification.email.retry',
+			'error.type': String(responseCode),
+		});
 	});
 
 	it.each([

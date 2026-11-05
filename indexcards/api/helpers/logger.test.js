@@ -48,6 +48,44 @@ describe('logger request context', () => {
 
 });
 
+describe('logger exception attributes', () => {
+	const capture = (log) => {
+		const captureTransport = new CaptureTransport();
+		const originalSilent = logger.silent;
+		const originalLevel = logger.level;
+		logger.silent = false;
+		logger.level = 'info';
+		logger.add(captureTransport);
+		try {
+			log();
+		} finally {
+			logger.remove(captureTransport);
+			logger.silent = originalSilent;
+			logger.level = originalLevel;
+		}
+		return captureTransport.entries[0];
+	};
+
+	it('turns an error in the metadata into exception.* and keeps the message as written', () => {
+		const error = new TypeError('boom');
+
+		const entry = capture(() => logger.warn('Failed to count jobs', { 'event.name': 'queue.job_counts.exception', error }));
+
+		expect(entry).toMatchObject({
+			message: 'Failed to count jobs',
+			'event.name': 'queue.job_counts.exception',
+			'exception.type': 'TypeError',
+			'exception.message': 'boom',
+			'exception.stacktrace': error.stack,
+		});
+		expect(entry).not.toHaveProperty('error');
+	});
+
+	it('leaves an error value that is not an Error alone', () => {
+		expect(capture(() => logger.warn('odd', { error: 'not an Error' }))).toMatchObject({ error: 'not an Error' });
+	});
+});
+
 describe('setupRequest route template', () => {
 	beforeAll(() => {
 		context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());

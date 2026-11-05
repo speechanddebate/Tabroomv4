@@ -1,6 +1,6 @@
-import { RedisConnection, createNodeRedisClient, type QueueBaseOptions } from 'bullmq';
+import { RedisConnection, createIORedisClient, type QueueBaseOptions } from 'bullmq';
 import { BullMQOtel } from 'bullmq-otel';
-import { createClient } from 'redis';
+import { Redis } from 'ioredis';
 import packageData from '../../../package.json' with { type: 'json' };
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
@@ -12,33 +12,33 @@ export function isRedisDown() {
 	return redisDown;
 }
 
-// BullMQ defaults to ioredis. The factory makes it build node-redis clients instead, and since
-// BullMQ creates them it also closes them when the queue or worker closes
+// ioredis, not node-redis: BullMQ's node-redis adapter (through 6.7.0) loads its Lua scripts only
+// once and never again after a reconnect, so after a Redis restart every job add fails with
+// NOSCRIPT until the process restarts. ioredis re-sends scripts on a new connection.
+// The factory lets the connection log an outage once; BullMQ still closes the clients it creates
 RedisConnection.clientFactory = (opts) => {
-	const client = createClient({
-		url: opts.url,
-		name: opts.connectionName,
-		socket: {
-			// node-redis retries every few ms by default, which floods the log while Redis is down
-			reconnectStrategy: (retries) => Math.min(retries * 500, 5000),
-		},
+	const { url, ...options } = opts;
+	const client = new Redis(url ?? config.redis.url, {
+		...options,
+		// BullMQ's default backs off to 20s between attempts; keep reconnects within 5s of Redis returning
+		retryStrategy: (times: number) => Math.min(times * 500, 5000),
 	});
 
 	// Registered before BullMQ wraps the client so the outage is marked before the queue sees the error
 	client.on('error', (error) => {
 		if (!redisDown) {
 			redisDown = true;
-			logger.warn(`Lost connection to Redis at ${new URL(config.redis.url).host}`, error);
+			logger.warn(`Lost connection to Redis at ${new URL(config.redis.url).host}`, { 'event.name': 'redis.connection.lost', error });
 		}
 	});
 	client.on('ready', () => {
 		if (redisDown) {
 			redisDown = false;
-			logger.info(`Reconnected to Redis at ${new URL(config.redis.url).host}`);
+			logger.info(`Reconnected to Redis at ${new URL(config.redis.url).host}`, { 'event.name': 'redis.connection.restored' });
 		}
 	});
 
-	return createNodeRedisClient(client);
+	return createIORedisClient(client);
 };
 
 /** Options shared by every Queue and Worker */

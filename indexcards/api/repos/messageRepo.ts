@@ -1,6 +1,22 @@
+import { metrics } from '@opentelemetry/api';
 import type { Database } from '../data/database.js';
 import type { Message } from '../data/schema.js';
 import type { Insertable, Selectable } from 'kysely';
+
+const deliveries = metrics.getMeter('indexcards').createCounter('tabroom.notification.deliveries', {
+	description: 'Notification deliveries by channel and how they ended',
+	unit: '{delivery}',
+});
+
+// A series is only exported once it has a value, and Prometheus's increase() can't count the jump
+// from no series to its first value, so the first deliveries after every start went uncounted.
+// Starting each series at 0 makes every delivery an increase
+for (const status of ['sent', 'rejected', 'failed', 'skipped', 'logged'] satisfies DeliveryStatus['email'][]) {
+	deliveries.add(0, { 'notification.channel': 'email', 'notification.status': status });
+}
+for (const status of ['sent', 'rejected', 'failed', 'skipped'] satisfies DeliveryStatus['push'][]) {
+	deliveries.add(0, { 'notification.channel': 'push', 'notification.status': status });
+}
 
 type queryOpts = {
 	unread?: boolean;
@@ -155,7 +171,10 @@ async function recordDelivery<C extends keyof DeliveryStatus>(
 		.where((eb) => eb.or([eb(statusColumn, 'is', null), eb(statusColumn, '=', 'queued')]))
 		.executeTakeFirst();
 
-	return result.numUpdatedRows > 0n;
+	// Only a changed row counts, so a stalled job's rerun or a late failure isn't counted twice
+	if (result.numUpdatedRows === 0n) return false;
+	deliveries.add(1, { 'notification.channel': channel, 'notification.status': status });
+	return true;
 }
 
 /**
@@ -189,7 +208,22 @@ async function failQueued(
 			.executeTakeFirst();
 		changed.push = Number(result.numUpdatedRows);
 	}
+	for (const channel of ['email', 'push'] as const) {
+		if (changed[channel] > 0) {
+			deliveries.add(changed[channel], { 'notification.channel': channel, 'notification.status': 'failed' });
+		}
+	}
 	return changed;
+}
+
+/**
+ * Counts deliveries that notify() settled as skipped when it wrote the rows (no one to reach on
+ * that channel), so the metric covers the deliveries no job ever ran for
+ */
+function countSkipped(channel: keyof DeliveryStatus, count: number) {
+	if (count > 0) {
+		deliveries.add(count, { 'notification.channel': channel, 'notification.status': 'skipped' });
+	}
 }
 
 export default {
@@ -198,4 +232,5 @@ export default {
 	createMessage,
 	recordDelivery,
 	failQueued,
+	countSkipped,
 };

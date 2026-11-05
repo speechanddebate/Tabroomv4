@@ -147,7 +147,9 @@ describe('processPush', () => {
 
 		expect(pushMessage).toHaveBeenCalledTimes(1);
 		expect(logger.warn).toHaveBeenCalledOnce();
-		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('not configured'));
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('not configured'), {
+			'event.name': 'notification.push.unconfigured',
+		});
 		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 2, 'push', 'skipped');
 		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 3, 'push', 'skipped');
 	});
@@ -227,7 +229,9 @@ describe('processEmail', () => {
 
 		expect(emailMessage).toHaveBeenCalledTimes(3);
 		expect(logger.warn).toHaveBeenCalledOnce();
-		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('mail mode is log'));
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('mail mode is log'), {
+			'event.name': 'notification.email.log_mode',
+		});
 	});
 
 	it('lets a database error fail the job', async () => {

@@ -78,6 +78,9 @@ describe('worker failure hook', () => {
 
 		await fail(failedJob(3), new Error('relay down'));
 
-		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('failure hook failed'), expect.any(Error));
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('failure hook failed'), {
+			'event.name': 'queue.job.failure_hook.exception',
+			error: expect.objectContaining({ message: 'database down' }),
+		});
 	});
 });

@@ -151,6 +151,44 @@ describe('push subscriptions', () => {
 		});
 	});
 
+	describe('getPushRecipients', () => {
+		it('names each asked-about person with a login that can receive push, once', async () => {
+			const Twice = await factories.person.create();
+			const Once = await factories.person.create();
+			const NotAsked = await factories.person.create();
+			await factories.session.create({ person: Twice.id, ...subscription() });
+			await factories.session.create({ person: Twice.id, ...subscription() });
+			await factories.session.create({ person: Once.id, ...subscription() });
+			await factories.session.create({ person: NotAsked.id, ...subscription() });
+
+			expect(await sessionRepo.getPushRecipients(db, [Twice.id, Once.id], KEY)).toEqual(new Set([Twice.id, Once.id]));
+		});
+
+		it('leaves out people whose logins cannot receive push', async () => {
+			const Other = await factories.person.create();
+			const NoEndpoint = await factories.person.create();
+			const Disabled = await factories.person.create();
+			const OldKey = await factories.person.create();
+			const Sued = await factories.person.create();
+			await factories.session.create({ person: NoEndpoint.id });
+			await factories.session.create({ person: Disabled.id, ...subscription(), push_disabled: 1 });
+			await factories.session.create({ person: OldKey.id, ...subscription(), push_vapid_key: 'fedcba9876543210' });
+			await factories.session.create({ person: Sued.id, su: Other.id, ...subscription() });
+
+			expect(await sessionRepo.getPushRecipients(db, [NoEndpoint.id, Disabled.id, OldKey.id, Sued.id], KEY)).toEqual(new Set());
+		});
+
+		it('looks only among the given sessions when there are some', async () => {
+			const Owner = await factories.person.create();
+			const Other = await factories.person.create();
+			const chosen = await factories.session.create({ person: Owner.id, ...subscription() });
+			await factories.session.create({ person: Other.id, ...subscription() });
+
+			expect(await sessionRepo.getPushRecipients(db, [Owner.id, Other.id], KEY, { sessions: [chosen.id] }))
+				.toEqual(new Set([Owner.id]));
+		});
+	});
+
 	describe('getPushSubscription', () => {
 		it('returns the endpoint and keys of a live subscription', async () => {
 			const values = subscription();

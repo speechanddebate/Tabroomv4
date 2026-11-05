@@ -13,8 +13,8 @@ describe('defineQueue', () => {
 		expect(queue.jobOptions).toEqual({
 			attempts: 3,
 			backoff: { type: 'exponential', delay: RETRY_DELAY },
-			removeOnComplete: { age: 24 * 60 * 60 },
-			removeOnFail: { age: 7 * 24 * 60 * 60 },
+			removeOnComplete: { age: 60 * 60, count: 5000 },
+			removeOnFail: { age: 24 * 60 * 60, count: 10000 },
 		});
 	});
 

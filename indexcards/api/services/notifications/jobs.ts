@@ -105,7 +105,9 @@ export const processEmail: Processor<EmailJobData, EmailJobResult> = async (job)
 	if (config.mail.mode === 'log') {
 		if (!warnedLogMode) {
 			warnedLogMode = true;
-			logger.warn('Email jobs are being logged, not sent: mail mode is log on this worker');
+			logger.warn('Email jobs are being logged, not sent: mail mode is log on this worker', {
+				'event.name': 'notification.email.log_mode',
+			});
 		}
 	} else {
 		warnedLogMode = false;
@@ -159,7 +161,9 @@ export const processPush: Processor<PushJobData, PushJobResult> = async (job) =>
 	if (!isPushConfigured()) {
 		if (!warnedUnconfigured) {
 			warnedUnconfigured = true;
-			logger.warn('Push jobs are being skipped, web push is not configured on this worker');
+			logger.warn('Push jobs are being skipped, web push is not configured on this worker', {
+				'event.name': 'notification.push.unconfigured',
+			});
 		}
 		await messageRepo.recordDelivery(db, job.data.message, 'push', 'skipped');
 		return { sent: 0, gone: 0, rejected: 0, skipped: 'unconfigured' };

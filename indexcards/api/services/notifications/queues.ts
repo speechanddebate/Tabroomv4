@@ -23,6 +23,6 @@ export const pushQueue = defineQueue({
 	// Push services answer 429 and 503 with Retry-After, which the job passes on in RetryAfterError
 	backoffStrategy: retryAfterBackoff,
 	onFailed: async (job) => {
-		await messageRepo.recordDelivery(db, job.data.message, 'push', 'failed');
+		await messageRepo.recordDelivery(db, job.data.message, 'push', job.data.sent?.length ? 'sent' : 'failed');
 	},
 });

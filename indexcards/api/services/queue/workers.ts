@@ -18,18 +18,26 @@ function startWorker({ name, processor, concurrency, backoffStrategy, onFailed }
 	// Without a listener BullMQ prints every error to the console
 	worker.on('error', (error) => {
 		if (!isRedisDown()) {
-			logger.error(`Job worker ${name} error`, error);
+			logger.error(`Job worker ${name} error`, { 'event.name': 'queue.worker.exception', error });
 		}
 	});
 	worker.on('failed', (job, error) => {
 		const attempts = job?.opts.attempts ?? 1;
 		const final = error instanceof UnrecoverableError || (job?.attemptsMade ?? 0) >= attempts;
 		const outcome = final ? 'giving up' : 'will retry';
-		logger.warn(`Job ${name}:${job?.id} (${job?.name}) failed on attempt ${job?.attemptsMade} of ${attempts}, ${outcome}`, error);
+		logger.warn(`Job ${name}:${job?.id} (${job?.name}) failed on attempt ${job?.attemptsMade} of ${attempts}, ${outcome}`, {
+			'event.name': 'queue.job.failed',
+			'bullmq.queue.name': name,
+			final,
+			error,
+		});
 
 		if (final && job && onFailed) {
 			onFailed(job, error).catch((hookError: unknown) => {
-				logger.error(`Job ${name}:${job.id} (${job.name}) failure hook failed`, hookError);
+				logger.error(`Job ${name}:${job.id} (${job.name}) failure hook failed`, {
+					'event.name': 'queue.job.failure_hook.exception',
+					error: hookError,
+				});
 			});
 		}
 	});

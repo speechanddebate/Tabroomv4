@@ -77,7 +77,9 @@ describe('initWebPush', () => {
 		initWebPush();
 
 		expect(logger.warn).toHaveBeenCalledOnce();
-		expect(logger.warn).toHaveBeenCalledWith('Web push keys not present, web push will not work');
+		expect(logger.warn).toHaveBeenCalledWith('Web push keys not present, web push will not work', {
+			'event.name': 'notification.push.unconfigured',
+		});
 		expect(isPushConfigured()).toBe(false);
 		expect(getVapid()).toBeNull();
 	});
@@ -216,15 +218,21 @@ describe('sendPush', () => {
 			reason: `push service responded ${statusCode}`,
 		});
 		expect(logger.error).toHaveBeenCalledOnce();
-		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('VAPID'));
-		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('the key is wrong'));
+		// One message names the VAPID keys and then quotes the push service's body
+		expect(logger.error).toHaveBeenCalledWith(expect.stringMatching(/VAPID.*the key is wrong/), {
+			'event.name': 'notification.push.vapid_rejected',
+			'error.type': String(statusCode),
+		});
 	});
 
 	it('rejects a 413 and logs an error about the payload', async () => {
 		sendNotification.mockRejectedValue(pushError(413));
 
 		await expect(sendPush(subscription, payload)).resolves.toMatchObject({ status: 'rejected' });
-		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('payload too large'));
+		expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('payload too large'), {
+			'event.name': 'notification.push.payload_too_large',
+			'error.type': '413',
+		});
 	});
 
 	it('rejects any other 4xx with a warning', async () => {
@@ -257,7 +265,10 @@ describe('sendPush', () => {
 			reason: 'push service responded 429',
 			retryAfter: 60,
 		});
-		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('after 60s'));
+		expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('after 60s'), {
+			'event.name': 'notification.push.retry',
+			'error.type': '429',
+		});
 	});
 
 	it('reads Retry-After given in seconds', async () => {

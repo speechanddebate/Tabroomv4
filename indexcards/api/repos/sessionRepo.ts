@@ -6,6 +6,23 @@ import config from '../config.js';
 import logger from '../helpers/logger.js';
 import type { Insertable, Updateable } from 'kysely';
 
+type queryOpts = {
+	/** Only logins that can receive push under this VAPID key: subscribed under it, not turned off, and not su'd */
+	pushableWith?: string;
+};
+
+function buildSessionQuery(db: Database, opts: queryOpts = {}) {
+	let query = db.selectFrom('session');
+	if (opts.pushableWith) {
+		query = query
+			.where('session.su', 'is', null)
+			.where('session.push_endpoint', 'is not', null)
+			.where('session.push_disabled', '=', 0)
+			.where('session.push_vapid_key', '=', opts.pushableWith);
+	}
+	return query;
+}
+
 export const findByUserKey = async (
 	db: Database,
 	userkey: string,
@@ -265,7 +282,7 @@ export const setPushSubscription = async (
  * not turned off, and not su'd
  */
 export const getPushSubscriptions = async (db: Database, personId: number, vapidKey: string) => {
-	return await db.selectFrom('session')
+	return await buildSessionQuery(db, { pushableWith: vapidKey })
 		.select([
 			'session.id',
 			'session.push_endpoint',
@@ -273,13 +290,30 @@ export const getPushSubscriptions = async (db: Database, personId: number, vapid
 			'session.push_auth',
 		])
 		.where('session.person', '=', personId)
-		.where('session.su', 'is', null)
-		.where('session.push_endpoint', 'is not', null)
-		.where('session.push_disabled', '=', 0)
-		.where('session.push_vapid_key', '=', vapidKey)
 		// setPushSubscription writes the three columns together, so none is null when the endpoint isn't
 		.$narrowType<{ push_endpoint: string; push_p256dh: string; push_auth: string }>()
 		.execute();
+};
+
+/**
+ * Which of these people have a login that can receive push, the same logins getPushSubscriptions
+ * returns, so notify() can skip a push job that would only find none. Limited to the given
+ * sessions when there are some
+ */
+export const getPushRecipients = async (
+	db: Database,
+	personIds: number[],
+	vapidKey: string,
+	opts: { sessions?: number[] } = {},
+): Promise<Set<number>> => {
+	let query = buildSessionQuery(db, { pushableWith: vapidKey })
+		.select('session.person')
+		.distinct()
+		.where('session.person', 'in', personIds);
+	if (opts.sessions) {
+		query = query.where('session.id', 'in', opts.sessions);
+	}
+	return new Set((await query.execute()).map((row) => row.person));
 };
 
 /**
@@ -341,6 +375,7 @@ export default {
 	getPushStatus,
 	getSessions,
 	getPushSubscriptions,
+	getPushRecipients,
 	getPushSubscription,
 	setPushSubscription,
 	clearPushEndpoint,

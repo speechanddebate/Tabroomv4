@@ -8,10 +8,9 @@ let producer: FlowProducer | undefined;
 function getFlowProducer(): FlowProducer {
 	if (!producer) {
 		producer = new FlowProducer(baseOptions);
-		// Without a listener BullMQ prints every error to the console
 		producer.on('error', (error) => {
 			if (!isRedisDown()) {
-				logger.error('Job flow producer error', error);
+				logger.error('Job flow producer error', { 'event.name': 'queue.flow.exception', error });
 			}
 		});
 	}

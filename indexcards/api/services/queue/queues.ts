@@ -17,7 +17,7 @@ export function getQueue<N extends QueueName>(name: N): Queue<QueueData[N], Queu
 		// Without a listener BullMQ prints every error to the console
 		queue.on('error', (error) => {
 			if (!isRedisDown()) {
-				logger.error(`Job queue ${name} error`, error);
+				logger.error(`Job queue ${name} error`, { 'event.name': 'queue.exception', error });
 			}
 		});
 		queues.set(name, queue);

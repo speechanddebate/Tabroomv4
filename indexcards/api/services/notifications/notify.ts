@@ -2,9 +2,10 @@ import { z } from "zod";
 import { db } from "../../data/database.js";
 import logger from "../../helpers/logger.js";
 import messageRepo from "../../repos/messageRepo.js";
+import sessionRepo from "../../repos/sessionRepo.js";
 import { addJobs, type FlowNode } from "../queue/index.js";
 import { emailQueue, pushQueue } from "./queues.js";
-import type { PushMessageOptions } from "./channels/webpush.js";
+import { getVapid, type PushMessageOptions } from "./channels/webpush.js";
 
 export type inputData = {
 	ids     : number[]
@@ -82,6 +83,9 @@ export type notifyResponse = {
  */
 const EMAIL_JOB_PRIORITY = 10;
 
+/** Push without VAPID keys is an environment choice, so it is said once per process, not per notification */
+let warnedPushUnconfigured = false;
+
 export class NotificationRequestError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -100,7 +104,7 @@ export type PreparedNotification = {
 /**
  * Does everything but queue: validates the request, writes one message row per recipient
  * (their inbox entry and the per-person record of the delivery), and builds a delivery
- * job per recipient and channel. Throws on an invalid request. A caller that wants
+ * job per recipient for each channel that can reach them. Throws on an invalid request. A caller that wants
  * something to run after every delivery settles adds the deliveries under its own flow
  * parent; notify() queues them as is
  */
@@ -119,6 +123,19 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 	const reachable = request.channels.email
 		? await emailRecipients(request.ids, request.ignoreNoEmail === true)
 		: new Set<number>();
+
+	// No push job for anyone without a login that can receive push, which is most people.
+	// Without VAPID keys nobody can, so every push is skipped here and no job runs to say so
+	const vapid = getVapid();
+	if (request.channels.webpush && !vapid && !warnedPushUnconfigured) {
+		warnedPushUnconfigured = true;
+		logger.warn('Push deliveries are being skipped, web push is not configured', {
+			'event.name': 'notification.push.unconfigured',
+		});
+	}
+	const pushable = request.channels.webpush && vapid
+		? await sessionRepo.getPushRecipients(db, request.ids, vapid.fingerprint, { sessions: request.push?.sessions })
+		: new Set<number>();
 	const queuedAt = new Date();
 
 	const messages = await db.insertInto('message')
@@ -135,22 +152,35 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			// so the row is still the record of the delivery when the inbox channel is off
 			visible_at: request.channels.inbox ? queuedAt : null,
 			// Each channel's status starts here: queued until its job settles, or settled
-			// already for someone email can't reach. A channel that is off stays null
+			// already for someone the channel can't reach. A channel that is off stays null
 			...(request.channels.email
 				? reachable.has(person)
 					? { email_status: 'queued' as const }
 					: { email_status: 'skipped' as const, emailed_at: queuedAt }
 				: {}),
-			...(request.channels.webpush ? { push_status: 'queued' as const } : {}),
+			...(request.channels.webpush
+				? pushable.has(person)
+					? { push_status: 'queued' as const }
+					: { push_status: 'skipped' as const, pushed_at: queuedAt }
+				: {}),
 		})))
 		.returning(['id', 'person'])
 		// every row above has a person
 		.$narrowType<{ person: number }>()
 		.execute();
 
+	// Deliveries settled above never reach recordDelivery, so they are counted here
+	if (request.channels.email) {
+		messageRepo.countSkipped('email', messages.filter((message) => !reachable.has(message.person)).length);
+	}
+	if (request.channels.webpush) {
+		messageRepo.countSkipped('push', messages.filter((message) => !pushable.has(message.person)).length);
+	}
+
 	const deliveries: FlowNode[] = [];
 	if (request.channels.webpush) {
 		for (const message of messages) {
+			if (!pushable.has(message.person)) continue;
 			deliveries.push(pushQueue.job('push', { message: message.id, ...(request.push ? { push: request.push } : {}) }, {
 				jobId: `message-${message.id}`,
 				// Whatever a caller runs after the deliveries still runs when a recipient's push fails
@@ -218,12 +248,17 @@ export async function notify(inputData: inputData): Promise<notifyResponse> {
 		// The rows are written and say queued, but nothing will ever run for them. Settle them
 		// as failed so the inbox entries do not look pending forever and a retried blast is
 		// not mistaken for a duplicate. The caller still gets the error
-		logger.error(`Could not queue ${jobs.push} push and ${jobs.email} email job(s) for ${messages.length} people`, error);
+		logger.error(`Could not queue ${jobs.push} push and ${jobs.email} email job(s) for ${messages.length} people`, {
+			'event.name': 'notification.enqueue.exception',
+			error,
+		});
 		const settled = await messageRepo.failQueued(db, messages.map((message) => message.id), {
 			email: jobs.email > 0,
 			push: jobs.push > 0,
 		});
-		logger.warn(`Marked ${settled.email} email and ${settled.push} push deliveries failed for the jobs that were not queued`);
+		logger.warn(`Marked ${settled.email} email and ${settled.push} push deliveries failed for the jobs that were not queued`, {
+			'event.name': 'notification.enqueue.failed_marked',
+		});
 		throw error;
 	}
 

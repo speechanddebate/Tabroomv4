@@ -27,14 +27,17 @@ export function initWebPush(): void {
 	const { subject, publicKey, privateKey } = config.webpush;
 
 	if (!subject || !publicKey || !privateKey) {
-		logger.warn('Web push keys not present, web push will not work');
+		logger.warn('Web push keys not present, web push will not work', { 'event.name': 'notification.push.unconfigured' });
 		return;
 	}
 
 	try {
 		webPush.setVapidDetails(subject, publicKey, privateKey);
 	} catch (err) {
-		logger.warn('Web push keys are invalid, web push will not work', err);
+		logger.warn('Web push keys are invalid, web push will not work', {
+			'event.name': 'notification.push.keys_invalid',
+			error: err,
+		});
 		return;
 	}
 
@@ -191,16 +194,28 @@ function sendFailure(err: unknown, host: string): PushSendResult {
 		if (statusCode === 429 || statusCode === 406 || statusCode >= 500) {
 			const retryAfter = parseRetryAfter(err.headers?.['retry-after'])
 				?? (statusCode === 429 ? RATE_LIMIT_WAIT : undefined);
-			logger.warn(`Push to ${host} failed, ${reason}, will retry${retryAfter === undefined ? '' : ` after ${retryAfter}s`}`);
+			logger.warn(`Push to ${host} failed, ${reason}, will retry${retryAfter === undefined ? '' : ` after ${retryAfter}s`}`, {
+				'event.name': 'notification.push.retry',
+				'error.type': String(statusCode),
+			});
 			return { status: 'retry', reason, retryAfter };
 		}
 
 		if (statusCode === 400 || statusCode === 401 || statusCode === 403) {
-			logger.error(`Push to ${host} rejected, ${reason}, check the VAPID keys: ${body}`);
+			logger.error(`Push to ${host} rejected, ${reason}, check the VAPID keys: ${body}`, {
+				'event.name': 'notification.push.vapid_rejected',
+				'error.type': String(statusCode),
+			});
 		} else if (statusCode === 413) {
-			logger.error(`Push to ${host} rejected, payload too large: ${body}`);
+			logger.error(`Push to ${host} rejected, payload too large: ${body}`, {
+				'event.name': 'notification.push.payload_too_large',
+				'error.type': '413',
+			});
 		} else {
-			logger.warn(`Push to ${host} rejected, ${reason}: ${body}`);
+			logger.warn(`Push to ${host} rejected, ${reason}: ${body}`, {
+				'event.name': 'notification.push.rejected',
+				'error.type': String(statusCode),
+			});
 		}
 		return { status: 'rejected', reason };
 	}
@@ -209,12 +224,19 @@ function sendFailure(err: unknown, host: string): PushSendResult {
 	const code = (err as NodeJS.ErrnoException)?.code;
 	const message = err instanceof Error ? err.message : String(err);
 	if (code || message === 'Socket timeout') {
-		logger.warn(`Push to ${host} failed, ${message}, will retry`);
+		logger.warn(`Push to ${host} failed, ${message}, will retry`, {
+			'event.name': 'notification.push.retry',
+			'error.type': code ?? 'timeout',
+		});
 		return { status: 'retry', reason: message };
 	}
 
 	// What's left is web-push refusing the arguments: malformed keys or options
-	logger.error(`Push to ${host} rejected, ${message}`);
+	logger.error(`Push to ${host} rejected, ${message}`, {
+		'event.name': 'notification.push.rejected',
+		'error.type': '_OTHER',
+		error: err,
+	});
 	return { status: 'rejected', reason: message };
 }
 

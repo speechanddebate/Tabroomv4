@@ -6,6 +6,7 @@ import factories from '../../../../../../tests/factories/index.js';
 import config from '../../../../../config.js';
 import logger from '../../../../../helpers/logger.js';
 import { db } from '../../../../../data/database.js';
+import sessionRepo from '../../../../../repos/sessionRepo.js';
 import { getVapid, initWebPush } from '../../../../../services/notifications/channels/webpush.js';
 import { PushStatusSchema } from '@tabroom/types';
 
@@ -528,6 +529,34 @@ describe('Push Router', () => {
 			const message = await db.selectFrom('message').select('push_status')
 				.where('person', '=', personId).orderBy('id', 'desc').executeTakeFirstOrThrow();
 			expect(message.push_status).toBe('failed');
+		});
+
+		it('returns 503 and logs it when notify() fails before queueing', async () => {
+			const error = vi.spyOn(logger, 'error').mockImplementation(() => logger);
+			const lookup = vi.spyOn(sessionRepo, 'getPushRecipients').mockRejectedValue(new Error('database down'));
+			const { userkey } = await subscribedSession();
+
+			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(503);
+			expect(res).toBeProblemResponse(503);
+			expect(error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+				'event.name': 'notification.push.test.exception',
+				error: expect.objectContaining({ message: 'database down' }),
+			}));
+			expect(addJobs).not.toHaveBeenCalled();
+			lookup.mockRestore();
+		});
+
+		it('returns 409 when the login stops receiving push before notify() queues it', async () => {
+			const { userkey } = await subscribedSession();
+			const lookup = vi.spyOn(sessionRepo, 'getPushRecipients').mockResolvedValue(new Set());
+
+			const res = await request(server).post(TEST_PATH).asPerson(userkey).expect(409);
+			expect(res).toBeProblemResponse(409);
+			expect(addJobs).toHaveBeenCalledWith([]);
+			const message = await db.selectFrom('message').select('push_status')
+				.where('person', '=', personId).orderBy('id', 'desc').executeTakeFirstOrThrow();
+			expect(message.push_status).toBe('skipped');
+			lookup.mockRestore();
 		});
 
 		it('returns 401 without a cookie', async () => {

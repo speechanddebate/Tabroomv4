@@ -14,10 +14,14 @@ const person = { id: 4242, email: 'Coach@Example.com' };
 const originalSecret = config.shared_secret;
 const DAY = 24 * 60 * 60;
 
-/** The same token with one character of its signature changed */
+/**
+ * The same token with one character of its signature changed. Not the last character: of its
+ * 6 bits only the top 4 are signature, so A, B, C and D decode alike and swapping among them
+ * leaves the signature valid. A character inside it always carries 6 real bits
+ */
 const tampered = (token: string) => {
-	const last = token.at(-1);
-	return token.slice(0, -1) + (last === 'A' ? 'B' : 'A');
+	const at = token.lastIndexOf('.') + 5;
+	return token.slice(0, at) + (token[at] === 'A' ? 'B' : 'A') + token.slice(at + 1);
 };
 
 beforeEach(() => {

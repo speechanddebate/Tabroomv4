@@ -68,9 +68,8 @@ export function defineQueue<Name extends string, Data, Result>(
 		backoff: backoffStrategy
 			? { type: 'custom' }
 			: { type: 'exponential', delay: RETRY_DELAY },
-		// Redis runs with noeviction, so finished jobs have to be cleaned up or they fill it
-		removeOnComplete: { age: 24 * 60 * 60 },
-		removeOnFail: { age: 7 * 24 * 60 * 60 },
+		removeOnComplete: { age: 60 * 60, count: 5000 },
+		removeOnFail: { age: 24 * 60 * 60, count: 10000 },
 	};
 	return {
 		name,

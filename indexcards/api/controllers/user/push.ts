@@ -87,8 +87,8 @@ export const disablePush = async (req: Request, res: Response) => {
 /**
  * Queues one push to this login through notify(), so the test runs the same path as real
  * notifications. The message row stays out of the inbox. The answer only says it was queued:
- * whether the push service took it is the job's to record. notify() never checks VAPID
- * keys (the job skips quietly without them), so that check stays here
+ * whether the push service took it is the job's to record. Without VAPID keys notify() would
+ * skip the push and queue nothing, so that is checked here first to say why
  */
 export const sendTestPush = async (req: Request, res: Response) => {
 	const person = getPerson(req);
@@ -102,8 +102,10 @@ export const sendTestPush = async (req: Request, res: Response) => {
 	const session = await sessionRepo.getPushSubscription(db, sessionId, vapid.fingerprint);
 	if (!session) return Conflict(req, res, 'Push notifications aren\'t on for this browser');
 
+	const failed = 'The test notification couldn\'t be sent right now. Try again later.';
+	let response: Awaited<ReturnType<typeof notify>>;
 	try {
-		await notify({
+		response = await notify({
 			ids: [person.id],
 			subject: 'Test notification',
 			text: 'Notifications from Tabroom are working on this browser.',
@@ -113,9 +115,20 @@ export const sendTestPush = async (req: Request, res: Response) => {
 			// A test that turns up an hour later is no use
 			push: { sessions: [sessionId], ttl: 60, urgency: 'high' },
 		});
-	} catch {
-		// notify() has logged it and marked the row failed
-		return ServiceUnavailable(req, res, 'The test notification couldn\'t be sent right now. Try again later.');
+	} catch (error) {
+		// notify() logs a queue that won't take the job, but nothing else it throws (the database, say)
+		logger.error('Could not send a test notification', { 'event.name': 'notification.push.test.exception', error });
+		return ServiceUnavailable(req, res, failed);
+	}
+
+	// notify() answers a request it refuses instead of throwing; this one is built here, so that is a bug
+	if (response.error) {
+		logger.error(`Test notification request was refused: ${response.message}`, { 'event.name': 'notification.push.test.exception' });
+		return ServiceUnavailable(req, res, failed);
+	}
+	// The login stopped being able to receive push between the check above and notify()'s own
+	if (!response.jobs?.push) {
+		return Conflict(req, res, 'Push notifications aren\'t on for this browser');
 	}
 
 	return res.status(202).end();

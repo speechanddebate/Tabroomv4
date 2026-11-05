@@ -46,6 +46,21 @@ export function getCallerFrame(options = {}) {
 
 const requestContextFormat = winston.format((info) => attachRequestContext(info));
 
+/**
+ * Turns an Error passed as `error` in the metadata into OTel's exception.* attributes. The json format
+ * writes an Error as {}, and an Error passed as the whole meta argument is merged into the message
+ */
+const exceptionFormat = winston.format((info) => {
+	const { error } = info;
+	if (error instanceof Error) {
+		delete info.error;
+		info['exception.type'] = error.name;
+		info['exception.message'] = error.message;
+		info['exception.stacktrace'] = error.stack;
+	}
+	return info;
+});
+
 function Labels(props = {}) {
 	return {
 		app: 'indexcards',
@@ -107,6 +122,7 @@ const logger = winston.createLogger({
 	level: config.logging.level,
 	format: winston.format.combine(
 		requestContextFormat(),
+		exceptionFormat(),
 		winston.format.json(),
 	),
 	exitOnError: false,

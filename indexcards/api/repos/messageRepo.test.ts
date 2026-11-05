@@ -3,6 +3,16 @@ import factories from '../../tests/factories/index.js';
 import { db } from '../../api/data/database.js';
 import { faker } from '@faker-js/faker';
 
+const { counted } = vi.hoisted(() => ({ counted: vi.fn() }));
+vi.mock('@opentelemetry/api', async (importOriginal) => ({
+	...await importOriginal<typeof import('@opentelemetry/api')>(),
+	metrics: { getMeter: () => ({ createCounter: () => ({ add: counted }) }) },
+}));
+
+beforeEach(() => {
+	counted.mockClear();
+});
+
 describe('messageRepo',() => {
 	describe('buildMessageQuery',() => {
 		it('does not return deleted messages when excludeDeleted is true', async () => {
@@ -90,6 +100,16 @@ describe('messageRepo',() => {
 			expect(message[0]?.Email?.content).toBe(Email.content);
 		});
 	});
+	it('starts every delivery series at 0 so the first delivery is counted as an increase', async () => {
+		vi.resetModules();
+		counted.mockClear();
+		await import('./messageRepo.js');
+
+		expect(counted).toHaveBeenCalledTimes(9);
+		expect(counted).toHaveBeenCalledWith(0, { 'notification.channel': 'email', 'notification.status': 'logged' });
+		expect(counted).toHaveBeenCalledWith(0, { 'notification.channel': 'push', 'notification.status': 'sent' });
+		expect(counted.mock.calls.every(([value]) => value === 0)).toBe(true);
+	});
 	describe('recordDelivery', () => {
 		const delivery = (id: number) => db.selectFrom('message')
 			.select(['email_status', 'emailed_at', 'push_status', 'pushed_at'])
@@ -109,6 +129,11 @@ describe('messageRepo',() => {
 
 			await messageRepo.recordDelivery(db, Message.id, 'push', 'rejected');
 			expect(await delivery(Message.id)).toMatchObject({ email_status: 'sent', push_status: 'rejected', pushed_at: expect.any(Date) });
+
+			expect(counted.mock.calls).toEqual([
+				[1, { 'notification.channel': 'email', 'notification.status': 'sent' }],
+				[1, { 'notification.channel': 'push', 'notification.status': 'rejected' }],
+			]);
 		});
 		it('records a delivery queued before the status was kept', async () => {
 			const Message = await factories.message.create();
@@ -122,6 +147,7 @@ describe('messageRepo',() => {
 
 			await expect(messageRepo.recordDelivery(db, Message.id, 'email', 'failed')).resolves.toBe(false);
 			expect(await delivery(Message.id)).toMatchObject({ email_status: 'sent', emailed_at: sentAt });
+			expect(counted).not.toHaveBeenCalled();
 		});
 	});
 	describe('failQueued', () => {
@@ -138,6 +164,11 @@ describe('messageRepo',() => {
 
 			expect(await delivery(Queued.id)).toMatchObject({ email_status: 'failed', emailed_at: expect.any(Date), push_status: 'failed', pushed_at: expect.any(Date) });
 			expect(await delivery(EmailOnly.id)).toMatchObject({ email_status: 'failed', push_status: null, pushed_at: null });
+
+			expect(counted.mock.calls).toEqual([
+				[2, { 'notification.channel': 'email', 'notification.status': 'failed' }],
+				[1, { 'notification.channel': 'push', 'notification.status': 'failed' }],
+			]);
 		});
 		it('leaves a channel alone when it is not named', async () => {
 			const Message = await factories.message.create({ email_status: 'queued', push_status: 'queued' });
@@ -150,6 +181,7 @@ describe('messageRepo',() => {
 
 			await expect(messageRepo.failQueued(db, [Sent.id], { email: true, push: true })).resolves.toEqual({ email: 0, push: 0 });
 			expect(await delivery(Sent.id)).toMatchObject({ email_status: 'sent', push_status: 'skipped' });
+			expect(counted).not.toHaveBeenCalled();
 		});
 		it('does nothing with no ids', async () => {
 			await expect(messageRepo.failQueued(db, [], { email: true, push: true })).resolves.toEqual({ email: 0, push: 0 });

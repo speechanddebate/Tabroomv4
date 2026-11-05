@@ -1,10 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import factories from "../../../tests/factories/index.js";
 import { db } from "../../data/database.js";
+import logger from "../../helpers/logger.js";
+import messageRepo from "../../repos/messageRepo.js";
 import { notify, prepNotify, validateNotificationRequest, NotificationRequestSchema } from "./notify.js";
 
-const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+const KEY = 'abcdef0123456789';
+const { addJobs, vapid } = vi.hoisted(() => ({
+	addJobs: vi.fn(),
+	vapid: { value: null as { publicKey: string; fingerprint: string } | null },
+}));
 vi.mock('../queue/index.js', () => ({ addJobs }));
+vi.mock('./channels/webpush.js', async (importOriginal) => ({
+	...await importOriginal<typeof import('./channels/webpush.js')>(),
+	getVapid: () => vapid.value,
+}));
 
 describe("Request Validation", () => {
 	it("should accept a well-formed request", async () => {
@@ -54,10 +64,22 @@ describe('notify', () => {
 	const base = { subject: 'Round 3 posted', body: null, url: '/user/home', text: 'You are in room 12', from: 'Tab <tab@tabroom.com>' };
 
 	let people: number[];
+	/** Each person's one login that can receive push, in the order of people */
+	let sessions: number[];
+	let endpoint = 0;
+	const subscribed = async (person: number) => (await factories.session.create({
+		person,
+		push_endpoint: `https://fcm.googleapis.com/fcm/send/notify-test-${person}-${++endpoint}`,
+		push_p256dh: 'p256dh',
+		push_auth: 'auth',
+		push_vapid_key: KEY,
+	})).id;
 
 	beforeEach(async () => {
 		// fresh people each time, so their inboxes hold only this test's messages
 		people = [(await factories.person.create()).id, (await factories.person.create()).id];
+		sessions = [await subscribed(people[0]), await subscribed(people[1])];
+		vapid.value = { publicKey: 'public', fingerprint: KEY };
 		addJobs.mockReset().mockResolvedValue(undefined);
 	});
 
@@ -133,13 +155,64 @@ describe('notify', () => {
 	});
 
 	it('carries the push options into each push job', async () => {
-		const push = { sessions: [41], ttl: 60, urgency: 'high' as const };
+		const push = { sessions, ttl: 60, urgency: 'high' as const };
 
 		await notify({ ...base, ids: people, channels: { email: false }, push });
 
 		const messages = await messageRows(people);
 		expect(addJobs.mock.calls[0][0].map((job: { data: unknown }) => job.data))
 			.toEqual(messages.map(message => ({ message: message.id, push })));
+	});
+
+	describe('push deliveries', () => {
+		const pushJobs = () => (addJobs.mock.calls[0][0] as { queueName: string; data: { message: number } }[])
+			.filter((delivery) => delivery.queueName === 'push');
+
+		it('settles push as skipped and queues no job for someone with no login that can receive push', async () => {
+			const Unsubscribed = await factories.person.create();
+
+			const response = await notify({ ...base, ids: [...people, Unsubscribed.id], channels: { email: false } });
+
+			expect(response.jobs).toEqual({ push: 2, email: 0 });
+			const [skipped] = await messageRows([Unsubscribed.id]);
+			expect(pushJobs().map(job => job.data.message)).not.toContain(skipped.id);
+			expect(skipped.push_status).toBe('skipped');
+			expect(skipped.pushed_at).toBeInstanceOf(Date);
+			expect((await messageRows(people)).every(message => message.push_status === 'queued')).toBe(true);
+		});
+
+		it('queues push only for people with one of the given sessions', async () => {
+			await notify({ ...base, ids: people, channels: { email: false }, push: { sessions: [sessions[0]] } });
+
+			const [first, second] = await messageRows(people);
+			expect(pushJobs().map(job => job.data.message)).toEqual([first.id]);
+			expect(second.push_status).toBe('skipped');
+		});
+
+		it('skips every push and says so once when web push is not configured', async () => {
+			vapid.value = null;
+			const warn = vi.spyOn(logger, 'warn');
+
+			await notify({ ...base, ids: people, channels: { email: false } });
+			await notify({ ...base, ids: people, channels: { email: false } });
+
+			expect(addJobs.mock.calls.every(([jobs]) => jobs.length === 0)).toBe(true);
+			expect((await messageRows(people)).every(message => message.push_status === 'skipped')).toBe(true);
+			expect(warn).toHaveBeenCalledOnce();
+			expect(warn).toHaveBeenCalledWith(expect.any(String), { 'event.name': 'notification.push.unconfigured' });
+			warn.mockRestore();
+		});
+
+		it('counts the deliveries it settles as skipped, which no job will record', async () => {
+			const countSkipped = vi.spyOn(messageRepo, 'countSkipped');
+			const OptedOutUnsubscribed = await factories.person.create({ no_email: 1 });
+
+			await notify({ ...base, ids: [...people, OptedOutUnsubscribed.id] });
+
+			expect(countSkipped).toHaveBeenCalledWith('email', 1);
+			expect(countSkipped).toHaveBeenCalledWith('push', 1);
+			countSkipped.mockRestore();
+		});
 	});
 
 	it('rejects an urgency the push service does not know', async () => {

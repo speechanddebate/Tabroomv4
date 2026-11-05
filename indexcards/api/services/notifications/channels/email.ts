@@ -108,7 +108,12 @@ export async function sendEmail(message: OutboundEmail): Promise<EmailSendResult
 	// A relay that takes the connection but not the address answers here rather than throwing
 	if (info.rejected.length > 0) {
 		const response = info.response.slice(0, MAX_LOGGED_RESPONSE);
-		logger.warn(`Email to ${message.to} rejected by the relay: ${response}`);
+		logger.warn(`Email to ${message.to} rejected by the relay: ${response}`, {
+			'event.name': 'notification.email.rejected',
+			// An SMTP reply starts with its three-digit code ("550 5.1.1 No such user"); nodemailer
+			// gives no responseCode on this path, so take the code from the reply text
+			'error.type': response.match(/^\d{3}/)?.[0] ?? '_OTHER',
+		});
 		return { status: 'rejected', reason: `relay responded ${response}` };
 	}
 
@@ -127,6 +132,8 @@ function sendFailure(err: unknown, to: string): EmailSendResult {
 		? err as NodemailerError
 		: { message: String(err) } as NodemailerError;
 	const detail = (response ?? message).slice(0, MAX_LOGGED_RESPONSE);
+	// OTel error.type: the relay's reply code when it answered, else nodemailer's own code
+	const errorType = responseCode === undefined ? code ?? '_OTHER' : String(responseCode);
 
 	if (responseCode !== undefined) {
 		const reason = `relay responded ${responseCode}`;
@@ -135,14 +142,23 @@ function sendFailure(err: unknown, to: string): EmailSendResult {
 		// mailbox, message refused, bad credentials), 4xx is the relay asking for later
 		if (permanent ?? (responseCode >= 500 && responseCode !== 503)) {
 			if (SETUP_ERRORS.has(code ?? '')) {
-				logger.error(`Email rejected, ${reason}, check the relay settings: ${detail}`);
+				logger.error(`Email rejected, ${reason}, check the relay settings: ${detail}`, {
+					'event.name': 'notification.email.relay_misconfigured',
+					'error.type': errorType,
+				});
 			} else {
-				logger.warn(`Email to ${to} rejected, ${reason}: ${detail}`);
+				logger.warn(`Email to ${to} rejected, ${reason}: ${detail}`, {
+					'event.name': 'notification.email.rejected',
+					'error.type': errorType,
+				});
 			}
 			return { status: 'rejected', reason };
 		}
 
-		logger.warn(`Email to ${to} failed, ${reason}, will retry: ${detail}`);
+		logger.warn(`Email to ${to} failed, ${reason}, will retry: ${detail}`, {
+			'event.name': 'notification.email.retry',
+			'error.type': errorType,
+		});
 		return { status: 'retry', reason };
 	}
 
@@ -151,15 +167,24 @@ function sendFailure(err: unknown, to: string): EmailSendResult {
 	// closed under us, say), is the network or a relay that went quiet, and the retries
 	// decide whether it was final
 	if (code && MESSAGE_ERRORS.has(code)) {
-		logger.error(`Email to ${to} rejected, ${message}`);
+		logger.error(`Email to ${to} rejected, ${message}`, {
+			'event.name': 'notification.email.rejected',
+			'error.type': errorType,
+		});
 		return { status: 'rejected', reason: message };
 	}
 	if (code && SETUP_ERRORS.has(code)) {
-		logger.error(`Email rejected, check the relay settings: ${message}`);
+		logger.error(`Email rejected, check the relay settings: ${message}`, {
+			'event.name': 'notification.email.relay_misconfigured',
+			'error.type': errorType,
+		});
 		return { status: 'rejected', reason: message };
 	}
 
-	logger.warn(`Email to ${to} failed, ${message}, will retry`);
+	logger.warn(`Email to ${to} failed, ${message}, will retry`, {
+		'event.name': 'notification.email.retry',
+		'error.type': errorType,
+	});
 	return { status: 'retry', reason: message };
 }
 
