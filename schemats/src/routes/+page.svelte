@@ -19,7 +19,7 @@
 	import type { GridOptions } from '$lib/layouts/grid/svgrid.js';
     import Registration from '$lib/invite/Registration.svelte';
 	import Ads from '$lib/components/ads.svelte';
-    import type { IRow } from '@svar-ui/grid-store';
+    import type { IRow } from '@svar-ui/svelte-grid';
 	import { createRestAds } from '$indexcards';
 	import { handleOrval } from '$lib/helpers/query';
 	import { WEB_URL } from '$app/env/public';

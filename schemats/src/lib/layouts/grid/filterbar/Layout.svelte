@@ -10,7 +10,7 @@
 		DatePicker,
 		DateRangePicker,
 	} from '@svar-ui/svelte-core';
-	import { createFilterRule } from '@svar-ui/filter-store/dist/index.js';
+	import { createFilterRule } from '@svar-ui/svelte-filter';
 
 	let { fields = [], debounce = 300, onchange = undefined } = $props();
 
