@@ -79,7 +79,9 @@ describe('/rest/notify/email/unsubscribe/:token', () => {
 		});
 
 		it('refuses a tampered token or one for an old address', async () => {
-			const tampered = token.slice(0, -1) + (token.at(-1) === 'A' ? 'B' : 'A');
+			// the signature's last base64url char ends in padding bits, so flipping it may decode to the same signature; flip its first char instead
+			const sig = token.lastIndexOf('.') + 1;
+			const tampered = token.slice(0, sig) + (token[sig] === 'A' ? 'B' : 'A') + token.slice(sig + 1);
 			const tamperedRes = await request(server).get(`/v1/rest/notify/email/unsubscribe/${tampered}`).set('Accept', 'application/json');
 			expect(tamperedRes).toBeProblemResponse(404);
 

@@ -25,17 +25,17 @@ const home = (key: string, query: Record<string, string> = {}) => request(server
 	.expect(200);
 
 // put the person at a tourn in each role
-const judgeAt = (person: number, tourn: Tourn) => factories.person.createJudge({ person, Judge: { category: tourn.Category.id } });
-const competeAt = async (person: number, tourn: Tourn) => {
+const judgeAt = (person: number, tourn: Pick<Tourn, 'Category'>) => factories.person.createJudge({ person, Judge: { category: tourn.Category.id } });
+const competeAt = async (person: number, tourn: Pick<Tourn, 'Event'>) => {
 	const Student = await factories.student.create({ person });
 	return factories.entry.create({ event: tourn.Event.id, students: [Student.id] });
 };
-const coachAt = async (person: number, tourn: Tourn, tag = 'chapter') => {
+const coachAt = async (person: number, tourn: Pick<Tourn, 'Tourn'>, tag = 'chapter') => {
 	const Chapter = await factories.chapter.create();
 	await factories.permission.create({ person, chapter: Chapter.id, tag });
 	return factories.school.create({ tourn: tourn.Tourn.id, chapter: Chapter.id });
 };
-const tabAt = (person: number, tourn: Tourn) => factories.permission.create({ person, tourn: tourn.Tourn.id, tag: 'tabber' });
+const tabAt = (person: number, tourn: Pick<Tourn, 'Tourn'>) => factories.permission.create({ person, tourn: tourn.Tourn.id, tag: 'tabber' });
 
 describe('GET /user/home', () => {
 	it('requires a logged in person', async () => {
@@ -73,19 +73,19 @@ describe('GET /user/home', () => {
 	it('names each role the person holds at a tourn', async () => {
 		const judging = await factories.tourn.createFull();
 		const competing = await factories.tourn.createFull();
-		const coaching = await factories.tourn.createFull();
-		const tabbing = await factories.tourn.createFull();
+		const coaching = await factories.tourn.create();
+		const tabbing = await factories.tourn.create();
 		const everything = await factories.tourn.createFull({ name: 'Everything Open' });
 		await judgeAt(personId, judging);
 		await competeAt(personId, competing);
-		await coachAt(personId, coaching);
-		await tabAt(personId, tabbing);
+		await coachAt(personId, { Tourn: coaching });
+		await tabAt(personId, { Tourn: tabbing });
 		await judgeAt(personId, everything);
 		await competeAt(personId, everything);
 		await coachAt(personId, everything);
 		await tabAt(personId, everything);
 		// a tourn the person has no role at, and another person's roles at the judging tourn
-		await factories.tourn.createFull();
+		await factories.tourn.create();
 		const Other = await factories.person.create();
 		await judgeAt(Other.id, judging);
 		await competeAt(Other.id, judging);
@@ -97,8 +97,8 @@ describe('GET /user/home', () => {
 		expect(roles).toEqual({
 			[judging.Tourn.id]: ['judge'],
 			[competing.Tourn.id]: ['competitor'],
-			[coaching.Tourn.id]: ['coach'],
-			[tabbing.Tourn.id]: ['tab'],
+			[coaching.id]: ['coach'],
+			[tabbing.id]: ['tab'],
 			[everything.Tourn.id]: ['judge', 'competitor', 'coach', 'tab'],
 		});
 		const card = res.body.Tourns.find((tourn: { id: number }) => tourn.id === everything.Tourn.id);

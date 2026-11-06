@@ -342,7 +342,7 @@ describe('judgeRepo', () => {
 			expect(res).toBeInstanceOf(Array);
 			expect(res.length).toBe(0);
 
-			const tourn2 = await factories.tourn.create({ start: faker.date.past() });
+			const tourn2 = await factories.tourn.create({ start: faker.date.past({ refDate: Date.now() - 8 * 24 * 60 * 60 * 1000 }) });
 			const category2 = await factories.category.create({
 				tourn: tourn2.id,
 				settings: {
