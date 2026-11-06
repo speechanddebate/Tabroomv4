@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+# Post-checkout hook to handle changes in package-lock.json and types/ directory
+
+# $3 is 1 for a branch checkout, 0 for a file checkout; $1 is the null ref on a fresh clone
+[ "$3" = "1" ] && [ "$1" != "$2" ] || exit 0
+
+changed=$(git diff --name-only "$1" "$2" 2>/dev/null || echo "package-lock.json types/")
+
+if echo "$changed" | grep -q 'package-lock\.json$'; then
+	echo "Lockfile changed, running npm ci"
+	npm ci
+	rebuild=1
+fi
+
+if [ -n "$rebuild" ] || echo "$changed" | grep -q '^types/'; then
+	echo "Rebuilding types"
+	npm run build --workspace=types
+fi
