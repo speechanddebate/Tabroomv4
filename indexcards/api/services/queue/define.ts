@@ -23,12 +23,16 @@ export type QueueDefinition<Name extends string = string, Data = any, Result = a
 	processor: Processor<Data, Result>;
 	/** Jobs one worker runs at the same time */
 	concurrency: number;
+	/** Jobs every worker together runs at the same time, kept in Redis. Unset means no cap */
+	globalConcurrency?: number;
 	/** Options every job added to the queue gets unless the add says otherwise */
 	jobOptions: DefaultJobOptions;
 	/** Set when the queue's jobs use backoff type custom */
 	backoffStrategy?: BackoffStrategy;
 	/** Runs when a job has failed for the last time */
 	onFailed?: FailedHook<Data>;
+	/** Jobs added on a timer; startQueues keeps them in step with each one's enabled() */
+	schedulers: QueueScheduler<Data>[];
 	/**
 	 * A job for this queue with the queue's options applied, for addFlow. A flow doesn't
 	 * pick up a queue's default options the way Queue.add does, so they go on here
@@ -41,6 +45,11 @@ export type QueueOptions<Name extends string, Data, Result> = {
 	processor: Processor<Data, Result>;
 	/** Jobs one worker runs at the same time. Default 1 */
 	concurrency?: number;
+	/**
+	 * Jobs every worker together runs at the same time. 1 runs the queue's jobs strictly one after
+	 * another however many API instances run workers. Default no cap
+	 */
+	globalConcurrency?: number;
 	/** Times a job runs before it is failed. Default 3 */
 	attempts?: number;
 	/**
@@ -53,6 +62,20 @@ export type QueueOptions<Name extends string, Data, Result> = {
 	 * UnrecoverableError. The worker logs anything it throws, so a hook can't fail the queue
 	 */
 	onFailed?: FailedHook<Data>;
+	/** Jobs to add on a timer, e.g. a sweep every few seconds. Default none */
+	schedulers?: QueueScheduler<Data>[];
+};
+
+/**
+ * A job BullMQ adds every `every` ms while enabled() is true. startQueues upserts it when enabled
+ * and removes it when not, so turning a feature flag off stops the timer on the next start
+ */
+export type QueueScheduler<Data> = {
+	/** BullMQ's job scheduler id, unique within the queue */
+	id: string;
+	every: number;
+	job: { name: string; data: Data };
+	enabled: () => boolean;
 };
 
 /** What a queue runs after one of its jobs fails for good */
@@ -62,7 +85,7 @@ export type FailedHook<Data> = (job: Job<Data>, error: Error) => Promise<void>;
 export function defineQueue<Name extends string, Data, Result>(
 	options: QueueOptions<Name, Data, Result>,
 ): QueueDefinition<Name, Data, Result> {
-	const { name, processor, concurrency = 1, attempts = 3, backoffStrategy, onFailed } = options;
+	const { name, processor, concurrency = 1, globalConcurrency, attempts = 3, backoffStrategy, onFailed, schedulers = [] } = options;
 	const jobOptions: DefaultJobOptions = {
 		attempts,
 		backoff: backoffStrategy
@@ -75,8 +98,10 @@ export function defineQueue<Name extends string, Data, Result>(
 		name,
 		processor,
 		concurrency,
+		...(globalConcurrency ? { globalConcurrency } : {}),
 		...(backoffStrategy ? { backoffStrategy } : {}),
 		...(onFailed ? { onFailed } : {}),
+		schedulers,
 		jobOptions,
 		job: (jobName, data, opts = {}) => ({
 			queueName: name,

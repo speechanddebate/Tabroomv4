@@ -33,6 +33,18 @@ describe('defineQueue', () => {
 		expect(defineQueue({ name: 'things', processor })).not.toHaveProperty('onFailed');
 	});
 
+	it('carries a global concurrency only when given one', () => {
+		expect(defineQueue({ name: 'things', processor, globalConcurrency: 1 }).globalConcurrency).toBe(1);
+		expect(defineQueue({ name: 'things', processor })).not.toHaveProperty('globalConcurrency');
+	});
+
+	it('carries its job schedulers, none by default', () => {
+		const sweep = { id: 'things:sweep', every: 5_000, job: { name: 'sweep', data: {} }, enabled: () => true };
+
+		expect(defineQueue({ name: 'things', processor }).schedulers).toEqual([]);
+		expect(defineQueue({ name: 'things', processor, schedulers: [sweep] }).schedulers).toEqual([sweep]);
+	});
+
 	it('builds a flow node with the queue options under the job options', () => {
 		const queue = defineQueue<'things', { id: number }, void>({ name: 'things', processor });
 

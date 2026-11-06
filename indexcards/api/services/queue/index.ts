@@ -1,12 +1,12 @@
 import { metrics, type ObservableCallback } from '@opentelemetry/api';
-import { MetricNames, TelemetryAttributes } from 'bullmq';
+import { MetricNames, TelemetryAttributes, type Queue } from 'bullmq';
 import packageData from '../../../package.json' with { type: 'json' };
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
 import { isRedisDown } from './connection.js';
 import { closeFlows } from './flows.js';
 import { closeQueues, getQueue } from './queues.js';
-import { queueNames } from './registry.js';
+import { getDefinition, queueNames } from './registry.js';
 import { closeWorkers } from './workers.js';
 
 export { RetryAfterError, retryAfterBackoff } from './backoff.js';
@@ -19,7 +19,8 @@ export { startWorkers } from './workers.js';
 let stopObservingJobCounts: (() => void) | undefined;
 
 /**
- * Open every queue and wait for Redis. Logs instead of throwing so the API still starts without Redis.
+ * Open every queue and wait for Redis, then set or clear each queue's global concurrency and add
+ * or remove its job schedulers as their enabled() says. Logs instead of throwing so the API still starts without Redis.
  * With telemetry on, also reports each queue's job counts as the bullmq.queue.jobs gauge, which
  * BullMQ only records when asked (recordJobCountsMetric). An observable gauge is read by the SDK at
  * each export, so telemetry.metricsInterval is its only setting
@@ -61,6 +62,36 @@ export async function startQueues() {
 			}),
 		]);
 		logger.info(`Connected job queues to Redis at ${new URL(config.redis.url).host}`);
+
+		await Promise.all(queueNames.map(async (name) => {
+			const definition = getDefinition(name);
+			// A scheduler's job was typed against its queue in defineQueue
+			const queue: Queue = getQueue(name);
+
+			// The cap lives in Redis, so dropping it from a definition has to remove it there too
+			try {
+				if (definition.globalConcurrency) {
+					await queue.setGlobalConcurrency(definition.globalConcurrency);
+				} else {
+					await queue.removeGlobalConcurrency();
+				}
+			} catch (error) {
+				logger.error(`Failed to update global concurrency on queue ${name}`, { 'event.name': 'queue.concurrency.exception', error });
+			}
+
+			// Timers follow their flags: an enabled one is added or updated, a disabled one removed
+			await Promise.all(definition.schedulers.map(async (scheduler) => {
+				try {
+					if (scheduler.enabled()) {
+						await queue.upsertJobScheduler(scheduler.id, { every: scheduler.every }, scheduler.job);
+					} else {
+						await queue.removeJobScheduler(scheduler.id);
+					}
+				} catch (error) {
+					logger.error(`Failed to update job scheduler ${scheduler.id} on queue ${name}`, { 'event.name': 'queue.scheduler.exception', error });
+				}
+			}));
+		}));
 	} catch (error) {
 		logger.error(`Failed to connect job queues to Redis at ${new URL(config.redis.url).host}`, {
 			'event.name': 'queue.connect.exception',
