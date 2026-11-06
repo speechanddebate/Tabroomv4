@@ -8,17 +8,31 @@ import z from 'zod';
 
 describe('GET /pages/invite/upcoming', () => {
 	it('Returns upcoming tournaments and district weekends', async () => {
-		const { Tourn } = await factories.tourn.createFull();
+		// Test mode lists every tourn ending after 2023-08-01, which in a well-used test DB is thousands of rows,
+		// too slow to finish in time and past the 512-row cap. ZZ is a state no factory picks; the state filter
+		// does not apply to district weekends, so they still come back. Week 1 of 2024 sorts first in test mode.
+		const dates = { start: new Date('2024-01-02T15:00:00Z'), end: new Date('2024-01-03T18:00:00Z') };
+		const { Tourn } = await factories.tourn.createFull({ ...dates, state: 'ZZ' });
+
+		const District = await factories.tourn.createFull(dates);
+		const Weekend = await factories.weekend.create({ tourn: District.Tourn.id, start: dates.start });
+		await factories.event.create({
+			tourn: District.Tourn.id,
+			category: District.Category.id,
+			settings: { weekend: Weekend.id },
+		});
 
 		const res = await request(server)
-			.get(`/v1/pages/invite/upcoming`)
+			.get(`/v1/pages/invite/upcoming?state=zz`)
 			.set('Accept', 'application/json')
 			.expect('Content-Type', /json/)
 			.expect(200);
-			
+
 		expect(res.body).toMatchSchema(z.array(UpcomingSchema));
 		expect(res.body.some((tourn: { tournId: number }) => tourn.tournId === Tourn.id)).toBe(true);
-		expect(res.body.some((tourn: { districts: string }) => tourn.districts === 'Yes')).toBe(true);
+		expect(res.body.some((tourn: { districts: string, weekendId?: number }) =>
+			tourn.districts === 'Yes' && tourn.weekendId === Weekend.id
+		)).toBe(true);
 	});
 	it('Filters by state and limits the number of results', async () => {
 		const res = await request(server)
