@@ -256,7 +256,7 @@ const ROLES: Record<string, RoleDef> = {
 		description: 'The person a record belongs to',
 		permissions: [
 			{
-				actions: ['judge/read', 'ballot/*'],
+				actions: ['judge/read', 'ballot/*', 'entry/read', 'entry/flip'],
 			},
 		],
 	},
@@ -265,7 +265,8 @@ const ROLES: Record<string, RoleDef> = {
 		description: 'resource administrator - manage a chapter and its resources',
 		permissions: [
 			{
-				actions: ['chapter/*'],// allow any action on any scoped resource
+				// the chapter's schools at tourns and their entries
+				actions: ['chapter/*', 'school/*', 'entry/*'],
 				notActions: ['chapter/owner'], //disallow anything only owner can do.
 			},
 		],
@@ -287,12 +288,14 @@ const ROLES: Record<string, RoleDef> = {
  * but event can access category resources via parentAccess
  */
 const CHILDREN: Record<string, string[]> = {
-	tourn: ['category', 'event', 'timeslot'],   // Tourn has these direct children
+	tourn: ['category', 'event', 'timeslot', 'school'],   // Tourn has these direct children
 	category: ['jpool', 'judge'],   // Category has jpools and judges as children
-	event: ['round'],               // Event has these direct children
+	event: ['round', 'entry'],      // an entry has two parents: its event and its school
 	round: ['panel'],
 	judge: ['ballot'],              // a ballot has two parents: its judge and its panel
 	panel: ['ballot'],
+	chapter: ['school'],            // a school has two parents: its chapter and its tourn
+	school: ['entry'],
 };
 
 /**

@@ -264,4 +264,91 @@ describe('Authorization Middleware', () => {
 			expect(checkAccess('panel', 'check', panel, [perm])).toBe(false);
 		});
 	});
+	describe('schools and entries', () => {
+		// two entries in event 12 (category 7) of tourn 42 that meet on a panel, from chapters 100 and 101
+		const school = { id: 200, chapterId: 100, tournId: 42 };
+		const entry = { id: 300, schoolId: 200, chapterId: 100, eventId: 12, categoryId: 7, tournId: 42 };
+		const opponent = { id: 301, schoolId: 201, chapterId: 101, eventId: 12, categoryId: 7, tournId: 42 };
+
+		describe('self', () => {
+			const perm = { scope: 'entry', id: 300, role: 'self', tournId: 42 };
+			it.each(['read', 'flip'])('allows entry/%s on its own entry', (action) => {
+				expect(checkAccess('entry', action, entry, [perm])).toBe(true);
+			});
+			it.each(['read', 'flip'])('denies entry/%s on the opponent entry', (action) => {
+				expect(checkAccess('entry', action, opponent, [perm])).toBe(false);
+			});
+			it('denies entry/write on its own entry', () => {
+				expect(checkAccess('entry', 'write', entry, [perm])).toBe(false);
+			});
+			it('denies the school', () => {
+				expect(checkAccess('school', 'read', school, [perm])).toBe(false);
+			});
+		});
+
+		describe('chapterAdmin', () => {
+			const perm = { scope: 'chapter', id: 100, role: 'chapterAdmin' };
+			it("allows school/read on its chapter's school", () => {
+				expect(checkAccess('school', 'read', school, [perm])).toBe(true);
+			});
+			it("allows entry/flip on its chapter's entry, two levels down", () => {
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(true);
+			});
+			it("denies another chapter's school and the opponent's entry", () => {
+				expect(checkAccess('school', 'read', { ...school, id: 201, chapterId: 101 }, [perm])).toBe(false);
+				expect(checkAccess('entry', 'flip', opponent, [perm])).toBe(false);
+			});
+			it('still denies chapter/owner', () => {
+				expect(checkAccess('chapter', 'owner', { id: 100 }, [perm])).toBe(false);
+			});
+		});
+
+		describe('tabbers', () => {
+			it.each(['owner', 'tabber', 'circuit'])('allows a tourn %s entry/flip and school/read', (role) => {
+				const perm = { scope: 'tourn', id: 42, role };
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(true);
+				expect(checkAccess('school', 'read', school, [perm])).toBe(true);
+			});
+			it.each(['owner', 'tabber', 'circuit'])('denies a %s at another tourn', (role) => {
+				const perm = { scope: 'tourn', id: 43, role };
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
+				expect(checkAccess('school', 'read', school, [perm])).toBe(false);
+			});
+			it('allows an event tabber the entries in their event', () => {
+				const perm = { scope: 'event', id: 12, tournId: 42, role: 'tabber' };
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(true);
+			});
+			it("denies an event tabber another event's entries", () => {
+				const perm = { scope: 'event', id: 13, tournId: 42, role: 'tabber' };
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
+			});
+			it('denies a checker entry/flip', () => {
+				const perm = { scope: 'tourn', id: 42, role: 'checker' };
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
+			});
+		});
+
+		describe('prefs', () => {
+			const perm = { scope: 'chapter', id: 100, role: 'prefs' };
+			it('allows chapter/prefs', () => {
+				expect(checkAccess('chapter', 'prefs', { id: 100 }, [perm])).toBe(true);
+			});
+			it("denies its own chapter's school and entries", () => {
+				expect(checkAccess('school', 'read', school, [perm])).toBe(false);
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
+			});
+		});
+
+		describe('existing grants unchanged', () => {
+			it('a judge self still has ballot/* and not entries', () => {
+				const perm = { scope: 'judge', id: 9, role: 'self', categoryId: 7, tournId: 42 };
+				expect(checkAccess('ballot', 'write', { judgeId: 9, panelId: 99, categoryId: 7, tournId: 42 }, [perm])).toBe(true);
+				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
+			});
+			it('a tourn tabber still reaches panels', () => {
+				const perm = { scope: 'tourn', id: 42, role: 'tabber' };
+				expect(checkAccess('panel', 'write', { id: 99, roundId: 50, eventId: 12, categoryId: 7, tournId: 42 }, [perm])).toBe(true);
+			});
+		});
+	});
 });

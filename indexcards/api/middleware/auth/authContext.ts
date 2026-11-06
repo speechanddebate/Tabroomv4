@@ -3,6 +3,8 @@ import eventRepo from '../../repos/eventRepo.js';
 import judgeRepo from '../../repos/judgeRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
 import categoryRepo from '../../repos/categoryRepo.js';
+import entryRepo from '../../repos/entryRepo.js';
+import schoolRepo from '../../repos/schoolRepo.js';
 import { BadRequest, NotFound, NotImplemented } from '../../helpers/problem.js';
 import type { Database } from '../../data/database.js';
 import type { Request, Response, NextFunction } from 'express';
@@ -165,6 +167,72 @@ export async function loadJudgeAuthContext(req: Request, res: Response, next: Ne
 			return NotFound(req, res, `Judge ${judgeId} not found`);
 		}
 		req.actor.grant(await loadJudgePerms(req.db, req.actor.Person.id, judge));
+		next();
+	} catch (err) {
+		next(err);
+	}
+}
+
+/**
+ * router.param adapter: 404 if the :schoolId school doesn't exist, then grant the actor
+ * its perms for the school's chapter (coaches) and tourn (tabbers)
+ */
+export async function loadSchoolAuthContext(req: Request, res: Response, next: NextFunction, schoolId: string) {
+	const id = paramId(schoolId);
+	if (!id) return BadRequest(req, res, 'schoolId must be a positive integer');
+	if(req.actor.type === 'anonymous') return next();
+	if(req.actor.type !== 'person') return NotImplemented(req, res, `Auth context for ${req.actor.type} actors is not implemented`);
+
+	try {
+		const school = await schoolRepo.getSchool(req.db, id);
+		if (!school) {
+			return NotFound(req, res, `School ${schoolId} not found`);
+		}
+		const personId = req.actor.Person.id;
+		const [chapterPerms, tournPerms] = await Promise.all([
+			school.chapter ? loadChapterPerms(req.db, personId, school.chapter) : [],
+			school.tourn ? loadTournPerms(req.db, personId, school.tourn) : [],
+		]);
+		req.actor.grant([...chapterPerms, ...tournPerms]);
+		next();
+	} catch (err) {
+		next(err);
+	}
+}
+
+/**
+ * router.param adapter: 404 if the :entryId entry doesn't exist, then grant the actor self when
+ * one of its unretired students is on the entry, plus its perms for the entry's chapter and tourn
+ */
+export async function loadEntryAuthContext(req: Request, res: Response, next: NextFunction, entryId: string) {
+	const id = paramId(entryId);
+	if (!id) return BadRequest(req, res, 'entryId must be a positive integer');
+	if(req.actor.type === 'anonymous') return next();
+	if(req.actor.type !== 'person') return NotImplemented(req, res, `Auth context for ${req.actor.type} actors is not implemented`);
+
+	try {
+		const entry = await entryRepo.getEntry(req.db, id);
+		if (!entry) {
+			return NotFound(req, res, `Entry ${entryId} not found`);
+		}
+		const personId = req.actor.Person.id;
+		const [onEntry, school, event] = await Promise.all([
+			entryRepo.getEntry(req.db, id, { person: personId }),
+			entry.school ? schoolRepo.getSchool(req.db, entry.school) : undefined,
+			// entry.tourn is null or wrong on some rows, so the tourn comes from the event
+			entry.event ? eventRepo.getEvent(req.db, entry.event) : undefined,
+		]);
+		const tournId = event?.tourn ?? undefined;
+		const [chapterPerms, tournPerms] = await Promise.all([
+			school?.chapter ? loadChapterPerms(req.db, personId, school.chapter) : [],
+			tournId ? loadTournPerms(req.db, personId, tournId) : [],
+		]);
+
+		req.actor.grant([
+			...onEntry ? [{ scope: 'entry', id, role: 'self', categoryId: event?.category ?? undefined, tournId }] : [],
+			...chapterPerms,
+			...tournPerms,
+		]);
 		next();
 	} catch (err) {
 		next(err);

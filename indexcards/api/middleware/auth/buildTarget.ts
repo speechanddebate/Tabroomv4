@@ -1,9 +1,11 @@
 
 import categoryRepo from '../../repos/categoryRepo.js';
+import entryRepo from '../../repos/entryRepo.js';
 import eventRepo from '../../repos/eventRepo.js';
 import judgeRepo from '../../repos/judgeRepo.js';
 import panelRepo from '../../repos/panelRepo.js';
 import roundRepo from '../../repos/roundRepo.js';
+import schoolRepo from '../../repos/schoolRepo.js';
 import timeslotRepo from '../../repos/timeslotRepo.js';
 
 import type { Database } from '../../data/database.js';
@@ -19,6 +21,8 @@ export type Target = {
 	roundId?: number;
 	panelId?: number;
 	judgeId?: number;
+	chapterId?: number;
+	schoolId?: number;
 };
 
 /** a stable cache key for a resource id: 12, or judgeId=12,panelId=34 */
@@ -132,6 +136,33 @@ export async function buildTarget(db: Database, resource: string, resourceId: Re
 				target = {
 					...await buildTarget(db, 'category', target.categoryId, targetCache),
 					...target,
+				};
+			}
+			break;
+		}
+		// a school has two parents: its chapter and its tourn
+		case 'school': {
+			const school = await schoolRepo.getSchool(db, resourceId);
+			if (school) {
+				target.chapterId = school.chapter ?? undefined;
+				target.tournId = school.tourn ?? undefined;
+			}
+			break;
+		}
+		// an entry has two parents: its school (chapter chain) and its event (tourn chain)
+		case 'entry': {
+			const entry = await entryRepo.getEntry(db, resourceId);
+			if (entry) {
+				const schoolTarget = entry.school ? await buildTarget(db, 'school', entry.school, targetCache) : undefined;
+				const eventTarget = entry.event ? await buildTarget(db, 'event', entry.event, targetCache) : undefined;
+				target = {
+					chapterId: schoolTarget?.chapterId,
+					tournId: schoolTarget?.tournId,
+					// tourn roles reach the entry through its event, so the event's tourn wins over the school's
+					...eventTarget,
+					...target,
+					schoolId: entry.school || undefined,
+					eventId: entry.event || undefined,
 				};
 			}
 			break;

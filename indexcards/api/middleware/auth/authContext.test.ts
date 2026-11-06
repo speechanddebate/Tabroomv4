@@ -7,6 +7,8 @@ import {
 	loadChapterAuthContext,
 	loadJudgeAuthContext,
 	loadPanelAuthContext,
+	loadSchoolAuthContext,
+	loadEntryAuthContext,
 } from './authContext.js';
 
 import type { NextFunction, Request, Response } from 'express';
@@ -19,10 +21,12 @@ const adapters: [string, Adapter][] = [
 	['loadChapterAuthContext', loadChapterAuthContext],
 	['loadJudgeAuthContext', loadJudgeAuthContext],
 	['loadPanelAuthContext', loadPanelAuthContext],
+	['loadSchoolAuthContext', loadSchoolAuthContext],
+	['loadEntryAuthContext', loadEntryAuthContext],
 ];
 
-async function personContext() {
-	const person = await factories.person.create();
+async function personContext(existing?: Awaited<ReturnType<typeof factories.person.create>>) {
+	const person = existing ?? await factories.person.create();
 	const con = createPersonContext(person);
 	const grant = vi.spyOn(con.req.actor, 'grant');
 	return { ...con, person, grant };
@@ -183,6 +187,179 @@ describe('auth context adapters', () => {
 
 			expect(next).toHaveBeenCalledWith();
 			expect(grant).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('school and entry loaders', () => {
+		/** two schools from different chapters whose entries meet on a panel */
+		async function pairing() {
+			const tourn = await factories.tourn.create();
+			const category = await factories.category.create({ tourn: tourn.id });
+			const event = await factories.event.create({ tourn: tourn.id, category: category.id });
+			const side = async () => {
+				const chapter = await factories.chapter.create();
+				const school = await factories.school.create({ tourn: tourn.id, chapter: chapter.id });
+				const person = await factories.person.create();
+				const student = await factories.student.create({ chapter: chapter.id, person: person.id, retired: 0 });
+				const entry = await factories.entry.create({ event: event.id, school: school.id, students: [student.id] });
+				return { chapter, school, person, entry };
+			};
+			return { tourn, category, event, mine: await side(), theirs: await side() };
+		}
+
+		describe('loadSchoolAuthContext', () => {
+			it('returns 404 when the school does not exist', async () => {
+				const { req, res, next, grant } = await personContext();
+
+				await loadSchoolAuthContext(req, res, next, '999999999');
+
+				expect(res.statusCode).toBe(404);
+				expect(next).not.toHaveBeenCalled();
+				expect(grant).not.toHaveBeenCalled();
+			});
+
+			it("grants a chapter holder chapterAdmin on the school's chapter", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine } = await pairing();
+				await factories.permission.create({ person: person.id, chapter: mine.chapter.id, tag: 'chapter' });
+
+				await loadSchoolAuthContext(req, res, next, String(mine.school.id));
+
+				expect(next).toHaveBeenCalledWith();
+				expect(granted(grant)).toEqual([{ scope: 'chapter', id: mine.chapter.id, role: 'chapterAdmin' }]);
+			});
+
+			it("grants a tabber their perms in the school's tourn", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { tourn, mine } = await pairing();
+				await factories.permission.create({ person: person.id, tourn: tourn.id, tag: 'tabber' });
+
+				await loadSchoolAuthContext(req, res, next, String(mine.school.id));
+
+				expect(granted(grant)).toContainEqual(expect.objectContaining({ scope: 'tourn', id: tourn.id, role: 'tabber' }));
+			});
+
+			it("grants the opponent school's chapter holder nothing", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine, theirs } = await pairing();
+				await factories.permission.create({ person: person.id, chapter: theirs.chapter.id, tag: 'chapter' });
+
+				await loadSchoolAuthContext(req, res, next, String(mine.school.id));
+
+				expect(next).toHaveBeenCalledWith();
+				expect(granted(grant)).toEqual([]);
+			});
+		});
+
+		describe('loadEntryAuthContext', () => {
+			it('returns 404 when the entry does not exist', async () => {
+				const { req, res, next, grant } = await personContext();
+
+				await loadEntryAuthContext(req, res, next, '999999999');
+
+				expect(res.statusCode).toBe(404);
+				expect(next).not.toHaveBeenCalled();
+				expect(grant).not.toHaveBeenCalled();
+			});
+
+			it('grants self to a student on the entry', async () => {
+				const { tourn, category, mine } = await pairing();
+				const { req, res, next, grant } = await personContext(mine.person);
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(next).toHaveBeenCalledWith();
+				expect(granted(grant)).toEqual([{
+					scope: 'entry',
+					id: mine.entry.id,
+					role: 'self',
+					categoryId: category.id,
+					tournId: tourn.id,
+				}]);
+			});
+
+			it('grants no self to a student on the opponent entry', async () => {
+				const { mine, theirs } = await pairing();
+				const { req, res, next, grant } = await personContext(theirs.person);
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(next).toHaveBeenCalledWith();
+				expect(granted(grant)).toEqual([]);
+			});
+
+			it('grants no self to a student at the same school who is not on the entry', async () => {
+				const { event, mine } = await pairing();
+				const { req, res, next, person, grant } = await personContext();
+				const teammate = await factories.student.create({ chapter: mine.chapter.id, person: person.id, retired: 0 });
+				await factories.entry.create({ event: event.id, school: mine.school.id, students: [teammate.id] });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(granted(grant)).toEqual([]);
+			});
+
+			it('grants no self to a retired student on the entry', async () => {
+				const { event, mine } = await pairing();
+				const { req, res, next, person, grant } = await personContext();
+				const retired = await factories.student.create({ chapter: mine.chapter.id, person: person.id, retired: 1 });
+				const entry = await factories.entry.create({ event: event.id, school: mine.school.id, students: [retired.id] });
+
+				await loadEntryAuthContext(req, res, next, String(entry.id));
+
+				expect(granted(grant)).toEqual([]);
+			});
+
+			it("grants a chapter holder chapterAdmin on the entry's chapter", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine } = await pairing();
+				await factories.permission.create({ person: person.id, chapter: mine.chapter.id, tag: 'chapter' });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(granted(grant)).toEqual([{ scope: 'chapter', id: mine.chapter.id, role: 'chapterAdmin' }]);
+			});
+
+			it('grants a prefs holder only prefs', async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine } = await pairing();
+				await factories.permission.create({ person: person.id, chapter: mine.chapter.id, tag: 'prefs' });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(granted(grant)).toEqual([{ scope: 'chapter', id: mine.chapter.id, role: 'prefs' }]);
+			});
+
+			it("grants the opponent school's chapter holder nothing", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine, theirs } = await pairing();
+				await factories.permission.create({ person: person.id, chapter: theirs.chapter.id, tag: 'chapter' });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(granted(grant)).toEqual([]);
+			});
+
+			it("grants a tabber their perms in the entry's tourn", async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { tourn, mine } = await pairing();
+				await factories.permission.create({ person: person.id, tourn: tourn.id, tag: 'tabber' });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(granted(grant)).toContainEqual(expect.objectContaining({ scope: 'tourn', id: tourn.id, role: 'tabber' }));
+			});
+
+			it('grants an unrelated person nothing', async () => {
+				const { req, res, next, person, grant } = await personContext();
+				const { mine } = await pairing();
+				await factories.permission.create({ person: person.id, tourn: (await factories.tourn.create()).id, tag: 'owner' });
+
+				await loadEntryAuthContext(req, res, next, String(mine.entry.id));
+
+				expect(next).toHaveBeenCalledWith();
+				expect(granted(grant)).toEqual([]);
+			});
 		});
 	});
 });
