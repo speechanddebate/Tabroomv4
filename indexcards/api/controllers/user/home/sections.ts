@@ -319,7 +319,6 @@ export function buildJudges(tourn: { id: number; start: Date; end: Date }, data:
 			Training: trainingEvent ? { event: trainingEvent.id, Event: { abbr: trainingEvent.abbr, type: trainingEvent.type } } : null,
 			roundsJudged: data.counts.get(judge.id)?.panels ?? 0,
 			ballotsEntered: data.counts.get(judge.id)?.ballots ?? 0,
-			ballotsOpen: tourn.start > data.now ? tourn.start.toISOString() : null,
 			feedbackUntil: running ? tourn.end.toISOString() : null,
 			Strikes: data.strikes
 				.filter((strike): strike is typeof strike & { type: Strike['type'] } => strike.judge === judge.id && STRIKE_TYPES.includes(strike.type ?? ''))

@@ -2320,10 +2320,6 @@ export const getUserHomeResponseMock = (
 				min: -9007199254740991,
 				max: 9007199254740991,
 			}),
-			ballotsOpen: faker.helpers.arrayElement([
-				faker.date.past().toISOString().slice(0, 19) + 'Z',
-				null,
-			]),
 			feedbackUntil: faker.helpers.arrayElement([
 				faker.date.past().toISOString().slice(0, 19) + 'Z',
 				null,

@@ -364,7 +364,6 @@ const ldJudge: HomeJudge = {
 	Training       : null,
 	roundsJudged   : 2,
 	ballotsEntered : 2,
-	ballotsOpen    : null,
 	feedbackUntil  : '2026-11-08T00:00:00Z',
 	Strikes        : [
 		schoolStrike(701, 1810, 'Riverdale Prep'),
@@ -452,7 +451,6 @@ const parts: Record<Phase, Record<HomeRole, RolePart>> = {
 				Jpools         : [{ id: 611, name: 'PF Prelims', site: null, Site: null, message: null }, { id: 612, name: 'PF Elims', site: null, Site: null, message: null }],
 				roundsJudged   : 0,
 				ballotsEntered : 0,
-				ballotsOpen    : '2026-11-20T14:00:00Z',
 				feedbackUntil  : null,
 				Strikes        : [
 					schoolStrike(711, 1810, 'Riverdale Prep'),

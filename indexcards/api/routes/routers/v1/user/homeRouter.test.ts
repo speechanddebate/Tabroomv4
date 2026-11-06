@@ -202,7 +202,6 @@ describe('GET /user/home', () => {
 				Training: null,
 				roundsJudged: 1,
 				ballotsEntered: 2,
-				ballotsOpen: null,
 				feedbackUntil: tourn.Tourn.end?.toISOString(),
 				Strikes: [{ id: strike.id, type: 'school', school: School.id, School: { name: 'Lincoln' }, entry: null, Entry: null }],
 				Quizzes: [
@@ -277,7 +276,7 @@ describe('GET /user/home', () => {
 			expect(new Map(res.body.Tourns[0].Judges[0].CurrentBallots.map((ballot: { id: number; Room: { name: string } }) => [ballot.id, ballot.Room.name]))).toEqual(rooms);
 		});
 
-		it('tells an upcoming tourn when ballots open and leaves current ballots and feedback closed', async () => {
+		it('leaves current ballots and feedback closed at an upcoming tourn', async () => {
 			const tourn = await factories.tourn.createFull({ start: new Date(Date.now() + 2 * DAY), end: new Date(Date.now() + 3 * DAY) });
 			const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
 			const panel = await factories.panel.create({ round: tourn.Round.id });
@@ -287,7 +286,6 @@ describe('GET /user/home', () => {
 
 			expect(res.body.Tourns[0].Judges[0]).toMatchObject({
 				School: null,
-				ballotsOpen: tourn.Tourn.start?.toISOString(),
 				feedbackUntil: null,
 				CurrentBallots: [],
 				Jpools: [],

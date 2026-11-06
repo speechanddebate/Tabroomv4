@@ -143,10 +143,6 @@
 	<div class="flex flex-col gap-6">
 		{#each tourn.Judges as judge (judge.id)}
 			<div class="@container flex flex-col gap-4">
-				{#if judge.ballotsOpen && phase === 'upcoming'}
-					<div class="text-sm text-muted">Online ballots open {when(judge.ballotsOpen)}.</div>
-				{/if}
-
 				<div class="grid gap-x-8 gap-y-4 @xl:grid-cols-2">
 					<div>
 						{#if tourn.Judges.length > 1}<div class={subhead}>{judge.Category.name}</div>{/if}

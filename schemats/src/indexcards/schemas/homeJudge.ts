@@ -58,8 +58,6 @@ export interface HomeJudge {
 	 * @maximum 9007199254740991
 	 */
 	ballotsEntered: number;
-	/** When online ballots open for the judge, before the tournament starts */
-	ballotsOpen: string | null;
 	/** Until when the judge may edit feedback on entered ballots */
 	feedbackUntil: string | null;
 	Strikes: Strike[];

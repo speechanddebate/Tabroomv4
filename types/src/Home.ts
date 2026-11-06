@@ -98,7 +98,6 @@ export const HomeJudgeSchema = z.object({
 	}).strict().nullable().meta({ description: 'The event whose sample round the judge judges to finish ballot training; null when the category has no training or the judge has finished it' }),
 	roundsJudged: z.int().meta({ description: 'The number of distinct panels the judge has judged, by audited ballots' }),
 	ballotsEntered: z.int(),
-	ballotsOpen: z.iso.datetime().nullable().meta({ description: 'When online ballots open for the judge, before the tournament starts' }),
 	feedbackUntil: z.iso.datetime().nullable().meta({ description: 'Until when the judge may edit feedback on entered ballots' }),
 	Strikes: z.array(StrikeSchema),
 	Quizzes: z.array(z.object({
