@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/env/public', () => ({ CLASSIC_URL: 'https://classic.example.com' }));
 
-import type { CurrentBallot } from '@tabroom/types';
+import type { CurrentBallot, HomeRound } from '@tabroom/types';
 import * as fx from '../../../storybook/stories/routes/user/home/fixtures';
 import { dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
 
@@ -192,6 +192,35 @@ describe('homeTasks', () => {
 	it('asks the flip winner to choose until the flip is due', () => {
 		expect(titles(fx.bluebonnetCompetitor)).toEqual(['Flip for round 3']);
 		expect(titles(fx.bluebonnetCompetitor, '2026-11-07T16:55:00Z')).toEqual([]);
+	});
+
+	describe('flip turns', () => {
+		// the competitor's round 3 flip at another point in the flip
+		const withFlip = (change: Partial<NonNullable<HomeRound['Panel']['Flip']>>) => ({
+			...fx.bluebonnetCompetitor,
+			Entries: fx.bluebonnetCompetitor.Entries.map(entry => ({
+				...entry,
+				Rounds: entry.Rounds.map(round => round.Panel.Flip ? { ...round, Panel: { ...round.Panel, Flip: { ...round.Panel.Flip, ...change } } } : round),
+			})),
+		});
+		const flipDetail = (tourn: Parameters<typeof homeTasks>[0]) => homeTasks(tourn, fx.now).find(task => task.title.startsWith('Flip'))?.detail;
+
+		it('tells only the toss winner it won', () => {
+			expect(flipDetail(fx.bluebonnetCompetitor)).toBe('You won the flip. Choose a side or speaking order.');
+			expect(flipDetail(withFlip({ won: false, turn: 'mine' }))).toBe("It's your turn to choose a side or speaking order.");
+		});
+
+		it('offers side only without team order', () => {
+			expect(flipDetail(withFlip({ teamOrder: false }))).toBe('You won the flip. Choose a side.');
+		});
+
+		it('lets either side choose in the anyone window', () => {
+			expect(flipDetail(withFlip({ turn: 'either' }))).toBe('Either side may choose first.');
+		});
+
+		it("asks nothing while it's the other entry's turn", () => {
+			expect(titles(withFlip({ won: true, turn: 'theirs' }))).toEqual([]);
+		});
 	});
 
 	it('lists what a coach and judge owes before the tournament', () => {

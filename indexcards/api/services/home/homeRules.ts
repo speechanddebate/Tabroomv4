@@ -190,11 +190,6 @@ export function trainingDue(
 	return !judge.tournWeekends || (!!judge.weekendStart && !!judge.weekendEnd && judge.weekendStart < now && now < judge.weekendEnd);
 }
 
-/** Whether a panel's flip is open to its entries: released with flip_published, not a bye, and not done */
-export function flipOpen(round: Settings, panel: { bye: number; flip_status: string | null | undefined }): boolean {
-	return isOn(round?.flip_published) && panel.bye === 0 && !!panel.flip_status && panel.flip_status !== 'done';
-}
-
 /** Whether judges are shown by code only: the tourn's ncfl or the event's anonymous_public, unless no_anon_dashboard */
 export function judgeAnonymous(tourn: Settings, event: Settings): boolean {
 	return !isOn(event?.no_anon_dashboard) && (isOn(event?.anonymous_public) || isOn(tourn?.ncfl));

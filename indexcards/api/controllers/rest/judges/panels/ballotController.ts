@@ -4,7 +4,8 @@ import type { BallotContext, BallotFeedback, BallotProgress, BallotSubmission } 
 import type { ValidatedRequest } from '../../../../middleware/validation.js';
 import { getPerson } from '../../../../middleware/auth/authorization.js';
 import { db, type Database } from '../../../../data/database.js';
-import { ballotRules, ballotStatus, flipStatus } from '../../../../services/ballots/ballotRules.js';
+import { ballotRules, ballotStatus } from '../../../../services/ballots/ballotRules.js';
+import { flipStatus } from '../../../../services/flips/flipRules.js';
 import { loadBallotInputs } from '../../../../services/ballots/loadBallotInputs.js';
 import { saveBallot, saveBallotFeedback } from '../../../../services/ballots/saveBallot.js';
 import { getSectionRoom } from '../../../../services/onlineRooms/onlineRoomService.js';

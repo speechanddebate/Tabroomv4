@@ -11,6 +11,7 @@ import entry from './entry.js';
 import event from './event.js';
 import file from './file.js';
 import fine from './fine.js';
+import flip from './flip.js';
 import jpool from './jpool.js';
 import judge from './judge.js';
 import message from './message.js';
@@ -47,6 +48,7 @@ const factories = {
 	event,
 	file,
 	fine,
+	flip,
 	jpool,
 	judge,
 	message,

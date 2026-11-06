@@ -1996,6 +1996,16 @@ export const getUserHomeResponseHomeFullSchoolMock = (
 				null,
 			]),
 		})),
+		Flips: {
+			open: faker.number.int({
+				min: -9007199254740991,
+				max: 9007199254740991,
+			}),
+			deadline: faker.helpers.arrayElement([
+				faker.date.past().toISOString().slice(0, 19) + 'Z',
+				null,
+			]),
+		},
 		Fines: Array.from(
 			{ length: faker.number.int({ min: 1, max: 10 }) },
 			(_, i) => i + 1,
@@ -2748,12 +2758,41 @@ export const getUserHomeResponseMock = (
 						min: -9007199254740991,
 						max: 9007199254740991,
 					}),
-					flip_at: faker.helpers.arrayElement([
-						faker.date.past().toISOString().slice(0, 19) + 'Z',
-						null,
-					]),
-					flip_status: faker.helpers.arrayElement([
-						faker.string.alpha({ length: { min: 10, max: 20 } }),
+					Flip: faker.helpers.arrayElement([
+						{
+							deadline:
+								faker.date.past().toISOString().slice(0, 19) +
+								'Z',
+							won: faker.datatype.boolean(),
+							turn: faker.helpers.arrayElement([
+								'mine',
+								'theirs',
+								'either',
+							] as const),
+							labels: [
+								faker.string.alpha({
+									length: { min: 10, max: 20 },
+								}),
+								faker.string.alpha({
+									length: { min: 10, max: 20 },
+								}),
+							],
+							teamOrder: faker.datatype.boolean(),
+							side: faker.helpers.arrayElement([
+								faker.number.int({
+									min: -9007199254740991,
+									max: 9007199254740991,
+								}),
+								null,
+							]),
+							order: faker.helpers.arrayElement([
+								faker.number.int({
+									min: -9007199254740991,
+									max: 9007199254740991,
+								}),
+								null,
+							]),
+						},
 						null,
 					]),
 				},

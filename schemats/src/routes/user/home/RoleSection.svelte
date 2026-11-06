@@ -80,7 +80,7 @@
 	const sideText = (round: HomeEntry['Rounds'][number]): string => {
 		if (round.side === 1) return 'Aff';
 		if (round.side) return 'Neg';
-		return round.Panel.flip_at ? 'Flip' : '';
+		return round.Panel.Flip ? 'Flip' : '';
 	};
 
 	// The person's own points: entry-level scores, or student scores not for a partner

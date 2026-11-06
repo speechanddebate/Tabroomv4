@@ -1,5 +1,5 @@
 import logger from '../../helpers/logger.js';
-import { compareTourns, flipOpen, homeWindow, isOnline, isRunning, judgeAnonymous, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue } from './homeRules.js';
+import { compareTourns, homeWindow, isOnline, isRunning, judgeAnonymous, judgeQuizzes, paradigmReview, requiredQuizIds, rolesFor, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue } from './homeRules.js';
 
 const now = new Date('2026-03-07T12:00:00Z');
 
@@ -138,16 +138,6 @@ describe('roundListed and roundVisibility', () => {
 		expect(at(primaryOnly, 'wudc')).toEqual(['winloss', 'rank', 'point']);
 		expect(at(primaryOnly, null)).toEqual(['winloss']);
 		expect(at(roundVisibility(levels(1, 1, 2), false), 'debate')).toEqual(['rank', 'point', 'refute']);
-	});
-});
-
-describe('flipOpen', () => {
-	it('needs the flip released, a paired panel, and an unfinished flip', () => {
-		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: 'winner' })).toBe(true);
-		expect(flipOpen({}, { bye: 0, flip_status: 'winner' })).toBe(false);
-		expect(flipOpen({ flip_published: '1' }, { bye: 1, flip_status: 'winner' })).toBe(false);
-		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: 'done' })).toBe(false);
-		expect(flipOpen({ flip_published: '1' }, { bye: 0, flip_status: null })).toBe(false);
 	});
 });
 

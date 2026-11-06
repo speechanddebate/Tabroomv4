@@ -5,6 +5,7 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
+import type { HomeRoundPanelFlip } from './homeRoundPanelFlip';
 
 export type HomeRoundPanel = {
 	/**
@@ -20,8 +21,6 @@ export type HomeRoundPanel = {
 	 * @maximum 9007199254740991
 	 */
 	bye: number;
-	/** When the side flip is due */
-	flip_at: string | null;
-	/** @nullable */
-	flip_status: string | null;
+	/** The coin flip for this round while it is open to the entry */
+	Flip: HomeRoundPanelFlip;
 };

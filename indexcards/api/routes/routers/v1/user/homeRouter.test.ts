@@ -5,7 +5,7 @@ import { createHomeWindow } from '../../../../../tests/homeWindow.js';
 import { countQueries } from '../../../../../tests/queryCounter.js';
 import { db } from '../../../../data/database.js';
 import { saveSettings, type Settings } from '../../../../repos/utils/index.js';
-import { HomeResponseSchema } from '@tabroom/types';
+import { HomeResponseSchema, type HomeRound } from '@tabroom/types';
 
 type Tourn = Awaited<ReturnType<typeof factories.tourn.createFull>>;
 
@@ -365,7 +365,7 @@ describe('GET /user/home', () => {
 				start: t.Timeslot.start?.toISOString(),
 				side: 1,
 				speakerorder: 0,
-				Panel: { id: panel.id, letter: 'B', flight: null, bye: 0, flip_at: null, flip_status: null },
+				Panel: { id: panel.id, letter: 'B', flight: null, bye: 0, Flip: null },
 				Room: { name: '204', url: 'https://maps.test/204' },
 				Opponents: [{ entry: t.opponent.id, code: 'CD' }],
 				Judges: [{ id: t.Judge.id, first: 'Jo', last: 'Judge', code: 'J1' }],
@@ -404,21 +404,78 @@ describe('GET /user/home', () => {
 			]);
 		});
 
-		it('hides the side while a flip is pending or an elim is unflipped, and sends flip details only once released', async () => {
+		it('hides the side while a flip is pending or an elim is unflipped, and sends the flip only once released', async () => {
 			const t = await setup();
 			const flipAt = new Date('2026-03-01T10:00:00Z');
-			const pendingReleased = await pair(t, { published: 1 }, { audit: 0, settings: { flip_published: 1 }, panel: { flip_status: 'winner', flip_at: flipAt } });
-			const pendingUnreleased = await pair(t, { published: 1 }, { audit: 0, panel: { flip_status: 'winner', flip_at: flipAt } });
+			const released = { flip_published: 1 };
+			const pendingReleased = await pair(t, { published: 1 }, { audit: 0, settings: released, panel: { flip_status: 'winner', flip_at: flipAt, flip_winner: String(t.mine.id) } });
+			const pendingUnreleased = await pair(t, { published: 1 }, { audit: 0, panel: { flip_status: 'winner', flip_at: flipAt, flip_winner: String(t.mine.id) } });
+			const finished = await pair(t, { published: 1 }, { audit: 0, settings: released, panel: { flip_status: 'done', flip_at: flipAt } });
 			const unflippedElim = await pair(t, { published: 1 }, { audit: 0, type: 'elim', panel: {} });
 			const auditedElim = await pair(t, { published: 1 }, { type: 'elim', panel: {} });
 
-			const rounds: { id: number; side: number | null; speakerorder: number | null; Panel: { flip_at: string | null; flip_status: string | null } }[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
+			const rounds: HomeRound[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
 			const byRound = (round: { round: { id: number } }) => rounds.find((row) => row.id === round.round.id);
 
-			expect(byRound(pendingReleased)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: flipAt.toISOString(), flip_status: 'winner' } });
-			expect(byRound(pendingUnreleased)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: null, flip_status: null } });
-			expect(byRound(unflippedElim)).toMatchObject({ side: null, speakerorder: null, Panel: { flip_at: null, flip_status: null } });
+			expect(byRound(pendingReleased)).toMatchObject({
+				side: null,
+				speakerorder: null,
+				Panel: { Flip: { deadline: flipAt.toISOString(), won: true, turn: 'mine', labels: ['Aff', 'Neg'], teamOrder: false, side: null, order: null } },
+			});
+			expect(byRound(pendingUnreleased)).toMatchObject({ side: null, speakerorder: null, Panel: { Flip: null } });
+			expect(byRound(finished)).toMatchObject({ side: 1, Panel: { Flip: null } });
+			expect(byRound(unflippedElim)).toMatchObject({ side: null, speakerorder: null, Panel: { Flip: null } });
 			expect(byRound(auditedElim)).toMatchObject({ side: 1, speakerorder: 0 });
+		});
+
+		it('tells only the toss winner it won, and gives each entry its own turn', async () => {
+			const t = await setup();
+			const flipAt = new Date(Date.now() + 5 * 60_000);
+			const flip = (status: string, winner: number) => ({ audit: 0, settings: { flip_published: 1 }, panel: { flip_status: status, flip_at: flipAt, flip_winner: String(winner) } });
+			const opponentWon = await pair(t, { published: 1 }, flip('winner', t.opponent.id));
+			const loserWindow = await pair(t, { published: 1 }, flip('loser', t.opponent.id));
+			const eitherWindow = await pair(t, { published: 1 }, flip('anyone', t.mine.id));
+
+			const rounds: HomeRound[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
+			const byRound = (round: { round: { id: number } }) => rounds.find((row) => row.id === round.round.id)?.Panel.Flip;
+
+			expect(byRound(opponentWon)).toMatchObject({ won: false, turn: 'theirs' });
+			expect(byRound(loserWindow)).toMatchObject({ won: false, turn: 'mine' });
+			expect(byRound(eitherWindow)).toMatchObject({ won: true, turn: 'either' });
+		});
+
+		it("offers order with team order, uses the event's side labels, and fills a locked side", async () => {
+			const t = await setup({ event: { flip_team_order: 1, aff_label: 'Pro', neg_label: 'Con' } });
+			// whole seconds, as the DB stores them
+			const flipAt = new Date(Math.floor(Date.now() / 1000) * 1000 + 5 * 60_000);
+			const sideLocked = await pair(t, { published: 1 }, {
+				audit: 0,
+				settings: { flip_published: 1 },
+				panel: { flip_status: 'loser', flip_at: flipAt, flip_winner: String(t.opponent.id), flip: { side_locked: 1, side_chosen: 'Con' } },
+			});
+
+			const rounds: HomeRound[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
+
+			expect(rounds.find((row) => row.id === sideLocked.round.id)?.Panel.Flip).toEqual({
+				deadline: flipAt.toISOString(),
+				won: false,
+				turn: 'mine',
+				labels: ['Pro', 'Con'],
+				teamOrder: true,
+				side: 1,
+				order: null,
+			});
+		});
+
+		it('shows no_side_constraints sides once the flip is done', async () => {
+			const t = await setup({ event: { no_side_constraints: 1 } });
+			const pending = await pair(t, { published: 1 }, { audit: 0, panel: { flip_status: 'anyone' } });
+			const done = await pair(t, { published: 1 }, { audit: 0, panel: { flip_status: 'done' } });
+
+			const rounds: HomeRound[] = entryOf(await home(userkey), t.Tourn.id).Rounds;
+
+			expect(rounds.find((row) => row.id === pending.round.id)).toMatchObject({ side: null });
+			expect(rounds.find((row) => row.id === done.round.id)).toMatchObject({ side: 1 });
 		});
 
 		it('hides codes and judge names when the tourn and event say so', async () => {
@@ -510,9 +567,30 @@ describe('GET /user/home', () => {
 				Signups: [{ entry: signup.id, Student: { first: 'Sam', last: 'Signup' }, Event: { abbr: 'LD' } }],
 				Onsite: { start: '2026-03-01T07:00:00.000Z', end: '2026-03-01T09:00:00.000Z' },
 				StrikeCards: [{ round: elim.id, Round: { name: 5, label: 'Quarters' }, due: '2026-03-01T12:00:00.000Z' }],
+				Flips: { open: 0, deadline: null },
 				Fines: expect.arrayContaining([expect.objectContaining({ id: judgeFine.id, judge: Judge.id }), expect.objectContaining({ id: schoolFine.id })]),
 			}]);
 			expect(card.Schools[0].Fines).toHaveLength(2);
+		});
+
+		it("counts the open flips of the school's entries only, with the earliest deadline", async () => {
+			const tourn = await factories.tourn.create({ start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY) });
+			const Chapter = await factories.chapter.create();
+			await factories.permission.create({ person: personId, chapter: Chapter.id, tag: 'chapter' });
+			const School = await factories.school.create({ tourn: tourn.id, chapter: Chapter.id });
+			// whole seconds, as the DB stores them
+			const soon = new Date(Math.floor(Date.now() / 1000) * 1000 + 2 * 60_000);
+			// the school's entry meets another school's entry on each panel
+			await factories.flip.create({ tourn: tourn.id, schools: { aff: School.id }, flipAt: soon });
+			await factories.flip.create({ tourn: tourn.id, schools: { neg: School.id }, status: 'loser' });
+			await factories.flip.create({ tourn: tourn.id, schools: { aff: School.id }, published: false });
+			await factories.flip.create({ tourn: tourn.id, schools: { aff: School.id }, status: 'done' });
+			await factories.flip.create({ tourn: tourn.id });
+
+			const res = await home(userkey);
+
+			expect(res.body).toMatchSchema(HomeResponseSchema);
+			expect(cardOf(res, tourn.id).Schools[0].Flips).toEqual({ open: 2, deadline: soon.toISOString() });
 		});
 
 		it('gives a prefs-only coach the school with its pref sheets only, and no card without a sheet to fill', async () => {
@@ -640,11 +718,11 @@ describe('GET /user/home', () => {
 
 		// the session lookup plus the home stages: tourns; judges, entries, schools, permissions, events, person, tabroom;
 		// categories, pools, counts, strikes, judge panels, fines, entry rounds, school entries, school judges, strike cards,
-		// school counts, entry counts, published tourns; quizzes, attempts, rounds, panel settings, panel ballots, scores, students
-		expect(selects(queries)).toBe(29);
-		expect(selects(heavy.queries)).toBe(29);
-		expect(selects(poll.queries)).toBe(29);
-		expect(oneTourn).toBeLessThanOrEqual(30);
+		// school flips, school counts, entry counts, published tourns; quizzes, attempts, rounds, panel settings, panel ballots, scores, students
+		expect(selects(queries)).toBe(30);
+		expect(selects(heavy.queries)).toBe(30);
+		expect(selects(poll.queries)).toBe(30);
+		expect(oneTourn).toBeLessThanOrEqual(31);
 		expect(result.body.Tourns).toHaveLength(15);
 		expect(result.body.Tourns[0].Schools[0].Counts.entries).toBe(50);
 	});

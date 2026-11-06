@@ -30,7 +30,7 @@ export async function loadBallotInputs(db: Database, judgeId: number, panelId: n
 		panelRepo.getPanel(db, panelId, { settings: true }),
 		judgeRepo.getJudge(db, judgeId),
 		getBallots(db, { judge: judgeId, panel: panelId }),
-		panelRepo.getMeetings(db, panelId),
+		panelRepo.getMeetings(db, [panelId]),
 	]);
 	if (!panel) return undefined;
 	if (!judge) throw new Error(`Judge ${judgeId} not found`);
@@ -83,7 +83,7 @@ export async function loadBallotInputs(db: Database, judgeId: number, panelId: n
 	const inputs = {
 		tourn, category, event, round, timeslot, panel, judge, panelJudges, ballots, scores, entries, students, schools, doubled, site, tbTypes,
 		topic: topic ?? null,
-		dueAff: dueAff(meetings, round.name),
+		dueAff: dueAff(meetings.get(panelId) ?? [], round.name),
 	} satisfies BallotRulesInput;
 
 	// No room assigned, or one that has since been deleted, both show as no room

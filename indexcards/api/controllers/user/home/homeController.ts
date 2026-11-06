@@ -53,11 +53,11 @@ async function onlineRooms(tournId: number, actor: Actor, mine: { schools: numbe
 
 // The settings each card reads, fetched once per table for every tourn on the page
 const TOURN_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.tourn, 'currency', 'onsite_registration', 'onsite_starts', 'onsite_ends', 'onsite_registration_nodash', 'hide_codes', 'ncfl', 'mock_trial_registration', 'nsda_nats', 'online_rooms', 'campus_zone']);
-const EVENT_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.event, 'supp', 'anonymous_public', 'no_anon_dashboard']);
+const EVENT_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.event, 'supp', 'anonymous_public', 'no_anon_dashboard', 'flip_team_order']);
 const CATEGORY_SETTINGS = ['livedoc_url', 'livedoc_caption', 'rounds_per', 'prefs', 'strike_start', 'strike_end', 'required_quizzes', 'paradigm_quiz', 'show_training', 'conflicts'];
 const JPOOL_SETTINGS = ['registrant', 'show_judges', 'standby', 'required_quizzes', 'paradigm_quiz', 'message'];
 const ROUND_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.round, 'strikes_published', 'strikes_due', 'flip_published']);
-const PANEL_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.panel, 'flip_at']);
+const PANEL_SETTINGS = unique([...CURRENT_BALLOT_SETTINGS.panel, 'flip_at', 'flip_winner', 'flip']);
 
 /**
  * GET /user/home: every tournament card the person's home page draws, in one response.
@@ -88,7 +88,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 	const fullSchoolIds = schools.filter((school) => school.tag === 'chapter').map((school) => school.id);
 	const tabTournIds = unique(permissions.map((permission) => permission.tourn));
 	const runningTourns = new Set(tourns.filter((tourn) => isRunning(tourn, now)).map((tourn) => tourn.id));
-	const [categories, pools, counts, strikes, panelRows, fines, entryRounds, schoolEntries, schoolJudges, strikeCards, schoolCounts, entryCounts, publishedTourns] = await Promise.all([
+	const [categories, pools, counts, strikes, panelRows, fines, entryRounds, schoolEntries, schoolJudges, strikeCards, schoolFlips, schoolCounts, entryCounts, publishedTourns] = await Promise.all([
 		categoryRepo.getCategories(db, { ids: unique([...judges, ...entries, ...events].map((row) => row.category)), settings: CATEGORY_SETTINGS }),
 		jpoolRepo.getJudgePools(db, { judges: judgeIds, settings: JPOOL_SETTINGS }),
 		ballotRepo.getJudgeBallotCounts(db, { judges: judgeIds }),
@@ -99,6 +99,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		entryRepo.getEntries(db, { schools: schools.map((school) => school.id) }),
 		judgeRepo.getJudges(db, { schools: fullSchoolIds }),
 		roundRepo.getSchoolStrikeCards(db, { schools: fullSchoolIds }),
+		panelRepo.getFlips(db, { schools: fullSchoolIds }),
 		schoolRepo.countByTourn(db, { tourns: tabTournIds }),
 		entryRepo.countByTourn(db, { tourns: tabTournIds, active: true }),
 		tournRepo.getTourns(db, { ids: tabTournIds, hasPublishedResults: true }),
@@ -142,7 +143,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		fines,
 	};
 	const entrySection: EntrySectionData = { now, entries, students, categories, events, entryRounds, panelBallots, scores, rounds, panels };
-	const schoolSection: SchoolSectionData = { schools, schoolEntries, schoolJudges, students, events, categories, strikeCards, fines };
+	const schoolSection: SchoolSectionData = { now, schools, schoolEntries, schoolJudges, students, events, categories, strikeCards, fines, flips: schoolFlips };
 	const tabSection: TabSectionData = { permissions, schoolCounts, entryCounts, publishedTourns: new Set(publishedTourns.map((tourn) => tourn.id)) };
 
 	const eventsByTourn = groupBy(events, (event) => event.tourn);

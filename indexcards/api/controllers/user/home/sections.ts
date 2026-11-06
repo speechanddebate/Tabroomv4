@@ -13,8 +13,9 @@ import type roundRepo from '../../../repos/roundRepo.js';
 import type schoolRepo from '../../../repos/schoolRepo.js';
 import type scoreRepo from '../../../repos/scoreRepo.js';
 import type strikeRepo from '../../../repos/strikeRepo.js';
-import { flightNumber, isOn, roundStart, sideVisible } from '../../../services/ballots/ballotRules.js';
-import { flipOpen, isRunning, judgeAnonymous, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue, type QuizRequirement } from '../../../services/home/homeRules.js';
+import { flightNumber, isOn, roundStart, sideNames, sideVisible } from '../../../services/ballots/ballotRules.js';
+import { flipChoices, isFlipOpen, flipStatus, flipTurn, parseFlip } from '../../../services/flips/flipRules.js';
+import { isRunning, judgeAnonymous, judgeQuizzes, requiredQuizIds, roundListed, roundVisibility, scoreVisible, sqlDatetime, strikeWindow, trainingDue, type QuizRequirement } from '../../../services/home/homeRules.js';
 
 type Rows<T extends (...args: never[]) => Promise<unknown[]>> = Awaited<ReturnType<T>>;
 type Settings = Record<string, string> | null | undefined;
@@ -96,7 +97,11 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 				const round = roundSettings.get(row.round);
 				const anonymous = judgeAnonymous(tourn.settings, event);
 				const sided = visible.pairing && sideVisible({ type: row.roundType }, panel?.flip_status, event, row.audit === 1);
-				const flip = flipOpen(round, { bye: row.panelBye, flip_status: panel?.flip_status });
+				const status = flipStatus({ settings: panel });
+				// classic's flip page needs a deadline too; it prunes flip_at an hour after it passes
+				const flipAt = iso(panel?.flip_at);
+				const flipLeft = flipChoices(event, parseFlip(panel?.flip));
+				const winner = Number(panel?.flip_winner) || null;
 
 				Rounds.push({
 					id: row.round,
@@ -117,8 +122,18 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 						letter: row.panelLetter,
 						flight: flightNumber({ round: { flighted: row.roundFlighted }, panel: { flight: row.panelFlight } }),
 						bye: row.panelBye,
-						flip_at: flip ? iso(panel?.flip_at) : null,
-						flip_status: flip ? panel?.flip_status ?? null : null,
+						Flip: flipAt && isFlipOpen({ round, bye: row.panelBye, status, ended, audited: row.audit === 1 })
+							? {
+								deadline: flipAt,
+								won: winner === entry.id,
+								// isFlipOpen means the flip is pending, so there is a turn
+								turn: flipTurn(status, winner, entry.id)!,
+								labels: [sideNames(event).aff, sideNames(event).neg],
+								teamOrder: isOn(event?.flip_team_order),
+								side: flipLeft.side ? null : row.side,
+								order: flipLeft.order || !isOn(event?.flip_team_order) ? null : row.speakerorder,
+							}
+							: null,
 					},
 					Room: visible.pairing && row.roomName !== null ? { name: row.roomName, url: row.roomUrl } : null,
 					Opponents: visible.pairing
@@ -176,6 +191,9 @@ export type SchoolSectionData = {
 	categories: Rows<typeof categoryRepo.getCategories>;
 	strikeCards: Rows<typeof roundRepo.getSchoolStrikeCards>;
 	fines: Rows<typeof fineRepo.getFines>;
+	/** pending flips on the coached schools' panels, opponents' rows included */
+	flips: Rows<typeof panelRepo.getFlips>;
+	now: Date;
 };
 
 /**
@@ -190,6 +208,13 @@ export function buildSchools(tourn: { id: number; settings?: Settings }, data: S
 	const judgesBySchool = groupBy(data.schoolJudges, (judge) => judge.school);
 	const studentsByEntry = groupBy(data.students, (student) => student.entry);
 	const cardsBySchool = groupBy(data.strikeCards, (card) => card.school);
+	const flipsBySchool = groupBy(data.flips.filter((row) => row.settings?.flip_at && isFlipOpen({
+		round: row.roundSettings,
+		bye: row.bye,
+		status: flipStatus(row),
+		ended: row.tournEnd !== null && row.tournEnd < data.now,
+		audited: row.audit === 1,
+	})), (row) => row.school);
 	const onsiteWindow = isOn(tourn.settings?.onsite_registration)
 		? { start: iso(tourn.settings?.onsite_starts), end: iso(tourn.settings?.onsite_ends) }
 		: null;
@@ -241,6 +266,10 @@ export function buildSchools(tourn: { id: number; settings?: Settings }, data: S
 				Round: { name: card.name, label: card.label },
 				due: iso(card.settings?.strikes_due),
 			})),
+			Flips: {
+				open: (flipsBySchool.get(school.id) ?? []).length,
+				deadline: (flipsBySchool.get(school.id) ?? []).map((row) => iso(row.settings?.flip_at)).sort()[0] ?? null,
+			},
 			Fines: data.fines.filter((fine) => fine.school === school.id).map(toFine),
 		});
 	}

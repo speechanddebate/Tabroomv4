@@ -243,13 +243,16 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 
 	for (const entry of tourn.Entries) {
 		for (const round of entry.Rounds) {
-			const { flip_at: flipAt, flip_status: flipStatus } = round.Panel;
-			if (!flipAt || flipAt < now || (flipStatus !== 'winner' && flipStatus !== 'anyone')) continue;
+			const flip = round.Panel.Flip;
+			if (!flip || flip.deadline < now || flip.turn === 'theirs') continue;
+			const choice = flip.teamOrder ? 'a side or speaking order' : 'a side';
 			tasks.push({
 				tone   : 'due',
 				title  : `Flip for ${roundLabel(round).toLowerCase()}`,
-				when   : due(flipAt),
-				detail : flipStatus === 'winner' ? 'You won the flip. Choose a side or speaking order.' : 'Either side may choose first.',
+				when   : due(flip.deadline),
+				detail : flip.turn === 'either'
+					? 'Either side may choose first.'
+					: flip.won ? `You won the flip. Choose ${choice}.` : `It's your turn to choose ${choice}.`,
 				action : { label: 'Choose side', href: classic.flip() },
 			});
 		}

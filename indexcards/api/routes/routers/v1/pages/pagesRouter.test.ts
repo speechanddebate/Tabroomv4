@@ -142,6 +142,60 @@ describe.each([
 	});
 });
 
+describe('GET /pages/invite/:tournId/:eventAbbr/:roundName', () => {
+	const schematic = async (overrides: Parameters<typeof factories.flip.create>[0]) => {
+		const tourn = await factories.tourn.create();
+		const timeslot = await factories.timeslot.create({ tourn: tourn.id });
+		const { event, round, panel } = await factories.flip.create({ tourn: tourn.id, timeslot: timeslot.id, ...overrides });
+		const res = await request(server)
+			.get(`/v1/pages/invite/${tourn.id}/${event.abbr}/${round.name}`)
+			.set('Accept', 'application/json')
+			.expect(200);
+		return res.body.Sections[panel.id];
+	};
+
+	it('marks sides provisional while a flip is pending', async () => {
+		expect(await schematic({ status: 'winner' })).toMatchObject({ sidesPending: true });
+	});
+
+	it('leaves sides final once the flip is done', async () => {
+		expect((await schematic({ status: 'done' })).sidesPending).toBeUndefined();
+	});
+
+	it('leaves an elim panel locked by an earlier meeting final, and the rest of the elim provisional', async () => {
+		const tourn = await factories.tourn.create();
+		const timeslot = await factories.timeslot.create({ tourn: tourn.id });
+		const category = await factories.category.create({ tourn: tourn.id });
+		const event = await factories.event.create({ tourn: tourn.id, category: category.id, type: 'debate' });
+		const round = (name: number, type: string) => factories.round.create({ event: event.id, timeslot: timeslot.id, name, type, published: 1 });
+		const [prelim, elim] = [await round(1, 'prelim'), await round(2, 'elim')];
+		const [a, b, c, d] = await Promise.all([1, 2, 3, 4].map(() => factories.entry.create({ event: event.id })));
+		const panel = async (roundId: number, aff: number, neg: number) => {
+			const created = await factories.panel.create({ round: roundId });
+			await factories.ballot.create({ panel: created.id, entry: aff, side: 1 });
+			await factories.ballot.create({ panel: created.id, entry: neg, side: 2 });
+			return created;
+		};
+		// b was Neg against a in round 1, so b is due Aff when they meet again
+		await panel(prelim.id, a.id, b.id);
+		const locked = await panel(elim.id, b.id, a.id);
+		const unmet = await panel(elim.id, c.id, d.id);
+
+		const res = await request(server)
+			.get(`/v1/pages/invite/${tourn.id}/${event.abbr}/2`)
+			.set('Accept', 'application/json')
+			.expect(200);
+
+		expect(res.body.Sections[locked.id].sidesPending).toBeUndefined();
+		expect(res.body.Sections[unmet.id]).toMatchObject({ sidesPending: true });
+	});
+
+	it('marks no_side_constraints sides provisional until the flip is done', async () => {
+		expect(await schematic({ status: 'loser', event: { no_side_constraints: '1' } })).toMatchObject({ sidesPending: true });
+		expect((await schematic({ status: 'done', event: { no_side_constraints: '1' } })).sidesPending).toBeUndefined();
+	});
+});
+
 describe('GET /pages/invite/webname/:webname', () => {
 	it('Returns a tournament by webname', async () => {
 		const Tourn = await factories.tourn.create({ webname: faker.string.alpha(16) });

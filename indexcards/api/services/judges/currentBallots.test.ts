@@ -120,7 +120,7 @@ describe('buildCurrentBallots', () => {
 		expect(deadline('prelim', { elim_decision_deadline: '100' })).toBe(end.toISOString());
 	});
 
-	it('labels sides unless a flip is still open, on elims until the flip is done, and never without side constraints', () => {
+	it('labels sides unless a flip is still open, and on elims and no_side_constraints events only once the flip is done', () => {
 		const sides = (flipStatus: string | null, overrides: Partial<JudgePanelRow> = {}, event: Record<string, string> = {}) => buildCurrentBallots(
 			[row({ side: 1, speakerorder: 1, ...overrides }), row({ id: 2, entry: 701, side: 2, speakerorder: 2, ...overrides })],
 			context({
@@ -135,7 +135,8 @@ describe('buildCurrentBallots', () => {
 		expect(sides(null, { roundType: 'elim' })).toEqual([[null, null], [null, null]]);
 		expect(sides('done', { roundType: 'elim' })).toEqual([['Pro', 1], ['Neg', 2]]);
 		expect(sides(null, { roundType: 'elim' }, { sidelock_elims: '1' })).toEqual([['Pro', 1], ['Neg', 2]]);
-		expect(sides('done', {}, { no_side_constraints: '1' })).toEqual([[null, null], [null, null]]);
+		expect(sides(null, {}, { no_side_constraints: '1' })).toEqual([[null, null], [null, null]]);
+		expect(sides('done', {}, { no_side_constraints: '1' })).toEqual([['Pro', 1], ['Neg', 2]]);
 	});
 
 	it('drops an audited panel until its flight ends, except for a congress or mock trial chair', () => {

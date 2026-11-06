@@ -139,8 +139,15 @@ export const HomeRoundSchema = z.object({
 		letter: z.string().nullable(),
 		flight: z.int().nullable(),
 		bye: z.int(),
-		flip_at: z.iso.datetime().nullable().meta({ description: 'When the side flip is due' }),
-		flip_status: z.string().nullable(),
+		Flip: z.object({
+			deadline: z.iso.datetime().meta({ description: 'When the current turn ends' }),
+			won: z.boolean().meta({ description: 'Whether this entry won the coin toss' }),
+			turn: z.enum(['mine', 'theirs', 'either']).meta({ description: 'Who may choose now: this entry, the other entry, or either one first' }),
+			labels: z.tuple([z.string(), z.string()]).meta({ description: "The event's names for side 1 and side 2" }),
+			teamOrder: z.boolean().meta({ description: 'Whether speaking order is chosen in the flip as well as side' }),
+			side: z.int().nullable().meta({ description: "This entry's side once the side is chosen; null while it's open" }),
+			order: z.int().nullable().meta({ description: "This entry's speaking order once it's chosen; null while it's open or not part of the flip" }),
+		}).strict().nullable().meta({ description: 'The coin flip for this round while it is open to the entry' }),
 	}).strict(),
 	Room: z.object({
 		name: RoomSchema.shape.name.nullable(),
@@ -267,6 +274,10 @@ export const HomeFullSchoolSchema = z.object({
 		}).strict(),
 		due: z.iso.datetime().nullable(),
 	}).strict()).meta({ description: 'Rounds with a strike card open for one of the school\'s entries' }),
+	Flips: z.object({
+		open: z.int(),
+		deadline: z.iso.datetime().nullable().meta({ description: 'The earliest deadline among them' }),
+	}).strict().meta({ description: "Coin flips open to the school's entries" }),
 	Fines: z.array(FineSchema).meta({ description: 'Every fine billed to the school, judge fines included' }),
 }).strict().meta({
 	id: 'HomeFullSchool',

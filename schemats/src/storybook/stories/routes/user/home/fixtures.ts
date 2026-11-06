@@ -118,9 +118,11 @@ const pfRound = (spec: RoundSpec): HomeRound => {
 			id          : spec.id + 20000,
 			letter      : '1',
 			flight      : 1,
-			bye         : 0,
-			flip_at     : spec.flipAt ?? null,
-			flip_status : spec.flipAt ? 'winner' : null,
+			bye    : 0,
+			// Maya's entry won the toss and chooses first
+			Flip   : spec.flipAt
+				? { deadline: spec.flipAt, won: true, turn: 'mine', labels: ['Pro', 'Con'], teamOrder: true, side: null, order: null }
+				: null,
 		},
 		Room           : spec.room ?? null,
 		Opponents      : [{ entry: spec.id + 50000, code: spec.opponent }],
@@ -381,6 +383,7 @@ const lakesideFull = (school: Partial<Extract<HomeSchool, { access: 'full' }>>):
 	chapter     : avery.chapter.id,
 	Prefs       : [],
 	access      : 'full',
+	Flips       : { open: 0, deadline: null },
 	onsite      : 0,
 	Counts      : { entries: 0, events: 0, judges: 0 },
 	Signups     : [],

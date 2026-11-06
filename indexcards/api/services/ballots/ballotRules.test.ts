@@ -2,7 +2,7 @@ import type { MockInstance } from 'vitest';
 import factories from '../../../tests/factories/index.js';
 import logger from '../../helpers/logger.js';
 import type { Settings } from '../../repos/utils/index.js';
-import { ballotEntries, ballotTimers, bestPOScoring, otherJudges, settingLines, entryLabel, feedbackScoring, ballotHeader, ballotRules, ballotStatus, ballotTopic, chairLabel, decisionDeadline, flightNumber, flipStatus, isChair, isOn, judgesSeeRound, pointsScoring, ranksScoring, roundLabel, roundStart, rulesText, savedWinner, sideLabel, sideLock, sideNames, sideVisible, winlossScoring, type BallotRulesInput } from './ballotRules.js';
+import { ballotEntries, ballotTimers, bestPOScoring, otherJudges, settingLines, entryLabel, feedbackScoring, ballotHeader, ballotRules, ballotStatus, ballotTopic, chairLabel, decisionDeadline, flightNumber, isChair, isOn, judgesSeeRound, pointsScoring, ranksScoring, roundLabel, roundStart, rulesText, savedWinner, sideLabel, sideLock, sideNames, sideVisible, winlossScoring, type BallotRulesInput } from './ballotRules.js';
 
 const recent = new Date('2026-10-01T00:00:00Z');
 const old = new Date('2020-10-01T00:00:00Z');
@@ -347,6 +347,17 @@ describe('sideVisible', () => {
 		expect(sideVisible(prelim, null, { no_side_constraints: '1' })).toBe(false);
 	});
 
+	it('shows no_side_constraints sides once the flip is done', () => {
+		expect(sideVisible(prelim, 'loser', { no_side_constraints: '1' })).toBe(false);
+		expect(sideVisible(prelim, 'done', { no_side_constraints: '1' })).toBe(true);
+		expect(sideVisible(elim, 'done', { no_side_constraints: '1' })).toBe(true);
+	});
+
+	it('shows runoff sides like a prelim once no flip is pending', () => {
+		expect(sideVisible({ type: 'runoff' }, null, {})).toBe(true);
+		expect(sideVisible({ type: 'runoff' }, 'winner', {})).toBe(false);
+	});
+
 	it('hides elim and final sides until the flip is done unless elims are sidelocked', () => {
 		expect(sideVisible(elim, null, {})).toBe(false);
 		expect(sideVisible({ type: 'final' }, 'anyone', {})).toBe(false);
@@ -572,21 +583,6 @@ describe('debate details', () => {
 
 			expect(warn).not.toHaveBeenCalled();
 		});
-	});
-});
-
-describe('flipStatus', () => {
-	it.each(['winner', 'loser', 'anyone', 'done'])('is %s when the panel is at that step', (status) => {
-		expect(flipStatus({ settings: { flip_status: status } })).toBe(status);
-	});
-
-	it('is null before the flip starts', () => {
-		expect(flipStatus({ settings: {} })).toBeNull();
-		expect(flipStatus({ settings: null })).toBeNull();
-	});
-
-	it('is null for a value the flip doesn\'t write', () => {
-		expect(flipStatus({ settings: { flip_status: 'second' } })).toBeNull();
 	});
 });
 

@@ -5,6 +5,9 @@ import { NotFound } from '../../../helpers/problem.js';
 import { publishLevel, snakeToCamel } from '../../../helpers/text.js';
 import { selectSettings } from '../../../repos/utils/index.js';
 import { entryWins } from '../../../services/results/entryWins.js';
+import { sideLock, sideVisible } from '../../../services/ballots/ballotRules.js';
+import { dueAff } from '../../../services/rounds/dueAff.js';
+import panelRepo from '../../../repos/panelRepo.js';
 
 export async function getSchematic (req,res) {
 
@@ -132,6 +135,8 @@ export async function getSchematic (req,res) {
 				'anonymous_public',
 				'pods',
 				'no_side_constraints',
+				'sidelock_elims',
+				'no_elim_sidelocks',
 				'not_nats',
 				'elim_decision_deadline',
 				'prelim_decision_deadline',
@@ -187,12 +192,17 @@ export async function getSchematic (req,res) {
 				panel.letter, panel.flight, panel.bye,
 				room.id roomId, room.name as roomName,
 				room.notes as roomNotes, room.url as roomUrl,
-				ps.value as hybrid
+				ps.value as hybrid,
+				flip_status.value as flipStatus
 			from panel
 
 				left join panel_setting ps
 					on ps.panel = panel.id
 					and ps.tag = 'online_hybrid'
+
+				left join panel_setting flip_status
+					on flip_status.panel = panel.id
+					and flip_status.tag = 'flip_status'
 
 				left join room on panel.room = room.id
 
@@ -223,9 +233,30 @@ export async function getSchematic (req,res) {
 			delete section.roomUrl;
 			delete section.roomNotes;
 
+			// the sides shown are provisional until the entries flip for them
+			if (!sideVisible({ type: round.type }, section.flipStatus, round.Event.Settings)) {
+				section.sidesPending = true;
+			}
+			delete section.flipStatus;
+
 			acc[section.id] = section;
 			return acc;
 		}, {});
+
+		// An elim pairing sets the sides when the entries met before and one is due Aff
+		// (round_elim_dueaff.mas); classic's postings mark those Locked
+		const pending = Object.values(round.Sections).filter((section) => section.sidesPending);
+		if (pending.length) {
+			const meetings = await panelRepo.getMeetings(db, pending.map((section) => section.id));
+			for (const section of pending) {
+				const lock = sideLock({
+					event: { settings: round.Event.Settings },
+					round: { type: round.type },
+					dueAff: dueAff(meetings.get(section.id) ?? [], round.name),
+				});
+				if (lock === 'history') delete section.sidesPending;
+			}
+		}
 
 		const { rows: rawBallots } = await sql`
 			select

@@ -26,6 +26,14 @@
 		judges  : {},
 	};
 
+	// The pairing's sides are provisional until the entries flip for them. In a round where only
+	// some are, the settled sections name their sides, as classic's "Locked Aff" postings do
+	const pendingSections = $derived(Object.values(schematic.Sections).filter((section) => (section as { sidesPending?: boolean }).sidesPending).length);
+	const sidesPending = $derived(pendingSections > 0);
+	const allPending = $derived(pendingSections === Object.keys(schematic.Sections).length);
+	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
+	const sideText = (code: string, label: string) => (row: any) => (sidesPending && !row.sidesPending && row[code] ? `${row[code]} (${label})` : row[code]);
+
 	// SORT THOSE SECTIONS!
 	let sections = $derived.by( () => {
 
@@ -176,17 +184,19 @@
 		baseColumns.push(
 			{
 				id           : 'affCode',
-				header       : event.Settings?.aff_label || 'Aff',
+				header       : sidesPending ? 'Entry' : event.Settings?.aff_label || 'Aff',
 				flexgrow     : 2,
 				cell         : CellLink,
 				linkFunction : affLinkFunction,
+				textFunction : sideText('affCode', event.Settings?.aff_label || 'Aff'),
 				cellClass    : cellClass,
 			},{
 				id           : 'negCode',
-				header       : event.Settings?.neg_label || 'Neg',
+				header       : sidesPending ? 'Entry' : event.Settings?.neg_label || 'Neg',
 				flexgrow     : 2,
 				cell         : CellLink,
 				linkFunction : negLinkFunction,
+				textFunction : sideText('negCode', event.Settings?.neg_label || 'Neg'),
 				cellClass    : cellClass,
 			},{
 				id        : 'judges',
@@ -211,6 +221,9 @@
 </script>
 
 	<div class='px-3 overflow-x-scroll pb-3 bg-surface wg-full text-success'>
+		{#if sidesPending}
+			<p class='py-2 font-semibold'>{allPending ? 'Flip for sides' : 'Flip for sides unless indicated'}</p>
+		{/if}
 		<SVGrid
 			columns   = { columns }
 			options   = { options }

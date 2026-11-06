@@ -14,6 +14,7 @@ import { convert } from 'html-to-text';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
 import { flightStart } from '../../helpers/flight.js';
+import { flipStatus, isFlipOnline, isFlipPending } from '../flips/flipRules.js';
 
 // Site-wide tabroom_setting tags the rules read. The caller loads all of
 // them in one query and passes value_text for each.
@@ -478,17 +479,7 @@ export function sideLock({ event, round, dueAff }: Pick<BallotRulesInput, 'event
  * means the entries pick them in a coin flip (user/enter/flip.mhtml), so the judge doesn't. */
 export function debateSides(lock: ReturnType<typeof sideLock>, event: Pick<BallotRulesInput['event'], 'settings'>): DebateBallotContext['debate']['sides'] {
 	if (lock !== 'pick') return 'locked';
-	return isOn(event.settings?.flip_online) ? 'flip' : 'pick';
-}
-
-/**
- * Returns the panel's flip_status, which the coin flip moves from winner to loser to anyone
- * to done (api/flip_monitor.mhtml). null before the flip starts or for a value it doesn't write. */
-export function flipStatus(panel: Pick<BallotRulesInput['panel'], 'settings'>): DebateBallotContext['debate']['flipStatus'] {
-	const FLIP_STATUSES = ['winner', 'loser', 'anyone', 'done'] as const;
-	const status = panel.settings?.flip_status;
-
-	return FLIP_STATUSES.find(value => value === status) ?? null;
+	return isFlipOnline(event.settings) ? 'flip' : 'pick';
 }
 
 // The score tags that make a ballot scored, as classic's panels.mhtml counts them
@@ -539,14 +530,13 @@ export function sideLabel(eventType: string | null, side: number | null, speaker
 }
 
 /**
- * Returns whether a ballot's side and speaker order are shown, classic's rule: hidden while a
- * flip is pending, on elims without sidelock_elims until the flip is done, and always on
- * no_side_constraints events. A competitor sees their own audited ballot's side regardless. */
+ * Returns whether a ballot's side and speaker order are shown, hidden while a
+ * online flip is pending, and until the flip is done on elims without sidelock_elims and on
+ * no_side_constraints events (show_entry.mas). A competitor sees their own audited ballot's side regardless. */
 export function sideVisible(round: { type: string | null }, flipStatus: string | null | undefined, event: Settings | null | undefined, audited = false): boolean {
-	if (audited) return true;
-	const pending = !!flipStatus && flipStatus !== 'done';
-	const elim = (round.type === 'elim' || round.type === 'final') && !isOn(event?.sidelock_elims) && flipStatus !== 'done';
-	return !pending && !elim && !isOn(event?.no_side_constraints);
+	if (audited || flipStatus === 'done') return true;
+	const elim = (round.type === 'elim' || round.type === 'final') && !isOn(event?.sidelock_elims);
+	return !isFlipPending(flipStatus) && !elim && !isOn(event?.no_side_constraints);
 }
 
 /** Returns whether the judge chairs the panel: any of their ballot rows is marked chair. */

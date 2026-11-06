@@ -5,11 +5,17 @@ import type { Insertable, Updateable } from 'kysely';
 import { sql } from 'kysely';
 import type { Panel } from '../data/schema.js';
 import { flightNumber, roundStart, sideNames } from '../services/ballots/ballotRules.js';
+import { parseFlip } from '../services/flips/flipRules.js';
+import { groupBy } from '../helpers/objectify.js';
 
 type queryOpts = {
 	settings?: boolean | string[];
 	ids?: number[];
 	round?: number;
+	/** panels with a ballot for one of these entries */
+	entries?: number[];
+	/** panels with a ballot for an entry from one of these schools */
+	schools?: number[];
 }
 function buildPanelQuery(db: Database, opts: queryOpts){
 	let query  = db.selectFrom('panel')
@@ -20,6 +26,21 @@ function buildPanelQuery(db: Database, opts: queryOpts){
 
 	query = opts.ids ? query.where('panel.id', 'in', opts.ids) : query;
 	query = opts.round ? query.where('panel.round', '=', opts.round) : query;
+	query = opts.entries
+		? query.where('panel.id', 'in', opts.entries.length ? (eb) => eb
+			.selectFrom('ballot')
+			.select('ballot.panel')
+			.where('ballot.entry', 'in', opts.entries!)
+		: [])
+		: query;
+	query = opts.schools
+		? query.where('panel.id', 'in', opts.schools.length ? (eb) => eb
+			.selectFrom('ballot')
+			.innerJoin('entry', 'entry.id', 'ballot.entry')
+			.select('ballot.panel')
+			.where('entry.school', 'in', opts.schools!)
+		: [])
+		: query;
 
 	return query;
 }
@@ -32,18 +53,21 @@ async function getPanel(db: Database, id: number, opts: queryOpts = {}){
 }
 
 /**
- * Returns every panel where this panel's two entries met, this one included, with each
- * entry's side and the round number, bye and forfeit flags, one row per ballot.
- * Empty unless the panel has exactly two entries. */
-async function getMeetings(db: Database, id: number) {
+ * Returns, for each of these panels, every panel where its two entries met, itself included,
+ * with each entry's side and the round number, bye and forfeit flags, one row per ballot.
+ * A panel without exactly two entries has no key. */
+async function getMeetings(db: Database, ids: number[]) {
 	const current = await db.selectFrom('ballot')
-		.select('ballot.entry')
-		.where('ballot.panel', '=', id)
+		.select(['ballot.panel', 'ballot.entry'])
+		.where('ballot.panel', 'in', ids)
+		.where('ballot.entry', 'is not', null)
 		.distinct()
 		.execute();
 
-	const entries = current.map(row => row.entry).filter(entry => entry !== null);
-	if (entries.length !== 2) return [];
+	// only panels with two entries have meetings
+	const pairs = new Map([...groupBy(current, row => row.panel)]
+		.map(([panel, rows]) => [panel, new Set(rows.map(row => row.entry))] as const)
+		.filter(([, entries]) => entries.size === 2));
 
 	const rows = await db.selectFrom('ballot')
 		.innerJoin('panel', 'panel.id', 'ballot.panel')
@@ -57,16 +81,18 @@ async function getMeetings(db: Database, id: number) {
 			'ballot.bye',
 			'ballot.forfeit',
 		])
-		.where('ballot.entry', 'in', entries)
+		.where('ballot.entry', 'in', [...pairs.values()].flatMap(entries => [...entries]))
 		.execute();
 
-	// Only panels where both entries were there
 	const entriesByPanel = new Map<number, Set<number | null>>();
 	for (const row of rows) {
 		entriesByPanel.set(row.panel, (entriesByPanel.get(row.panel) ?? new Set()).add(row.entry));
 	}
 
-	return rows.filter(row => entriesByPanel.get(row.panel)?.size === 2);
+	// each panel's meetings: the rows of panels where both of its entries were there
+	return new Map([...pairs].map(([panel, entries]) => [panel, rows.filter(row =>
+		entries.has(row.entry) && [...entries].every(entry => entriesByPanel.get(row.panel)?.has(entry)),
+	)]));
 }
 
 /**
@@ -166,6 +192,47 @@ async function getPanelEntryStudents(db: Database, panelIds: number[]) {
 
 async function getPanels(db: Database, opts: queryOpts = {}) {
 	return await buildPanelQuery(db, opts).selectAll('panel').execute();
+}
+
+/**
+ * Pending coin flips on the panels opts selects, one row per entry on the panel (opponents
+ * included), with what flipRules needs to decide whether each is open and whose turn it is.
+ * audit is set when any of the entry's ballots on the panel is audited.
+ */
+async function getFlips(db: Database, opts: Pick<queryOpts, 'ids' | 'entries' | 'schools'>) {
+	const rows = await buildPanelQuery(db, { ...opts, settings: ['flip_status', 'flip_at', 'flip_winner', 'flip'] })
+		.innerJoin('round', 'round.id', 'panel.round')
+		.innerJoin('event', 'event.id', 'round.event')
+		.innerJoin('tourn', 'tourn.id', 'event.tourn')
+		.innerJoin('ballot', 'ballot.panel', 'panel.id')
+		.innerJoin('entry', 'entry.id', 'ballot.entry')
+		.where('panel.id', 'in', (eb) => eb
+			.selectFrom('panel_setting')
+			.select('panel_setting.panel')
+			.where('panel_setting.tag', '=', 'flip_status')
+			.where('panel_setting.value', '!=', 'done'))
+		.select((eb) => [
+			'panel.id',
+			'panel.bye',
+			'round.id as round',
+			'round.name as roundName',
+			'round.label as roundLabel',
+			'event.id as event',
+			'event.abbr as eventAbbr',
+			'tourn.end as tournEnd',
+			'entry.id as entry',
+			'entry.code as entryCode',
+			'entry.school',
+			eb.fn.max('ballot.side').as('side'),
+			eb.fn.max('ballot.speakerorder').as('speakerorder'),
+			eb.fn.max('ballot.audit').as('audit'),
+			...selectSettings({ table: 'round', settings: ['flip_published'], as: 'roundSettings' }),
+			...selectSettings({ table: 'event', settings: ['flip_team_order', 'aff_label', 'neg_label'], as: 'eventSettings' }),
+		])
+		.groupBy(['panel.id', 'entry.id'])
+		.execute();
+
+	return rows.map((row) => ({ ...row, flip: parseFlip(row.settings?.flip) }));
 }
 async function createPanel(db: Database, data: Insertable<Panel> & { settings?: Settings }){
 	const { settings, ...panelData } = data;
@@ -426,6 +493,7 @@ async function getJudgeHistoryPanels(db: Database, judgeId: number) {
 export default {
 	getPanel,
 	getPanels,
+	getFlips,
 	getMeetings,
 	getDoubledEntries,
 	getPanelJudges,

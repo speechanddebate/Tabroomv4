@@ -2,7 +2,8 @@ import type { CurrentBallot } from '@tabroom/types';
 import type ballotRepo from '../../repos/ballotRepo.js';
 import logger from '../../helpers/logger.js';
 import { groupBy } from '../../helpers/objectify.js';
-import { ballotStatus, decisionDeadline, flightNumber, flipStatus, isChair, isOn, judgesSeeRound, roundStart, sideLabel, sideNames, sideVisible } from '../ballots/ballotRules.js';
+import { ballotStatus, decisionDeadline, flightNumber, isChair, isOn, judgesSeeRound, roundStart, sideLabel, sideNames, sideVisible } from '../ballots/ballotRules.js';
+import { flipStatus } from '../flips/flipRules.js';
 
 export type JudgePanelRow = Awaited<ReturnType<typeof ballotRepo.getJudgePanels>>[number];
 

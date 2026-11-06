@@ -8,6 +8,7 @@
 import type { Fine } from './fine';
 import type { HomeFullSchoolAccess } from './homeFullSchoolAccess';
 import type { HomeFullSchoolCounts } from './homeFullSchoolCounts';
+import type { HomeFullSchoolFlips } from './homeFullSchoolFlips';
 import type { HomeFullSchoolOnsite } from './homeFullSchoolOnsite';
 import type { HomeFullSchoolSignupsItem } from './homeFullSchoolSignupsItem';
 import type { HomeFullSchoolStrikeCardsItem } from './homeFullSchoolStrikeCardsItem';
@@ -40,6 +41,8 @@ export interface HomeFullSchool {
 	Onsite: HomeFullSchoolOnsite;
 	/** Rounds with a strike card open for one of the school's entries */
 	StrikeCards: HomeFullSchoolStrikeCardsItem[];
+	/** Coin flips open to the school's entries */
+	Flips: HomeFullSchoolFlips;
 	/** Every fine billed to the school, judge fines included */
 	Fines: Fine[];
 }

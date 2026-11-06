@@ -50,7 +50,7 @@ describe('panelRepo', () => {
 			const earlier = await panelWith(round1.id, [[a.id, 2], [b.id, 1]], { bye: 1 }, { forfeit: 1 });
 			const later = await panelWith(round4.id, [[a.id, 1], [b.id, 2]]);
 
-			const meetings = await panelRepo.getMeetings(db, current.id);
+			const meetings = (await panelRepo.getMeetings(db, [current.id])).get(current.id);
 
 			expect(meetings).toHaveLength(6);
 			expect(meetings).toEqual(expect.arrayContaining([
@@ -65,7 +65,7 @@ describe('panelRepo', () => {
 			const { round1, a, c, current, panelWith } = await setup();
 			const other = await panelWith(round1.id, [[a.id, 1], [c.id, 2]]);
 
-			const meetings = await panelRepo.getMeetings(db, current.id);
+			const meetings = (await panelRepo.getMeetings(db, [current.id])).get(current.id) ?? [];
 
 			expect(meetings.map(meeting => meeting.panel)).not.toContain(other.id);
 		});
@@ -74,7 +74,23 @@ describe('panelRepo', () => {
 			const { round3, a, panelWith } = await setup();
 			const bye = await panelWith(round3.id, [[a.id, 1]]);
 
-			expect(await panelRepo.getMeetings(db, bye.id)).toEqual([]);
+			expect((await panelRepo.getMeetings(db, [bye.id])).has(bye.id)).toBe(false);
+		});
+
+		it('keeps each panel\'s meetings to its own pair when several panels are asked for at once', async () => {
+			const { round1, round3, a, b, c, current, panelWith } = await setup();
+			const d = await factories.entry.create({ event: a.event });
+			const cd = await panelWith(round3.id, [[c.id, 1], [d.id, 2]]);
+			// a met c earlier: that meeting belongs to neither current pair
+			const ac = await panelWith(round1.id, [[a.id, 2], [c.id, 1]]);
+			const cdEarlier = await panelWith(round1.id, [[c.id, 2], [d.id, 1]]);
+
+			const meetings = await panelRepo.getMeetings(db, [current.id, cd.id]);
+
+			expect(new Set(meetings.get(current.id)?.map(meeting => meeting.panel))).toEqual(new Set([current.id]));
+			expect(new Set(meetings.get(cd.id)?.map(meeting => meeting.panel))).toEqual(new Set([cd.id, cdEarlier.id]));
+			expect([...meetings.values()].flat().map(meeting => meeting.panel)).not.toContain(ac.id);
+			expect(meetings.get(current.id)?.map(meeting => meeting.entry).sort()).toEqual([a.id, b.id].sort());
 		});
 	});
 	describe('getDoubledEntries', () => {
@@ -209,6 +225,69 @@ describe('panelRepo', () => {
 			expect(results).toBeDefined();
 			expect(results.length).toBeGreaterThanOrEqual(2);
 			expect(results.map(s => s.id)).toEqual(expect.arrayContaining([panel1.id, panel2.id]));
+		});
+	});
+	describe('getFlips', () => {
+		it('returns a row per entry on the panel, opponent included, for an entry filter', async () => {
+			const { panel, aff, neg, winner } = await factories.flip.create({ flip: { side_locked: 1, side_chosen: 'Aff' } });
+
+			const rows = await panelRepo.getFlips(db, { entries: [aff.id] });
+
+			expect(rows).toHaveLength(2);
+			expect(rows.find((row) => row.entry === aff.id)).toMatchObject({
+				id: panel.id,
+				bye: 0,
+				entryCode: aff.code,
+				side: 1,
+				settings: { flip_status: 'winner', flip_winner: String(winner.id) },
+				flip: { side_locked: 1, side_chosen: 'Aff' },
+				roundSettings: { flip_published: '1' },
+				eventSettings: null,
+			});
+			expect(rows.find((row) => row.entry === neg.id)).toMatchObject({ id: panel.id, side: 2 });
+			expect(rows[0].tournEnd).toBeInstanceOf(Date);
+		});
+
+		it('selects panels by school and leaves out other schools\' panels', async () => {
+			const school = await factories.school.create();
+			const { panel } = await factories.flip.create({ schools: { neg: school.id } });
+			const { panel: elsewhere } = await factories.flip.create();
+
+			const rows = await panelRepo.getFlips(db, { schools: [school.id] });
+
+			expect(new Set(rows.map((row) => row.id))).toEqual(new Set([panel.id]));
+			expect(rows.map((row) => row.id)).not.toContain(elsewhere.id);
+		});
+
+		it('leaves out finished flips and panels with no flip', async () => {
+			const { aff } = await factories.flip.create({ status: 'done' });
+			const panel = await factories.panel.create();
+			await factories.ballot.create({ panel: panel.id, entry: aff.id, side: 1 });
+
+			expect(await panelRepo.getFlips(db, { entries: [aff.id] })).toEqual([]);
+		});
+
+		it('sets audit when any of the entry\'s ballots is audited', async () => {
+			const { panel, aff } = await factories.flip.create();
+			await factories.ballot.create({ panel: panel.id, entry: aff.id, side: 1, audit: 1 });
+
+			const rows = await panelRepo.getFlips(db, { entries: [aff.id] });
+
+			expect(rows.find((row) => row.entry === aff.id)?.audit).toBe(1);
+		});
+
+		it('reads invalid flip JSON as no flip state', async () => {
+			const { panel, aff } = await factories.flip.create();
+			await db.updateTable('panel_setting').set({ value: 'text', value_text: '{not json' }).where('panel', '=', panel.id).where('tag', '=', 'flip').execute();
+
+			const rows = await panelRepo.getFlips(db, { entries: [aff.id] });
+
+			expect(rows[0].flip).toBeNull();
+		});
+
+		it('returns nothing for empty filters', async () => {
+			expect(await panelRepo.getFlips(db, { entries: [] })).toEqual([]);
+			expect(await panelRepo.getFlips(db, { schools: [] })).toEqual([]);
 		});
 	});
 	describe('createPanel', () => {
