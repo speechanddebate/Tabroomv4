@@ -5,6 +5,7 @@ export default defineConfig({
 		globals: true,
 		// CI runners are 2 vCPU running 2 jobs at once, and MariaDB shares the job
 		maxWorkers: process.env.CI ? 1 : undefined,
+		testTimeout: process.env.CI ? 15_000 : undefined,
 		// The API always runs in UTC (see the dev script and Dockerfile)
 		env: { TZ: 'UTC' },
 		setupFiles: './tests/setup.js',

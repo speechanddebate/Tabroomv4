@@ -101,6 +101,8 @@ jobs:
 
       - name: Seed database
         run: |
+          mariadb --host=mariadb --port=3306 --user=root --password=root \
+            -e "SET GLOBAL innodb_flush_log_at_trx_commit = 0"
           mariadb \
             --host=mariadb \
             --port=3306 \
