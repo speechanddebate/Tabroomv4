@@ -42,7 +42,7 @@
 	],
 	"private": true,
 	"devDependencies": {
-		"eslint-plugin-storybook": "^10.6.1",
+		"eslint-plugin-storybook": "^10.6.6",
 		"oxlint": "^1.80.0"
 	},
 	"allowScripts": {},

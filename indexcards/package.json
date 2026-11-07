@@ -46,7 +46,7 @@
 		"express": "^5.2.1",
 		"express-rate-limit": "^8.3.1",
 		"helmet": "^8",
-		"html-to-text": "^9.0.5",
+		"html-to-text": "^10.0.1",
 		"ioredis": "^5.11.1",
 		"jose": "^6.2.14",
 		"kysely": "^0.29.6",

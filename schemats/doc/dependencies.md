@@ -52,7 +52,7 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| @tiptap/core, @tiptap/starter-kit, @tiptap/extension-text-align, @tiptap/extensions | ^3.26.1 | `src/lib/components/Editor.svelte` (ballot feedback): core, base extensions, text alignment, and `Placeholder` | Same version for all four. |
+| @tiptap/core, @tiptap/starter-kit, @tiptap/extension-text-align, @tiptap/extensions | ^3.33.0 | `src/lib/components/Editor.svelte` (ballot feedback): core, base extensions, text alignment, and `Placeholder` | Same version for all four. 3.30.5 is the floor for the `mergeAttributes` and Markdown ReDoS advisories. Install them together by name (`npm install -w schemats @tiptap/core@^x ...`): a plain `npm update` leaves `@tiptap/extensions` and its own `core` and `pm` copies behind. |
 
 ## Dates
 
@@ -84,8 +84,8 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| storybook, @storybook/sveltekit, @storybook/addon-a11y, @storybook/addon-docs, @storybook/addon-vitest | dev ^10.6.1 (storybook), ~10.6.1 (the rest) | Component workshop, framework, and addons | Same minor for all five. |
-| @storybook/addon-svelte-csf | dev ^5.1.5 | Svelte CSF stories | Versioned on its own line. Peers allow Storybook 11. |
+| storybook, @storybook/sveltekit, @storybook/addon-a11y, @storybook/addon-docs, @storybook/addon-vitest | dev ^10.6.6 (storybook), ~10.6.6 (the rest) | Component workshop, framework, and addons | Same minor for all five, plus `eslint-plugin-storybook` in the root `package.json`. 10.6.2 is the floor for the dev-server code-injection advisories. |
+| @storybook/addon-svelte-csf | dev ^5.1.6 | Svelte CSF stories | Versioned on its own line. Peers allow Storybook 11. |
 
 ## Lint and format
 

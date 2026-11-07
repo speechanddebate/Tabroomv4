@@ -59,7 +59,7 @@ Every package in `indexcards/package.json`, grouped by what it does, with what c
 |---|---|---|---|
 | nodemailer | ^10.3.1 | SMTP egress in `channels/email.ts` | CommonJS: default imports only, mocked as `{ default }`. |
 | web-push | ^3.6.7 | Web push delivery | CommonJS, the same as nodemailer. |
-| html-to-text | ^9.0.5 | Plain-text bodies for email and push, and ballot text | v10 is out; `@types/html-to-text` is still 9.0.4. |
+| html-to-text | ^10.0.1 | Plain-text bodies for email and push, and ballot text | v10 ships no types; `@types/html-to-text` 9.0.4 still covers `convert`. v10 keeps `<textarea>` and `<xmp>` content as raw text, tags included. v11 will be ESM-only. |
 | sanitize-html | ^2.17.4 | `api/helpers/text.js` | None. |
 | @types/html-to-text, @types/sanitize-html, @types/web-push | dev | Types | Follow their packages. |
 
