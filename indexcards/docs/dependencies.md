@@ -95,7 +95,7 @@ Every package in `indexcards/package.json`, grouped by what it does, with what c
 |---|---|---|---|
 | typescript | dev ^7.0.2 | Build and typecheck | `schemats/` is on 6. |
 | tsx | dev ^4.19.2 | Dev server and scripts | None. |
-| vitest, @vitest/coverage-v8, @vitest/ui | dev ^5.0.1 | Tests, coverage, and the test UI | Same version for all three, matching the vitest packages in `schemats/`. |
+| vitest, @vitest/coverage-v8, @vitest/ui | dev ^5.1.0 | Tests, coverage, and the test UI | Same version for all three, matching the vitest packages in `schemats/`. |
 | supertest, @types/supertest | dev ^7.1.3, ^7.2.0 | Router tests | None. |
 | @faker-js/faker | dev ^10.2.0 | Test factories | None. |
 

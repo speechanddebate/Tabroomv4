@@ -72,7 +72,7 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| vitest, @vitest/browser, @vitest/browser-playwright, @vitest/coverage-v8 | dev ^5.0.1 | Unit and a11y projects, the a11y story run in Chromium, and coverage | Same version for all four, matching the vitest packages in `indexcards/`. `@storybook/addon-vitest` accepts vitest 4 and 5. |
+| vitest, @vitest/browser, @vitest/browser-playwright, @vitest/coverage-v8 | dev ^5.1.0 | Unit and a11y projects, the a11y story run in Chromium, and coverage | Same version for all four, matching the vitest packages in `indexcards/`. `@storybook/addon-vitest` accepts vitest 4 and 5. |
 | jsdom | dev ^29.0.1 | Unit test environment | None; vitest accepts any version. |
 | @testing-library/svelte | dev ^5.4.2 | Component tests | None. |
 | @testing-library/jest-dom | dev ^6.9.1 | DOM matchers, loaded through the `/vitest` entry in `config/testing/vitest-setup.ts` and the `tsconfig.json` `types` array | v7 needs `@testing-library/dom` 10, which is installed. |
