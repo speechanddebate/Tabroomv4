@@ -4,20 +4,20 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { randomUUID } from 'node:crypto';
 
-import config from './api/config.js';
+import config from './api/config.ts';
 import errorHandler from './api/helpers/errors/errorHandler.js';
-import { Authenticate } from './api/middleware/auth/authentication.js';
-import csrfMiddleware from './api/middleware/csrfMiddleware.js';
-import v1Router, { openApiSpec } from './api/routes/routers/v1/indexRouter.js';
-import { writeOpenApiSpec } from './api/routes/openapi/createOpenApiSpec.js';
-import { rateLimiterMiddleware } from './api/middleware/rateLimiter.js';
-import { db } from './api/data/database.js';
+import { Authenticate } from './api/middleware/auth/authentication.ts';
+import csrfMiddleware from './api/middleware/csrfMiddleware.ts';
+import v1Router, { openApiSpec } from './api/routes/routers/v1/indexRouter.ts';
+import { writeOpenApiSpec } from './api/routes/openapi/createOpenApiSpec.ts';
+import { rateLimiterMiddleware } from './api/middleware/rateLimiter.ts';
+import { db } from './api/data/database.ts';
 import { sql } from 'kysely';
 import logger, { setupRequest } from './api/helpers/logger.js';
-import { startQueues, startWorkers, stopQueues } from './api/services/queue/index.js';
-import { initWebPush } from './api/services/notifications/channels/webpush.js';
-import { closeMail } from './api/services/notifications/channels/email.js';
-import { onShutdown } from './api/helpers/shutdown.js';
+import { startQueues, startWorkers, stopQueues } from './api/services/queue/index.ts';
+import { initWebPush } from './api/services/notifications/channels/webpush.ts';
+import { closeMail } from './api/services/notifications/channels/email.ts';
+import { onShutdown } from './api/helpers/shutdown.ts';
 
 const app = express();
 

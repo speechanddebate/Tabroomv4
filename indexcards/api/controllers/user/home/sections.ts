@@ -1,5 +1,4 @@
 import type { CurrentBallot, Fine, HomeEntry, HomeJudge, HomePrefSheet, HomeRound, HomeSchool, HomeTab, Strike } from '@tabroom/types';
-import { groupBy } from '../../../helpers/objectify.js';
 import type ballotRepo from '../../../repos/ballotRepo.js';
 import type categoryRepo from '../../../repos/categoryRepo.js';
 import type entryRepo from '../../../repos/entryRepo.js';
@@ -77,8 +76,8 @@ export function buildEntries(tourn: { id: number; start: Date; end: Date; settin
 	const eventSettings = new Map(data.events.map((event) => [event.id, event.settings]));
 	const roundSettings = new Map(data.rounds.map((round) => [round.id, round.settings]));
 	const panelSettings = new Map(data.panels.map((panel) => [panel.id, panel.settings]));
-	const ballotsByPanel = groupBy(data.panelBallots, (row) => row.panel);
-	const scoresByPanel = groupBy(data.scores, (score) => score.panel);
+	const ballotsByPanel = Map.groupBy(data.panelBallots, (row) => row.panel);
+	const scoresByPanel = Map.groupBy(data.scores, (score) => score.panel);
 
 	return data.entries.filter((entry) => entry.tourn === tourn.id).map((entry) => {
 		const category = categoriesById.get(entry.category ?? 0);
@@ -204,11 +203,11 @@ export type SchoolSectionData = {
 export function buildSchools(tourn: { id: number; settings?: Settings }, data: SchoolSectionData): HomeSchool[] {
 	const eventsById = new Map(data.events.map((event) => [event.id, event]));
 	const categoriesById = new Map(data.categories.map((category) => [category.id, category]));
-	const entriesBySchool = groupBy(data.schoolEntries, (entry) => entry.school);
-	const judgesBySchool = groupBy(data.schoolJudges, (judge) => judge.school);
-	const studentsByEntry = groupBy(data.students, (student) => student.entry);
-	const cardsBySchool = groupBy(data.strikeCards, (card) => card.school);
-	const flipsBySchool = groupBy(data.flips.filter((row) => row.settings?.flip_at && isFlipOpen({
+	const entriesBySchool = Map.groupBy(data.schoolEntries, (entry) => entry.school);
+	const judgesBySchool = Map.groupBy(data.schoolJudges, (judge) => judge.school);
+	const studentsByEntry = Map.groupBy(data.students, (student) => student.entry);
+	const cardsBySchool = Map.groupBy(data.strikeCards, (card) => card.school);
+	const flipsBySchool = Map.groupBy(data.flips.filter((row) => row.settings?.flip_at && isFlipOpen({
 		round: row.roundSettings,
 		bye: row.bye,
 		status: flipStatus(row),
@@ -225,7 +224,7 @@ export function buildSchools(tourn: { id: number; settings?: Settings }, data: S
 		const active = entries.filter((entry) => entry.active === 1);
 
 		const Prefs: HomePrefSheet[] = [];
-		for (const [categoryId, categoryEntries] of groupBy(active, (entry) => eventsById.get(entry.event ?? 0)?.category ?? null)) {
+		for (const [categoryId, categoryEntries] of Map.groupBy(active, (entry) => eventsById.get(entry.event ?? 0)?.category ?? null)) {
 			const category = categoriesById.get(categoryId ?? 0);
 			const window = strikeWindow(category?.settings);
 			if (!category || !window) continue;

@@ -14,7 +14,7 @@
 	"compilerOptions": {
 		"module"          : "nodenext",
 		"moduleResolution": "nodenext",
-		"target"          : "es2022",
+		"target"          : "es2024",
 		"types"           : ["node", "vitest/globals"],
    		"outDir": "./dist",
 		"allowJs"         : true,
@@ -25,6 +25,8 @@
 		"skipLibCheck"    : true,
 		"removeComments": true,
 		"verbatimModuleSyntax": true,
+		"allowImportingTsExtensions": true,
+		"rewriteRelativeImportExtensions": true,
 		"declaration": true,
 		"declarationMap": true,
 	}

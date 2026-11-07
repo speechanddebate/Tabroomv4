@@ -22,7 +22,6 @@ import strikeRepo from '../../../repos/strikeRepo.js';
 import tabroomRepo from '../../../repos/tabroomRepo.js';
 import tournRepo from '../../../repos/tournRepo.js';
 import { buildCurrentBallots, CURRENT_BALLOT_SETTINGS, settingsById } from '../../../services/judges/currentBallots.js';
-import { groupBy } from '../../../helpers/objectify.js';
 import { compareTourns, homeWindow, isOnline, isRunning, paradigmReview, requiredQuizIds, rolesFor, sqlDatetime } from '../../../services/home/homeRules.js';
 import { getEntryPrepRooms, getSchoolRooms, getSectionRooms, getUtilityRooms } from '../../../services/onlineRooms/onlineRoomService.js';
 import { buildEntries, buildJudges, buildSchools, buildTab, type EntrySectionData, type JudgeSectionData, type SchoolSectionData, type TabSectionData } from './sections.js';
@@ -123,7 +122,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		panels: settingsById(panels),
 	});
 	// Each ballot's room as this person sees it, so the join button needs no request of its own
-	await Promise.all([...groupBy(currentBallots, (ballot) => ballot.tourn)].map(async ([tournId, ballots]) => {
+	await Promise.all([...Map.groupBy(currentBallots, (ballot) => ballot.tourn)].map(async ([tournId, ballots]) => {
 		const rooms = await getSectionRooms(db, tournId, ballots.map((ballot) => ballot.id), req.actor);
 		for (const ballot of ballots) ballot.Room = rooms.get(ballot.id)?.display ?? null;
 	}));
@@ -146,8 +145,8 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 	const schoolSection: SchoolSectionData = { now, schools, schoolEntries, schoolJudges, students, events, categories, strikeCards, fines, flips: schoolFlips };
 	const tabSection: TabSectionData = { permissions, schoolCounts, entryCounts, publishedTourns: new Set(publishedTourns.map((tourn) => tourn.id)) };
 
-	const eventsByTourn = groupBy(events, (event) => event.tourn);
-	const categoriesByTourn = groupBy(categories, (category) => category.tourn);
+	const eventsByTourn = Map.groupBy(events, (event) => event.tourn);
+	const categoriesByTourn = Map.groupBy(categories, (category) => category.tourn);
 
 	const cards: HomeTourn[] = [];
 	for (const tourn of tourns) {

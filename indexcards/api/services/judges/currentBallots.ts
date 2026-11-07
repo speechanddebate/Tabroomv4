@@ -1,7 +1,6 @@
 import type { CurrentBallot } from '@tabroom/types';
 import type ballotRepo from '../../repos/ballotRepo.js';
 import logger from '../../helpers/logger.js';
-import { groupBy } from '../../helpers/objectify.js';
 import { ballotStatus, decisionDeadline, flightNumber, isChair, isOn, judgesSeeRound, roundStart, sideLabel, sideNames, sideVisible } from '../ballots/ballotRules.js';
 import { flipStatus } from '../flips/flipRules.js';
 
@@ -39,7 +38,7 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 	const ballots: CurrentBallot[] = [];
 	const judged = rows.filter((row): row is JudgePanelRow & { judge: number; tourn: number } => row.judge !== null && row.tourn !== null && row.entryActive === 1);
 
-	for (const panelRows of groupBy(judged, (row) => `${row.panel}-${row.judge}`).values()) {
+	for (const panelRows of Map.groupBy(judged, (row) => `${row.panel}-${row.judge}`).values()) {
 		const first = panelRows[0];
 		const event = ctx.events.get(first.event);
 		const round = ctx.rounds.get(first.round);

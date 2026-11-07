@@ -6,7 +6,7 @@ Every package in `indexcards/package.json`, grouped by what it does, with what c
 
 | Package | Version | Purpose | Upgrade notes |
 |---|---|---|---|
-| Node.js | 24.13.1 | Runtime | Set by `engines` (`>= 24.13.1`), the `node:24.13.1` base images in `indexcards/Dockerfile`, `schemats/Dockerfile`, and the root `Dockerfile`, `@types/node`, and the deathstar deploy. `e2e/Dockerfile` uses the Playwright image, which bundles its own Node. Node 26 adds the built-in `Temporal` API, which covers everything luxon does here. |
+| Node.js | 24.13.1 | Runtime | Set by `engines` (`>= 24.13.1`), the `node:24.13.1` base images in `indexcards/Dockerfile`, `schemats/Dockerfile`, and the root `Dockerfile`, `@types/node`, and the deathstar deploy. `e2e/Dockerfile` uses the Playwright image, which bundles its own Node. TypeScript `target` follows the production Node: `es2024` in `indexcards/tsconfig.json` and `e2e/tsconfig.json` (which typechecks indexcards factories). On Node 26, raise both to `es2025`. Node 26 adds the built-in `Temporal` API, which covers everything luxon does here. |
 
 ## Web server and middleware
 

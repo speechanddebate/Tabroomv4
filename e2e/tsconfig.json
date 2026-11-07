@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
-		"target": "ES2022",
+		// At least indexcards' target: the tests import indexcards factories, so this config typechecks indexcards source
+		"target": "ES2024",
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"strict": true,

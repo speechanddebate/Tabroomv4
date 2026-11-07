@@ -1,5 +1,5 @@
 // import { showDateTime } from '../../../helpers/common.js';
-import { objectify, arrayify, objectStrip, objectifySettings, objectifyGroupSettings } from '../../../helpers/objectify.js';
+import { objectify, objectStrip, objectifySettings, objectifyGroupSettings } from '../../../helpers/objectify.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
 import BackupService from '../../../services/BackupService.js';
@@ -34,13 +34,13 @@ export async function backupTourn(req,res) {
 	);
 
 	// Circuits have a many to many join table so that's harder
-	tourn.circuits = arrayify((await sql`
+	tourn.circuits = (await sql`
 		select circuit.id
 			from circuit, tourn_circuit tc
 			where tc.tourn = ${req.params.tournId}
 			and tc.circuit = circuit.id
 		order by circuit.abbr
-	`.execute(kdb)).rows, 'id');
+	`.execute(kdb)).rows.map((row) => row.id);
 
 	// Protocols, formerly known as tiebreak sets.
 	const protocols = (await sql`

@@ -12,7 +12,6 @@ import panelRepo from '../../repos/panelRepo.js';
 import permissionRepo from '../../repos/permissionRepo.js';
 import schoolRepo from '../../repos/schoolRepo.js';
 import tournRepo from '../../repos/tournRepo.js';
-import { groupBy } from '../../helpers/objectify.js';
 import { isOn } from '../ballots/ballotRules.js';
 import { campusServer, campusUuid, signCampusToken } from './campus.js';
 
@@ -152,8 +151,8 @@ export async function getSectionRooms(db: Database, tournId: number, sectionIds:
 		panelRepo.getPanelJudges(db, panelIds),
 		panelRepo.getPanelEntryStudents(db, panelIds),
 	]);
-	const judgesByPanel = groupBy(judges, judge => judge.panel);
-	const studentsByPanel = groupBy(entryStudents, student => student.panel);
+	const judgesByPanel = Map.groupBy(judges, judge => judge.panel);
+	const studentsByPanel = Map.groupBy(entryStudents, student => student.panel);
 
 	const sections = [...contexts.values()].map((room, i) => {
 		const students = studentsByPanel.get(room.panelId) ?? [];

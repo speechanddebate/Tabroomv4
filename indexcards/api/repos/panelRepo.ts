@@ -6,7 +6,6 @@ import { sql } from 'kysely';
 import type { Panel } from '../data/schema.js';
 import { flightNumber, roundStart, sideNames } from '../services/ballots/ballotRules.js';
 import { parseFlip } from '../services/flips/flipRules.js';
-import { groupBy } from '../helpers/objectify.js';
 
 type queryOpts = {
 	settings?: boolean | string[];
@@ -65,7 +64,7 @@ async function getMeetings(db: Database, ids: number[]) {
 		.execute();
 
 	// only panels with two entries have meetings
-	const pairs = new Map([...groupBy(current, row => row.panel)]
+	const pairs = new Map([...Map.groupBy(current, row => row.panel)]
 		.map(([panel, rows]) => [panel, new Set(rows.map(row => row.entry))] as const)
 		.filter(([, entries]) => entries.size === 2));
 
