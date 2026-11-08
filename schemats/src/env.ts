@@ -32,6 +32,11 @@ export const variables = defineEnvVars({
 		schema: z.stringbool().default(true),
 		description: 'Whether pages still in development return a 404. default: true',
 	},
+	HOME_FEATURES: {
+		public: true,
+		schema: z.string().default(''),
+		description: 'Comma list of user home features still in development to show, or "all". Names in src/routes/user/home/features.ts. default: none',
+	},
 	// LOGGING
 	LOG_LEVEL: {
 		schema: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

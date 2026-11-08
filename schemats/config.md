@@ -24,6 +24,7 @@ Examples of defaults currently provided:
 - `LOG_LEVEL` defaults to `info`
 - `LOGGING_FILE_MAXSIZE` defaults to `2097152`
 - `LOGGING_FILE_MAXFILES` defaults to `5`
+- `HOME_FEATURES` defaults to empty: no in-development user home features shown. Set it to `all` locally; the names are in `src/routes/user/home/features.ts`
 
 ## Important: VITE vars are separate
 

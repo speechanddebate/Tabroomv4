@@ -5,6 +5,7 @@
 import type { CurrentBallot, HomeJudge, HomeTourn, OnlineRoom } from '@tabroom/types';
 import { CLASSIC_URL } from '$app/env/public';
 import { parseDateTime, showDateTime, showTime } from '$lib/helpers/dt';
+import { isEnabled } from './features';
 
 export type Phase = 'running' | 'upcoming' | 'past';
 
@@ -215,10 +216,10 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 	const tasks: Task[] = [];
 
 	for (const judge of tourn.Judges) {
-		tasks.push(...openBallots(judge.CurrentBallots, now).map(ballot => ballotTask(ballot, tourn.tz, personTz, now)));
+		if (isEnabled('ballots')) tasks.push(...openBallots(judge.CurrentBallots, now).map(ballot => ballotTask(ballot, tourn.tz, personTz, now)));
 
 		// The server lists a standby until its timeslot ends; nothing to open, just be ready
-		tasks.push(...judge.Standbys.map(standby => ({
+		if (isEnabled('standby')) tasks.push(...judge.Standbys.map(standby => ({
 			tone  : 'due' as const,
 			title : `On standby for ${standby.Timeslot.name}`,
 			when  : `${dueText(standby.Timeslot.start, tourn.tz, now)} to ${showTime({ dtISO: standby.Timeslot.end, tz: tourn.tz })}`,
@@ -229,7 +230,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 			].filter(Boolean),
 		})));
 
-		if (judge.Training && phase !== 'past') {
+		if (isEnabled('training') && judge.Training && phase !== 'past') {
 			tasks.push({
 				tone   : 'due',
 				title  : `Complete a training ballot${tourn.Judges.length > 1 ? ` for ${judge.Category.abbr ?? judge.Category.name}` : ''}`,
@@ -237,14 +238,14 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 				action : { label: 'Start training', href: classic.training(judge.Training.event, judge.id) },
 			});
 		}
-		const quiz = phase === 'past' ? null : quizTask(judge, phase, tourn.Judges.length > 1);
+		const quiz = phase === 'past' || !isEnabled('questionnaires') ? null : quizTask(judge, phase, tourn.Judges.length > 1);
 		if (quiz) tasks.push(quiz);
 	}
 
 	for (const entry of tourn.Entries) {
 		for (const round of entry.Rounds) {
 			const flip = round.Panel.Flip;
-			if (!flip || flip.deadline < now || flip.turn === 'theirs') continue;
+			if (!isEnabled('flips') || !flip || flip.deadline < now || flip.turn === 'theirs') continue;
 			const choice = flip.teamOrder ? 'a side or speaking order' : 'a side';
 			tasks.push({
 				tone   : 'due',
@@ -256,7 +257,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 				action : { label: 'Choose side', href: classic.flip() },
 			});
 		}
-		if (entry.Prefs?.end && isOpen(entry.Prefs, now)) {
+		if (isEnabled('prefs') && entry.Prefs?.end && isOpen(entry.Prefs, now)) {
 			tasks.push({
 				tone   : 'due',
 				title  : `Judge prefs are open for ${entry.Event.abbr ?? entry.code}`,
@@ -267,7 +268,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 	}
 
 	for (const school of tourn.Schools) {
-		for (const sheet of school.Prefs.filter(sheet => isOpen(sheet, now))) {
+		for (const sheet of school.Prefs.filter(sheet => isEnabled('prefs') && isOpen(sheet, now))) {
 			tasks.push({
 				tone   : 'due',
 				title  : `Judge prefs are open for ${sheet.Category.abbr ?? sheet.Category.name}`,
@@ -278,7 +279,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 		}
 		if (school.access !== 'full') continue;
 
-		if (school.Signups.length > 0) {
+		if (isEnabled('signups') && school.Signups.length > 0) {
 			const names = school.Signups.map(signup => `${signup.Student.first ?? ''} ${signup.Student.last ?? ''} in ${signup.Event.abbr ?? 'an event'}`.trim());
 			tasks.push({
 				tone   : 'due',
@@ -289,7 +290,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 		}
 
 		const cards = school.StrikeCards.filter(card => !card.due || card.due > now);
-		if (cards.length > 0) {
+		if (isEnabled('strikeCards') && cards.length > 0) {
 			const first = cards.map(card => card.due).filter(Boolean).sort()[0];
 			tasks.push({
 				tone       : 'due',
@@ -301,7 +302,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 			});
 		}
 
-		if (school.Onsite?.end && !school.onsite && isOpen(school.Onsite, now)) {
+		if (isEnabled('onsite') && school.Onsite?.end && !school.onsite && isOpen(school.Onsite, now)) {
 			tasks.push({
 				tone   : 'alert',
 				title  : tourn.Schools.length > 1 ? `Check in ${school.name}` : 'Check in your school',
@@ -311,7 +312,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 			});
 		}
 
-		if (phase === 'upcoming' && isOpen({ start: tourn.reg_start, end: tourn.reg_end }, now)) {
+		if (isEnabled('registration') && phase === 'upcoming' && isOpen({ start: tourn.reg_start, end: tourn.reg_end }, now)) {
 			// A school with no entries yet still owes registration; one with entries just has the option to change them
 			tasks.push({
 				tone   : school.Counts.entries > 0 ? 'info' : 'due',

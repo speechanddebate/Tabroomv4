@@ -1,13 +1,16 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/env/public', () => ({ CLASSIC_URL: 'https://classic.example.com' }));
+vi.mock('$app/env/public', () => ({ CLASSIC_URL: 'https://classic.example.com', HOME_FEATURES: 'all' }));
 
 import type { CurrentBallot, HomeRound } from '@tabroom/types';
 import * as fx from '../../../storybook/stories/routes/user/home/fixtures';
+import { homeFeatureNames, setHomeFeatures, type HomeFeature } from './features';
 import { dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
 
 const titles = (tourn: Parameters<typeof homeTasks>[0], now = fx.now) => homeTasks(tourn, now).map(task => task.title);
 const toneOf = (tourn: Parameters<typeof homeTasks>[0], title: string, now = fx.now) => homeTasks(tourn, now).find(task => task.title.startsWith(title))?.tone;
+
+beforeEach(() => setHomeFeatures('all'));
 
 describe('phaseOf', () => {
 	it('splits on start and end', () => {
@@ -251,6 +254,41 @@ describe('homeTasks', () => {
 	it('owes nothing at a finished tournament', () => {
 		expect(titles(fx.cypressCoachJudge)).toEqual([]);
 		expect(titles(fx.cypressCompetitor)).toEqual([]);
+	});
+});
+
+describe('feature flags', () => {
+	// each flag, a tourn whose tasks include its row, and how that row's title starts
+	const rows: [HomeFeature, Parameters<typeof homeTasks>[0], string, string][] = [
+		['ballots', fx.bluebonnetCoachJudge, fx.now, 'Round 3 LD'],
+		['standby', fx.bluebonnetStandbyTraining, fx.now, 'On standby'],
+		['training', fx.bluebonnetStandbyTraining, fx.now, 'Complete a training ballot'],
+		['questionnaires', fx.bluebonnetCoachJudge, fx.now, '1 of 3 questionnaires'],
+		['flips', fx.bluebonnetCompetitor, fx.now, 'Flip for round 3'],
+		['prefs', fx.gulfCoastCoachJudge, fx.now, 'Judge prefs are open'],
+		['signups', fx.gulfCoastCoachJudge, fx.now, '2 student signups'],
+		['strikeCards', fx.bluebonnetCoachJudge, fx.now, '2 strike cards open'],
+		['onsite', fx.gulfCoastCoachJudge, '2026-11-20T13:00:00Z', 'Check in your school'],
+		['registration', fx.gulfCoastCoachJudge, fx.now, 'Registration closes'],
+	];
+
+	it.each(rows)('%s off drops its row and nothing else', (flag, tourn, now, title) => {
+		const all = titles(tourn, now);
+		expect(all.some(task => task.startsWith(title))).toBe(true);
+		setHomeFeatures(homeFeatureNames.filter(name => name !== flag));
+		expect(titles(tourn, now)).toEqual(all.filter(task => !task.startsWith(title)));
+	});
+
+	it('prefs covers the entry and the prefs-only coach too', () => {
+		setHomeFeatures([]);
+		expect(titles(fx.gulfCoastCompetitor)).toEqual([]);
+		expect(titles(fx.gulfCoastPrefsOnly)).toEqual([]);
+	});
+
+	it('owes nothing with every flag off', () => {
+		setHomeFeatures([]);
+		expect(titles(fx.bluebonnetCoachJudge)).toEqual([]);
+		expect(titles(fx.gulfCoastCoachJudge)).toEqual([]);
 	});
 });
 
