@@ -43,6 +43,6 @@ export interface HomeFullSchool {
 	StrikeCards: HomeFullSchoolStrikeCardsItem[];
 	/** Coin flips open to the school's entries */
 	Flips: HomeFullSchoolFlips;
-	/** Every fine billed to the school, judge fines included */
+	/** Judge fines billed to the school for its judges' missed rounds and revoked bonds; school fees are not included */
 	Fines: Fine[];
 }

@@ -18,7 +18,6 @@ export const homeFeatureNames = [
 	'registration',
 	'judgeFacts',
 	'conflicts',
-	'fines',
 	'rounds',
 	'results',
 	'tab',

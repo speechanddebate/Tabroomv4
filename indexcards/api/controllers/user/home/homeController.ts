@@ -93,7 +93,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		ballotRepo.getJudgeBallotCounts(db, { judges: judgeIds }),
 		strikeRepo.getJudgeStrikes(db, { judges: judgeIds }),
 		ballotRepo.getJudgePanels(db, { judges: judges.filter((judge) => judge.tourn !== null && runningTourns.has(judge.tourn)).map((judge) => judge.id) }),
-		fineRepo.getFines(db, { person: person.id, tourns: tournIds, judges: judgeIds, schools: fullSchoolIds }),
+		fineRepo.getFines(db, { tourns: tournIds, judges: judgeIds, schools: fullSchoolIds, judgeFines: true }),
 		ballotRepo.getEntryRounds(db, { entries: entries.filter((entry) => tourns.some((tourn) => tourn.id === entry.tourn && tourn.start <= now)).map((entry) => entry.id) }),
 		entryRepo.getEntries(db, { schools: schools.map((school) => school.id) }),
 		judgeRepo.getJudges(db, { schools: fullSchoolIds }),
@@ -124,7 +124,6 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 
 	const judgeSection: JudgeSectionData = {
 		now,
-		person: person.id,
 		judges,
 		pools,
 		counts,

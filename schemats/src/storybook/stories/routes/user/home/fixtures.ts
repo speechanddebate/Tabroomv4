@@ -430,11 +430,10 @@ const parts: Record<Phase, Record<HomeRole, RolePart>> = {
 					{ round: 7731, Round: { name: 8, label: 'PF Quarters' }, due: '2026-11-07T18:30:00Z' },
 					{ round: 7741, Round: { name: 8, label: 'LD Quarters' }, due: '2026-11-07T18:30:00Z' },
 				],
-				// Newest first; judge fines name the judge, Avery's own included
+				// Newest first; the coach view names the judge, Avery's own included
 				Fines       : [
 					fine(8803, 50, 'Did not judge round 2', '2026-11-07T14:50:00Z', sam),
 					fine(8801, 50, 'Did not judge round 1', '2026-11-06T23:45:00Z', avery),
-					fine(8802, 25, 'Lakeside RW dropped from Public Forum Debate after the deadline', '2026-11-06T22:10:00Z'),
 				],
 			})],
 		},

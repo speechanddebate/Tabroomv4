@@ -130,8 +130,8 @@
 		<ul class="flex flex-col gap-1 text-sm">
 			{#each rows as fine (fine.id)}
 				<li>
-					<span class="font-semibold text-danger">{fine.currency ?? '$'}{fine.amount ?? 0}</span>
-					{named && fine.Judge ? `${fine.Judge.first ?? ''} ${fine.Judge.last ?? ''}: ` : ''}{fine.reason ?? 'Fine'}.
+					{#if fine.amount !== null}<span class="font-semibold text-danger">{fine.currency ?? '$'}{fine.amount}</span>{/if}
+					{named && (fine.Judge?.first || fine.Judge?.last) ? `${[fine.Judge.first, fine.Judge.last].filter(Boolean).join(' ')}: ` : ''}{fine.reason ?? 'Fine'}.
 					<span class="text-muted">Billed to {fine.schoolName ?? 'your school'} on {showDateTime({ dtISO: fine.leviedAt, tz: tourn.tz, format: 'medium', joinWord: 'at' })}.</span>
 				</li>
 			{/each}
@@ -293,7 +293,7 @@
 						{#if tourn.Schools.length > 1}<div class={subhead}>{school.name}</div>{/if}
 						<Facts facts={coachFacts(school)} />
 					</div>
-					<!-- Every fine billed to the school, judge fines included -->
+					<!-- Only judge fines; school fees stay on the classic fees page -->
 					{#if school.Fines.length > 0}{@render fines(school.Fines, true)}{/if}
 					<div class="flex flex-wrap gap-2">
 						{#each coachActions(school) as action (action.label)}

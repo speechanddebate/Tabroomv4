@@ -181,8 +181,10 @@ describe('GET /user/home', () => {
 			const done = await factories.panel.create({ round: tourn.Round.id });
 			for (const side of [1, 2]) await factories.ballot.create({ panel: done.id, judge: Judge.id, entry: (await factories.entry.create({ event: tourn.Event.id })).id, side, audit: 1 });
 			const mine = await factories.fine.create({ tourn: tourn.Tourn.id, judge: Judge.id, school: School.id, amount: 25 });
-			const personal = await factories.fine.create({ tourn: tourn.Tourn.id, person: personId, school: School.id });
+			// a school fee that names the person, another judge's fine, and a deleted fine of their own
+			await factories.fine.create({ tourn: tourn.Tourn.id, person: personId, school: School.id });
 			await factories.fine.create({ tourn: tourn.Tourn.id, judge: Other.id, school: School.id });
+			await factories.fine.create({ tourn: tourn.Tourn.id, judge: Judge.id, school: School.id, deleted: 1 });
 
 			const res = await home(userkey);
 
@@ -211,8 +213,7 @@ describe('GET /user/home', () => {
 			});
 			expect(judge.CurrentBallots.map((ballot: { id: number }) => ballot.id)).toEqual([open.id]);
 			expect(judge.CurrentBallots[0].Room).toBeNull();
-			expect(judge.Fines.map((fine: { id: number }) => fine.id).sort()).toEqual([mine.id, personal.id].sort());
-			expect(judge.Fines.find((fine: { id: number }) => fine.id === mine.id)).toMatchObject({ amount: 25, currency: '€', judge: Judge.id, Judge: { first: Judge.first, last: Judge.last } });
+			expect(judge.Fines).toEqual([expect.objectContaining({ id: mine.id, amount: 25, currency: '€', judge: Judge.id, Judge: { first: Judge.first, last: Judge.last } })]);
 		});
 
 		it("gives pools their site and message, and lists standby pools until their timeslot ends", async () => {
@@ -547,9 +548,11 @@ describe('GET /user/home', () => {
 			const elim = await factories.round.create({ event: tourn.Event.id, timeslot: tourn.Timeslot.id, name: 5, label: 'Quarters', published: 2, settings: { strikes_published: 1, strikes_due: new Date('2026-03-01T12:00:00Z') } });
 			const panel = await factories.panel.create({ round: elim.id });
 			await factories.ballot.create({ panel: panel.id, entry: first.id });
-			const judgeFine = await factories.fine.create({ tourn: tourn.Tourn.id, school: School.id, judge: Judge.id });
-			const schoolFine = await factories.fine.create({ tourn: tourn.Tourn.id, school: School.id });
-			await factories.fine.create({ tourn: tourn.Tourn.id, school: otherSchool.id });
+			const judgeFine = await factories.fine.create({ tourn: tourn.Tourn.id, school: School.id, judge: Judge.id, amount: null });
+			// school fees (the school's own and a payment) and another school's judge fine stay off the card
+			await factories.fine.create({ tourn: tourn.Tourn.id, school: School.id });
+			await factories.fine.create({ tourn: tourn.Tourn.id, school: School.id, payment: 1, amount: -50 });
+			await factories.fine.create({ tourn: tourn.Tourn.id, school: otherSchool.id, judge: (await factories.person.createJudge({ Judge: { category: tourn.Category.id, school: otherSchool.id } })).Judge.id });
 
 			const res = await home(userkey);
 
@@ -568,9 +571,8 @@ describe('GET /user/home', () => {
 				Onsite: { start: '2026-03-01T07:00:00.000Z', end: '2026-03-01T09:00:00.000Z' },
 				StrikeCards: [{ round: elim.id, Round: { name: 5, label: 'Quarters' }, due: '2026-03-01T12:00:00.000Z' }],
 				Flips: { open: 0, deadline: null },
-				Fines: expect.arrayContaining([expect.objectContaining({ id: judgeFine.id, judge: Judge.id }), expect.objectContaining({ id: schoolFine.id })]),
+				Fines: [expect.objectContaining({ id: judgeFine.id, judge: Judge.id, amount: null, Judge: { first: Judge.first, last: Judge.last } })],
 			}]);
-			expect(card.Schools[0].Fines).toHaveLength(2);
 		});
 
 		it("counts the open flips of the school's entries only, with the earliest deadline", async () => {

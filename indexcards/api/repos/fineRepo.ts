@@ -4,6 +4,18 @@ type queryOpts = {
 	tourns?: number[];
 	/** include fines that were deleted */
 	deleted?: boolean;
+	/**
+	 * only fines assessed against a judge (no-show and bond revocations). Classic sets fine.judge
+	 * nowhere else; the rest of the table is school fees and payments
+	 */
+	judgeFines?: boolean;
+	/**
+	 * who may see the fine. Unlike the other repos these three are ORed, not ANDed: a fine is
+	 * visible when it names the person, one of their judges, or one of the schools they coach
+	 */
+	person?: number;
+	judges?: number[];
+	schools?: number[];
 };
 
 function buildFineQuery(db: Database, opts: queryOpts = {}) {
@@ -11,15 +23,19 @@ function buildFineQuery(db: Database, opts: queryOpts = {}) {
 
 	if (opts.tourns) query = query.where('fine.tourn', 'in', opts.tourns);
 	if (!opts.deleted) query = query.where('fine.deleted', '=', 0);
+	if (opts.judgeFines) query = query.where('fine.judge', 'is not', null);
+	if (opts.person !== undefined || opts.judges || opts.schools) {
+		query = query.where((eb) => eb.or([
+			...(opts.person === undefined ? [] : [eb('fine.person', '=', opts.person)]),
+			...(opts.judges ? [eb('fine.judge', 'in', opts.judges)] : []),
+			...(opts.schools ? [eb('fine.school', 'in', opts.schools)] : []),
+		]));
+	}
 
 	return query;
 }
 
-/**
- * The fines a person may see: their own, those assessed against their judges, and every
- * fine billed to the schools they coach. Pass the judge and school ids the person holds
- */
-async function getFines(db: Database, opts: queryOpts & { person: number; judges?: number[]; schools?: number[] }) {
+async function getFines(db: Database, opts: queryOpts = {}) {
 	return await buildFineQuery(db, opts)
 		.innerJoin('tourn', 'tourn.id', 'fine.tourn')
 		.leftJoin('school', 'fine.school', 'school.id')
@@ -42,11 +58,6 @@ async function getFines(db: Database, opts: queryOpts & { person: number; judges
 			'judge.first as judgeFirst',
 			'judge.last as judgeLast',
 		])
-		.where((eb) => eb.or([
-			eb('fine.person', '=', opts.person),
-			eb('fine.judge', 'in', opts.judges ?? []),
-			eb('fine.school', 'in', opts.schools ?? []),
-		]))
 		.execute();
 }
 

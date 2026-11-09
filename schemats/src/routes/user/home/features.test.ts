@@ -19,19 +19,19 @@ describe('parseHomeFeatures', () => {
 	});
 
 	it('turns everything on with "all"', () => {
-		expect(parseHomeFeatures('fines,all')).toEqual(new Set(homeFeatureNames));
+		expect(parseHomeFeatures('prefs,all')).toEqual(new Set(homeFeatureNames));
 	});
 });
 
 describe('isEnabled', () => {
 	it('starts from the env', () => {
 		expect(isEnabled('standby')).toBe(true);
-		expect(isEnabled('fines')).toBe(false);
+		expect(isEnabled('prefs')).toBe(false);
 	});
 
 	it('follows setHomeFeatures', () => {
-		setHomeFeatures(['fines']);
-		expect(isEnabled('fines')).toBe(true);
+		setHomeFeatures(['prefs']);
+		expect(isEnabled('prefs')).toBe(true);
 		expect(isEnabled('standby')).toBe(false);
 		setHomeFeatures('all');
 		expect(homeFeatureNames.every(isEnabled)).toBe(true);

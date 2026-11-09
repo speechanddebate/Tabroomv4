@@ -65,6 +65,6 @@ export interface HomeJudge {
 	Quizzes: HomeJudgeQuizzesItem[];
 	/** The open panels the judge sits on, at running tournaments */
 	CurrentBallots: CurrentBallot[];
-	/** Fines assessed against this judge */
+	/** Judge fines assessed against this judge: missed rounds and revoked bonds, never school fees */
 	Fines: Fine[];
 }

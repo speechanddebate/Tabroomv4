@@ -104,7 +104,7 @@ export const HomeJudgeSchema = z.object({
 		}).strict().nullable().meta({ description: "The person's attempt, if any" }),
 	}).strict()).meta({ description: 'Questionnaires the judge must complete before judging' }),
 	CurrentBallots: z.array(CurrentBallotSchema).meta({ description: 'The open panels the judge sits on, at running tournaments' }),
-	Fines: z.array(FineSchema).meta({ description: 'Fines assessed against this judge' }),
+	Fines: z.array(FineSchema).meta({ description: 'Judge fines assessed against this judge: missed rounds and revoked bonds, never school fees' }),
 }).strict().meta({
 	id: 'HomeJudge',
 	description: "One of the person's judge rows at a tournament",
@@ -268,7 +268,7 @@ export const HomeFullSchoolSchema = z.object({
 		open: z.int(),
 		deadline: z.iso.datetime().nullable().meta({ description: 'The earliest deadline among them' }),
 	}).strict().meta({ description: "Coin flips open to the school's entries" }),
-	Fines: z.array(FineSchema).meta({ description: 'Every fine billed to the school, judge fines included' }),
+	Fines: z.array(FineSchema).meta({ description: "Judge fines billed to the school for its judges' missed rounds and revoked bonds; school fees are not included" }),
 }).strict().meta({
 	id: 'HomeFullSchool',
 	description: 'A school the person coaches',

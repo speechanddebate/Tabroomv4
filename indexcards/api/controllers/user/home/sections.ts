@@ -39,7 +39,6 @@ export function toFine(row: Rows<typeof fineRepo.getFines>[number]): Fine {
 
 export type JudgeSectionData = {
 	now: Date;
-	person: number;
 	judges: Rows<typeof judgeRepo.getPersonJudges>;
 	pools: Rows<typeof jpoolRepo.getJudgePools>;
 	counts: Awaited<ReturnType<typeof ballotRepo.getJudgeBallotCounts>>;
@@ -362,9 +361,7 @@ export function buildJudges(tourn: { id: number; start: Date; end: Date }, data:
 				})),
 			Quizzes: judgeQuizzes(requirements, data.quizzes, data.attempts),
 			CurrentBallots: running ? data.currentBallots.filter((ballot) => ballot.JudgeId === judge.id) : [],
-			Fines: data.fines
-				.filter((fine) => fine.judge === judge.id || (fine.judge === null && fine.person === data.person && fine.tourn === tourn.id))
-				.map(toFine),
+			Fines: data.fines.filter((fine) => fine.judge === judge.id).map(toFine),
 		};
 	});
 }
