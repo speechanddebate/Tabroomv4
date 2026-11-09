@@ -1424,6 +1424,10 @@ export const getRestJudgesConflictsResponseMock = (
 		]),
 		EnteredBy: faker.helpers.arrayElement([
 			{
+				role: faker.helpers.arrayElement([
+					'tab',
+					'registrant',
+				] as const),
 				first: faker.helpers.arrayElement([
 					faker.string.alpha({ length: { min: 10, max: 20 } }),
 					null,
@@ -1578,6 +1582,7 @@ export const getRestJudgesConflictAddResponseMock = (
 	]),
 	EnteredBy: faker.helpers.arrayElement([
 		{
+			role: faker.helpers.arrayElement(['tab', 'registrant'] as const),
 			first: faker.helpers.arrayElement([
 				faker.string.alpha({ length: { min: 10, max: 20 } }),
 				null,

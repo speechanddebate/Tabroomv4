@@ -64,6 +64,15 @@ export const classic = {
 	confirmEmail   : () => `${CLASSIC_URL}/user/login/confirm.mhtml`,
 };
 
+/**
+ * Where the card's "Add conflicts" goes: the beta sheet once it's on, else classic's. A category
+ * that doesn't take judge conflicts still gets the link, to the account-wide list.
+ */
+export function conflictsHref(judge: Pick<HomeJudge, 'id' | 'tournConflicts'>): string {
+	if (!judge.tournConflicts) return classic.standingConflicts();
+	return isEnabled('conflictSheet') ? `/user/judge/conflicts?judge=${judge.id}` : classic.conflicts(judge.id);
+}
+
 // Time rules read the browser clock; ballots don't, since the server decides which are current.
 // `now` is a parameter so tests can pin it.
 export function phaseOf(tourn: Pick<HomeTourn, 'start' | 'end'>, now = new Date().toISOString()): Phase {

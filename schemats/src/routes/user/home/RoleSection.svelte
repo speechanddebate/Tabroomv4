@@ -8,7 +8,7 @@
 	import { showDateTime, showTime } from '$lib/helpers/dt';
 	import Facts, { type Fact } from '$lib/components/Facts.svelte';
 	import ItemList from './ItemList.svelte';
-	import { classic, dueText, feedbackItems, phaseOf, quizItems, quizState, roundLabel, type Tone } from './tasks';
+	import { classic, conflictsHref, dueText, feedbackItems, phaseOf, quizItems, quizState, roundLabel, type Tone } from './tasks';
 
 	// The card's tab names the category or school, so a block gets its own heading only when there are several
 	const { tourn, role }: { tourn: HomeTourn, role: HomeRole } = $props();
@@ -168,8 +168,7 @@
 							<div>
 								<div class="flex items-baseline justify-between gap-2">
 									<div class={subhead}>Your conflicts</div>
-									<!-- A category that doesn't take judge conflicts still gets the link, to the account-wide list -->
-									<a class={link} href={judge.tournConflicts ? classic.conflicts(judge.id) : classic.standingConflicts()}>Add conflicts</a>
+									<a class={link} href={conflictsHref(judge)}>Add conflicts</a>
 								</div>
 								{#if judge.Strikes.length > 0}
 									<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">

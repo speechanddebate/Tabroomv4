@@ -152,6 +152,7 @@ export * from './inboxMessageTourn';
 export * from './inboxUnreadCount';
 export * from './judgeConflict';
 export * from './judgeConflictEnteredBy';
+export * from './judgeConflictEnteredByRole';
 export * from './judgeConflictEntry';
 export * from './judgeConflictEntryEvent';
 export * from './judgeConflictRegion';

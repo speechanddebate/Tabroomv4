@@ -54,20 +54,23 @@
 
 {#if selected}
 	<div class="mb-2 flex flex-wrap items-center gap-2" role="search">
-		<label class="text-xs font-semibold" for="{id}-column">Search by</label>
-		<select
-			id="{id}-column"
-			class="rounded border border-border-strong bg-surface px-2 py-1 text-sm"
-			onchange={pickColumn}
-			value={selected.id}
-		>
-			{#each columns as column (column.id)}
-				<option value={column.id}>{column.label}</option>
-			{/each}
-		</select>
+		<!-- a lone searchable column needs no picker; the input's label names it -->
+		{#if columns.length > 1}
+			<label class="text-xs font-semibold" for="{id}-column">Search by</label>
+			<select
+				id="{id}-column"
+				class="rounded border border-border-strong bg-surface py-1 pr-8 pl-2 text-sm"
+				onchange={pickColumn}
+				value={selected.id}
+			>
+				{#each columns as column (column.id)}
+					<option value={column.id}>{column.label}</option>
+				{/each}
+			</select>
+		{/if}
 		{#if selected.options}
 			<select
-				class="rounded border border-border-strong bg-surface px-2 py-1 text-sm"
+				class="rounded border border-border-strong bg-surface py-1 pr-8 pl-2 text-sm"
 				aria-label="{selected.label} value"
 				onchange={search}
 				bind:value

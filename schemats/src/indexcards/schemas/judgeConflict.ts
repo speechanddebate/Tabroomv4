@@ -25,7 +25,7 @@ export interface JudgeConflict {
 	School: JudgeConflictSchool;
 	region: number | null;
 	Region: JudgeConflictRegion;
-	/** The person who recorded it; null when classic wrote the row without one */
+	/** Who recorded it, named only for a registrant; null when classic wrote the row without a person */
 	EnteredBy: JudgeConflictEnteredBy;
 	/** Whether the caller may remove it: rows they entered, and rows declared from the judge's side */
 	removable: boolean;

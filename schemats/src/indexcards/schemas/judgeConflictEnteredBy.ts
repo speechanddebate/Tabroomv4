@@ -5,11 +5,14 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
+import type { JudgeConflictEnteredByRole } from './judgeConflictEnteredByRole';
 
 /**
- * The person who recorded it; null when classic wrote the row without one
+ * Who recorded it, named only for a registrant; null when classic wrote the row without a person
  */
 export type JudgeConflictEnteredBy = {
+	/** tab: tournament staff, whose name is withheld; registrant: the judge, a coach, or a standing conflict */
+	role: JudgeConflictEnteredByRole;
 	/** @nullable */
 	first: string | null;
 	/** @nullable */

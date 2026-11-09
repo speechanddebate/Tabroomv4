@@ -28,9 +28,10 @@ export const JudgeConflictSchema = z.object({
 	region: RegionSchema.shape.id.nullable(),
 	Region: RegionRef.nullable(),
 	EnteredBy: z.object({
+		role: z.enum(['tab', 'registrant']).meta({ description: 'tab: tournament staff, whose name is withheld; registrant: the judge, a coach, or a standing conflict' }),
 		first: z.string().nullable(),
 		last: z.string().nullable(),
-	}).strict().nullable().meta({ description: 'The person who recorded it; null when classic wrote the row without one' }),
+	}).strict().nullable().meta({ description: 'Who recorded it, named only for a registrant; null when classic wrote the row without a person' }),
 	removable: z.boolean().meta({ description: 'Whether the caller may remove it: rows they entered, and rows declared from the judge\'s side' }),
 }).strict().meta({
 	id: 'JudgeConflict',

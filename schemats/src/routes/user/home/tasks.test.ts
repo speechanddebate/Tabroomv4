@@ -5,7 +5,7 @@ vi.mock('$app/env/public', () => ({ CLASSIC_URL: 'https://classic.example.com', 
 import type { CurrentBallot, HomeRound } from '@tabroom/types';
 import * as fx from '../../../storybook/stories/routes/user/home/fixtures';
 import { homeFeatureNames, setHomeFeatures, type HomeFeature } from './features';
-import { dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
+import { conflictsHref, dueText, feedbackItems, homeTasks, openBallots, phaseOf, quizState } from './tasks';
 
 const titles = (tourn: Parameters<typeof homeTasks>[0], now = fx.now) => homeTasks(tourn, now).map(task => task.title);
 const toneOf = (tourn: Parameters<typeof homeTasks>[0], title: string, now = fx.now) => homeTasks(tourn, now).find(task => task.title.startsWith(title))?.tone;
@@ -288,6 +288,18 @@ describe('feature flags', () => {
 		setHomeFeatures([]);
 		expect(titles(fx.bluebonnetCoachJudge)).toEqual(['Round 3 LD starts at 11:00 AM']);
 		expect(titles(fx.gulfCoastCoachJudge)).toEqual([]);
+	});
+});
+
+describe('conflictsHref', () => {
+	it('goes to the beta sheet when the category takes judge conflicts, else to the account-wide list', () => {
+		expect(conflictsHref({ id: 701, tournConflicts: true })).toBe('/user/judge/conflicts?judge=701');
+		expect(conflictsHref({ id: 701, tournConflicts: false })).toBe('https://classic.example.com/user/judge/conflicts.mhtml');
+	});
+
+	it("keeps classic's sheet until the page is on", () => {
+		setHomeFeatures([]);
+		expect(conflictsHref({ id: 701, tournConflicts: true })).toBe('https://classic.example.com/user/judge/judge_conflicts.mhtml?judge_id=701');
 	});
 });
 

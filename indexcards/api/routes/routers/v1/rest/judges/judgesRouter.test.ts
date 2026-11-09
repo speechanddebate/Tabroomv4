@@ -173,11 +173,11 @@ describe('GET /rest/judges/:judgeId/conflicts', () => {
 			{
 				id: mine.id, type: 'entry', entry: s.marked.id, Entry: { id: s.marked.id, code: 'Westlake BB', name: 'Westlake BB', Event: { abbr: 'LD' } },
 				school: null, School: null, region: null, Region: null,
-				EnteredBy: { first: s.Person.first, last: s.Person.last }, removable: true,
+				EnteredBy: { role: 'registrant', first: s.Person.first, last: s.Person.last }, removable: true,
 			},
 			{
 				id: coaches.id, type: 'school', entry: null, Entry: null, school: s.riverdale.id, School: { id: s.riverdale.id, name: 'Riverdale' },
-				region: null, Region: null, EnteredBy: { first: 'Carl', last: 'Coach' }, removable: false,
+				region: null, Region: null, EnteredBy: { role: 'registrant', first: 'Carl', last: 'Coach' }, removable: false,
 			},
 		]));
 		const states = Object.fromEntries(res.body.Candidates.Entries.map((entry: { code: string, state: string }) => [entry.code, entry.state]));
@@ -266,7 +266,7 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 		expect(res.body).toMatchSchema(JudgeConflictSchema);
 		expect(res.body).toMatchObject({
 			type: 'entry', entry: s.open.id, Entry: { id: s.open.id, code: 'Westlake DD', name: 'Westlake DD', Event: { abbr: 'LD' } },
-			school: null, region: null, EnteredBy: { first: s.Person.first, last: s.Person.last }, removable: true,
+			school: null, region: null, EnteredBy: { role: 'registrant', first: s.Person.first, last: s.Person.last }, removable: true,
 		});
 		expect(await db.selectFrom('strike').selectAll().where('id', '=', res.body.id).executeTakeFirst()).toMatchObject({
 			judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.open.id, conflict: 1, registrant: 1, conflictee: 1, entered_by: s.Person.id,
@@ -337,7 +337,7 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 		expect(await post(s.Judge.id, s.userkey, { type: 'entry' })).toBeProblemResponse(400);
 	});
 
-	it("allows the tourn's tabber, who becomes the enterer, and refuses other people", async () => {
+	it("allows the tourn's tabber, who becomes the enterer but is shown only as tab staff, and refuses other people", async () => {
 		const s = await createSheet();
 		const tabber = await factories.person.create({ first: 'Tab', last: 'Staff' });
 		await factories.permission.create({ person: tabber.id, tourn: s.tourn.Tourn.id, tag: 'tabber' });
@@ -348,10 +348,10 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 
 		const res = await post(s.Judge.id, tabberKey, { type: 'entry', id: s.open.id });
 		expect(res.status).toBe(201);
-		expect(res.body).toMatchObject({ EnteredBy: { first: 'Tab', last: 'Staff' }, removable: true });
-		// marked on the judge's behalf, so the judge may remove it too
+		expect(res.body).toMatchObject({ EnteredBy: { role: 'tab', first: null, last: null }, removable: true });
+		// marked on the judge's behalf, so the judge may remove it too, and never learns which staffer did it
 		const sheet = await request(server).get(url(s.Judge.id)).asPerson(s.userkey);
-		expect(sheet.body.Strikes).toMatchObject([{ id: res.body.id, removable: true }]);
+		expect(sheet.body.Strikes).toMatchObject([{ id: res.body.id, EnteredBy: { role: 'tab', first: null, last: null }, removable: true }]);
 
 		expect(await request(server).post(url(s.Judge.id)).send({ type: 'entry', id: s.marked.id })).toBeProblemResponse(401);
 		expect(await post(s.Judge.id, strangerKey, { type: 'entry', id: s.marked.id })).toBeProblemResponse(403);

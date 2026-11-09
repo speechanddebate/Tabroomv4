@@ -5,6 +5,7 @@ import { getCategory } from '../../repos/categoryRepo.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
 import entryRepo from '../../repos/entryRepo.js';
 import judgeRepo from '../../repos/judgeRepo.js';
+import permissionRepo from '../../repos/permissionRepo.js';
 import regionRepo from '../../repos/regionRepo.js';
 import schoolRepo from '../../repos/schoolRepo.js';
 import strikeRepo from '../../repos/strikeRepo.js';
@@ -15,8 +16,12 @@ import { candidateState, isRemovable } from './conflictRules.js';
 
 type SheetStrike = Awaited<ReturnType<typeof strikeRepo.getJudgeConflicts>>[number];
 
-/** The judge, their category and tournament with the settings the sheet reads, and the conflicts they may see */
-async function loadSheet(db: Database, judgeId: number) {
+/**
+ * The judge, their category and tournament with the settings the sheet reads, the conflicts they
+ * may see, and which of the people who entered them (the caller included) are the tournament's
+ * staff, whose names the sheet withholds
+ */
+async function loadSheet(db: Database, judgeId: number, personId: number) {
 	const judge = await judgeRepo.getJudge(db, judgeId);
 	if (!judge?.category) return null;
 	const category = await getCategory(db, judge.category, { settings: ['conflicts'] });
@@ -26,18 +31,28 @@ async function loadSheet(db: Database, judgeId: number) {
 		strikeRepo.getJudgeConflicts(db, { judges: [judgeId], tourn: category.tourn }),
 	]);
 	if (!tourn) return null;
+	const enterers = strikes.map((strike) => strike.entered_by).filter((id): id is number => id !== null);
+	const permissions = await permissionRepo.getPermissions(db, { tourn: category.tourn, persons: [...new Set([...enterers, personId])] });
 	return {
 		judge,
 		category,
 		tournId: category.tourn,
 		tourn,
 		strikes,
+		staff: new Set(permissions.map((permission) => permission.person).filter((id): id is number => id !== null)),
 		editable: isOn(category.settings?.conflicts),
 		mockTrial: isOn(tourn.settings?.mock_trial_registration),
 	};
 }
 
-const conflictRow = (strike: SheetStrike, personId: number): JudgeConflict => ({
+// the judge's own rows read as theirs even when they also tab the tournament
+const enteredBy = (strike: SheetStrike, judgePerson: number | null, staff: Set<number>): JudgeConflict['EnteredBy'] => {
+	if (strike.entered_by === null) return null;
+	if (strike.entered_by !== judgePerson && staff.has(strike.entered_by)) return { role: 'tab', first: null, last: null };
+	return { role: 'registrant', first: strike.enteredFirst, last: strike.enteredLast };
+};
+
+const conflictRow = (strike: SheetStrike, personId: number, judgePerson: number | null, staff: Set<number>): JudgeConflict => ({
 	id: strike.id,
 	type: strike.type as JudgeConflict['type'],
 	entry: strike.entry,
@@ -46,7 +61,7 @@ const conflictRow = (strike: SheetStrike, personId: number): JudgeConflict => ({
 	School: strike.school === null ? null : { id: strike.school, name: strike.schoolName },
 	region: strike.region,
 	Region: strike.region === null ? null : { id: strike.region, name: strike.regionName },
-	EnteredBy: strike.entered_by === null ? null : { first: strike.enteredFirst, last: strike.enteredLast },
+	EnteredBy: enteredBy(strike, judgePerson, staff),
 	removable: isRemovable(strike, personId),
 });
 
@@ -64,9 +79,9 @@ const targetLabel = (strike: Pick<SheetStrike, 'type' | 'entryCode' | 'schoolNam
  * may see and what they may still mark. Null when the judge or their tournament doesn't exist.
  */
 export async function loadJudgeConflicts(db: Database, judgeId: number, personId: number): Promise<JudgeConflicts | null> {
-	const sheet = await loadSheet(db, judgeId);
+	const sheet = await loadSheet(db, judgeId, personId);
 	if (!sheet) return null;
-	const { judge, category, tournId, tourn, strikes, editable, mockTrial } = sheet;
+	const { judge, category, tournId, tourn, strikes, staff, editable, mockTrial } = sheet;
 
 	// mock trial judges conflict by region, so the entry list is never built for them
 	const [school, entries, regions] = await Promise.all([
@@ -87,7 +102,7 @@ export async function loadJudgeConflicts(db: Database, judgeId: number, personId
 		},
 		Tourn: { id: tourn.id, name: tourn.name, tz: tourn.tz ?? 'UTC', mockTrial },
 		editable,
-		Strikes: strikes.map((strike) => conflictRow(strike, personId)),
+		Strikes: strikes.map((strike) => conflictRow(strike, personId, judge.person, staff)),
 		Candidates: {
 			Entries: entries.map((entry) => ({
 				id: entry.id,
@@ -122,9 +137,9 @@ export type AddOutcome =
  * doesn't exist; notFound when the target isn't a candidate here.
  */
 export async function addJudgeConflict(db: Database, judgeId: number, person: SessionPerson, request: JudgeConflictRequest): Promise<AddOutcome | null> {
-	const sheet = await loadSheet(db, judgeId);
+	const sheet = await loadSheet(db, judgeId, person.id);
 	if (!sheet) return null;
-	const { judge, category, tournId, strikes, editable, mockTrial } = sheet;
+	const { judge, category, tournId, strikes, staff, editable, mockTrial } = sheet;
 	if (!editable) return { result: 'refused', reason: 'closed' };
 
 	let target: Pick<SheetStrike, 'type' | 'entryCode' | 'schoolName' | 'regionName'> & { entry?: number; school?: number; region?: number };
@@ -178,7 +193,7 @@ export async function addJudgeConflict(db: Database, judgeId: number, person: Se
 	});
 
 	const [row] = await strikeRepo.getJudgeConflicts(db, { ids: [created.id], judges: [judgeId] });
-	return { result: 'added', conflict: conflictRow(row, person.id) };
+	return { result: 'added', conflict: conflictRow(row, person.id, judge.person, staff) };
 }
 
 /**
@@ -187,7 +202,7 @@ export async function addJudgeConflict(db: Database, judgeId: number, person: Se
  * or the row (on this judge's sheet) doesn't exist.
  */
 export async function removeJudgeConflict(db: Database, judgeId: number, strikeId: number, person: SessionPerson): Promise<'removed' | 'forbidden' | null> {
-	const sheet = await loadSheet(db, judgeId);
+	const sheet = await loadSheet(db, judgeId, person.id);
 	if (!sheet) return null;
 	const strike = sheet.strikes.find((row) => row.id === strikeId);
 	if (!strike) return null;
