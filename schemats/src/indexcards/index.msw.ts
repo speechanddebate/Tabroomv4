@@ -36,7 +36,6 @@ import type {
 	JudgeTournHistory,
 	LoginResponse,
 	MockTrialBallotContext,
-	OnlineRoom,
 	OnlineRoomJoin,
 	OtherBallotContext,
 	ParadigmDetailsSchema,
@@ -46,9 +45,11 @@ import type {
 	QuizOutput,
 	RestCircuit,
 	ResultSetSchema,
+	RoomView,
 	Session,
 	StudentSchema,
 	Tourn,
+	TournRoom,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
 	UnsubscribeResponse,
@@ -56,7 +57,6 @@ import type {
 	UserChapter,
 	UserParadigmOutput,
 	UserSession,
-	UtilityRoom,
 } from './schemas';
 
 export const getRestAdsResponseMock = (): HomepageAd[] =>
@@ -1404,8 +1404,8 @@ export const getRestTournsResponseMock = (): Tourn[] =>
 	}));
 
 export const getRestTournsSectionsRoomGetResponseMock = (
-	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
-): OnlineRoom => ({
+	overrideResponse: Partial<Extract<RoomView, object>> = {},
+): RoomView => ({
 	name: faker.helpers.arrayElement([
 		faker.string.alpha({ length: { min: 10, max: 20 } }),
 		null,
@@ -1435,8 +1435,8 @@ export const getRestTournsSectionsRoomJoinResponseMock = (
 });
 
 export const getRestTournsSchoolsRoomGetResponseMock = (
-	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
-): OnlineRoom => ({
+	overrideResponse: Partial<Extract<RoomView, object>> = {},
+): RoomView => ({
 	name: faker.helpers.arrayElement([
 		faker.string.alpha({ length: { min: 10, max: 20 } }),
 		null,
@@ -1466,8 +1466,8 @@ export const getRestTournsSchoolsRoomJoinResponseMock = (
 });
 
 export const getRestTournsPrepRoomsGetResponseMock = (
-	overrideResponse: Partial<Extract<OnlineRoom, object>> = {},
-): OnlineRoom => ({
+	overrideResponse: Partial<Extract<RoomView, object>> = {},
+): RoomView => ({
 	name: faker.helpers.arrayElement([
 		faker.string.alpha({ length: { min: 10, max: 20 } }),
 		null,
@@ -1496,7 +1496,7 @@ export const getRestTournsPrepRoomsJoinResponseMock = (
 	...overrideResponse,
 });
 
-export const getRestTournsRoomsListResponseMock = (): UtilityRoom[] =>
+export const getRestTournsRoomsListResponseMock = (): TournRoom[] =>
 	Array.from(
 		{ length: faker.number.int({ min: 1, max: 10 }) },
 		(_, i) => i + 1,
@@ -1511,6 +1511,11 @@ export const getRestTournsRoomsListResponseMock = (): UtilityRoom[] =>
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
+		kind: faker.helpers.arrayElement([
+			'school',
+			'prep',
+			'utility',
+		] as const),
 		id: faker.number.int({ min: 0, max: 9007199254740991 }),
 	}));
 
@@ -2165,7 +2170,7 @@ export const getUserHomeResponseMock = (
 				null,
 			]),
 		})),
-		OnlineRooms: Array.from(
+		TournRooms: Array.from(
 			{ length: faker.number.int({ min: 1, max: 10 }) },
 			(_, i) => i + 1,
 		).map(() => ({
@@ -4654,10 +4659,10 @@ export const getRestTournsMockHandler = (
 
 export const getRestTournsSectionsRoomGetMockHandler = (
 	overrideResponse?:
-		| OnlineRoom
+		| RoomView
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<OnlineRoom> | OnlineRoom),
+		  ) => Promise<RoomView> | RoomView),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
@@ -4702,10 +4707,10 @@ export const getRestTournsSectionsRoomJoinMockHandler = (
 
 export const getRestTournsSchoolsRoomGetMockHandler = (
 	overrideResponse?:
-		| OnlineRoom
+		| RoomView
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<OnlineRoom> | OnlineRoom),
+		  ) => Promise<RoomView> | RoomView),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
@@ -4750,10 +4755,10 @@ export const getRestTournsSchoolsRoomJoinMockHandler = (
 
 export const getRestTournsPrepRoomsGetMockHandler = (
 	overrideResponse?:
-		| OnlineRoom
+		| RoomView
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<OnlineRoom> | OnlineRoom),
+		  ) => Promise<RoomView> | RoomView),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(
@@ -4798,10 +4803,10 @@ export const getRestTournsPrepRoomsJoinMockHandler = (
 
 export const getRestTournsRoomsListMockHandler = (
 	overrideResponse?:
-		| UtilityRoom[]
+		| TournRoom[]
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<UtilityRoom[]> | UtilityRoom[]),
+		  ) => Promise<TournRoom[]> | TournRoom[]),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(

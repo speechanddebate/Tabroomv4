@@ -8,10 +8,10 @@
 import type { HomeEntry } from './homeEntry';
 import type { HomeJudge } from './homeJudge';
 import type { HomeLiveDoc } from './homeLiveDoc';
-import type { HomeOnlineRoom } from './homeOnlineRoom';
 import type { HomeRoleSchema } from './homeRoleSchema';
 import type { HomeSchool } from './homeSchool';
 import type { HomeTab } from './homeTab';
+import type { TournRoom } from './tournRoom';
 
 /**
  * One tournament card on the user home page
@@ -44,7 +44,7 @@ export interface HomeTourn {
 	roles: HomeRoleSchema[];
 	LiveDocs: HomeLiveDoc[];
 	/** Rooms the person may enter; only while the tournament is online and running */
-	OnlineRooms: HomeOnlineRoom[];
+	TournRooms: TournRoom[];
 	/** The person's judge rows; empty unless they judge here */
 	Judges: HomeJudge[];
 	/** The person's entries; empty unless they compete here */

@@ -1,6 +1,6 @@
 import request from 'supertest';
 import z from 'zod';
-import { OnlineRoomJoinSchema, UtilityRoomSchema } from '@tabroom/types';
+import { OnlineRoomJoinSchema, TournRoomSchema } from '@tabroom/types';
 import server from '../../../../../../app.js';
 import { db } from '../../../../../data/database.js';
 import factories from '../../../../../../tests/factories/index.js';
@@ -43,8 +43,8 @@ describe('/rest/tourns/:tournId/rooms', () => {
 		const res = await request(server).get(url(tournId)).asPerson(coachUserkey);
 
 		expect(res.status).toBe(200);
-		expect(res.body).toMatchSchema(z.array(UtilityRoomSchema));
-		expect(res.body).toEqual([{ id: 1, name: 'Coach Lounge', joinable: true, hybrid: false, mapUrl: null }]);
+		expect(res.body).toMatchSchema(z.array(TournRoomSchema));
+		expect(res.body).toEqual([{ kind: 'utility', id: 1, name: 'Coach Lounge', joinable: true, hybrid: false, mapUrl: null }]);
 	});
 
 	it('lists every room to a tourn checker', async () => {

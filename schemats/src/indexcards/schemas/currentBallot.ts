@@ -9,7 +9,7 @@ import type { CurrentBallotEntriesItem } from './currentBallotEntriesItem';
 import type { CurrentBallotEventType } from './currentBallotEventType';
 import type { CurrentBallotFlipStatus } from './currentBallotFlipStatus';
 import type { CurrentBallotStatus } from './currentBallotStatus';
-import type { OnlineRoom } from './onlineRoom';
+import type { RoomView } from './roomView';
 
 export interface CurrentBallot {
 	/**
@@ -37,7 +37,7 @@ export interface CurrentBallot {
 	end: string;
 	roomId: number | null;
 	/** The section's room as this person sees it, and whether they can join it online */
-	Room: OnlineRoom | null;
+	Room: RoomView | null;
 	roomNotes: string | null;
 	/**
 	 * @maximum 9007199254740991

@@ -1,7 +1,7 @@
 // Works out which online room a person joins and how, ported from classic's funclib/online_room.mas.
 // Knows nothing about the request: callers pass the actor, which says who the person is and what they can check in.
 
-import type { OnlineRoom, OnlineRoomJoin, UtilityRoom } from '@tabroom/types';
+import type { OnlineRoomJoin, RoomView, TournRoom } from '@tabroom/types';
 import type { Database } from '../../data/database.js';
 import type { Actor, SessionPerson } from '../../middleware/auth/types.js';
 import config from '../../config.js';
@@ -51,7 +51,7 @@ export type JoinRoomResult =
 	| { result: 'joined', join: OnlineRoomJoin };
 
 export type ResolvedRoom = {
-	display: OnlineRoom;
+	display: RoomView;
 	/** null when the room can't be joined online */
 	launch: RoomLaunch | null;
 	log: RoomLog;
@@ -224,7 +224,7 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 		description: role === 'observer' ? `Entered ${name} as an observer` : `Entered ${name} from Tabroom`,
 	};
 
-	const offline = (display: Partial<OnlineRoom> = {}): ResolvedRoom => ({
+	const offline = (display: Partial<RoomView> = {}): ResolvedRoom => ({
 		display: { name: room.roomName, joinable: false, hybrid: false, mapUrl: null, ...display },
 		launch: null,
 		log,
@@ -502,13 +502,13 @@ function utilityRoomSettings(value: unknown): UtilityRoomSetting[] {
 	}));
 }
 
-export type ResolvedUtilityRoom = Omit<ResolvedRoom, 'display'> & { display: UtilityRoom };
+export type ResolvedTournRoom = Omit<ResolvedRoom, 'display'> & { display: TournRoom };
 
 /**
  * The tourn's utility rooms the person can see, from its online_rooms setting. Attendees see them from
  * the tourn's start to its end; tab staff and site admins always. null when the tourn doesn't exist
  */
-export async function getUtilityRooms(db: Database, tournId: number, actor: Actor): Promise<ResolvedUtilityRoom[] | null> {
+export async function getUtilityRooms(db: Database, tournId: number, actor: Actor): Promise<ResolvedTournRoom[] | null> {
 	const person = actor.Person;
 	if (!person) return null;
 
@@ -541,7 +541,7 @@ export async function getUtilityRooms(db: Database, tournId: number, actor: Acto
 		}
 	};
 
-	const visible: ResolvedUtilityRoom[] = [];
+	const visible: ResolvedTournRoom[] = [];
 
 	for (const room of rooms) {
 		if (!await canSee(room)) continue;
@@ -560,7 +560,7 @@ export async function getUtilityRooms(db: Database, tournId: number, actor: Acto
 			}) : null);
 
 		visible.push({
-			display: { id: room.id, name: room.name, joinable: !!launch, hybrid: false, mapUrl: null },
+			display: { kind: 'utility', id: room.id, name: room.name, joinable: !!launch, hybrid: false, mapUrl: null },
 			launch,
 			log: { tag: 'campus', tourn: tourn.id, uuid: room.uuid ?? String(room.id), description: `Entered ${room.name} from Tabroom` },
 		});

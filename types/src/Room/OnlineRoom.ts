@@ -1,17 +1,7 @@
 import { z } from 'zod';
 import type { ZodOpenApiSchemaObject } from 'zod-openapi';
 import * as utils from '../utils.js';
-
-export const OnlineRoomSchema = z.object({
-	name: z.string().nullable().meta({ description: 'The name of the room' }),
-	joinable: z.boolean().meta({ description: 'Whether the person can join the room online' }),
-	hybrid: z.boolean().meta({ description: 'Whether the room is a hybrid room with some participants in person' }),
-	mapUrl: z.string().nullable().meta({ description: 'A map to the physical room' }),
-}).strict().meta({
-	id: 'OnlineRoom',
-}) satisfies ZodOpenApiSchemaObject;
-
-export type OnlineRoom = z.infer<typeof OnlineRoomSchema>;
+import { RoomViewSchema } from './RoomView.js';
 
 export const OnlineRoomJoinSchema = z.object({
 	url: z.string().meta({ description: 'The URL to open, or for NSDA Campus the URL to post the token to' }),
@@ -23,10 +13,12 @@ export const OnlineRoomJoinSchema = z.object({
 
 export type OnlineRoomJoin = z.infer<typeof OnlineRoomJoinSchema>;
 
-export const UtilityRoomSchema = OnlineRoomSchema.extend({
-	id: utils.id.meta({ description: 'The id of the utility room within the tournament' }),
+export const TournRoomSchema = RoomViewSchema.extend({
+	kind: z.enum(['school', 'prep', 'utility']).meta({ description: 'Which join endpoint opens the room: a school squad room, an entry prep room, or a tournament utility room' }),
+	id: utils.id.meta({ description: 'The school, entry, or utility room id the join endpoint takes' }),
 }).strict().meta({
-	id: 'UtilityRoom',
+	id: 'TournRoom',
+	description: "A room the tournament provides outside any round: a school's squad room, an entry's prep room, or a tournament utility room. id is the school, entry, or utility room id the matching join endpoint takes.",
 }) satisfies ZodOpenApiSchemaObject;
 
-export type UtilityRoom = z.infer<typeof UtilityRoomSchema>;
+export type TournRoom = z.infer<typeof TournRoomSchema>;

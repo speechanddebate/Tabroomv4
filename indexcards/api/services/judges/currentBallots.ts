@@ -30,7 +30,7 @@ export type CurrentBallotContext = {
 };
 
 /**
- * The judges' open panels as the current ballots card shows them, one per panel and judge,
+ * The judges' current ballots one per panel and judge,
  * from getJudgePanels rows and the settings of their tourns, events, rounds, and panels.
  * Room is left null for the caller to resolve for the person
  */

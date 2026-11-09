@@ -19,7 +19,7 @@ import type { CongressBallotContextSpeechTimesItem } from './congressBallotConte
 import type { CongressBallotContextTimers } from './congressBallotContextTimers';
 import type { CongressBallotContextTopic } from './congressBallotContextTopic';
 import type { CongressBallotContextTourn } from './congressBallotContextTourn';
-import type { OnlineRoom } from './onlineRoom';
+import type { RoomView } from './roomView';
 
 export interface CongressBallotContext {
 	eventType: CongressBallotContextEventType;
@@ -42,7 +42,7 @@ export interface CongressBallotContext {
 	/** The panel's flight. null when the round is not flighted */
 	flight: number | null;
 	/** The section's room as this person sees it, and whether they can join it online */
-	Room: OnlineRoom | null;
+	Room: RoomView | null;
 	Judge: CongressBallotContextJudge;
 	/** The topic shown on the ballot. null when there is none */
 	topic: CongressBallotContextTopic;

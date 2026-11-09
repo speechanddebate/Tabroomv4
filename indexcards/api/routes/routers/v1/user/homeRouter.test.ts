@@ -110,7 +110,7 @@ describe('GET /user/home', () => {
 			end: everything.Tourn.end?.toISOString(),
 			online: false,
 			LiveDocs: [],
-			OnlineRooms: [],
+			TournRooms: [],
 		});
 		expect(card.Judges).toHaveLength(1);
 		expect(card.Entries).toHaveLength(1);
@@ -665,12 +665,12 @@ describe('GET /user/home', () => {
 			expect(res.body).toMatchSchema(HomeResponseSchema);
 			const cards = Object.fromEntries(res.body.Tourns.map((card: { id: number }) => [card.id, card]));
 			expect(cards[running.Tourn.id].online).toBe(true);
-			expect(cards[running.Tourn.id].OnlineRooms).toEqual([
+			expect(cards[running.Tourn.id].TournRooms).toEqual([
 				{ kind: 'school', id: School.id, name: 'Lincoln Squad Room', joinable: true, hybrid: false, mapUrl: null },
 				{ kind: 'prep', id: entry.id, name: 'AB Prep Room', joinable: true, hybrid: false, mapUrl: null },
 				{ kind: 'utility', id: 1, name: 'Entry Lounge', joinable: true, hybrid: false, mapUrl: null },
 			]);
-			expect(cards[upcoming.Tourn.id]).toMatchObject({ online: true, OnlineRooms: [] });
+			expect(cards[upcoming.Tourn.id]).toMatchObject({ online: true, TournRooms: [] });
 		});
 	});
 

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { OnlineRoomJoinSchema, OnlineRoomSchema, ProblemSchema } from '@tabroom/types';
+import { OnlineRoomJoinSchema, ProblemSchema, RoomViewSchema } from '@tabroom/types';
 import z from 'zod';
 import config from '../../../../../config.js';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
@@ -35,7 +35,7 @@ router.route('/:sectionId/room')
 			responses: {
 				200: {
 					description: 'The online room',
-					content: { 'application/json': { schema: OnlineRoomSchema } },
+					content: { 'application/json': { schema: RoomViewSchema } },
 				},
 				400: { $ref: '#/components/responses/BadRequest' },
 				404: { $ref: '#/components/responses/NotFound' },

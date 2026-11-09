@@ -56,7 +56,6 @@ import type {
 	LoginRequest,
 	LoginResponse,
 	NotFoundResponse,
-	OnlineRoom,
 	OnlineRoomJoin,
 	ParadigmDetailsSchema,
 	ParadigmSearchResult,
@@ -78,11 +77,13 @@ import type {
 	RestTournsSectionsRoomGetParams,
 	RestTournsSectionsRoomJoinParams,
 	ResultSetSchema,
+	RoomView,
 	ServiceUnavailableResponse,
 	Session,
 	StudentSchema,
 	TooManyRequestsResponse,
 	Tourn,
+	TournRoom,
 	UnauthorizedResponse,
 	UnlinkedJudgeSchema,
 	UnlinkedStudentSearchSchema,
@@ -98,7 +99,6 @@ import type {
 	UserStudentsClaimParams,
 	UserTournsBallotsParams,
 	UserTournsParams,
-	UtilityRoom,
 } from './schemas';
 
 // https://stackoverflow.com/questions/49579094/typescript-conditional-types-filter-out-readonly-properties-pick-only-requir/49579497#49579497
@@ -2854,7 +2854,7 @@ export const prefetchRestTournsQuery = async <
 };
 
 export type restTournsSectionsRoomGetResponse200 = {
-	data: OnlineRoom;
+	data: RoomView;
 	status: 200;
 };
 
@@ -3350,7 +3350,7 @@ export const createRestTournsSectionsRoomJoin = <
 };
 
 export type restTournsSchoolsRoomGetResponse200 = {
-	data: OnlineRoom;
+	data: RoomView;
 	status: 200;
 };
 
@@ -3772,7 +3772,7 @@ export const createRestTournsSchoolsRoomJoin = <
 };
 
 export type restTournsPrepRoomsGetResponse200 = {
-	data: OnlineRoom;
+	data: RoomView;
 	status: 200;
 };
 
@@ -4194,7 +4194,7 @@ export const createRestTournsPrepRoomsJoin = <
 };
 
 export type restTournsRoomsListResponse200 = {
-	data: UtilityRoom[];
+	data: TournRoom[];
 	status: 200;
 };
 

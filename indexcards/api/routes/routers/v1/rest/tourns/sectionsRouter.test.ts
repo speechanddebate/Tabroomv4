@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { jwtVerify } from 'jose';
-import { OnlineRoomJoinSchema, OnlineRoomSchema } from '@tabroom/types';
+import { OnlineRoomJoinSchema, RoomViewSchema } from '@tabroom/types';
 import server from '../../../../../../app.js';
 import config from '../../../../../config.js';
 import logger from '../../../../../helpers/logger.js';
@@ -57,7 +57,7 @@ describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 		const res = await request(server).get(url(panelId)).asPerson(judgeUserkey);
 
 		expect(res.status).toBe(200);
-		expect(res.body).toMatchSchema(OnlineRoomSchema);
+		expect(res.body).toMatchSchema(RoomViewSchema);
 		expect(res.body).toEqual({ name: 'PF A', joinable: true, hybrid: false, mapUrl: null });
 	});
 
@@ -65,7 +65,7 @@ describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 		const res = await request(server).get(url(panelId)).asPerson(studentUserkey);
 
 		expect(res.status).toBe(200);
-		expect(res.body).toMatchSchema(OnlineRoomSchema);
+		expect(res.body).toMatchSchema(RoomViewSchema);
 	});
 
 	it.each([
@@ -78,7 +78,7 @@ describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 		const res = await request(server).get(url(panelId)).asPerson(userkey);
 
 		expect(res.status).toBe(200);
-		expect(res.body).toMatchSchema(OnlineRoomSchema);
+		expect(res.body).toMatchSchema(RoomViewSchema);
 	});
 
 	it('returns 404 to a checker of another category', async () => {

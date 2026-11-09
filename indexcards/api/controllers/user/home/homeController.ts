@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { HomeLiveDoc, HomeOnlineRoom, HomeResponse, HomeTourn } from '@tabroom/types';
+import type { HomeLiveDoc, HomeResponse, HomeTourn, TournRoom } from '@tabroom/types';
 import { db } from '../../../data/database.js';
 import { getPerson } from '../../../middleware/auth/authorization.js';
 import type { Actor } from '../../../middleware/auth/types.js';
@@ -31,7 +31,7 @@ function unique<T>(values: (T | null)[]): T[] {
 }
 
 /** The rooms the person may enter at a running online tourn: squad rooms, prep rooms, and the tourn's utility rooms */
-async function onlineRooms(tournId: number, actor: Actor, mine: { schools: number[]; entries: number[] }): Promise<HomeOnlineRoom[]> {
+async function onlineRooms(tournId: number, actor: Actor, mine: { schools: number[]; entries: number[] }): Promise<TournRoom[]> {
 	const [squad, prep, utility] = await Promise.all([
 		getSchoolRooms(db, tournId, mine.schools, actor),
 		getEntryPrepRooms(db, tournId, mine.entries, actor),
@@ -46,7 +46,7 @@ async function onlineRooms(tournId: number, actor: Actor, mine: { schools: numbe
 			const room = prep.get(entry);
 			return room ? [{ ...room.display, kind: 'prep' as const, id: entry }] : [];
 		}),
-		...(utility ?? []).map((room) => ({ ...room.display, kind: 'utility' as const })),
+		...(utility ?? []).map((room) => room.display),
 	];
 }
 
@@ -181,7 +181,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 			online: isOnline(eventsByTourn.get(tourn.id) ?? []),
 			roles,
 			LiveDocs,
-			OnlineRooms: [],
+			TournRooms: [],
 			Judges: buildJudges(tourn, judgeSection),
 			Entries: buildEntries(tourn, entrySection),
 			Schools,
@@ -193,7 +193,7 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 	// The online rooms service resolves one room at a time, so this runs only for running
 	// online tourns, normally none or one
 	await Promise.all(cards.filter((card) => card.online && runningTourns.has(card.id)).map(async (card) => {
-		card.OnlineRooms = await onlineRooms(card.id, req.actor, {
+		card.TournRooms = await onlineRooms(card.id, req.actor, {
 			schools: card.Schools.filter((school) => school.access === 'full').map((school) => school.id),
 			entries: entries.filter((entry) => entry.tourn === card.id).map((entry) => entry.id),
 		});

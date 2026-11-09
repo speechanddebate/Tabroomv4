@@ -282,7 +282,7 @@ export const ballots = {
 
 /* The three tournaments every role combination is shown at */
 
-type TournBase = Omit<HomeTourn, 'roles' | 'LiveDocs' | 'OnlineRooms' | 'Judges' | 'Entries' | 'Schools' | 'Tab'>;
+type TournBase = Omit<HomeTourn, 'roles' | 'LiveDocs' | 'TournRooms' | 'Judges' | 'Entries' | 'Schools' | 'Tab'>;
 
 const tourns: Record<Phase, TournBase> = {
 	running: {
@@ -583,7 +583,7 @@ export function tourn(phase: Phase, roles: HomeRole[]): HomeTourn {
 		...tourns[phase],
 		roles,
 		LiveDocs    : held.flatMap(p => p.LiveDocs ?? []).filter((doc, idx, all) => all.findIndex(d => d.url === doc.url) === idx),
-		OnlineRooms : [],
+		TournRooms  : [],
 		Judges      : held.flatMap(p => p.Judges ?? []),
 		Entries     : held.flatMap(p => p.Entries ?? []),
 		Schools     : held.flatMap(p => p.Schools ?? []),
@@ -618,7 +618,7 @@ export const noviceNightTab: HomeTourn = {
 	online      : false,
 	roles       : ['tab'],
 	LiveDocs    : [],
-	OnlineRooms : [],
+	TournRooms  : [],
 	Judges      : [],
 	Entries     : [],
 	Schools     : [],
@@ -708,7 +708,7 @@ const room = (kind: 'school' | 'prep' | 'utility', id: number, name: string) => 
 export const bluebonnetOnlineCoachJudge: HomeTourn = {
 	...bluebonnetCoachJudge,
 	...online,
-	OnlineRooms : [room('school', lakeside.id, 'Lakeside squad room'), room('utility', 3, 'Judge lounge')],
+	TournRooms  : [room('school', lakeside.id, 'Lakeside squad room'), room('utility', 3, 'Judge lounge')],
 	Judges      : [{ ...ldJudge, CurrentBallots: [ballots.ldRound3Online] }],
 };
 
@@ -716,7 +716,7 @@ export const bluebonnetOnlineCoachJudge: HomeTourn = {
 export const bluebonnetOnlineJudge: HomeTourn = {
 	...tourn('running', ['judge']),
 	...online,
-	OnlineRooms : [room('utility', 3, 'Judge lounge')],
+	TournRooms  : [room('utility', 3, 'Judge lounge')],
 	Judges      : [{ ...ldJudge, CurrentBallots: [ballots.ldRound3Online] }],
 };
 
@@ -757,7 +757,7 @@ export const bluebonnetBallotRows: HomeTourn = {
 export const bluebonnetOnlineCompetitor: HomeTourn = {
 	...bluebonnetCompetitor,
 	...online,
-	OnlineRooms : [
+	TournRooms  : [
 		room('school', lakeside.id, 'Lakeside squad room'),
 		room('prep', 7001, 'Lakeside CN prep room'),
 		room('utility', 4, 'Competitor commons'),

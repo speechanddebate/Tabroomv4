@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { OnlineRoomJoinSchema, ProblemSchema, UtilityRoomSchema } from '@tabroom/types';
+import { OnlineRoomJoinSchema, ProblemSchema, TournRoomSchema } from '@tabroom/types';
 import z from 'zod';
 import config from '../../../../../config.js';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
@@ -34,7 +34,7 @@ router.route('/')
 			responses: {
 				200: {
 					description: 'The utility rooms',
-					content: { 'application/json': { schema: z.array(UtilityRoomSchema) } },
+					content: { 'application/json': { schema: z.array(TournRoomSchema) } },
 				},
 				400: { $ref: '#/components/responses/BadRequest' },
 				404: { $ref: '#/components/responses/NotFound' },
@@ -58,7 +58,7 @@ router.route('/:roomId/join')
 				content: {
 					'application/json': {
 						schema: z.object({
-							name: UtilityRoomSchema.shape.name.unwrap().meta({ description: 'The name of the room, as listed' }),
+							name: TournRoomSchema.shape.name.unwrap().meta({ description: 'The name of the room, as listed' }),
 						}),
 					},
 				},

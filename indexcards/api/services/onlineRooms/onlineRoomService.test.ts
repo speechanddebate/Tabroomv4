@@ -740,7 +740,7 @@ describe('utility rooms', () => {
 
 		const rooms = await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `tourn:${Tourn.id}`));
 
-		expect(rooms?.[0].display).toEqual({ id: 1, name: 'Zoom Lounge', joinable: true, hybrid: false, mapUrl: null });
+		expect(rooms?.[0].display).toEqual({ kind: 'utility', id: 1, name: 'Zoom Lounge', joinable: true, hybrid: false, mapUrl: null });
 		expect(rooms?.[0].launch).toEqual({ url: 'https://zoom.test/lounge', password: null, campus: null });
 		expect(rooms?.[0].log.uuid).toBe('1');
 		expect(rooms?.[1].display.joinable).toBe(false);

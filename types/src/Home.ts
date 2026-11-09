@@ -7,7 +7,7 @@ import { EntrySchema } from './Entry.js';
 import { EventSchema } from './Event.js';
 import { RoundSchema } from './Round.js';
 import { RoomSchema } from './Room/Room.js';
-import { OnlineRoomSchema } from './Room/OnlineRoom.js';
+import { TournRoomSchema } from './Room/OnlineRoom.js';
 import { CurrentBallotSchema } from './Section.js';
 import { FineSchema } from './Fine.js';
 import { StrikeSchema } from './Strike.js';
@@ -47,16 +47,6 @@ export const HomeLiveDocSchema = z.object({
 }) satisfies ZodOpenApiSchemaObject;
 
 export type HomeLiveDoc = z.infer<typeof HomeLiveDocSchema>;
-
-export const HomeOnlineRoomSchema = OnlineRoomSchema.extend({
-	kind: z.enum(['school', 'prep', 'utility']).meta({ description: 'Which join endpoint opens the room: a school squad room, an entry prep room, or a tournament utility room' }),
-	id: utils.id.meta({ description: 'The school, entry, or utility room id the join endpoint takes' }),
-}).strict().meta({
-	id: 'HomeOnlineRoom',
-	description: 'An online room the person may enter at a running online tournament',
-}) satisfies ZodOpenApiSchemaObject;
-
-export type HomeOnlineRoom = z.infer<typeof HomeOnlineRoomSchema>;
 
 export const HomeJudgeSchema = z.object({
 	id: JudgeSchema.shape.id,
@@ -324,7 +314,7 @@ export const HomeTournSchema = z.object({
 	online: z.boolean().meta({ description: 'Whether any event at the tournament runs online' }),
 	roles: z.array(HomeRoleSchema).meta({ description: 'The roles the person holds at the tournament' }),
 	LiveDocs: z.array(HomeLiveDocSchema),
-	OnlineRooms: z.array(HomeOnlineRoomSchema).meta({ description: 'Rooms the person may enter; only while the tournament is online and running' }),
+	TournRooms: z.array(TournRoomSchema).meta({ description: 'Rooms the person may enter; only while the tournament is online and running' }),
 	Judges: z.array(HomeJudgeSchema).meta({ description: "The person's judge rows; empty unless they judge here" }),
 	Entries: z.array(HomeEntrySchema).meta({ description: "The person's entries; empty unless they compete here" }),
 	Schools: z.array(HomeSchoolSchema).meta({ description: 'Schools the person has a permission for; empty unless they coach here' }),

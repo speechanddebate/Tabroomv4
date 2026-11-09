@@ -5,12 +5,12 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
-import type { HomeOnlineRoomKind } from './homeOnlineRoomKind';
+import type { TournRoomKind } from './tournRoomKind';
 
 /**
- * An online room the person may enter at a running online tournament
+ * A room the tournament provides outside any round: a school's squad room, an entry's prep room, or a tournament utility room. id is the school, entry, or utility room id the matching join endpoint takes.
  */
-export interface HomeOnlineRoom {
+export interface TournRoom {
 	/**
 	 * The name of the room
 	 * @nullable
@@ -26,7 +26,7 @@ export interface HomeOnlineRoom {
 	 */
 	mapUrl: string | null;
 	/** Which join endpoint opens the room: a school squad room, an entry prep room, or a tournament utility room */
-	kind: HomeOnlineRoomKind;
+	kind: TournRoomKind;
 	/**
 	 * The school, entry, or utility room id the join endpoint takes
 	 * @maximum 9007199254740991

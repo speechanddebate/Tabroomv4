@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { OnlineRoomJoinSchema, OnlineRoomSchema } from '@tabroom/types';
+import { OnlineRoomJoinSchema, RoomViewSchema } from '@tabroom/types';
 import server from '../../../../../../app.js';
 import config from '../../../../../config.js';
 import factories from '../../../../../../tests/factories/index.js';
@@ -38,7 +38,7 @@ describe('/rest/tourns/:tournId/prep-rooms/:entryId', () => {
 		const res = await request(server).get(url(entryId)).asPerson(studentUserkey);
 
 		expect(res.status).toBe(200);
-		expect(res.body).toMatchSchema(OnlineRoomSchema);
+		expect(res.body).toMatchSchema(RoomViewSchema);
 		expect(res.body.name).toBe('AB Prep Room');
 	});
 

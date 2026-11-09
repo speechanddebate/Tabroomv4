@@ -9,10 +9,9 @@
 /**
  * Which join endpoint opens the room: a school squad room, an entry prep room, or a tournament utility room
  */
-export type HomeOnlineRoomKind =
-	(typeof HomeOnlineRoomKind)[keyof typeof HomeOnlineRoomKind];
+export type TournRoomKind = (typeof TournRoomKind)[keyof typeof TournRoomKind];
 
-export const HomeOnlineRoomKind = {
+export const TournRoomKind = {
 	school: 'school',
 	prep: 'prep',
 	utility: 'utility',

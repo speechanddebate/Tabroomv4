@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.2.0
  */
 
-export interface OnlineRoom {
+export interface RoomView {
 	/**
 	 * The name of the room
 	 * @nullable

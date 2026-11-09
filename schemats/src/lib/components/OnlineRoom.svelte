@@ -10,7 +10,7 @@
 <script lang='ts'>
 	import { tick } from 'svelte';
 	import { Video } from '@lucide/svelte';
-	import type { OnlineRoom, OnlineRoomJoin } from '@tabroom/types';
+	import type { OnlineRoomJoin, RoomView } from '@tabroom/types';
 	import {
 		createRestTournsPrepRoomsJoin,
 		createRestTournsRoomJoin,
@@ -22,7 +22,7 @@
 
 	// The join button for a room that can be joined online. Only render it when room.joinable
 	type Props = {
-		room: OnlineRoom;
+		room: RoomView;
 		target: OnlineRoomTarget;
 		// icon: an icon-only join button. text: a join button with the icon and text
 		variant?: 'icon' | 'text';

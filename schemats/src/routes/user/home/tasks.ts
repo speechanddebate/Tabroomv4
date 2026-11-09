@@ -2,7 +2,7 @@
  * What a home card owes the person, derived from one HomeTourn. Pure, so the
  * card components only lay it out and the rules are unit-tested here.
  */
-import type { CurrentBallot, HomeJudge, HomeTourn, OnlineRoom } from '@tabroom/types';
+import type { CurrentBallot, HomeJudge, HomeTourn, RoomView } from '@tabroom/types';
 import { CLASSIC_URL } from '$app/env/public';
 import { parseDateTime, showDateTime, showTime } from '$lib/helpers/dt';
 import { isEnabled } from './features';
@@ -35,7 +35,7 @@ export type Task = {
 	action?     : Link,
 	tone        : Tone,
 	// The round's online room, joined beside the action; the target matches OnlineRoom.svelte's section target
-	room?       : { room: OnlineRoom, target: { type: 'section', tournId: number, sectionId: number } },
+	room?       : { room: RoomView, target: { type: 'section', tournId: number, sectionId: number } },
 	items?      : TaskItem[],
 	itemsLabel? : string, // what the list holds, for the disclosure: "strike cards", "questionnaires"
 };

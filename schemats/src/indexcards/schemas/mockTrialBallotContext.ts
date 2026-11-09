@@ -19,7 +19,7 @@ import type { MockTrialBallotContextSpeechTimesItem } from './mockTrialBallotCon
 import type { MockTrialBallotContextTimers } from './mockTrialBallotContextTimers';
 import type { MockTrialBallotContextTopic } from './mockTrialBallotContextTopic';
 import type { MockTrialBallotContextTourn } from './mockTrialBallotContextTourn';
-import type { OnlineRoom } from './onlineRoom';
+import type { RoomView } from './roomView';
 
 export interface MockTrialBallotContext {
 	eventType: MockTrialBallotContextEventType;
@@ -42,7 +42,7 @@ export interface MockTrialBallotContext {
 	/** The panel's flight. null when the round is not flighted */
 	flight: number | null;
 	/** The section's room as this person sees it, and whether they can join it online */
-	Room: OnlineRoom | null;
+	Room: RoomView | null;
 	Judge: MockTrialBallotContextJudge;
 	/** The topic shown on the ballot. null when there is none */
 	topic: MockTrialBallotContextTopic;

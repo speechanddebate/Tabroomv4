@@ -22,9 +22,9 @@
 	const tasks = $derived(homeTasks(tourn, new Date().toISOString(), person?.tz ?? null));
 	const dates = $derived(showDateRange({ startISO: tourn.start, endISO: tourn.end, tz: tourn.tz, mode: 'date', format: 'long' }).dateOutput?.trim());
 	const location = $derived(tourn.city ? [tourn.city, tourn.state].filter(Boolean).join(', ') : tourn.online ? 'Online' : '');
-	const rooms = $derived(tourn.OnlineRooms.filter(room => room.joinable));
+	const rooms = $derived(tourn.TournRooms.filter(room => room.joinable));
 
-	const roomTarget = (room: HomeTourn['OnlineRooms'][number]): OnlineRoomTarget => {
+	const roomTarget = (room: HomeTourn['TournRooms'][number]): OnlineRoomTarget => {
 		switch (room.kind) {
 			case 'school': return { type: 'school', tournId: tourn.id, schoolId: room.id };
 			case 'prep': return { type: 'entry', tournId: tourn.id, entryId: room.id };
