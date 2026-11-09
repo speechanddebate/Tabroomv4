@@ -345,6 +345,12 @@ describe('Authorization Middleware', () => {
 				expect(checkAccess('ballot', 'write', { judgeId: 9, panelId: 99, categoryId: 7, tournId: 42 }, [perm])).toBe(true);
 				expect(checkAccess('entry', 'flip', entry, [perm])).toBe(false);
 			});
+			it('a judge self has judge/conflicts on its own judge only', () => {
+				const perm = { scope: 'judge', id: 9, role: 'self', categoryId: 7, tournId: 42 };
+				expect(checkAccess('judge', 'conflicts', { id: 9, categoryId: 7, tournId: 42 }, [perm])).toBe(true);
+				expect(checkAccess('judge', 'conflicts', { id: 10, categoryId: 7, tournId: 42 }, [perm])).toBe(false);
+				expect(checkAccess('judge', 'write', { id: 9, categoryId: 7, tournId: 42 }, [perm])).toBe(false);
+			});
 			it('a tourn tabber still reaches panels', () => {
 				const perm = { scope: 'tourn', id: 42, role: 'tabber' };
 				expect(checkAccess('panel', 'write', { id: 99, roundId: 50, eventId: 12, categoryId: 7, tournId: 42 }, [perm])).toBe(true);

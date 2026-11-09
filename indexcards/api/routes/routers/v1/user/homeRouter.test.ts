@@ -170,11 +170,17 @@ describe('GET /user/home', () => {
 			await factories.jpool.create({ category: tourn.Category.id, name: 'Hidden', judges: [Judge.id] });
 			const quiz = await factories.quiz.create({ label: 'Ethics' });
 			const poolQuiz = await factories.quiz.create({ label: 'Pool rules' });
-			await saveSettings({ db, table: 'category', settings: { required_quizzes: [quiz.id] }, ownerId: tourn.Category.id });
+			await saveSettings({ db, table: 'category', settings: { required_quizzes: [quiz.id], conflicts: 1 }, ownerId: tourn.Category.id });
 			await saveSettings({ db, table: 'jpool', settings: { paradigm_quiz: poolQuiz.id }, ownerId: shown.id });
 			await factories.personQuiz.create({ person: personId, quiz: quiz.id, completed: 1 });
 			const strike = await factories.strike.create({ judge: Judge.id, tourn: tourn.Tourn.id, type: 'school', school: School.id, conflict: 1, registrant: 1 });
+			const region = await factories.region.create({ tourn: tourn.Tourn.id, name: 'North' });
+			const regional = await factories.strike.create({ judge: Judge.id, tourn: tourn.Tourn.id, type: 'region', region: region.id, conflict: 1, registrant: 1 });
+			// hidden: a tab conflict without the registrant tick, a coach's pref-sheet strike, a tab strike, and another judge's conflict
 			await factories.strike.create({ judge: Judge.id, tourn: tourn.Tourn.id, type: 'school', school: School.id, conflict: 1, registrant: 0 });
+			await factories.strike.create({ judge: Judge.id, tourn: tourn.Tourn.id, type: 'entry', entry: (await factories.entry.create({ event: tourn.Event.id })).id, conflict: 0, registrant: 1 });
+			await factories.strike.create({ judge: Judge.id, tourn: tourn.Tourn.id, type: 'time', start: new Date(), end: new Date(Date.now() + DAY), conflict: 0, registrant: 0 });
+			await factories.strike.create({ judge: Other.id, tourn: tourn.Tourn.id, type: 'school', school: School.id, conflict: 1, registrant: 1 });
 			// an open panel, and an audited panel that counts as judged
 			const open = await factories.panel.create({ round: tourn.Round.id });
 			for (const side of [1, 2]) await factories.ballot.create({ panel: open.id, judge: Judge.id, entry: (await factories.entry.create({ event: tourn.Event.id })).id, side });
@@ -205,12 +211,17 @@ describe('GET /user/home', () => {
 				roundsJudged: 1,
 				ballotsEntered: 2,
 				feedbackUntil: tourn.Tourn.end?.toISOString(),
-				Strikes: [{ id: strike.id, type: 'school', school: School.id, School: { name: 'Lincoln' }, entry: null, Entry: null }],
+				tournConflicts: true,
 				Quizzes: [
 					{ Quiz: { id: quiz.id, label: 'Ethics', approval: 0 }, requiredBy: tourn.Category.name, PersonQuiz: { completed: 1, approved_by: null, pending: 0 } },
 					{ Quiz: { id: poolQuiz.id, label: 'Pool rules', approval: 0 }, requiredBy: 'Friday', PersonQuiz: null },
 				],
 			});
+			expect(judge.Strikes).toHaveLength(2);
+			expect(judge.Strikes).toEqual(expect.arrayContaining([
+				{ id: strike.id, type: 'school', start: null, end: null, school: School.id, School: { name: 'Lincoln' }, entry: null, Entry: null, region: null, Region: null },
+				{ id: regional.id, type: 'region', start: null, end: null, school: null, School: null, entry: null, Entry: null, region: region.id, Region: { name: 'North' } },
+			]));
 			expect(judge.CurrentBallots.map((ballot: { id: number }) => ballot.id)).toEqual([open.id]);
 			expect(judge.CurrentBallots[0].Room).toBeNull();
 			expect(judge.Fines).toEqual([expect.objectContaining({ id: mine.id, amount: 25, currency: '€', judge: Judge.id, Judge: { first: Judge.first, last: Judge.last } })]);
@@ -292,6 +303,9 @@ describe('GET /user/home', () => {
 				Jpools: [],
 				Quizzes: [],
 				Fines: [],
+				Strikes: [],
+				// the category never set `conflicts`
+				tournConflicts: false,
 			});
 		});
 	});

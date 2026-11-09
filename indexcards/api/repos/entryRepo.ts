@@ -10,6 +10,8 @@ type entryOpts = {
 	settings?: boolean | string[],
 	ids?: number[],
 	tourns?: number[],
+	/** entries in the events of these categories */
+	categories?: number[],
 	schools?: number[],
 	active?: boolean,
 	/** entries one of the person's unretired students is on */
@@ -34,6 +36,14 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 			.selectFrom('event')
 			.select('event.id')
 			.where('event.tourn', 'in', opts.tourns!)
+		: [])
+		: query;
+
+	query = opts.categories
+		? query.where('entry.event', 'in', opts.categories.length ? (eb) => eb
+			.selectFrom('event')
+			.select('event.id')
+			.where('event.category', 'in', opts.categories!)
 		: [])
 		: query;
 
@@ -105,6 +115,28 @@ async function getEntryStudents(db: Database, entryIds: number[]) {
 		.execute();
 }
 
+/** Entries with their school and event, in sheet order: school, event, entry name */
+async function getCategoryEntries(db: Database, opts: entryOpts & { categories: number[] }) {
+	return await buildEntryQuery(db, opts)
+		.innerJoin('event', 'event.id', 'entry.event')
+		.leftJoin('school', 'school.id', 'entry.school')
+		.select([
+			'entry.id',
+			'entry.code',
+			'entry.name',
+			'entry.school',
+			'event.id as eventId',
+			'school.name as schoolName',
+			'event.name as eventName',
+			'event.abbr as eventAbbr',
+			'event.category as eventCategory',
+		])
+		.orderBy('school.name')
+		.orderBy('event.name')
+		.orderBy('entry.name')
+		.execute();
+}
+
 async function createEntry(db: Database, data: Insertable<Entry> & { settings?: Settings }) {
 	const { settings, ...entryData } = data;
 	const res =  await db.insertInto('entry')
@@ -173,6 +205,7 @@ export default {
 	getEntry,
 	getEntries,
 	getEntryStudents,
+	getCategoryEntries,
 	getPersonEntries,
 	countByTourn,
 	createEntry,

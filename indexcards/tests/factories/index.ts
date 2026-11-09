@@ -18,6 +18,7 @@ import message from './message.js';
 import permission from './permission.js';
 import protocol from './protocol.js';
 import resultSet from './result_set.js';
+import region from './region.js';
 import room from './room.js';
 import round from './round.js';
 import school from './school.js';
@@ -55,6 +56,7 @@ const factories = {
 	permission,
 	protocol,
 	resultSet,
+	region,
 	room,
 	round,
 	school,

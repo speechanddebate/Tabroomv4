@@ -7,13 +7,14 @@
  */
 
 /**
- * What the strike is against: a school, an entry, or a time the judge is unavailable (departure runs to the end of the tournament)
+ * What the strike is against: a school, an entry, a region (mock trial), or a time the judge is unavailable (departure runs to the end of the tournament)
  */
 export type StrikeType = (typeof StrikeType)[keyof typeof StrikeType];
 
 export const StrikeType = {
 	school: 'school',
 	entry: 'entry',
+	region: 'region',
 	departure: 'departure',
 	time: 'time',
 } as const;

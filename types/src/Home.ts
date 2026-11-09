@@ -90,6 +90,7 @@ export const HomeJudgeSchema = z.object({
 	ballotsEntered: z.int(),
 	feedbackUntil: z.iso.datetime().nullable().meta({ description: 'Until when the judge may edit feedback on entered ballots' }),
 	Strikes: z.array(StrikeSchema),
+	tournConflicts: z.boolean().meta({ description: "Whether the judge's category takes conflicts entered by its judges" }),
 	Quizzes: z.array(z.object({
 		Quiz: z.object({
 			id: utils.id,

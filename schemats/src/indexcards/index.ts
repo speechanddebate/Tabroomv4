@@ -49,6 +49,9 @@ import type {
 	HomepageAd,
 	InboxMessage,
 	InboxUnreadCount,
+	JudgeConflict,
+	JudgeConflictRequest,
+	JudgeConflicts,
 	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
@@ -2521,6 +2524,593 @@ export const createRestJudgesBallotFeedback = <
 > => {
 	return createMutation(
 		() => ({ ...getRestJudgesBallotFeedbackMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type restJudgesConflictsResponse200 = {
+	data: JudgeConflicts;
+	status: 200;
+};
+
+export type restJudgesConflictsResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restJudgesConflictsResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restJudgesConflictsResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type restJudgesConflictsResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restJudgesConflictsResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restJudgesConflictsResponseSuccess =
+	restJudgesConflictsResponse200 & {
+		headers: Headers;
+	};
+export type restJudgesConflictsResponseError = (
+	| restJudgesConflictsResponse400
+	| restJudgesConflictsResponse401
+	| restJudgesConflictsResponse403
+	| restJudgesConflictsResponse404
+	| restJudgesConflictsResponse500
+) & {
+	headers: Headers;
+};
+
+export type restJudgesConflictsResponse =
+	| restJudgesConflictsResponseSuccess
+	| restJudgesConflictsResponseError;
+
+export const getRestJudgesConflictsUrl = (judgeId: number) => {
+	return `${indexcardsApiBaseUrl()}/rest/judges/${judgeId}/conflicts`;
+};
+
+/**
+ * The conflicts the judge may see at their tournament, and the entries, schools, or regions they may still mark
+ * @summary Get a judge's conflict sheet
+ */
+export const restJudgesConflicts = async (
+	judgeId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restJudgesConflictsResponse> => {
+	const res = await (fetchFn ?? fetch)(getRestJudgesConflictsUrl(judgeId), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restJudgesConflictsResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restJudgesConflictsResponse;
+};
+
+export const getRestJudgesConflictsQueryKey = (judgeId: number) => {
+	return [
+		`${indexcardsApiBaseUrl()}/rest/judges/${judgeId}/conflicts`,
+	] as const;
+};
+
+export const getRestJudgesConflictsQueryOptions = <
+	TData = Awaited<ReturnType<typeof restJudgesConflicts>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	judgeId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restJudgesConflicts>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getRestJudgesConflictsQueryKey(judgeId);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restJudgesConflicts>>
+	> = ({ signal }) =>
+		restJudgesConflicts(judgeId, { signal, ...fetchOptions }, fetcherFn);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: judgeId !== null && judgeId !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restJudgesConflicts>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestJudgesConflictsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restJudgesConflicts>>
+>;
+export type RestJudgesConflictsQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get a judge's conflict sheet
+ */
+
+export function createRestJudgesConflicts<
+	TData = Awaited<ReturnType<typeof restJudgesConflicts>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	judgeId: () => number,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restJudgesConflicts>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getRestJudgesConflictsQueryOptions(judgeId(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get a judge's conflict sheet
+ */
+export const prefetchRestJudgesConflictsQuery = async <
+	TData = Awaited<ReturnType<typeof restJudgesConflicts>>,
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	judgeId: number,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restJudgesConflicts>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestJudgesConflictsQueryOptions(judgeId, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restJudgesConflictAddResponse201 = {
+	data: JudgeConflict;
+	status: 201;
+};
+
+export type restJudgesConflictAddResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restJudgesConflictAddResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restJudgesConflictAddResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type restJudgesConflictAddResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restJudgesConflictAddResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type restJudgesConflictAddResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restJudgesConflictAddResponseSuccess =
+	restJudgesConflictAddResponse201 & {
+		headers: Headers;
+	};
+export type restJudgesConflictAddResponseError = (
+	| restJudgesConflictAddResponse400
+	| restJudgesConflictAddResponse401
+	| restJudgesConflictAddResponse403
+	| restJudgesConflictAddResponse404
+	| restJudgesConflictAddResponse409
+	| restJudgesConflictAddResponse500
+) & {
+	headers: Headers;
+};
+
+export type restJudgesConflictAddResponse =
+	| restJudgesConflictAddResponseSuccess
+	| restJudgesConflictAddResponseError;
+
+export const getRestJudgesConflictAddUrl = (judgeId: number) => {
+	return `${indexcardsApiBaseUrl()}/rest/judges/${judgeId}/conflicts`;
+};
+
+/**
+ * Records that the judge cannot judge an entry, a school, or (mock trial) a region. A target the judge could not mark here is 404; a covered target or a closed category is 409 with a reason of closed, duplicate, school, or ownSchool
+ * @summary Mark a conflict
+ */
+export const restJudgesConflictAdd = async (
+	judgeId: number,
+	judgeConflictRequest?: JudgeConflictRequest,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restJudgesConflictAddResponse> => {
+	const res = await (fetchFn ?? fetch)(getRestJudgesConflictAddUrl(judgeId), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(judgeConflictRequest),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restJudgesConflictAddResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restJudgesConflictAddResponse;
+};
+
+export const getRestJudgesConflictAddMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restJudgesConflictAdd>>,
+		TError,
+		{ judgeId: number; data?: JudgeConflictRequest },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restJudgesConflictAdd>>,
+	TError,
+	{ judgeId: number; data?: JudgeConflictRequest },
+	TContext
+> => {
+	const mutationKey = ['restJudgesConflictAdd'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restJudgesConflictAdd>>,
+		{ judgeId: number; data?: JudgeConflictRequest }
+	> = (props) => {
+		const { judgeId, data } = props ?? {};
+
+		return restJudgesConflictAdd(judgeId, data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestJudgesConflictAddMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restJudgesConflictAdd>>
+>;
+export type RestJudgesConflictAddMutationBody =
+	| JudgeConflictRequest
+	| undefined;
+export type RestJudgesConflictAddMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Mark a conflict
+ */
+export const createRestJudgesConflictAdd = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restJudgesConflictAdd>>,
+			TError,
+			{ judgeId: number; data?: JudgeConflictRequest },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restJudgesConflictAdd>>,
+	TError,
+	{ judgeId: number; data?: JudgeConflictRequest },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestJudgesConflictAddMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type restJudgesConflictRemoveResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type restJudgesConflictRemoveResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type restJudgesConflictRemoveResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restJudgesConflictRemoveResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type restJudgesConflictRemoveResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restJudgesConflictRemoveResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restJudgesConflictRemoveResponseSuccess =
+	restJudgesConflictRemoveResponse204 & {
+		headers: Headers;
+	};
+export type restJudgesConflictRemoveResponseError = (
+	| restJudgesConflictRemoveResponse400
+	| restJudgesConflictRemoveResponse401
+	| restJudgesConflictRemoveResponse403
+	| restJudgesConflictRemoveResponse404
+	| restJudgesConflictRemoveResponse500
+) & {
+	headers: Headers;
+};
+
+export type restJudgesConflictRemoveResponse =
+	| restJudgesConflictRemoveResponseSuccess
+	| restJudgesConflictRemoveResponseError;
+
+export const getRestJudgesConflictRemoveUrl = (
+	judgeId: number,
+	strikeId: number,
+) => {
+	return `${indexcardsApiBaseUrl()}/rest/judges/${judgeId}/conflicts/${strikeId}`;
+};
+
+/**
+ * Removes a conflict the caller entered, or one declared from the judge's side (a derived or judge-entered row). A coach's or tab's row is 403
+ * @summary Remove a conflict
+ */
+export const restJudgesConflictRemove = async (
+	judgeId: number,
+	strikeId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restJudgesConflictRemoveResponse> => {
+	const res = await (fetchFn ?? fetch)(
+		getRestJudgesConflictRemoveUrl(judgeId, strikeId),
+		{
+			credentials: 'include',
+			...options,
+			method: 'DELETE',
+		},
+	);
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restJudgesConflictRemoveResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restJudgesConflictRemoveResponse;
+};
+
+export const getRestJudgesConflictRemoveMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restJudgesConflictRemove>>,
+		TError,
+		{ judgeId: number; strikeId: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restJudgesConflictRemove>>,
+	TError,
+	{ judgeId: number; strikeId: number },
+	TContext
+> => {
+	const mutationKey = ['restJudgesConflictRemove'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restJudgesConflictRemove>>,
+		{ judgeId: number; strikeId: number }
+	> = (props) => {
+		const { judgeId, strikeId } = props ?? {};
+
+		return restJudgesConflictRemove(
+			judgeId,
+			strikeId,
+			fetchOptions,
+			fetcherFn,
+		);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestJudgesConflictRemoveMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restJudgesConflictRemove>>
+>;
+
+export type RestJudgesConflictRemoveMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Remove a conflict
+ */
+export const createRestJudgesConflictRemove = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restJudgesConflictRemove>>,
+			TError,
+			{ judgeId: number; strikeId: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restJudgesConflictRemove>>,
+	TError,
+	{ judgeId: number; strikeId: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestJudgesConflictRemoveMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

@@ -30,6 +30,8 @@ import type {
 	HomepageAd,
 	InboxMessage,
 	InboxUnreadCount,
+	JudgeConflict,
+	JudgeConflicts,
 	JudgeHistoryPage,
 	JudgeLiveDoc,
 	JudgeRecord,
@@ -1322,6 +1324,278 @@ export const getRestJudgesBallotFeedbackResponseMock = (
 	...overrideResponse,
 });
 
+export const getRestJudgesConflictsResponseMock = (
+	overrideResponse: Partial<Extract<JudgeConflicts, object>> = {},
+): JudgeConflicts => ({
+	Judge: {
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		code: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 8, max: 8 } }),
+			null,
+		]),
+		first: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 63 } }),
+			null,
+		]),
+		last: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 63 } }),
+			null,
+		]),
+		school: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		School: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+	},
+	Tourn: {
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		name: faker.string.alpha({ length: { min: 10, max: 63 } }),
+		tz: faker.string.alpha({ length: { min: 10, max: 31 } }),
+		mockTrial: faker.datatype.boolean(),
+	},
+	editable: faker.datatype.boolean(),
+	Strikes: Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		type: faker.helpers.arrayElement([
+			'entry',
+			'school',
+			'region',
+		] as const),
+		entry: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		Entry: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				code: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				Event: {
+					abbr: faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+				},
+			},
+			null,
+		]),
+		school: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		School: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		region: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		Region: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		EnteredBy: faker.helpers.arrayElement([
+			{
+				first: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		removable: faker.datatype.boolean(),
+	})),
+	Candidates: {
+		Entries: Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			code: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			event: faker.number.int({ min: 0, max: 9007199254740991 }),
+			Event: {
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				abbr: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			category: faker.number.int({ min: 0, max: 9007199254740991 }),
+			school: faker.helpers.arrayElement([
+				faker.number.int({ min: 0, max: 9007199254740991 }),
+				null,
+			]),
+			School: faker.helpers.arrayElement([
+				{
+					id: faker.number.int({ min: 0, max: 9007199254740991 }),
+					name: faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+				},
+				null,
+			]),
+			Students: Array.from(
+				{ length: faker.number.int({ min: 1, max: 10 }) },
+				(_, i) => i + 1,
+			).map(() => ({
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				first: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+			})),
+			state: faker.helpers.arrayElement([
+				'open',
+				'entry',
+				'school',
+				'ownSchool',
+			] as const),
+		})),
+		Regions: Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		})),
+	},
+	...overrideResponse,
+});
+
+export const getRestJudgesConflictAddResponseMock = (
+	overrideResponse: Partial<Extract<JudgeConflict, object>> = {},
+): JudgeConflict => ({
+	id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	type: faker.helpers.arrayElement(['entry', 'school', 'region'] as const),
+	entry: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	Entry: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			code: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			Event: {
+				abbr: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+		},
+		null,
+	]),
+	school: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	School: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	region: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	Region: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	EnteredBy: faker.helpers.arrayElement([
+		{
+			first: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			last: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	removable: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
 export const getRestTournsResponseMock = (): Tourn[] =>
 	Array.from(
 		{ length: faker.number.int({ min: 1, max: 10 }) },
@@ -2347,6 +2621,7 @@ export const getUserHomeResponseMock = (
 				type: faker.helpers.arrayElement([
 					'school',
 					'entry',
+					'region',
 					'departure',
 					'time',
 				] as const),
@@ -2388,7 +2663,23 @@ export const getUserHomeResponseMock = (
 					},
 					null,
 				]),
+				region: faker.helpers.arrayElement([
+					faker.number.int({ min: 0, max: 9007199254740991 }),
+					null,
+				]),
+				Region: faker.helpers.arrayElement([
+					{
+						name: faker.helpers.arrayElement([
+							faker.string.alpha({
+								length: { min: 10, max: 20 },
+							}),
+							null,
+						]),
+					},
+					null,
+				]),
 			})),
+			tournConflicts: faker.datatype.boolean(),
 			Quizzes: Array.from(
 				{ length: faker.number.int({ min: 1, max: 10 }) },
 				(_, i) => i + 1,
@@ -4633,6 +4924,75 @@ export const getRestJudgesBallotFeedbackMockHandler = (
 	);
 };
 
+export const getRestJudgesConflictsMockHandler = (
+	overrideResponse?:
+		| JudgeConflicts
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<JudgeConflicts> | JudgeConflicts),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/judges/:judgeId/conflicts',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestJudgesConflictsResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestJudgesConflictAddMockHandler = (
+	overrideResponse?:
+		| JudgeConflict
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<JudgeConflict> | JudgeConflict),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/judges/:judgeId/conflicts',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestJudgesConflictAddResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestJudgesConflictRemoveMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.delete>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.delete(
+		'*/rest/judges/:judgeId/conflicts/:strikeId',
+		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
 export const getRestTournsMockHandler = (
 	overrideResponse?:
 		| Tourn[]
@@ -5881,6 +6241,9 @@ export const getIndexCardsAPIMock = () => [
 	getRestJudgesBallotStatusMockHandler(),
 	getRestJudgesBallotConfirmMockHandler(),
 	getRestJudgesBallotFeedbackMockHandler(),
+	getRestJudgesConflictsMockHandler(),
+	getRestJudgesConflictAddMockHandler(),
+	getRestJudgesConflictRemoveMockHandler(),
 	getRestTournsMockHandler(),
 	getRestTournsSectionsRoomGetMockHandler(),
 	getRestTournsSectionsRoomJoinMockHandler(),

@@ -22,6 +22,7 @@
 	const conflictTypes: { types: Strike['type'][], label: string, joined: boolean }[] = [
 		{ types: ['school'], label: 'Schools', joined: true },
 		{ types: ['entry'], label: 'Entries', joined: true },
+		{ types: ['region'], label: 'Regions', joined: true },
 		{ types: ['departure', 'time'], label: 'Unavailable', joined: false },
 	];
 
@@ -29,6 +30,7 @@
 		switch (strike.type) {
 			case 'school': return strike.School?.name ?? 'A school';
 			case 'entry': return strike.Entry?.code ?? 'An entry';
+			case 'region': return strike.Region?.name ?? 'A region';
 			case 'departure': return strike.start ? `After ${when(strike.start)}` : 'Departure';
 			case 'time': return strike.start && strike.end ? `${when(strike.start)} to ${when(strike.end)}` : 'Time conflict';
 		}
@@ -166,7 +168,8 @@
 							<div>
 								<div class="flex items-baseline justify-between gap-2">
 									<div class={subhead}>Your conflicts</div>
-									<a class={link} href={classic.conflicts(judge.id)}>Add conflicts</a>
+									<!-- A category that doesn't take judge conflicts still gets the link, to the account-wide list -->
+									<a class={link} href={judge.tournConflicts ? classic.conflicts(judge.id) : classic.standingConflicts()}>Add conflicts</a>
 								</div>
 								{#if judge.Strikes.length > 0}
 									<dl class="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1 text-sm">

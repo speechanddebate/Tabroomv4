@@ -61,6 +61,8 @@ export interface HomeJudge {
 	/** Until when the judge may edit feedback on entered ballots */
 	feedbackUntil: string | null;
 	Strikes: Strike[];
+	/** Whether the judge's category takes conflicts entered by its judges */
+	tournConflicts: boolean;
 	/** Questionnaires the judge must complete before judging */
 	Quizzes: HomeJudgeQuizzesItem[];
 	/** The open panels the judge sits on, at running tournaments */

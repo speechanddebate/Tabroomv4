@@ -5,7 +5,7 @@ import * as utils from './utils.js';
 /** A conflict or unavailability recorded against a judge at a tournament, as the judge may see it */
 export const StrikeSchema = z.object({
 	id: utils.id,
-	type: z.enum(['school', 'entry', 'departure', 'time']).meta({ description: 'What the strike is against: a school, an entry, or a time the judge is unavailable (departure runs to the end of the tournament)' }),
+	type: z.enum(['school', 'entry', 'region', 'departure', 'time']).meta({ description: 'What the strike is against: a school, an entry, a region (mock trial), or a time the judge is unavailable (departure runs to the end of the tournament)' }),
 	start: z.iso.datetime().nullable().meta({ description: 'The start of the unavailable window in UTC, for departure and time strikes' }),
 	end: z.iso.datetime().nullable().meta({ description: 'The end of the unavailable window in UTC, for time strikes' }),
 	school: utils.id.nullable(),
@@ -16,6 +16,10 @@ export const StrikeSchema = z.object({
 	Entry: z.object({
 		code: z.string().nullable(),
 	}).strict().nullable().meta({ description: 'The entry the strike is against, for entry strikes' }),
+	region: utils.id.nullable(),
+	Region: z.object({
+		name: z.string().nullable(),
+	}).strict().nullable().meta({ description: 'The region the strike is against, for region strikes' }),
 }).strict().meta({
 	id: 'Strike',
 }) satisfies ZodOpenApiSchemaObject;

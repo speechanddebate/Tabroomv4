@@ -256,7 +256,7 @@ const ROLES: Record<string, RoleDef> = {
 		description: 'The person a record belongs to',
 		permissions: [
 			{
-				actions: ['judge/read', 'ballot/*', 'entry/read', 'entry/flip'],
+				actions: ['judge/read', 'judge/conflicts', 'ballot/*', 'entry/read', 'entry/flip'],
 			},
 		],
 	},

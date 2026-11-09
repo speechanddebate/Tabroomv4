@@ -50,15 +50,15 @@ const lakeside = { id: 1701, name: 'Lakeside High School' };
 /* Builders for the nested rows that repeat */
 
 const schoolStrike = (id: number, school: number, name: string): Strike => ({
-	id, type: 'school', start: null, end: null, school, School: { name }, entry: null, Entry: null,
+	id, type: 'school', start: null, end: null, school, School: { name }, entry: null, Entry: null, region: null, Region: null,
 });
 
 const entryStrike = (id: number, entry: number, code: string): Strike => ({
-	id, type: 'entry', start: null, end: null, school: null, School: null, entry, Entry: { code },
+	id, type: 'entry', start: null, end: null, school: null, School: null, entry, Entry: { code }, region: null, Region: null,
 });
 
 const timeStrike = (id: number, type: 'time' | 'departure', start: string, end: string | null): Strike => ({
-	id, type, start, end, school: null, School: null, entry: null, Entry: null,
+	id, type, start, end, school: null, School: null, entry: null, Entry: null, region: null, Region: null,
 });
 
 type QuizState = 'done' | 'todo' | 'unapproved';
@@ -367,6 +367,7 @@ const ldJudge: HomeJudge = {
 	roundsJudged   : 2,
 	ballotsEntered : 2,
 	feedbackUntil  : '2026-11-08T00:00:00Z',
+	tournConflicts : true,
 	Strikes        : [
 		schoolStrike(701, 1810, 'Riverdale Prep'),
 		schoolStrike(702, 1811, 'Westlake'),
@@ -454,6 +455,7 @@ const parts: Record<Phase, Record<HomeRole, RolePart>> = {
 				roundsJudged   : 0,
 				ballotsEntered : 0,
 				feedbackUntil  : null,
+				tournConflicts : true,
 				Strikes        : [
 					schoolStrike(711, 1810, 'Riverdale Prep'),
 					timeStrike(712, 'time', '2026-11-22T20:00:00Z', '2026-11-23T00:00:00Z'),
@@ -520,6 +522,7 @@ const parts: Record<Phase, Record<HomeRole, RolePart>> = {
 				roundsJudged   : 7,
 				ballotsEntered : 7,
 				feedbackUntil  : '2026-11-01T00:00:00Z',
+				tournConflicts : false,
 				Strikes        : [],
 				Quizzes        : [
 					quiz(321, 'Cypress Ridge judge pledge', ld.name, 'done'),
@@ -673,6 +676,7 @@ export const bluebonnetTwoJudgeRows: HomeTourn = {
 		Jpools         : [{ id: 621, name: 'PF Prelims', site: null, Site: null, message: null }],
 		roundsJudged   : 1,
 		ballotsEntered : 1,
+		tournConflicts : false,
 		Strikes        : [],
 		Quizzes        : [quiz(341, 'Bluebonnet judge pledge', pf.name, 'done')],
 		CurrentBallots : [],

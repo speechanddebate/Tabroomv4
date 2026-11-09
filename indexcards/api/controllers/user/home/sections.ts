@@ -21,7 +21,7 @@ type Settings = Record<string, string> | null | undefined;
 
 const iso = (value: Date | string | null | undefined) => sqlDatetime(value)?.toISOString() ?? null;
 
-const STRIKE_TYPES: readonly string[] = ['school', 'entry', 'departure', 'time'];
+const STRIKE_TYPES: readonly string[] = ['school', 'entry', 'region', 'departure', 'time'];
 
 export function toFine(row: Rows<typeof fineRepo.getFines>[number]): Fine {
 	return {
@@ -358,7 +358,10 @@ export function buildJudges(tourn: { id: number; start: Date; end: Date }, data:
 					School: strike.school === null ? null : { name: strike.schoolName },
 					entry: strike.entry,
 					Entry: strike.entry === null ? null : { code: strike.entryCode },
+					region: strike.region,
+					Region: strike.region === null ? null : { name: strike.regionName },
 				})),
+			tournConflicts: isOn(category?.settings?.conflicts),
 			Quizzes: judgeQuizzes(requirements, data.quizzes, data.attempts),
 			CurrentBallots: running ? data.currentBallots.filter((ballot) => ballot.JudgeId === judge.id) : [],
 			Fines: data.fines.filter((fine) => fine.judge === judge.id).map(toFine),

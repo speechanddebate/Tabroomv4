@@ -30,6 +30,8 @@ export * from './src/ResultSet.js';
 export * from './src/Room/Room.js';
 export * from './src/Site.js';
 export * from './src/Strike.js';
+export * from './src/Region.js';
+export * from './src/JudgeConflicts.js';
 export * from './src/Student.js';
 export * from './src/Timeslot.js';
 export * from './src/Topic.js';

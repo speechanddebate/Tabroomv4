@@ -17,7 +17,6 @@ export const homeFeatureNames = [
 	'onsite',
 	'registration',
 	'judgeFacts',
-	'conflicts',
 	'rounds',
 	'results',
 	'tab',

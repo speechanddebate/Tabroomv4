@@ -61,6 +61,9 @@ export function fakeTournName() {
 export function fakeSchoolName() {
 	return `${faker.helpers.arrayElement(SCHOOLS)} ${faker.helpers.arrayElement(SCHOOL_SUFFIXES)}`;
 }
+export function fakeRegionName() {
+	return `${faker.location.cardinalDirection()} ${faker.location.state()}`;
+}
 export function fakeRoundName() {
 	const category = faker.helpers.arrayElement(CATEGORIES);
 	const roundNum = faker.number.int({ min: 1, max: 10 });

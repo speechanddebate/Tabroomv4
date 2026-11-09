@@ -46,6 +46,7 @@ export const classic = {
 	training       : (event: number, judge: number) => `${CLASSIC_URL}/user/judge/training.mhtml?sample=1&event_id=${event}&judge_id=${judge}`,
 	legionComments : (panel: number, judge: number) => `${CLASSIC_URL}/user/judge/legion_comments.mhtml?panel_id=${panel}&judge_id=${judge}`,
 	conflicts      : (judge: number) => `${CLASSIC_URL}/user/judge/judge_conflicts.mhtml?judge_id=${judge}`,
+	standingConflicts: () => `${CLASSIC_URL}/user/judge/conflicts.mhtml`,
 	flip           : () => `${CLASSIC_URL}/user/enter/flip.mhtml`,
 	entryPrefs     : (entry: number, school: number | null, type: string | null) =>
 		`${CLASSIC_URL}/user/enter/ratings/${type ?? 'ordinals'}_prefs.mhtml?entry_id=${entry}&school_id=${school ?? ''}`,

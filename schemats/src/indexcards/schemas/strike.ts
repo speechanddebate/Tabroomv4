@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.2.0
  */
 import type { StrikeEntry } from './strikeEntry';
+import type { StrikeRegion } from './strikeRegion';
 import type { StrikeSchool } from './strikeSchool';
 import type { StrikeType } from './strikeType';
 
@@ -15,7 +16,7 @@ export interface Strike {
 	 * @exclusiveMinimum 0
 	 */
 	id: number;
-	/** What the strike is against: a school, an entry, or a time the judge is unavailable (departure runs to the end of the tournament) */
+	/** What the strike is against: a school, an entry, a region (mock trial), or a time the judge is unavailable (departure runs to the end of the tournament) */
 	type: StrikeType;
 	/** The start of the unavailable window in UTC, for departure and time strikes */
 	start: string | null;
@@ -27,4 +28,7 @@ export interface Strike {
 	entry: number | null;
 	/** The entry the strike is against, for entry strikes */
 	Entry: StrikeEntry;
+	region: number | null;
+	/** The region the strike is against, for region strikes */
+	Region: StrikeRegion;
 }
