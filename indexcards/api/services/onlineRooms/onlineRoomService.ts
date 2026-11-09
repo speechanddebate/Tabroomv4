@@ -202,6 +202,50 @@ export async function getSectionRoom(db: Database, tournId: number, sectionId: n
 	})).get(sectionId) ?? null;
 }
 
+type RoomSettings = Record<string, string> | null | undefined;
+
+/** How a section's room shows to a person: where it is and whether they can join it online */
+export function roomView({ live, host, room, campusName, eventSettings, roundSettings, panelSettings }: {
+	live: boolean;
+	/** judges and tab staff, who get the host link first in sync rooms */
+	host: boolean;
+	room: { name: string | null; url: string | null; judgeUrl: string | null } | null;
+	/** "{event abbr} {section letter}", with the matched event's abbr when the event shares rooms */
+	campusName: string;
+	eventSettings: RoomSettings;
+	roundSettings: RoomSettings;
+	panelSettings: RoomSettings;
+}): RoomView {
+	const mode = isOn(roundSettings?.use_normal_rooms) ? 'sync' : eventSettings?.online_mode ?? null;
+	const hybrid = isOn(panelSettings?.online_hybrid);
+	const offline: RoomView = { name: room?.name ?? null, joinable: false, hybrid: false, mapUrl: null };
+
+	// An in-person room's url is a map to it
+	if (!mode || mode === 'none') return { ...offline, mapUrl: room?.url || null };
+
+	// Rooms close an hour after the round is done
+	if (!live) return offline;
+
+	// A hybrid event meets in person, except in the sections marked hybrid. Like classic, only the
+	// hybrid sections get a map
+	if (isOn(eventSettings?.online_hybrid) && panelSettings?.online_hybrid === undefined) return offline;
+
+	if (mode === 'sync') {
+		return roundSettings?.override_link || (host && room?.judgeUrl) || room?.url
+			? { ...offline, joinable: true }
+			: offline;
+	}
+
+	if (!CAMPUS_MODES.includes(mode)) return offline;
+
+	return {
+		name: hybrid ? room?.name ?? null : campusName,
+		joinable: true,
+		hybrid,
+		mapUrl: hybrid ? roundSettings?.override_link || room?.url || null : null,
+	};
+}
+
 /** The section's room for a person taking part in it as role */
 function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed, isStaff, mode }: SectionPart): ResolvedRoom {
 	const { eventSettings, roundSettings, panelSettings, tournSettings } = room;
@@ -211,9 +255,17 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 	const eventId = room.matchPanelId ? room.matchEventId : room.eventId;
 	const eventAbbr = room.matchPanelId ? room.matchEventAbbr : room.eventAbbr;
 
-	const hybrid = isOn(panelSettings?.online_hybrid);
-	const campus = CAMPUS_MODES.includes(mode ?? '');
-	const name = campus && !hybrid ? `${eventAbbr ?? ''} ${room.panelLetter ?? ''}`.trim() : room.roomName;
+	// judges and tab get the host link and password when the room has one
+	const host = !!roles.judge || isStaff;
+	const display = roomView({
+		live: !!room.live,
+		host,
+		room: { name: room.roomName, url: room.roomUrl, judgeUrl: room.roomJudgeUrl },
+		campusName: `${eventAbbr ?? ''} ${room.panelLetter ?? ''}`.trim(),
+		eventSettings,
+		roundSettings,
+		panelSettings,
+	});
 
 	const log: RoomLog = {
 		tag: role === 'observer' ? 'observer' : 'panel',
@@ -221,34 +273,17 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 		panel: panelId,
 		judge: roles.judge?.id ?? null,
 		entry: observed?.entryId ?? roles.entry?.entryId ?? null,
-		description: role === 'observer' ? `Entered ${name} as an observer` : `Entered ${name} from Tabroom`,
+		description: role === 'observer' ? `Entered ${display.name} as an observer` : `Entered ${display.name} from Tabroom`,
 	};
 
-	const offline = (display: Partial<RoomView> = {}): ResolvedRoom => ({
-		display: { name: room.roomName, joinable: false, hybrid: false, mapUrl: null, ...display },
-		launch: null,
-		log,
-	});
-
-	// Rooms close an hour after the round is done
-	if (!room.live) return offline();
-
-	// A hybrid event meets in person, except in the sections marked hybrid. Like classic, only the
-	// hybrid sections get a map
-	if (isOn(eventSettings?.online_hybrid) && panelSettings?.online_hybrid === undefined) {
-		return offline();
-	}
+	if (!display.joinable) return { display, launch: null, log };
 
 	if (mode === 'sync') {
-		// judges and tab get the host link and password when the room has one
-		const host = !!roles.judge || isStaff;
-		const url = roundSettings?.override_link || (host && room.roomJudgeUrl) || room.roomUrl || null;
-		if (!url) return offline();
-
 		return {
-			display: { name: room.roomName, joinable: true, hybrid: false, mapUrl: null },
+			display,
 			launch: {
-				url,
+				// joinable, so one of these is set
+				url: roundSettings?.override_link || (host && room.roomJudgeUrl) || room.roomUrl || '',
 				password: (host && room.roomJudgePassword) || room.roomPassword || null,
 				campus: null,
 			},
@@ -256,20 +291,13 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 		};
 	}
 
-	if (!campus) return offline();
-
 	const objectId = roles.judge ? `judge-${roles.judge.id}`
 		: roles.entry ? `entry-${roles.entry.entryId}`
 		: observed ? String(observed.entryId)
 		: null;
 
 	return {
-		display: {
-			name,
-			joinable: true,
-			hybrid,
-			mapUrl: hybrid ? roundSettings?.override_link || room.roomUrl || null : null,
-		},
+		display,
 		launch: {
 			url: config.campus.uri,
 			password: null,
@@ -279,7 +307,7 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 				role,
 				object_id: objectId,
 				displayName: displayName(role, eventSettings, person, roles),
-				roomName: name,
+				roomName: display.name,
 				roomInstructions: eventSettings?.online_instructions ?? null,
 				supportEmail: eventSettings?.online_support ?? null,
 				server: campusServer(tournSettings?.campus_zone, room.tournTz),
@@ -290,7 +318,7 @@ function sectionRoom(person: SessionPerson, role: Role, { room, roles, observed,
 				event_id: eventId,
 				tz: room.tournTz,
 				mode,
-				hybrid: hybrid ? 1 : null,
+				hybrid: display.hybrid ? 1 : null,
 				entry_code: roles.entry?.entryCode ?? null,
 				judge_code: roles.judge?.code ?? null,
 			},

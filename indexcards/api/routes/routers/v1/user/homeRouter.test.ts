@@ -210,7 +210,7 @@ describe('GET /user/home', () => {
 				],
 			});
 			expect(judge.CurrentBallots.map((ballot: { id: number }) => ballot.id)).toEqual([open.id]);
-			expect(judge.CurrentBallots[0].Room).toEqual({ name: null, joinable: false, hybrid: false, mapUrl: null });
+			expect(judge.CurrentBallots[0].Room).toBeNull();
 			expect(judge.Fines.map((fine: { id: number }) => fine.id).sort()).toEqual([mine.id, personal.id].sort());
 			expect(judge.Fines.find((fine: { id: number }) => fine.id === mine.id)).toMatchObject({ amount: 25, currency: '€', judge: Judge.id, Judge: { first: Judge.first, last: Judge.last } });
 		});
@@ -691,9 +691,11 @@ describe('GET /user/home', () => {
 
 	it('runs the same number of queries for a one-tourn judge and a heavy account with every role at 15 tourns', async () => {
 		const DAY = 86400000;
-		const one = await factories.tourn.createFull();
-		await judgeAt(personId, one);
-		const { count: oneTourn, queries } = await countQueries(() => home(userkey));
+		const one = await factories.tourn.createFull({ start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY) });
+		const { Judge } = await judgeAt(personId, one);
+		const panel = await factories.panel.create({ round: one.Round.id, room: (await factories.room.create({ name: '204' })).id });
+		await factories.ballot.create({ panel: panel.id, judge: Judge.id, entry: (await factories.entry.create({ event: one.Event.id })).id });
+		const { count: oneTourn, queries, result: oneResult } = await countQueries(() => home(userkey));
 
 		// a coach, judge, competitor, and tab staffer at 15 tourns in the window, with 50 entries at the running one
 		const Busy = await factories.person.create();
@@ -703,11 +705,13 @@ describe('GET /user/home', () => {
 			const tourn = await factories.tourn.createFull(running
 				? { start: new Date(Date.now() - DAY), end: new Date(Date.now() + DAY) }
 				: { start: new Date(Date.now() + (i + 1) * DAY), end: new Date(Date.now() + (i + 2) * DAY) });
-			await judgeAt(Busy.id, tourn);
+			const { Judge: BusyJudge } = await judgeAt(Busy.id, tourn);
 			await competeAt(Busy.id, tourn);
 			const School = await coachAt(Busy.id, tourn);
 			await tabAt(Busy.id, tourn);
 			if (running) {
+				const panel = await factories.panel.create({ round: tourn.Round.id, room: (await factories.room.create({ name: '205' })).id });
+				await factories.ballot.create({ panel: panel.id, judge: BusyJudge.id, entry: (await factories.entry.create({ event: tourn.Event.id })).id });
 				for (let n = 0; n < 50; n++) await factories.entry.create({ event: tourn.Event.id, school: School.id });
 			}
 		}
@@ -717,12 +721,15 @@ describe('GET /user/home', () => {
 		const result = heavy.result;
 
 		// the session lookup plus the home stages: tourns; judges, entries, schools, permissions, events, person, tabroom;
-		// categories, pools, counts, strikes, judge panels, fines, entry rounds, school entries, school judges, strike cards,
+		// categories, pools, counts, strikes, judge ballot rows, fines, entry rounds, school entries, school judges, strike cards,
 		// school flips, school counts, entry counts, published tourns; quizzes, attempts, rounds, panel settings, panel ballots, scores, students
 		expect(selects(queries)).toBe(30);
 		expect(selects(heavy.queries)).toBe(30);
 		expect(selects(poll.queries)).toBe(30);
 		expect(oneTourn).toBeLessThanOrEqual(31);
+		expect(oneResult.body.Tourns[0].Judges[0].CurrentBallots.map((ballot: { Room: { name: string } }) => ballot.Room.name)).toEqual(['204']);
+		expect(result.body.Tourns[0].Judges[0].CurrentBallots.map((ballot: { Room: { name: string } }) => ballot.Room.name)).toEqual(['205']);
+		expect(poll.result.body.Tourns[0].Judges[0].CurrentBallots.map((ballot: { Room: { name: string } }) => ballot.Room.name)).toEqual(['205']);
 		expect(result.body.Tourns).toHaveLength(15);
 		expect(result.body.Tourns[0].Schools[0].Counts.entries).toBe(50);
 	});

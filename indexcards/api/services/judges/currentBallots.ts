@@ -3,6 +3,7 @@ import type ballotRepo from '../../repos/ballotRepo.js';
 import logger from '../../helpers/logger.js';
 import { ballotStatus, decisionDeadline, flightNumber, isChair, isOn, judgesSeeRound, roundStart, sideLabel, sideNames, sideVisible } from '../ballots/ballotRules.js';
 import { flipStatus } from '../flips/flipRules.js';
+import { roomView } from '../onlineRooms/onlineRoomService.js';
 
 export type JudgePanelRow = Awaited<ReturnType<typeof ballotRepo.getJudgePanels>>[number];
 
@@ -12,9 +13,9 @@ type SettingsById = Map<number, Settings>;
 /** The settings the current ballot card reads, by table */
 export const CURRENT_BALLOT_SETTINGS = {
 	tourn: ['legion'],
-	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label', 'sidelock_elims', 'no_side_constraints', 'prelim_decision_deadline', 'elim_decision_deadline'],
-	round: ['judges_ballots_visible', 'include_room_notes'],
-	panel: ['flip_status', 'show_async'],
+	event: ['online_mode', 'online_ballots', 'start_button', 'start_button_text', 'flight_offset', 'aff_label', 'neg_label', 'sidelock_elims', 'no_side_constraints', 'prelim_decision_deadline', 'elim_decision_deadline', 'online_hybrid'],
+	round: ['judges_ballots_visible', 'include_room_notes', 'use_normal_rooms', 'override_link'],
+	panel: ['flip_status', 'show_async', 'online_hybrid'],
 };
 
 export function settingsById(rows: { id: number; settings?: Settings }[]): SettingsById {
@@ -32,7 +33,7 @@ export type CurrentBallotContext = {
 /**
  * The judges' current ballots one per panel and judge,
  * from getJudgePanels rows and the settings of their tourns, events, rounds, and panels.
- * Room is left null for the caller to resolve for the person
+ * Room is the section's room as the judge sees it
  */
 export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotContext): CurrentBallot[] {
 	const ballots: CurrentBallot[] = [];
@@ -71,6 +72,17 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 		if (onlineMode === 'async' && end < ctx.now) continue;
 
 		const sided = sideVisible({ type: first.roundType }, panel?.flip_status, event);
+		const view = roomView({
+			// The judge's own unconfirmed ballot keeps the room live; a confirmed panel is only here as a
+			// presiding chair's until end, or past end for feedback links, where the room is closed
+			live: status !== 'confirmed' || ctx.now < end,
+			host: true,
+			room: first.room === null ? null : { name: first.roomName, url: first.roomUrl, judgeUrl: first.roomJudgeUrl },
+			campusName: `${first.matchEventAbbr ?? first.eventAbbr ?? ''} ${first.panelLetter ?? ''}`.trim(),
+			eventSettings: event,
+			roundSettings: round,
+			panelSettings: panel,
+		});
 
 		ballots.push({
 			id: first.panel,
@@ -89,7 +101,7 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 			deadline: (decisionDeadline(timing) ?? end).toISOString(),
 			end: end.toISOString(),
 			roomId: first.room,
-			Room: null,
+			Room: first.room === null && !view.joinable ? null : view,
 			roomNotes: isOn(round?.include_room_notes) ? first.roomNotes : null,
 			chair,
 			tourn: first.tourn,

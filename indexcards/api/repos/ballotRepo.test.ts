@@ -242,10 +242,12 @@ describe('ballotRepo', async () => {
 				room: Room.id,
 				roomName: '101',
 				roomUrl: Room.url,
+				roomJudgeUrl: Room.judge_url,
 				roomNotes: Room.notes,
 				event: Event.id,
 				eventName: Event.name,
 				eventAbbr: Event.abbr,
+				matchEventAbbr: null,
 				eventType: Event.type,
 				category: Category.id,
 				tourn: Tourn.id,
@@ -254,6 +256,18 @@ describe('ballotRepo', async () => {
 				entryActive: 1,
 				scoreTag: null,
 			});
+		});
+
+		it('getJudgePanels returns the abbr of the event online_event_match points to', async () => {
+			const Match = await factories.event.create({ abbr: 'PF' });
+			const { Round } = await factories.tourn.createFull({ Event: { settings: { online_event_match: String(Match.id) } } });
+			const { Judge } = await factories.person.createJudge();
+			const Panel = await factories.panel.create({ round: Round.id });
+			await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+
+			const rows = await ballotRepo.getJudgePanels(db, { judges: [Judge.id] });
+
+			expect(rows.map((row) => row.matchEventAbbr)).toEqual(['PF']);
 		});
 
 		it("getEntryRounds returns the entries' or panels' ballots with the round's publish levels and the judge", async () => {

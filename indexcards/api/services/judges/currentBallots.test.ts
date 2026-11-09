@@ -28,10 +28,12 @@ function row(overrides: Partial<JudgePanelRow> = {}): JudgePanelRow {
 		room: 300,
 		roomName: '101',
 		roomUrl: null,
+		roomJudgeUrl: null,
 		roomNotes: 'back of the gym',
 		event: 400,
 		eventName: 'Lincoln Douglas',
 		eventAbbr: 'LD',
+		matchEventAbbr: null,
 		eventType: 'debate',
 		category: 500,
 		tourn: 600,
@@ -67,7 +69,7 @@ describe('buildCurrentBallots', () => {
 			start: start.toISOString(),
 			deadline: end.toISOString(),
 			roomId: 300,
-			Room: null,
+			Room: { name: '101', joinable: false, hybrid: false, mapUrl: null },
 			roomNotes: null,
 			chair: false,
 			tourn: 600,
@@ -171,6 +173,47 @@ describe('buildCurrentBallots', () => {
 		});
 		expect(buildCurrentBallots([row({ scoreTag: 'refute' })], ctx)[0].status).toBe('scored');
 		expect(buildCurrentBallots([row({ audit: 1, eventType: 'congress', chair: 1 })], ctx)[0].status).toBe('confirmed');
+	});
+
+	describe('Room', () => {
+		const room = (overrides: Partial<JudgePanelRow>, ctx: Partial<CurrentBallotContext> = {}) => buildCurrentBallots([row(overrides)], context(ctx))[0].Room;
+		const events = (settings: Record<string, string>) => ({ events: new Map([[400, settings]]) });
+
+		it('maps an in-person room by its url', () => {
+			expect(room({ roomUrl: 'https://maps.example/101' }, events({}))).toEqual({ name: '101', joinable: false, hybrid: false, mapUrl: 'https://maps.example/101' });
+			expect(room({}, events({ online_mode: 'none' }))).toEqual({ name: '101', joinable: false, hybrid: false, mapUrl: null });
+		});
+
+		it('joins a sync room by its judge url, its url, or the round override link', () => {
+			const joinable = { name: '101', joinable: true, hybrid: false, mapUrl: null };
+
+			expect(room({ roomJudgeUrl: 'https://meet.example/host' })).toEqual(joinable);
+			expect(room({ roomUrl: 'https://meet.example/101' })).toEqual(joinable);
+			expect(room({}, { rounds: new Map([[200, { override_link: 'https://meet.example/all' }]]) })).toEqual(joinable);
+			expect(room({})).toEqual({ ...joinable, joinable: false });
+		});
+
+		it('names a Campus room after the section, in the matched event when the event shares rooms', () => {
+			expect(room({}, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'LD A', joinable: true, hybrid: false, mapUrl: null });
+			expect(room({ matchEventAbbr: 'CX' }, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'CX A', joinable: true, hybrid: false, mapUrl: null });
+		});
+
+		it('shows a hybrid Campus section as its in-person room with a map', () => {
+			expect(room({ roomUrl: 'https://maps.example/101' }, { ...events({ online_mode: 'nsda_campus' }), panels: new Map([[100, { online_hybrid: '1' }]]) }))
+				.toEqual({ name: '101', joinable: true, hybrid: true, mapUrl: 'https://maps.example/101' });
+		});
+
+		it('keeps a confirmed chair\'s room open until the end and closes it after', () => {
+			const chair = { audit: 1, eventType: 'congress' as const, chair: 1, roomUrl: 'https://meet.example/101' };
+
+			expect(room(chair)?.joinable).toBe(true);
+			expect(room(chair, { now: new Date('2026-03-07T14:00:00Z') })?.joinable).toBe(false);
+		});
+
+		it('is null without a room unless the room is Campus', () => {
+			expect(room({ room: null, roomName: null }, events({}))).toBeNull();
+			expect(room({ room: null, roomName: null }, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'LD A', joinable: true, hybrid: false, mapUrl: null });
+		});
 	});
 });
 

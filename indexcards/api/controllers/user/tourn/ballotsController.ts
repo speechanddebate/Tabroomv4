@@ -9,7 +9,6 @@ import panelRepo from '../../../repos/panelRepo.js';
 import roundRepo from '../../../repos/roundRepo.js';
 import tournRepo from '../../../repos/tournRepo.js';
 import { buildCurrentBallots, CURRENT_BALLOT_SETTINGS, settingsById } from '../../../services/judges/currentBallots.js';
-import { getSectionRooms } from '../../../services/onlineRooms/onlineRoomService.js';
 
 const unique = (ids: number[]) => [...new Set(ids)];
 
@@ -31,19 +30,13 @@ export async function getCurrent(req: ValidatedRequest, res: Response) {
 		panelRepo.getPanels(db, { ids: unique(rows.map((row) => row.panel)), settings: CURRENT_BALLOT_SETTINGS.panel }),
 	]);
 
-	const ballots = buildCurrentBallots(rows, {
+	return res.json(buildCurrentBallots(rows, {
 		now,
 		tourns: new Map([[tourn.id, tourn]]),
 		events: settingsById(events),
 		rounds: settingsById(rounds),
 		panels: settingsById(panels),
-	});
-
-	// Each ballot's room as this person sees it, so the join button needs no request of its own
-	const rooms = await getSectionRooms(db, tournId, ballots.map((ballot) => ballot.id), req.actor);
-	for (const ballot of ballots) ballot.Room = rooms.get(ballot.id)?.display ?? null;
-
-	return res.json(ballots);
+	}));
 }
 
 export default {

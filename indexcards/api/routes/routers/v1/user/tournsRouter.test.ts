@@ -159,7 +159,7 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 			.expect(200);
 
 		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
-		expect(res.body[0].Room).toEqual({ name: null, joinable: false, hybrid: false, mapUrl: null });
+		expect(res.body[0].Room).toBeNull();
 	});
 	it('Returns the room to join for an online round', async () => {
 		const { Tourn } = await factories.person.createBallot({
@@ -193,6 +193,35 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 
 		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
 		expect(new Map(res.body.map((ballot: { id: number; Room: { name: string } }) => [ballot.id, ballot.Room.name]))).toEqual(rooms);
+	});
+	it('Returns a Campus room named after the section', async () => {
+		const tourn = await factories.tourn.createFull({ Event: { abbr: 'CX', settings: { online_mode: 'nsda_campus' } } });
+		const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
+		const panel = await factories.panel.create({ round: tourn.Round.id, letter: 'B' });
+		await factories.ballot.create({ panel: panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${tourn.Tourn.id}/ballots/current`)
+			.asPerson(userkey)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: 'CX B', joinable: true, hybrid: false, mapUrl: null });
+	});
+	it('Returns a Campus room named after the matched event\'s section when events share rooms', async () => {
+		const match = await factories.event.create({ abbr: 'PF' });
+		const tourn = await factories.tourn.createFull({ Event: { abbr: 'CX', settings: { online_mode: 'nsda_campus', online_event_match: String(match.id) } } });
+		const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
+		const panel = await factories.panel.create({ round: tourn.Round.id, letter: 'C' });
+		await factories.ballot.create({ panel: panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+
+		const res = await request(server)
+			.get(`/v1/user/tourns/${tourn.Tourn.id}/ballots/current`)
+			.asPerson(userkey)
+			.expect(200);
+
+		expect(res.body).toMatchSchema(z.array(CurrentBallotSchema));
+		expect(res.body[0].Room).toEqual({ name: 'PF C', joinable: true, hybrid: false, mapUrl: null });
 	});
 	// Classic's rule: published, or released to judges only (judges_ballots_visible, "Publish ballots but not schematic")
 	it.each([

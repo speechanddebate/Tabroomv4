@@ -23,7 +23,7 @@ import tabroomRepo from '../../../repos/tabroomRepo.js';
 import tournRepo from '../../../repos/tournRepo.js';
 import { buildCurrentBallots, CURRENT_BALLOT_SETTINGS, settingsById } from '../../../services/judges/currentBallots.js';
 import { compareTourns, homeWindow, isOnline, isRunning, paradigmReview, requiredQuizIds, rolesFor, sqlDatetime } from '../../../services/home/homeRules.js';
-import { getEntryPrepRooms, getSchoolRooms, getSectionRooms, getUtilityRooms } from '../../../services/onlineRooms/onlineRoomService.js';
+import { getEntryPrepRooms, getSchoolRooms, getUtilityRooms } from '../../../services/onlineRooms/onlineRoomService.js';
 import { buildEntries, buildJudges, buildSchools, buildTab, type EntrySectionData, type JudgeSectionData, type SchoolSectionData, type TabSectionData } from './sections.js';
 
 function unique<T>(values: (T | null)[]): T[] {
@@ -121,11 +121,6 @@ export async function getHome(req: ValidatedRequest, res: Response) {
 		rounds: settingsById(rounds),
 		panels: settingsById(panels),
 	});
-	// Each ballot's room as this person sees it, so the join button needs no request of its own
-	await Promise.all([...Map.groupBy(currentBallots, (ballot) => ballot.tourn)].map(async ([tournId, ballots]) => {
-		const rooms = await getSectionRooms(db, tournId, ballots.map((ballot) => ballot.id), req.actor);
-		for (const ballot of ballots) ballot.Room = rooms.get(ballot.id)?.display ?? null;
-	}));
 
 	const judgeSection: JudgeSectionData = {
 		now,

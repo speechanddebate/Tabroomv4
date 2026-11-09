@@ -123,6 +123,11 @@ function joinPanelContext(query: ReturnType<typeof buildBallotQuery>) {
 /** The judges' ballots with what their panel card shows: the round, its time, the room, and each entry */
 export async function getJudgePanels(db: Database, opts: queryOpts & { judges: number[] }) {
 	return await joinPanelContext(buildBallotQuery(db, opts))
+		// Events that share rooms meet in the matched event's section; the Campus room is named after it
+		.leftJoin('event_setting as online_event_match', (join) => join
+			.onRef('online_event_match.event', '=', 'event.id')
+			.on('online_event_match.tag', '=', 'online_event_match'))
+		.leftJoin('event as match_event', 'match_event.id', 'online_event_match.value')
 		.select([
 			'ballot.id',
 			'ballot.judge',
@@ -146,10 +151,12 @@ export async function getJudgePanels(db: Database, opts: queryOpts & { judges: n
 			'room.id as room',
 			'room.name as roomName',
 			'room.url as roomUrl',
+			'room.judge_url as roomJudgeUrl',
 			'room.notes as roomNotes',
 			'event.id as event',
 			'event.name as eventName',
 			'event.abbr as eventAbbr',
+			'match_event.abbr as matchEventAbbr',
 			'event.type as eventType',
 			'event.category',
 			'event.tourn',

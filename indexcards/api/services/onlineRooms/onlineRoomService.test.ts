@@ -19,6 +19,7 @@ import {
 	getSectionRooms,
 	getUtilityRooms,
 	joinUtilityRoom,
+	roomView,
 } from './onlineRoomService.js';
 
 type SectionOverrides = {
@@ -89,6 +90,89 @@ async function prepRoom(entry: { id: number; event: number | null }, actor: Acto
 	if (isStaff && event?.tourn) actor.grant([{ scope: 'tourn', id: event.tourn, role: 'checker' }]);
 	return await getEntryPrepRoom(db, event?.tourn ?? 0, entry.id, actor);
 }
+
+describe('roomView', () => {
+	const physical = { name: 'Room 101', url: 'https://zoom.test/room', judgeUrl: 'https://zoom.test/host' };
+	const view = (overrides: Partial<Parameters<typeof roomView>[0]> = {}) => roomView({
+		live: true,
+		host: false,
+		room: physical,
+		campusName: 'PF A',
+		eventSettings: null,
+		roundSettings: null,
+		panelSettings: null,
+		...overrides,
+	});
+
+	it.each([null, 'none'])('maps an in-person room (online mode %s) by its url', (mode) => {
+		expect(view({ eventSettings: mode ? { online_mode: mode } : null, room: { ...physical, url: 'https://maps.test/room-101' } }))
+			.toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: 'https://maps.test/room-101' });
+	});
+
+	it.each([null, ''])('has no map for an in-person room with url %j', (url) => {
+		expect(view({ room: { ...physical, url } })).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+	});
+
+	it('is not joinable online once the room closes', () => {
+		expect(view({ live: false, eventSettings: { online_mode: 'nsda_campus' } }))
+			.toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+	});
+
+	it('is offline in a hybrid event section not marked hybrid', () => {
+		expect(view({ eventSettings: { online_mode: 'nsda_campus', online_hybrid: '1' } }))
+			.toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+	});
+
+	describe('sync', () => {
+		const eventSettings = { online_mode: 'sync' };
+
+		it('is joinable for a host with a host link', () => {
+			expect(view({ eventSettings, host: true })).toEqual({ name: 'Room 101', joinable: true, hybrid: false, mapUrl: null });
+		});
+
+		it('is not joinable for a non-host when the room has only a host link', () => {
+			expect(view({ eventSettings, room: { ...physical, url: null } }).joinable).toBe(false);
+		});
+
+		it('is joinable through the round override link with no room', () => {
+			expect(view({ eventSettings, room: null, roundSettings: { override_link: 'https://override.test' } }))
+				.toEqual({ name: null, joinable: true, hybrid: false, mapUrl: null });
+		});
+
+		it('is not joinable without any link', () => {
+			expect(view({ eventSettings, host: true, room: { ...physical, url: null, judgeUrl: null } }))
+				.toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+		});
+
+		it('is forced by use_normal_rooms', () => {
+			expect(view({ eventSettings: { online_mode: 'nsda_campus' }, roundSettings: { use_normal_rooms: '1' } }))
+				.toEqual({ name: 'Room 101', joinable: true, hybrid: false, mapUrl: null });
+		});
+	});
+
+	it.each(['async', 'public_jitsi'])('is not joinable in online mode %s', (mode) => {
+		expect(view({ eventSettings: { online_mode: mode } })).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+	});
+
+	describe('campus', () => {
+		const eventSettings = { online_mode: 'nsda_campus' };
+
+		it('is named after the section', () => {
+			expect(view({ eventSettings })).toEqual({ name: 'PF A', joinable: true, hybrid: false, mapUrl: null });
+		});
+
+		// the meeting is in Campus, so the room's url is a map to where the in-person side sits
+		it('shows the physical room and its map in a hybrid section', () => {
+			expect(view({ eventSettings: { ...eventSettings, online_hybrid: '1' }, panelSettings: { online_hybrid: '1' }, room: { ...physical, url: 'https://maps.test/room-101' } }))
+				.toEqual({ name: 'Room 101', joinable: true, hybrid: true, mapUrl: 'https://maps.test/room-101' });
+		});
+
+		it('maps a hybrid section by the round override link first', () => {
+			expect(view({ eventSettings, panelSettings: { online_hybrid: '1' }, roundSettings: { override_link: 'https://override.test' } }).mapUrl)
+				.toBe('https://override.test');
+		});
+	});
+});
 
 describe('getSectionRoom', () => {
 	it('returns null for a section that does not exist', async () => {
@@ -312,12 +396,21 @@ describe('getSectionRoom', () => {
 		expect(room?.launch).toBeNull();
 	});
 
-	it.each(['async', 'public_jitsi', 'public_jitsi_observers', null])('is not joinable in online mode %s', async (mode) => {
+	it.each(['async', 'public_jitsi', 'public_jitsi_observers'])('is not joinable in online mode %s', async (mode) => {
 		const { panel, judgePerson } = await createSection({ eventSettings: { online_mode: mode } });
 
 		const room = await sectionRoom(panel.id, asPerson(judgePerson), { isStaff: false });
 
 		expect(room?.display).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: null });
+	});
+
+	it('maps an in-person room by its url', async () => {
+		const { panel, judgePerson } = await createSection({ eventSettings: { online_mode: null } });
+
+		const room = await sectionRoom(panel.id, asPerson(judgePerson), { isStaff: false });
+
+		expect(room?.display).toEqual({ name: 'Room 101', joinable: false, hybrid: false, mapUrl: 'https://zoom.test/room' });
+		expect(room?.launch).toBeNull();
 	});
 
 	describe('closing', () => {
