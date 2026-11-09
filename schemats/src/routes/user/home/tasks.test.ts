@@ -114,10 +114,10 @@ describe('ballot rows', () => {
 		personTz,
 	)[0]!;
 
-	it('lists the flight, room, entries with sides, room notes, and the event instructions', () => {
+	it('puts the flight in the round label and lists the room with its notes, entries with sides, and the event instructions', () => {
 		expect(row(fx.ballots.ldRound3Flight2)).toMatchObject({
-			title  : 'Round 3 LD starts at 11:00 AM',
-			lines  : ['Flight 2 · Room 214', 'Aff Westlake MR vs. Neg Cedar Park TJ', 'Room notes: Back of the gym, use the side door', 'Submit your RFD before the next round.'],
+			title  : 'Round 3 Flt 2 LD starts at 11:00 AM',
+			lines  : ['Room 214 (Back of the gym, use the side door)', 'Aff Westlake MR vs. Neg Cedar Park TJ', 'Submit your RFD before the next round.'],
 			action : { label: 'Start round' },
 		});
 	});
@@ -148,7 +148,7 @@ describe('ballot rows', () => {
 			lines : ['Room 214 · Panelist: only chairs enter ballots', '1G Lakeside AB · 1O Westlake CD · 2G Reagan EF · 2O Plano GH'],
 		});
 		expect(row(fx.ballots.wudcPanelist).action).toBeUndefined();
-		expect(row(fx.ballots.ldRound3Paper, late)).toMatchObject({ tone: 'due', lines: ['Room 214 · Paper ballot', 'Aff Westlake MR vs. Neg Cedar Park TJ'] });
+		expect(row(fx.ballots.ldRound3Paper, late)).toMatchObject({ tone: 'due', lines: ['Room 214', 'Aff Westlake MR vs. Neg Cedar Park TJ'] });
 		expect(row(fx.ballots.ldRound3Paper).action).toBeUndefined();
 	});
 
@@ -260,7 +260,6 @@ describe('homeTasks', () => {
 describe('feature flags', () => {
 	// each flag, a tourn whose tasks include its row, and how that row's title starts
 	const rows: [HomeFeature, Parameters<typeof homeTasks>[0], string, string][] = [
-		['ballots', fx.bluebonnetCoachJudge, fx.now, 'Round 3 LD'],
 		['standby', fx.bluebonnetStandbyTraining, fx.now, 'On standby'],
 		['training', fx.bluebonnetStandbyTraining, fx.now, 'Complete a training ballot'],
 		['questionnaires', fx.bluebonnetCoachJudge, fx.now, '1 of 3 questionnaires'],
@@ -285,9 +284,9 @@ describe('feature flags', () => {
 		expect(titles(fx.gulfCoastPrefsOnly)).toEqual([]);
 	});
 
-	it('owes nothing with every flag off', () => {
+	it('owes only its ballots with every flag off', () => {
 		setHomeFeatures([]);
-		expect(titles(fx.bluebonnetCoachJudge)).toEqual([]);
+		expect(titles(fx.bluebonnetCoachJudge)).toEqual(['Round 3 LD starts at 11:00 AM']);
 		expect(titles(fx.gulfCoastCoachJudge)).toEqual([]);
 	});
 });

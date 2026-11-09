@@ -210,10 +210,12 @@ describe('GET /user/tourns/{tournId}/ballots/current', () => {
 	});
 	it('Returns a Campus room named after the matched event\'s section when events share rooms', async () => {
 		const match = await factories.event.create({ abbr: 'PF' });
-		const tourn = await factories.tourn.createFull({ Event: { abbr: 'CX', settings: { online_mode: 'nsda_campus', online_event_match: String(match.id) } } });
+		const tourn = await factories.tourn.createFull({ Event: { abbr: 'CX', settings: { online_mode: 'nsda_campus', online_event_match: String(match.id) } }, Round: { name: 2 } });
 		const { Judge } = await factories.person.createJudge({ person: personId, Judge: { category: tourn.Category.id } });
 		const panel = await factories.panel.create({ round: tourn.Round.id, letter: 'C' });
 		await factories.ballot.create({ panel: panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
+		// the PF section the judge meets in: same round name and letter
+		await factories.panel.create({ round: (await factories.round.create({ event: match.id, name: 2 })).id, letter: 'C' });
 
 		const res = await request(server)
 			.get(`/v1/user/tourns/${tourn.Tourn.id}/ballots/current`)

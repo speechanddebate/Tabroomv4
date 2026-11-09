@@ -7,7 +7,6 @@ import { HOME_FEATURES } from '$app/env/public';
 export const homeFeatureNames = [
 	'alerts',
 	'pastTourns',
-	'ballots',
 	'standby',
 	'training',
 	'questionnaires',

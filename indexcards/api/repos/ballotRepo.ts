@@ -170,6 +170,16 @@ export async function getJudgePanels(db: Database, opts: queryOpts & { judges: n
 			.where('score.tag', 'in', SCORE_TAGS)
 			.limit(1)
 			.as('scoreTag'))
+		// The section the judge actually meets in: the matched event's panel with this round's
+		// name and this section's letter, when it has one. A subquery so a ballot row is never doubled
+		.select((eb) => eb.selectFrom('panel as match_panel')
+			.innerJoin('round as match_round', 'match_round.id', 'match_panel.round')
+			.select('match_panel.id')
+			.whereRef('match_round.event', '=', 'match_event.id')
+			.whereRef('match_round.name', '=', 'round.name')
+			.whereRef('match_panel.letter', '=', 'panel.letter')
+			.limit(1)
+			.as('matchPanelId'))
 		.execute();
 }
 

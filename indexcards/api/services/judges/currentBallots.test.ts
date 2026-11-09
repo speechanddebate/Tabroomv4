@@ -34,6 +34,7 @@ function row(overrides: Partial<JudgePanelRow> = {}): JudgePanelRow {
 		eventName: 'Lincoln Douglas',
 		eventAbbr: 'LD',
 		matchEventAbbr: null,
+		matchPanelId: null,
 		eventType: 'debate',
 		category: 500,
 		tourn: 600,
@@ -193,9 +194,10 @@ describe('buildCurrentBallots', () => {
 			expect(room({})).toEqual({ ...joinable, joinable: false });
 		});
 
-		it('names a Campus room after the section, in the matched event when the event shares rooms', () => {
+		it('names a Campus room after the section, in the matched event only when it has a matching section', () => {
 			expect(room({}, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'LD A', joinable: true, hybrid: false, mapUrl: null });
-			expect(room({ matchEventAbbr: 'CX' }, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'CX A', joinable: true, hybrid: false, mapUrl: null });
+			expect(room({ matchEventAbbr: 'CX', matchPanelId: 5 }, events({ online_mode: 'nsda_campus' }))).toEqual({ name: 'CX A', joinable: true, hybrid: false, mapUrl: null });
+			expect(room({ matchEventAbbr: 'CX' }, events({ online_mode: 'nsda_campus' }))?.name).toBe('LD A');
 		});
 
 		it('shows a hybrid Campus section as its in-person room with a map', () => {

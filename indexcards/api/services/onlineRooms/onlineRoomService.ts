@@ -206,6 +206,11 @@ type RoomSettings = Record<string, string> | null | undefined;
 
 /** How a section's room shows to a person: where it is and whether they can join it online */
 export function roomView({ live, host, room, campusName, eventSettings, roundSettings, panelSettings }: {
+	/**
+	 * whether the room is still open. The join endpoints pass getSectionRoomContext's rule (a ballot on the
+	 * panel is unconfirmed, one was confirmed within the hour, or the timeslot hasn't ended); the home card
+	 * passes a stricter value of its own, so it never shows a Join the endpoint refuses
+	 */
 	live: boolean;
 	/** judges and tab staff, who get the host link first in sync rooms */
 	host: boolean;
@@ -220,10 +225,10 @@ export function roomView({ live, host, room, campusName, eventSettings, roundSet
 	const hybrid = isOn(panelSettings?.online_hybrid);
 	const offline: RoomView = { name: room?.name ?? null, joinable: false, hybrid: false, mapUrl: null };
 
-	// An in-person room's url is a map to it
+	// An in-person room's url is a map to it, as on classic's judge panel card. room.url holds the
+	// meeting link only in sync mode; an in-person event's rooms must carry a map or nothing
 	if (!mode || mode === 'none') return { ...offline, mapUrl: room?.url || null };
 
-	// Rooms close an hour after the round is done
 	if (!live) return offline;
 
 	// A hybrid event meets in person, except in the sections marked hybrid. Like classic, only the

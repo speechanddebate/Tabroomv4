@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$app/env/public', () => ({ HOME_FEATURES: 'ballots, flips' }));
+vi.mock('$app/env/public', () => ({ HOME_FEATURES: 'standby, flips' }));
 
 import { homeFeatureNames, isEnabled, parseHomeFeatures, setHomeFeatures } from './features';
 
 describe('parseHomeFeatures', () => {
 	it('reads a comma list, trimming whitespace', () => {
-		expect(parseHomeFeatures('ballots, flips ,tab')).toEqual(new Set(['ballots', 'flips', 'tab']));
+		expect(parseHomeFeatures('standby, flips ,tab')).toEqual(new Set(['standby', 'flips', 'tab']));
 	});
 
 	it('treats empty as nothing on', () => {
@@ -15,7 +15,7 @@ describe('parseHomeFeatures', () => {
 	});
 
 	it('drops unknown names', () => {
-		expect(parseHomeFeatures('ballots,nope,Flips')).toEqual(new Set(['ballots']));
+		expect(parseHomeFeatures('standby,nope,Flips')).toEqual(new Set(['standby']));
 	});
 
 	it('turns everything on with "all"', () => {
@@ -25,14 +25,14 @@ describe('parseHomeFeatures', () => {
 
 describe('isEnabled', () => {
 	it('starts from the env', () => {
-		expect(isEnabled('ballots')).toBe(true);
+		expect(isEnabled('standby')).toBe(true);
 		expect(isEnabled('fines')).toBe(false);
 	});
 
 	it('follows setHomeFeatures', () => {
 		setHomeFeatures(['fines']);
 		expect(isEnabled('fines')).toBe(true);
-		expect(isEnabled('ballots')).toBe(false);
+		expect(isEnabled('standby')).toBe(false);
 		setHomeFeatures('all');
 		expect(homeFeatureNames.every(isEnabled)).toBe(true);
 		setHomeFeatures([]);

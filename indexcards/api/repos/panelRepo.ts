@@ -307,6 +307,7 @@ async function getSectionRoomContext(db: Database, ids: number[]) {
 		.innerJoin('round', 'round.id', 'panel.round')
 		.innerJoin('event', 'event.id', 'round.event')
 		.innerJoin('tourn', 'tourn.id', 'event.tourn')
+		.leftJoin('timeslot', 'timeslot.id', 'round.timeslot')
 		.leftJoin('room', 'room.id', 'panel.room')
 		.leftJoin('event_setting as online_event_match', (join) => join
 			.onRef('online_event_match.event', '=', 'event.id')
@@ -352,14 +353,18 @@ async function getSectionRoomContext(db: Database, ids: number[]) {
 				as: 'eventSettings',
 			}),
 			...selectSettings({ table: 'tourn', settings: ['campus_zone'], as: 'tournSettings' }),
-			eb.exists(eb.selectFrom('ballot')
-				.select('ballot.id')
-				.whereRef('ballot.panel', '=', 'panel.id')
-				.where((b) => b.or([
-					b('ballot.audit', '!=', 1),
-					b('ballot.timestamp', '>', sql<Date>`NOW() - INTERVAL 1 HOUR`),
-				]))
-			).as('live'),
+			// The room is open while a ballot is unconfirmed, for an hour after the last one is
+			// confirmed (classic's rule), and until the round's timeslot ends
+			eb.or([
+				eb.exists(eb.selectFrom('ballot')
+					.select('ballot.id')
+					.whereRef('ballot.panel', '=', 'panel.id')
+					.where((b) => b.or([
+						b('ballot.audit', '!=', 1),
+						b('ballot.timestamp', '>', sql<Date>`NOW() - INTERVAL 1 HOUR`),
+					]))),
+				eb('timeslot.end', '>', sql<Date>`NOW()`),
+			]).as('live'),
 		])
 		.where('panel.id', 'in', ids)
 		.execute();

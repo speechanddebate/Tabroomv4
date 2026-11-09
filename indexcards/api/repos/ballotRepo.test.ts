@@ -248,6 +248,7 @@ describe('ballotRepo', async () => {
 				eventName: Event.name,
 				eventAbbr: Event.abbr,
 				matchEventAbbr: null,
+				matchPanelId: null,
 				eventType: Event.type,
 				category: Category.id,
 				tourn: Tourn.id,
@@ -258,16 +259,21 @@ describe('ballotRepo', async () => {
 			});
 		});
 
-		it('getJudgePanels returns the abbr of the event online_event_match points to', async () => {
+		it('getJudgePanels returns the event online_event_match points to, and its section with this round name and letter', async () => {
 			const Match = await factories.event.create({ abbr: 'PF' });
-			const { Round } = await factories.tourn.createFull({ Event: { settings: { online_event_match: String(Match.id) } } });
+			// the factory leaves round.name null, which never matches
+			const { Round } = await factories.tourn.createFull({ Event: { settings: { online_event_match: String(Match.id) } }, Round: { name: 3 } });
 			const { Judge } = await factories.person.createJudge();
-			const Panel = await factories.panel.create({ round: Round.id });
+			const Panel = await factories.panel.create({ round: Round.id, letter: 'B' });
 			await factories.ballot.create({ panel: Panel.id, judge: Judge.id, entry: (await factories.entry.create()).id });
 
-			const rows = await ballotRepo.getJudgePanels(db, { judges: [Judge.id] });
+			expect((await ballotRepo.getJudgePanels(db, { judges: [Judge.id] })).map((row) => [row.matchEventAbbr, row.matchPanelId])).toEqual([['PF', null]]);
 
-			expect(rows.map((row) => row.matchEventAbbr)).toEqual(['PF']);
+			const MatchRound = await factories.round.create({ event: Match.id, name: Round.name });
+			await factories.panel.create({ round: MatchRound.id, letter: 'A' });
+			const MatchPanel = await factories.panel.create({ round: MatchRound.id, letter: 'B' });
+
+			expect((await ballotRepo.getJudgePanels(db, { judges: [Judge.id] })).map((row) => row.matchPanelId)).toEqual([MatchPanel.id]);
 		});
 
 		it("getEntryRounds returns the entries' or panels' ballots with the round's publish levels and the judge", async () => {

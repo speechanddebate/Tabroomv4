@@ -117,7 +117,12 @@ const ballotHref = (ballot: CurrentBallot): string => ballot.legion
 
 const matchup = (ballot: CurrentBallot) => ballot.eventType === 'debate' ? ballot.Entries.map(entry => entry.code).join(' vs. ') : '';
 
-const ballotRound = (ballot: CurrentBallot) => `${ballot.eventType === 'congress' && !ballot.label ? `Session ${ballot.name ?? ''}` : roundLabel(ballot)} ${ballot.eventAbbr ?? ''}`.trim();
+// "Round 3 Flt 2 LD": the flight rides with the round, as on classic's panel card
+const ballotRound = (ballot: CurrentBallot) => [
+	ballot.eventType === 'congress' && !ballot.label ? `Session ${ballot.name ?? ''}` : roundLabel(ballot),
+	ballot.flight ? `Flt ${ballot.flight}` : '',
+	ballot.eventAbbr ?? '',
+].filter(Boolean).join(' ');
 
 // A congress or mock trial chair keeps presiding after their ballot is audited, until the round ends
 export const presiding = (ballot: CurrentBallot, now = new Date().toISOString()) => ballot.status === 'confirmed'
@@ -172,11 +177,11 @@ function ballotTask(ballot: CurrentBallot, tz: string, personTz: string | null, 
 		: ballot.status === 'started' ? 'Enter ballot'
 		: ballot.startText ?? 'Start round';
 
+	const room = ballot.Room?.name ?? '';
 	const facts = [
-		ballot.flight ? `Flight ${ballot.flight}` : '',
-		asynchronous ? 'Video links are on the ballot' : ballot.Room?.name ?? '',
+		asynchronous ? 'Video links are on the ballot' : ballot.roomNotes ? `${room} (${ballot.roomNotes})`.trim() : room,
 		ballot.eventType === 'mock_trial' ? (ballot.chair ? 'Presiding judge' : 'Scorer') : '',
-		!ballot.onlineBallots ? 'Paper ballot' : panelist ? 'Panelist: only chairs enter ballots' : '',
+		panelist ? 'Panelist: only chairs enter ballots' : '',
 	].filter(Boolean).join(' · ');
 
 	return {
@@ -186,7 +191,7 @@ function ballotTask(ballot: CurrentBallot, tz: string, personTz: string | null, 
 		title  : isPresiding ? `${ballotRound(ballot)}: presiding until ${time(ballot.end)}`
 			: asynchronous ? `${ballotRound(ballot)} ballot due ${time(ballot.end)}`
 			: `${ballotRound(ballot)} starts at ${time(ballot.start)}`,
-		lines  : [facts, entriesLine(ballot), ballot.roomNotes ? `Room notes: ${ballot.roomNotes}` : '', ballot.ballotText ?? '']
+		lines  : [facts, entriesLine(ballot), ballot.ballotText ?? '']
 			.filter((line): line is string => !!line),
 		action : ballot.onlineBallots && !panelist ? { label, href: ballotHref(ballot) } : undefined,
 		room   : ballot.Room?.joinable ? { room: ballot.Room, target: { type: 'section', tournId: ballot.tourn, sectionId: ballot.id } } : undefined,
@@ -216,7 +221,7 @@ export function homeTasks(tourn: HomeTourn, now = new Date().toISOString(), pers
 	const tasks: Task[] = [];
 
 	for (const judge of tourn.Judges) {
-		if (isEnabled('ballots')) tasks.push(...openBallots(judge.CurrentBallots, now).map(ballot => ballotTask(ballot, tourn.tz, personTz, now)));
+		tasks.push(...openBallots(judge.CurrentBallots, now).map(ballot => ballotTask(ballot, tourn.tz, personTz, now)));
 
 		// The server lists a standby until its timeslot ends; nothing to open, just be ready
 		if (isEnabled('standby')) tasks.push(...judge.Standbys.map(standby => ({

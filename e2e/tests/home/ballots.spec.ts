@@ -102,9 +102,8 @@ test.describe('ballots on the user home', () => {
 		await page.goto('/user/home');
 
 		const tasks = dueFor(page, ballot.tournName);
-		await expect(tasks).toContainText('Room 204');
+		await expect(tasks).toContainText('Room 204 (Back of the gym, use the side door)');
 		await expect(tasks).toContainText('Aff AFF1 vs. Neg NEG2');
-		await expect(tasks).toContainText('Room notes: Back of the gym, use the side door');
 	});
 
 	test('shows a paper ballot\'s round with no ballot button when the event has no online ballots', async ({ page, person, login }) => {
@@ -115,7 +114,6 @@ test.describe('ballots on the user home', () => {
 
 		const tasks = dueFor(page, ballot.tournName);
 		await expect(tasks).toContainText(/Round 1 LD starts at/);
-		await expect(tasks).toContainText('Paper ballot');
 		await expect(tasks.getByRole('link', { name: 'Start round' })).toHaveCount(0);
 	});
 

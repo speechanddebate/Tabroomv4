@@ -28,6 +28,7 @@ type SectionOverrides = {
 	roundSettings?: Settings;
 	panelSettings?: Settings;
 	Room?: Record<string, unknown>;
+	Timeslot?: { start: Date; end: Date };
 };
 
 // A section in event PF with one ballot: a judge and a one student entry, each with their own person
@@ -36,6 +37,7 @@ async function createSection(overrides: SectionOverrides = {}) {
 		tz: 'America/Chicago',
 		settings: overrides.tournSettings,
 		Event: { abbr: 'PF', settings: overrides.eventSettings },
+		Timeslot: overrides.Timeslot,
 		Round: { name: 1, settings: overrides.roundSettings },
 	});
 	const room = await factories.room.create({
@@ -423,10 +425,14 @@ describe('getSectionRoom', () => {
 			expect(room?.display.joinable).toBe(true);
 		});
 
-		it('closes an hour after the ballots are confirmed', async () => {
-			const { panel, judgePerson, ballot } = await createSection({ eventSettings: { online_mode: 'nsda_campus' } });
+		it('closes an hour after the ballots are confirmed once the timeslot has ended', async () => {
+			const hour = 60 * 60 * 1000;
+			const { panel, judgePerson, ballot } = await createSection({
+				eventSettings: { online_mode: 'nsda_campus' },
+				Timeslot: { start: new Date(Date.now() - 3 * hour), end: new Date(Date.now() - 2 * hour) },
+			});
 			await db.updateTable('ballot')
-				.set({ audit: 1, timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) })
+				.set({ audit: 1, timestamp: new Date(Date.now() - 2 * hour) })
 				.where('id', '=', ballot.id)
 				.execute();
 
@@ -434,6 +440,20 @@ describe('getSectionRoom', () => {
 
 			expect(room?.display.joinable).toBe(false);
 			expect(room?.launch).toBeNull();
+		});
+
+		it('stays open until the timeslot ends though every ballot was confirmed hours ago', async () => {
+			const hour = 60 * 60 * 1000;
+			const { panel, judgePerson, ballot } = await createSection({
+				eventSettings: { online_mode: 'nsda_campus' },
+				Timeslot: { start: new Date(Date.now() - 3 * hour), end: new Date(Date.now() + hour) },
+			});
+			await db.updateTable('ballot')
+				.set({ audit: 1, timestamp: new Date(Date.now() - 2 * hour) })
+				.where('id', '=', ballot.id)
+				.execute();
+
+			expect((await sectionRoom(panel.id, asPerson(judgePerson), { isStaff: false }))?.display.joinable).toBe(true);
 		});
 	});
 

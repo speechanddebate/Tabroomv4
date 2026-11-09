@@ -202,6 +202,23 @@ describe('panelRepo', () => {
 				expect.objectContaining({ panelId: second.id, panelLetter: 'B', roomName: 'Room B', eventId: Event.id, eventAbbr: 'PF', tournId: Tourn.id, matchPanelId: null }),
 			]));
 		});
+
+		it('is live while a ballot is unconfirmed, for an hour after the last confirmation, and until the timeslot ends', async () => {
+			const hour = 60 * 60 * 1000;
+			const over = { start: new Date(Date.now() - 3 * hour), end: new Date(Date.now() - 2 * hour) };
+			const running = { ...over, end: new Date(Date.now() + hour) };
+			const live = async (timeslot: typeof over, ballot: { audit: number; timestamp?: Date }) => {
+				const { Round } = await factories.tourn.createFull({ Timeslot: timeslot });
+				const panel = await factories.panel.create({ round: Round.id });
+				await factories.ballot.create({ panel: panel.id, entry: (await factories.entry.create()).id, ...ballot });
+				return (await panelRepo.getSectionRoomContext(db, [panel.id]))[0].live;
+			};
+
+			expect(await live(over, { audit: 0 })).toBe(1);
+			expect(await live(over, { audit: 1, timestamp: new Date() })).toBe(1);
+			expect(await live(over, { audit: 1, timestamp: new Date(Date.now() - 2 * hour) })).toBe(0);
+			expect(await live(running, { audit: 1, timestamp: new Date(Date.now() - 2 * hour) })).toBe(1);
+		});
 	});
 	describe('getPanels', () => {
 		it('retrieves all panels for a given round', async () => {

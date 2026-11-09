@@ -73,12 +73,13 @@ export function buildCurrentBallots(rows: JudgePanelRow[], ctx: CurrentBallotCon
 
 		const sided = sideVisible({ type: first.roundType }, panel?.flip_status, event);
 		const view = roomView({
-			// The judge's own unconfirmed ballot keeps the room live; a confirmed panel is only here as a
-			// presiding chair's until end, or past end for feedback links, where the room is closed
+			// Stricter than the join endpoint's rule on purpose, never looser: the judge's own unconfirmed
+			// ballot keeps the room live, and a confirmed panel is only here as a presiding chair's until
+			// end (before the timeslot ends, so the endpoint agrees) or past end for feedback links
 			live: status !== 'confirmed' || ctx.now < end,
 			host: true,
 			room: first.room === null ? null : { name: first.roomName, url: first.roomUrl, judgeUrl: first.roomJudgeUrl },
-			campusName: `${first.matchEventAbbr ?? first.eventAbbr ?? ''} ${first.panelLetter ?? ''}`.trim(),
+			campusName: `${(first.matchPanelId ? first.matchEventAbbr : first.eventAbbr) ?? ''} ${first.panelLetter ?? ''}`.trim(),
 			eventSettings: event,
 			roundSettings: round,
 			panelSettings: panel,
