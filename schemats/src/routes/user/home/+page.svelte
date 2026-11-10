@@ -16,7 +16,9 @@
 	import TournCard from './TournCard.svelte';
 	import { classic, phaseOf, type Phase } from './tasks';
 
-	const userHomeQuery = createUserHome();
+	// Not persisted: a reload right after a change elsewhere (e.g. a conflict marked on the sheet)
+	// would restore the copy from before it, still inside staleTime, and never refetch
+	const userHomeQuery = createUserHome(undefined, () => ({ query: { meta: { persist: false } } }));
 
 	const home = $derived(handleOrval(userHomeQuery));
 
