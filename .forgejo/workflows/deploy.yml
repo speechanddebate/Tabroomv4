@@ -22,8 +22,8 @@ jobs:
           install -d -m 700 ~/.ssh
           (umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          # Job containers can't resolve internal names.
-          printf 'Host control\n  HostName 10.19.25.1\n  HostKeyAlias control\n' > ~/.ssh/config
 
+          # Job containers can't resolve internal names.
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o HostName=10.19.25.1 -o HostKeyAlias=control \
             ansible@control "$DEPLOY_SHA"
