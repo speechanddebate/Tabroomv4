@@ -17,6 +17,6 @@ export interface ConflictPersonMatch {
 	first: string | null;
 	/** @nullable */
 	last: string | null;
-	/** Chapters the person has judged for, most recent first */
+	/** Chapters the person has judged or competed for */
 	Chapters: ConflictPersonMatchChaptersItem[];
 }

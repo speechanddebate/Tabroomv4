@@ -8,7 +8,7 @@ const HOUR = 60 * 60 * 1000;
 
 // The person judges LD at a tournament running this week whose category takes judge conflicts.
 // Quinn Quill's student is there on Riverdale QQ, for a chapter named for the test so the
-// program search finds only it.
+// school search finds only it.
 const createWorld = async (person: TestPerson) => {
 	const suffix = `${Date.now().toString(36)}${Math.random().toString(36).substring(2, 6)}`;
 	const tourn = await factories.tourn.create({ name: `Standing Classic ${suffix}`, tz: 'America/Chicago', end: new Date(Date.now() + 7 * 24 * HOUR) });
@@ -59,14 +59,14 @@ test.describe('standing conflicts', () => {
 		await expect(marked(page).getByRole('row', { name: /Riverdale QQ/ })).toHaveCount(0);
 	});
 
-	test('adds a program, which strikes the judge off its school', async ({ page, person, login }) => {
+	test('adds a school, which strikes the judge off its school', async ({ page, person, login }) => {
 		const world = await createWorld(person);
 
 		await login(person);
 		await page.goto('/user/conflicts');
-		await page.getByRole('textbox', { name: 'Program name' }).fill(world.chapter.name);
+		await page.getByRole('textbox', { name: 'School name' }).fill(world.chapter.name);
 		await page.getByRole('button', { name: 'Search' }).last().click();
-		await page.getByRole('table', { name: 'Programs found' }).getByRole('row', { name: new RegExp(world.chapter.name) }).getByRole('button', { name: 'Conflict' }).click();
+		await page.getByRole('table', { name: 'Schools found' }).getByRole('row', { name: new RegExp(world.chapter.name) }).getByRole('button', { name: 'Conflict' }).click();
 		await expect(list(page).getByRole('row', { name: new RegExp(`${world.chapter.name} \\(NY\\)`) })).toBeVisible();
 
 		await page.goto(`/user/judge/conflicts?judge=${world.judge}`);

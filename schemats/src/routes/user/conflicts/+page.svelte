@@ -1,6 +1,6 @@
 <script lang="ts">
 	/*
-	 * A person's standing conflicts: the people and programs they must never judge or be judged
+	 * A person's standing conflicts: the people and schools they must never judge or be judged
 	 * by. Saving one marks the conflicts it implies at every tournament of theirs that hasn't
 	 * ended, and removing one takes those marks back; the server does both.
 	 */
@@ -13,7 +13,7 @@
 	import { personName } from '$lib/helpers/text';
 	import { toast } from '$lib/helpers/toasts';
 	import { createUserConflictAdd, createUserConflictRemove, createUserConflicts, createUserConflictsChapters, createUserConflictsPeople } from '$indexcards';
-	import { conflictName, judgedFor } from './standing';
+	import { affiliatedWith, conflictName } from './standing';
 
 	const listQuery = createUserConflicts();
 	const conflicts = $derived(handleOrval(listQuery) ?? []);
@@ -52,7 +52,7 @@
 	function searchChapters(event: SubmitEvent) {
 		event.preventDefault();
 		if (chapterName.trim().length < 2) {
-			toast.warning({ message: 'Give at least two letters of the program name' });
+			toast.warning({ message: 'Give at least two letters of the school name' });
 			return;
 		}
 		if (chapterTerm === chapterName.trim()) void chaptersQuery.refetch();
@@ -82,22 +82,22 @@
 	const listHelper = createAppColumnHelper<StandingConflict>();
 	const listColumns = listHelper.columns([
 		listHelper.accessor(conflictName, { id: 'name', header: 'Conflict' }),
-		listHelper.accessor((conflict) => conflict.Chapter ? 'Program' : 'Person', { id: 'kind', header: 'Kind', size: 100 }),
-		listHelper.display({ id: 'remove', header: '', cell: ({ row }) => renderSnippet(removeCell, row.original), size: 120 }),
+		listHelper.accessor((conflict) => conflict.Chapter ? 'School' : 'Person', { id: 'kind', header: 'Kind', size: 100 }),
+		listHelper.display({ id: 'remove', header: 'Remove', cell: ({ row }) => renderSnippet(removeCell, row.original), size: 96, enableResizing: false, meta: { truncate: false } }),
 	]);
 
 	const peopleHelper = createAppColumnHelper<ConflictPersonMatch>();
 	const peopleColumns = peopleHelper.columns([
 		peopleHelper.accessor(personName, { id: 'name', header: 'Name' }),
-		peopleHelper.accessor(judgedFor, { id: 'judgedFor', header: 'Has judged for' }),
-		peopleHelper.display({ id: 'add', header: '', cell: ({ row }) => renderSnippet(personCell, row.original), size: 120 }),
+		peopleHelper.accessor(affiliatedWith, { id: 'affiliatedWith', header: 'Affiliated with', meta: { truncate: false } }),
+		peopleHelper.display({ id: 'add', header: 'Add', cell: ({ row }) => renderSnippet(personCell, row.original), size: 96, enableResizing: false, meta: { truncate: false } }),
 	]);
 
 	const chapterHelper = createAppColumnHelper<ConflictChapterMatch>();
 	const chapterColumns = chapterHelper.columns([
-		chapterHelper.accessor('name', { id: 'name', header: 'Program' }),
+		chapterHelper.accessor('name', { id: 'name', header: 'School' }),
 		chapterHelper.accessor((chapter) => [chapter.city, chapter.state].filter(Boolean).join(', '), { id: 'where', header: 'Location' }),
-		chapterHelper.display({ id: 'add', header: '', cell: ({ row }) => renderSnippet(chapterCell, row.original), size: 120 }),
+		chapterHelper.display({ id: 'add', header: 'Add', cell: ({ row }) => renderSnippet(chapterCell, row.original), size: 96, enableResizing: false, meta: { truncate: false } }),
 	]);
 
 	const heading = 'text-base font-semibold text-text';
@@ -127,7 +127,7 @@
 
 <h2>Standing conflicts</h2>
 <p class="mt-1 text-sm text-muted">
-	People and programs you have a coaching or personal relationship with, so you should never judge them or be judged by them.
+	People and schools you have a coaching or personal relationship with, so you should never judge them or be judged by them.
 	Tabroom marks them at every tournament you attend; a tournament's tab staff still decides who judges whom.
 </p>
 
@@ -176,10 +176,10 @@
 </section>
 
 <section class="mt-6">
-	<h3 class="{heading} mb-1">Add a program</h3>
+	<h3 class="{heading} mb-1">Add a school</h3>
 	<form class="grid gap-3 sm:grid-cols-[1fr_auto]" onsubmit={searchChapters}>
 		<label>
-			<span class={label}>Program name</span>
+			<span class={label}>School name</span>
 			<input name="chapter" class={field} autocomplete="off" type="text" bind:value={chapterName} />
 		</label>
 		<Button class="sm:self-end" color="primary" type="submit">{chaptersQuery.isFetching ? 'Searching…' : 'Search'}</Button>
@@ -187,10 +187,10 @@
 	{#if chapterTerm !== null}
 		<div class="mt-3">
 			<Table
-				caption="Programs found"
+				caption="Schools found"
 				columns={chapterColumns}
 				data={chapters}
-				emptyMessage="No program starts with that."
+				emptyMessage="No school starts with that."
 				enableSorting={false}
 				getRowId={(chapter) => String(chapter.id)}
 				isLoading={chaptersQuery.isLoading}

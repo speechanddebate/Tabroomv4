@@ -66,13 +66,16 @@ describe('standing conflicts', () => {
 	});
 
 	describe('GET /user/conflicts/people and /chapters', () => {
-		it('finds people by last name prefix with the chapters they judged for, and by exact email', async () => {
+		it('finds people by last name prefix with the chapters they judged or competed for, and by exact email', async () => {
 			const { userkey, quinn, riverdale } = await createWorld();
+			const westlake = await factories.chapter.create({ name: `Westlake ${riverdale.id}` });
+			await factories.student.create({ person: quinn.id, chapter: westlake.id });
+			await factories.student.create({ person: quinn.id, chapter: riverdale.id });
 
 			const byName = await request(server).get(`${url}/people`).query({ last: quinn.last!.slice(0, -2), first: 'Qu' }).asPerson(userkey);
 			expect(byName.status).toBe(200);
 			expect(byName.body).toMatchSchema(z.array(ConflictPersonMatchSchema));
-			expect(byName.body).toEqual([{ id: quinn.id, first: 'Quinn', last: quinn.last, Chapters: [{ id: riverdale.id, name: riverdale.name }] }]);
+			expect(byName.body).toEqual([{ id: quinn.id, first: 'Quinn', last: quinn.last, Chapters: [{ id: riverdale.id, name: riverdale.name }, { id: westlake.id, name: westlake.name }] }]);
 
 			const byEmail = await request(server).get(`${url}/people`).query({ email: quinn.email }).asPerson(userkey);
 			expect(byEmail.body.map((person: { id: number }) => person.id)).toEqual([quinn.id]);

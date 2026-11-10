@@ -8,6 +8,7 @@ type queryOpts = {
 	limit?: number;
 	offset?: number;
 	person?: number;
+	persons?: number[];
 	person_request?: number;
 	settings?: boolean | string[]
 }
@@ -22,6 +23,7 @@ function buildStudentQuery(db: Database, opts: queryOpts = {}) {
 	if(opts.limit) query = query.limit(opts.limit);
 	if(opts.offset) query = query.offset(opts.offset);
 	if(opts.person) query = query.where('student.person', '=', opts.person);
+	if(opts.persons) query = query.where('student.person', 'in', opts.persons);
 	if(opts.person_request) query = query.where('student.person_request', '=', opts.person_request);
 
 	return query;
@@ -37,6 +39,16 @@ async function getStudents(db: Database, opts: queryOpts = {}) {
 	return await buildStudentQuery(db, opts)
 	.selectAll('student')
 	.execute();
+}
+
+/** The chapters each person is on the student roster of, by name */
+async function getStudentChapters(db: Database, personIds: number[]) {
+	return await buildStudentQuery(db, { persons: personIds })
+		.innerJoin('chapter', 'chapter.id', 'student.chapter')
+		.select(['student.person', 'chapter.id', 'chapter.name'])
+		.groupBy(['student.person', 'chapter.id', 'chapter.name'])
+		.orderBy('chapter.name')
+		.execute();
 }
 
 async function createStudent(db: Database, data: Insertable<Student>) {
@@ -101,5 +113,6 @@ export default {
 	createStudent,
 	updateStudent,
 	getStudents,
+	getStudentChapters,
 	unlinkedSearch,
 };

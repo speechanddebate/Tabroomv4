@@ -7,6 +7,7 @@ import { db } from '../../data/database.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import judgeRepo from '../../repos/judgeRepo.js';
 import personRepo from '../../repos/personRepo.js';
+import studentRepo from '../../repos/studentRepo.js';
 import { addStandingConflict, listStandingConflicts, removeStandingConflict } from '../../services/conflicts/standingConflicts.js';
 
 const REFUSALS: Record<StandingConflictRefusal, string> = {
@@ -23,12 +24,16 @@ export async function searchPeople(req: ValidatedRequest, res: Response) {
 	const { first, last, email } = req.query as { first?: string; last?: string; email?: string };
 	if (!last && !email) return BadRequest(req, res, 'Give a last name or an email');
 	const people = await personRepo.findPersons(db, { first, last, email }, { limit: 25, orderByName: true });
-	const chapters = await judgeRepo.getJudgedChapters(db, people.map((person) => person.id));
+	const personIds = people.map((person) => person.id);
+	const [judged, competed] = await Promise.all([judgeRepo.getJudgedChapters(db, personIds), studentRepo.getStudentChapters(db, personIds)]);
 	const matches: ConflictPersonMatch[] = people.map((person) => ({
 		id: person.id,
 		first: person.first,
 		last: person.last,
-		Chapters: chapters.filter((chapter) => chapter.person === person.id).map((chapter) => ({ id: chapter.id, name: chapter.name })),
+		Chapters: [...judged, ...competed]
+			.filter((chapter) => chapter.person === person.id)
+			.filter((chapter, index, own) => own.findIndex((other) => other.id === chapter.id) === index)
+			.map((chapter) => ({ id: chapter.id, name: chapter.name })),
 	}));
 	res.json(matches);
 }

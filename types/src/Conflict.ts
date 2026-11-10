@@ -55,7 +55,7 @@ export const StandingConflictRefusalSchema = z.enum(['duplicate', 'self']).meta(
 
 export type StandingConflictRefusal = z.infer<typeof StandingConflictRefusalSchema>;
 
-/** A person found for a standing conflict, with the chapters they have judged for */
+/** A person found for a standing conflict, with the chapters they have judged or competed for */
 export const ConflictPersonMatchSchema = z.object({
 	id: PersonSchema.shape.id,
 	first: z.string().nullable(),
@@ -63,7 +63,7 @@ export const ConflictPersonMatchSchema = z.object({
 	Chapters: z.array(z.object({
 		id: ChapterSchema.shape.id,
 		name: ChapterSchema.shape.name,
-	}).strict()).meta({ description: 'Chapters the person has judged for, most recent first' }),
+	}).strict()).meta({ description: 'Chapters the person has judged or competed for' }),
 }).strict().meta({
 	id: 'ConflictPersonMatch',
 }) satisfies ZodOpenApiSchemaObject;
