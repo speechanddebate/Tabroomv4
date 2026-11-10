@@ -209,7 +209,7 @@ describe('PersonRepo', () => {
 		});
 	});
 
-	describe('personSearch', () => {
+	describe('findPersons', () => {
 		it('returns persons matching the search query', async () => {
 			// Arrange
 			const personData = factories.person.createPersonData();
@@ -218,7 +218,7 @@ describe('PersonRepo', () => {
 			await factories.judge.create({ person: Person.id });
 
 			// Act
-			const results = await personRepo.personSearch(db, `${personData.first} ${personData.last}`);
+			const results = await personRepo.findPersons(db, { name: `${personData.first} ${personData.last}` });
 
 			// Assert: expect the search results to include the created person
 			expect(Array.isArray(results)).toBe(true);
@@ -235,10 +235,29 @@ describe('PersonRepo', () => {
 			await factories.judge.create({ person: Person.id });
 
 			// Act
-			const results = await personRepo.personSearch(db, `${first} ${last}`);
+			const results = await personRepo.findPersons(db, { name: `${first} ${last}` });
 
 			// Assert
 			expect(results.map((p) => p.id)).toContain(Person.id);
+		});
+		it('narrows by last and first name prefixes and by exact email, and drops LIKE wildcards', async () => {
+			const suffix = Math.random().toString(36).substring(2, 8);
+			const quinn = await factories.person.create({ first: 'Quinn', last: `Quill${suffix}` });
+			const quincy = await factories.person.create({ first: 'Quincy', last: `Quill${suffix}` });
+
+			const byLast = await personRepo.findPersons(db, { last: `Quill${suffix}` }, { orderByName: true });
+			expect(byLast.map((p) => p.id)).toEqual([quincy.id, quinn.id]);
+			expect(byLast[0]).toHaveProperty('email');
+
+			const byBoth = await personRepo.findPersons(db, { last: `Quill${suffix}`, first: 'Quinn' });
+			expect(byBoth.map((p) => p.id)).toEqual([quinn.id]);
+
+			const byEmail = await personRepo.findPersons(db, { email: quincy.email });
+			expect(byEmail.map((p) => p.id)).toEqual([quincy.id]);
+
+			expect(await personRepo.findPersons(db, { last: `%${suffix}` })).toEqual([]);
+			expect(await personRepo.findPersons(db, { last: '%' }, { limit: 25 })).toEqual([]);
+			expect(await personRepo.findPersons(db, { last: `Quill${suffix}`, first: '!!!' })).toEqual([]);
 		});
 		it('returns an empty array when no persons match the search query', async () => {
 			// Arrange
@@ -246,7 +265,7 @@ describe('PersonRepo', () => {
 			await factories.person.create(personData);
 
 			// Act
-			const results = await personRepo.personSearch(db,'Nonexistent Name');
+			const results = await personRepo.findPersons(db, { name: 'Nonexistent Name' });
 
 			// Assert
 			expect(Array.isArray(results)).toBe(true);
@@ -258,7 +277,7 @@ describe('PersonRepo', () => {
 			await factories.person.create(personData);
 
 			// Act
-			const results = await personRepo.personSearch(db,'');
+			const results = await personRepo.findPersons(db, {});
 
 			// Assert
 			expect(Array.isArray(results)).toBe(true);

@@ -97,8 +97,17 @@ async function createStrike(db: Database, data: Insertable<Strike>) {
 		.executeTakeFirstOrThrow();
 }
 
+async function createStrikes(db: Database, rows: Insertable<Strike>[]) {
+	if (rows.length === 0) return;
+	await db.insertInto('strike').values(rows).execute();
+}
+
 async function deleteStrike(db: Database, id: number) {
 	await db.deleteFrom('strike').where('strike.id', '=', id).execute();
+}
+
+async function deleteStrikes(db: Database, ids: number[]) {
+	await db.deleteFrom('strike').where('strike.id', 'in', ids).execute();
 }
 
 export default {
@@ -106,5 +115,7 @@ export default {
 	getJudgeStrikes,
 	getJudgeConflicts,
 	createStrike,
+	createStrikes,
 	deleteStrike,
+	deleteStrikes,
 };

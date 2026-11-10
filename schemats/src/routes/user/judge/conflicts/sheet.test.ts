@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConflictCandidate } from '@tabroom/types';
-import { conflictLabel, filterCandidates, removeHint, stateText, studentList } from './sheet';
+import { conflictLabel, matchesFilter, removeHint, stateText, studentList } from './sheet';
 
 const westlake = { id: 1811, name: 'Westlake' };
 const candidate = (overrides: Partial<ConflictCandidate> = {}): ConflictCandidate => ({
@@ -34,18 +34,19 @@ describe('stateText', () => {
 	});
 });
 
-describe('filterCandidates', () => {
+describe('matchesFilter', () => {
 	const entries = [
 		candidate({ id: 1, code: 'Westlake BB' }),
 		candidate({ id: 2, code: 'Riverdale CC', name: 'Riverdale CC', School: { id: 1812, name: 'Riverdale' }, Students: [{ id: 10, first: 'Ben', last: 'Brown' }] }),
 		candidate({ id: 3, code: 'Westlake DD', name: 'Westlake DD', Students: [] }),
 	];
 	it('matches school, code, or a competitor, case-insensitively, needing every word', () => {
-		expect(filterCandidates(entries, '').map((entry) => entry.id)).toEqual([1, 2, 3]);
-		expect(filterCandidates(entries, 'westlake').map((entry) => entry.id)).toEqual([1, 3]);
-		expect(filterCandidates(entries, 'brown').map((entry) => entry.id)).toEqual([2]);
-		expect(filterCandidates(entries, 'Westlake dd').map((entry) => entry.id)).toEqual([3]);
-		expect(filterCandidates(entries, 'nobody')).toEqual([]);
+		const matching = (filter: string) => entries.filter((entry) => matchesFilter(entry, filter)).map((entry) => entry.id);
+		expect(matching('')).toEqual([1, 2, 3]);
+		expect(matching('westlake')).toEqual([1, 3]);
+		expect(matching('brown')).toEqual([2]);
+		expect(matching('Westlake dd')).toEqual([3]);
+		expect(matching('nobody')).toEqual([]);
 	});
 });
 

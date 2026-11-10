@@ -38,6 +38,8 @@ import type {
 	BallotSubmission,
 	BallotValidationProblem,
 	ClaimResponse,
+	ConflictChapterMatch,
+	ConflictPersonMatch,
 	ConflictResponse,
 	CurrentBallot,
 	ErrorResponseResponse,
@@ -83,6 +85,8 @@ import type {
 	RoomView,
 	ServiceUnavailableResponse,
 	Session,
+	StandingConflict,
+	StandingConflictRequest,
 	StudentSchema,
 	TooManyRequestsResponse,
 	Tourn,
@@ -93,6 +97,8 @@ import type {
 	UnsubscribeResponse,
 	UnsubscribeStatus,
 	UserChapter,
+	UserConflictsChaptersParams,
+	UserConflictsPeopleParams,
 	UserHomeParams,
 	UserJudgesClaimParams,
 	UserJudgesHistoryParams,
@@ -13240,4 +13246,903 @@ export const prefetchUserChaptersQuery = async <
 	await queryClient.prefetchQuery(queryOptions);
 
 	return queryClient;
+};
+
+export type userConflictsResponse200 = {
+	data: StandingConflict[];
+	status: 200;
+};
+
+export type userConflictsResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userConflictsResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userConflictsResponseSuccess = userConflictsResponse200 & {
+	headers: Headers;
+};
+export type userConflictsResponseError = (
+	| userConflictsResponse401
+	| userConflictsResponse500
+) & {
+	headers: Headers;
+};
+
+export type userConflictsResponse =
+	| userConflictsResponseSuccess
+	| userConflictsResponseError;
+
+export const getUserConflictsUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/conflicts`;
+};
+
+/**
+ * The people and chapters the logged-in person must not judge or be judged by, at any tournament
+ * @summary List standing conflicts
+ */
+export const userConflicts = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userConflictsResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserConflictsUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userConflictsResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userConflictsResponse;
+};
+
+export const getUserConflictsQueryKey = () => {
+	return [`${indexcardsApiBaseUrl()}/user/conflicts`] as const;
+};
+
+export const getUserConflictsQueryOptions = <
+	TData = Awaited<ReturnType<typeof userConflicts>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(options?: {
+	query?: Partial<
+		CreateQueryOptions<
+			Awaited<ReturnType<typeof userConflicts>>,
+			TError,
+			TData
+		>
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserConflictsQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof userConflicts>>> = ({
+		signal,
+	}) => userConflicts({ signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userConflicts>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserConflictsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userConflicts>>
+>;
+export type UserConflictsQueryError =
+	| UnauthorizedResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary List standing conflicts
+ */
+
+export function createUserConflicts<
+	TData = Awaited<ReturnType<typeof userConflicts>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflicts>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserConflictsQueryOptions(options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary List standing conflicts
+ */
+export const prefetchUserConflictsQuery = async <
+	TData = Awaited<ReturnType<typeof userConflicts>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflicts>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserConflictsQueryOptions(options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userConflictAddResponse201 = {
+	data: StandingConflict;
+	status: 201;
+};
+
+export type userConflictAddResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userConflictAddResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userConflictAddResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userConflictAddResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userConflictAddResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userConflictAddResponseSuccess = userConflictAddResponse201 & {
+	headers: Headers;
+};
+export type userConflictAddResponseError = (
+	| userConflictAddResponse400
+	| userConflictAddResponse401
+	| userConflictAddResponse404
+	| userConflictAddResponse409
+	| userConflictAddResponse500
+) & {
+	headers: Headers;
+};
+
+export type userConflictAddResponse =
+	| userConflictAddResponseSuccess
+	| userConflictAddResponseError;
+
+export const getUserConflictAddUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/conflicts`;
+};
+
+/**
+ * Records a person or a chapter as a standing conflict and marks the conflicts it implies at every tournament of theirs that has not ended. A repeat or a self-conflict is 409 with a reason of duplicate or self
+ * @summary Add a standing conflict
+ */
+export const userConflictAdd = async (
+	standingConflictRequest?: StandingConflictRequest,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userConflictAddResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserConflictAddUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(standingConflictRequest),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userConflictAddResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userConflictAddResponse;
+};
+
+export const getUserConflictAddMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userConflictAdd>>,
+		TError,
+		{ data?: StandingConflictRequest },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userConflictAdd>>,
+	TError,
+	{ data?: StandingConflictRequest },
+	TContext
+> => {
+	const mutationKey = ['userConflictAdd'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userConflictAdd>>,
+		{ data?: StandingConflictRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return userConflictAdd(data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserConflictAddMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userConflictAdd>>
+>;
+export type UserConflictAddMutationBody = StandingConflictRequest | undefined;
+export type UserConflictAddMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Add a standing conflict
+ */
+export const createUserConflictAdd = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userConflictAdd>>,
+			TError,
+			{ data?: StandingConflictRequest },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userConflictAdd>>,
+	TError,
+	{ data?: StandingConflictRequest },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserConflictAddMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userConflictsPeopleResponse200 = {
+	data: ConflictPersonMatch[];
+	status: 200;
+};
+
+export type userConflictsPeopleResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userConflictsPeopleResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userConflictsPeopleResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userConflictsPeopleResponseSuccess =
+	userConflictsPeopleResponse200 & {
+		headers: Headers;
+	};
+export type userConflictsPeopleResponseError = (
+	| userConflictsPeopleResponse400
+	| userConflictsPeopleResponse401
+	| userConflictsPeopleResponse500
+) & {
+	headers: Headers;
+};
+
+export type userConflictsPeopleResponse =
+	| userConflictsPeopleResponseSuccess
+	| userConflictsPeopleResponseError;
+
+export const getUserConflictsPeopleUrl = (
+	params?: UserConflictsPeopleParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/user/conflicts/people?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/user/conflicts/people`;
+};
+
+/**
+ * People by last name and first name prefix, or by exact email. A last name or an email is required
+ * @summary Find people for a standing conflict
+ */
+export const userConflictsPeople = async (
+	params?: UserConflictsPeopleParams,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userConflictsPeopleResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserConflictsPeopleUrl(params), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userConflictsPeopleResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userConflictsPeopleResponse;
+};
+
+export const getUserConflictsPeopleQueryKey = (
+	params?: UserConflictsPeopleParams,
+) => {
+	return [
+		`${indexcardsApiBaseUrl()}/user/conflicts/people`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getUserConflictsPeopleQueryOptions = <
+	TData = Awaited<ReturnType<typeof userConflictsPeople>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: UserConflictsPeopleParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsPeople>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getUserConflictsPeopleQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof userConflictsPeople>>
+	> = ({ signal }) =>
+		userConflictsPeople(params, { signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userConflictsPeople>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserConflictsPeopleQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userConflictsPeople>>
+>;
+export type UserConflictsPeopleQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Find people for a standing conflict
+ */
+
+export function createUserConflictsPeople<
+	TData = Awaited<ReturnType<typeof userConflictsPeople>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: () => UserConflictsPeopleParams,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsPeople>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserConflictsPeopleQueryOptions(params?.(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Find people for a standing conflict
+ */
+export const prefetchUserConflictsPeopleQuery = async <
+	TData = Awaited<ReturnType<typeof userConflictsPeople>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	params?: UserConflictsPeopleParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsPeople>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserConflictsPeopleQueryOptions(params, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userConflictsChaptersResponse200 = {
+	data: ConflictChapterMatch[];
+	status: 200;
+};
+
+export type userConflictsChaptersResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userConflictsChaptersResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userConflictsChaptersResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userConflictsChaptersResponseSuccess =
+	userConflictsChaptersResponse200 & {
+		headers: Headers;
+	};
+export type userConflictsChaptersResponseError = (
+	| userConflictsChaptersResponse400
+	| userConflictsChaptersResponse401
+	| userConflictsChaptersResponse500
+) & {
+	headers: Headers;
+};
+
+export type userConflictsChaptersResponse =
+	| userConflictsChaptersResponseSuccess
+	| userConflictsChaptersResponseError;
+
+export const getUserConflictsChaptersUrl = (
+	params: UserConflictsChaptersParams,
+) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/user/conflicts/chapters?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/user/conflicts/chapters`;
+};
+
+/**
+ * Chapters by name prefix
+ * @summary Find chapters for a standing conflict
+ */
+export const userConflictsChapters = async (
+	params: UserConflictsChaptersParams,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userConflictsChaptersResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserConflictsChaptersUrl(params), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userConflictsChaptersResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userConflictsChaptersResponse;
+};
+
+export const getUserConflictsChaptersQueryKey = (
+	params?: UserConflictsChaptersParams,
+) => {
+	return [
+		`${indexcardsApiBaseUrl()}/user/conflicts/chapters`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getUserConflictsChaptersQueryOptions = <
+	TData = Awaited<ReturnType<typeof userConflictsChapters>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params: UserConflictsChaptersParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsChapters>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getUserConflictsChaptersQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof userConflictsChapters>>
+	> = ({ signal }) =>
+		userConflictsChapters(params, { signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userConflictsChapters>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserConflictsChaptersQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userConflictsChapters>>
+>;
+export type UserConflictsChaptersQueryError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Find chapters for a standing conflict
+ */
+
+export function createUserConflictsChapters<
+	TData = Awaited<ReturnType<typeof userConflictsChapters>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params: () => UserConflictsChaptersParams,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsChapters>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserConflictsChaptersQueryOptions(params(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Find chapters for a standing conflict
+ */
+export const prefetchUserConflictsChaptersQuery = async <
+	TData = Awaited<ReturnType<typeof userConflictsChapters>>,
+	TError = BadRequestResponse | UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	params: UserConflictsChaptersParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userConflictsChapters>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserConflictsChaptersQueryOptions(params, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userConflictRemoveResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userConflictRemoveResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userConflictRemoveResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userConflictRemoveResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userConflictRemoveResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userConflictRemoveResponseSuccess =
+	userConflictRemoveResponse204 & {
+		headers: Headers;
+	};
+export type userConflictRemoveResponseError = (
+	| userConflictRemoveResponse400
+	| userConflictRemoveResponse401
+	| userConflictRemoveResponse404
+	| userConflictRemoveResponse500
+) & {
+	headers: Headers;
+};
+
+export type userConflictRemoveResponse =
+	| userConflictRemoveResponseSuccess
+	| userConflictRemoveResponseError;
+
+export const getUserConflictRemoveUrl = (conflictId: number) => {
+	return `${indexcardsApiBaseUrl()}/user/conflicts/${conflictId}`;
+};
+
+/**
+ * Removes one of the person's standing conflicts and the tournament conflicts it derived at tournaments that have not ended
+ * @summary Remove a standing conflict
+ */
+export const userConflictRemove = async (
+	conflictId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userConflictRemoveResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserConflictRemoveUrl(conflictId), {
+		credentials: 'include',
+		...options,
+		method: 'DELETE',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userConflictRemoveResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userConflictRemoveResponse;
+};
+
+export const getUserConflictRemoveMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userConflictRemove>>,
+		TError,
+		{ conflictId: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userConflictRemove>>,
+	TError,
+	{ conflictId: number },
+	TContext
+> => {
+	const mutationKey = ['userConflictRemove'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userConflictRemove>>,
+		{ conflictId: number }
+	> = (props) => {
+		const { conflictId } = props ?? {};
+
+		return userConflictRemove(conflictId, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserConflictRemoveMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userConflictRemove>>
+>;
+
+export type UserConflictRemoveMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Remove a standing conflict
+ */
+export const createUserConflictRemove = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userConflictRemove>>,
+			TError,
+			{ conflictId: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userConflictRemove>>,
+	TError,
+	{ conflictId: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserConflictRemoveMutationOptions(options?.()) }),
+		queryClient,
+	);
 };

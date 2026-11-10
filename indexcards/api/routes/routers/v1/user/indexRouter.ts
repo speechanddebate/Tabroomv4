@@ -7,6 +7,7 @@ import sessionsRouter from './sessionsRouter.js';
 import judgesRouter from './judges/judgesRouter.js';
 import studentsRouter from './studentsRouter.js';
 import chaptersRouter from './chaptersRouter.js';
+import conflictsRouter from './conflictsRouter.js';
 import sectionsRouter from './sectionsRouter.js';
 
 const router = Router();
@@ -20,6 +21,7 @@ router.use(sessionsRouter);
 router.use('/judges', judgesRouter);
 router.use('/students', studentsRouter);
 router.use('/chapters', chaptersRouter);
+router.use('/conflicts', conflictsRouter);
 router.use('/sections', sectionsRouter);
 
 export default router;

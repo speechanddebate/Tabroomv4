@@ -102,8 +102,8 @@ test.describe('a judge\'s conflict sheet', () => {
 
 		await login(person);
 		await page.goto('/user/home');
-		// the card still offers the link, to the account-wide list on classic
-		await expect(card(page, sheet.tournName).getByRole('link', { name: 'Add conflicts' })).toHaveAttribute('href', /\/user\/judge\/conflicts\.mhtml$/);
+		// the card still offers the link, to the account-wide list
+		await expect(card(page, sheet.tournName).getByRole('link', { name: 'Add conflicts' })).toHaveAttribute('href', '/user/conflicts');
 
 		await page.goto(`/user/judge/conflicts?judge=${sheet.judge}`);
 		await expect(marked(page).getByRole('row', { name: /Riverdale/ })).toBeVisible();

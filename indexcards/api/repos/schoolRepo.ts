@@ -8,6 +8,7 @@ type queryOpts = {
 	tourn?: number;
 	tourns?: number[];
 	chapter?: number;
+	chapters?: number[];
 	region?: number;
 	district?: number;
 	settings?: boolean | string[];
@@ -31,6 +32,9 @@ function buildSchoolQuery(db: Database, opts: queryOpts = {}){
 	}
 	if (opts.chapter) {
 		query = query.where('school.chapter', '=', opts.chapter);
+	}
+	if (opts.chapters) {
+		query = query.where('school.chapter', 'in', opts.chapters);
 	}
 	if (opts.region) {
 		query = query.where('school.region', '=', opts.region);

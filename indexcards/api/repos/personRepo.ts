@@ -13,6 +13,11 @@ type queryOpts = {
 	hasJudged?: boolean;
 	limit?: number;
 	offset?: number;
+	/**
+	 * sort by last then first name. Off by default: person has no name index, so a sort over
+	 * a wide match (the paradigm list's empty term) reads every row before the limit applies
+	 */
+	orderByName?: boolean;
 };
 
 async function buildPersonQuery(db: Database, opts: queryOpts = {}) {
@@ -124,20 +129,34 @@ export async function getPerson(db: Database, id: number, opts: queryOpts = {}) 
 		.executeTakeFirst();
 }
 
-export async function personSearch(db: Database, term: string, opts: queryOpts = {},) {
-	const sanitize = (term: string) => {
-		if (!term) return '';
-		return term
-			.normalize('NFC')
-			.replace(/[\u2018\u2019]/g, "'")
-			.replace(/[^\p{L}\p{M}0-9\-'\s]/gu, '')
-			.trim();
-	};
+// keeps letters, marks, digits, hyphens, apostrophes, and spaces, so LIKE wildcards never reach the query
+const sanitize = (text: string) => text
+	.normalize('NFC')
+	.replace(/[\u2018\u2019]/g, "'")
+	.replace(/[^\p{L}\p{M}0-9\-'\s]/gu, '')
+	.trim();
 
-	const cleanTerm = sanitize(term);
-	const words = cleanTerm.split(/\s+/).filter((w) => w.length > 0);
+export type PersonTerms = {
+	/** free text: every word must start a first or a last name, in any order */
+	name?: string;
+	/** first name prefix */
+	first?: string;
+	/** last name prefix */
+	last?: string;
+	/** exact email */
+	email?: string;
+};
 
+/**
+ * The one way to look people up by what someone typed. Terms narrow each other; the caller
+ * decides which it accepts (the conflicts page wants a last name or an email, the paradigm
+ * search takes free text). Filters on who (banned, confirmed, has judged) and paging come
+ * from the builder's opts.
+ */
+export async function findPersons(db: Database, terms: PersonTerms, opts: queryOpts = {}) {
 	let query = await buildPersonQuery(db, opts);
+
+	const words = sanitize(terms.name ?? '').split(/\s+/).filter((word) => word.length > 0);
 	if (words.length) {
 		query = query.where((eb) =>
 			eb.and(
@@ -150,6 +169,14 @@ export async function personSearch(db: Database, term: string, opts: queryOpts =
 			),
 		);
 	}
+	const first = sanitize(terms.first ?? '');
+	const last = sanitize(terms.last ?? '');
+	// a prefix with no name characters left ("%", "!!!") would be like '%' and match everyone
+	if ((terms.first && !first) || (terms.last && !last)) return [];
+	if (first) query = query.where('person.first', 'like', `${first}%`);
+	if (last) query = query.where('person.last', 'like', `${last}%`);
+	if (terms.email) query = query.where('person.email', '=', terms.email);
+	if (opts.orderByName) query = query.orderBy('person.last').orderBy('person.first');
 
 	return await query.selectAll('person').execute();
 }
@@ -213,7 +240,7 @@ export async function createPerson(db: Database, data: CreatePersonData) {
 
 export default {
 	getPerson,
-	personSearch,
+	findPersons,
 	getPersonByUsername,
 	updatePerson,
 	createPerson

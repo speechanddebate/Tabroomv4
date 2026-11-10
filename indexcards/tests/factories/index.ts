@@ -5,6 +5,7 @@ import chapter from './chapter.js';
 import chapterJudge from './chapterJudge.js';
 import changeLog from './changelog.js';
 import circuit from './circuit.js';
+import conflict from './conflict.js';
 import contact from './contact.js';
 import email from './email.js';
 import entry from './entry.js';
@@ -44,6 +45,7 @@ const factories = {
 	chapterJudge,
 	changeLog,
 	circuit,
+	conflict,
 	email,
 	entry,
 	event,

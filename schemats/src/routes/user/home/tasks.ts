@@ -69,8 +69,8 @@ export const classic = {
  * that doesn't take judge conflicts still gets the link, to the account-wide list.
  */
 export function conflictsHref(judge: Pick<HomeJudge, 'id' | 'tournConflicts'>): string {
-	if (!judge.tournConflicts) return classic.standingConflicts();
-	return isEnabled('conflictSheet') ? `/user/judge/conflicts?judge=${judge.id}` : classic.conflicts(judge.id);
+	if (!isEnabled('conflictSheet')) return judge.tournConflicts ? classic.conflicts(judge.id) : classic.standingConflicts();
+	return judge.tournConflicts ? `/user/judge/conflicts?judge=${judge.id}` : '/user/conflicts';
 }
 
 // Time rules read the browser clock; ballots don't, since the server decides which are current.

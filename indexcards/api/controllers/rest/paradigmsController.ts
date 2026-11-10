@@ -11,7 +11,7 @@ async function getParadigms(req: ValidatedRequest, res: Response) {
 	//get the search query from the query params
 	const { search, limit = 50, offset = 0 } = req.query;
 
-	const paradigms = await personRepo.personSearch(db, search ?? '', {
+	const paradigms = await personRepo.findPersons(db, { name: search }, {
 		excludeBanned: true,
 		excludeUnconfirmedEmail: true,
 		hasValidParadigm: true,

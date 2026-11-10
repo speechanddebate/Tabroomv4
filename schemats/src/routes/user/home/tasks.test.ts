@@ -292,14 +292,15 @@ describe('feature flags', () => {
 });
 
 describe('conflictsHref', () => {
-	it('goes to the beta sheet when the category takes judge conflicts, else to the account-wide list', () => {
+	it('goes to the beta sheet when the category takes judge conflicts, else to the beta standing list', () => {
 		expect(conflictsHref({ id: 701, tournConflicts: true })).toBe('/user/judge/conflicts?judge=701');
-		expect(conflictsHref({ id: 701, tournConflicts: false })).toBe('https://classic.example.com/user/judge/conflicts.mhtml');
+		expect(conflictsHref({ id: 701, tournConflicts: false })).toBe('/user/conflicts');
 	});
 
-	it("keeps classic's sheet until the page is on", () => {
+	it("keeps classic's pages until the flag is on", () => {
 		setHomeFeatures([]);
 		expect(conflictsHref({ id: 701, tournConflicts: true })).toBe('https://classic.example.com/user/judge/judge_conflicts.mhtml?judge_id=701');
+		expect(conflictsHref({ id: 701, tournConflicts: false })).toBe('https://classic.example.com/user/judge/conflicts.mhtml');
 	});
 });
 

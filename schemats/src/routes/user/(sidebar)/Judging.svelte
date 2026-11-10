@@ -2,6 +2,7 @@
 	import { getPerson } from '$lib/helpers/SessionContext.svelte';
     import SidebarLink from './SidebarLink.svelte';
 	import { CLASSIC_URL } from '$app/env/public';
+	import { isEnabled } from '../home/features';
 	const person = $derived(getPerson());
 </script>
 
@@ -18,7 +19,7 @@
 	>Judging History</SidebarLink>
 
 	<SidebarLink
-		href={`${CLASSIC_URL}/user/judge/conflicts.mhtml`}
+		href={isEnabled('conflictSheet') ? '/user/conflicts' : `${CLASSIC_URL}/user/judge/conflicts.mhtml`}
 		size="half"
 	>Standing Conflicts</SidebarLink>
 

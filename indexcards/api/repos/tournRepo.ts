@@ -255,14 +255,22 @@ export async function getEventModeCounts(db: Database, tournId: number) {
 	};
 };
 
-async function getPersonTourns(db: Database, personId: number, opts: queryOpts = {}) {
+/** The ways a person can be at a tourn; each counts unless passed as false */
+type personTournOpts = queryOpts & {
+	entry?: boolean;
+	judge?: boolean;
+	coach?: boolean;
+	tabber?: boolean;
+};
+
+async function getPersonTourns(db: Database, personId: number, opts: personTournOpts = {}) {
 	const query = buildTournQuery(db, opts);
 
 	const data = await query
 		.selectAll('tourn')
 		.where(({ or, exists, selectFrom }) => or([
 			// Person is a student in an entry at this tournament
-			exists(
+			...(opts.entry === false ? [] : [exists(
 				selectFrom('student')
 					.innerJoin('entry_student', 'entry_student.student', 'student.id')
 					.innerJoin('entry', 'entry.id', 'entry_student.entry')
@@ -271,31 +279,31 @@ async function getPersonTourns(db: Database, personId: number, opts: queryOpts =
 					.where('student.person', '=', personId)
 					.where('student.retired', '!=', 1)
 					.whereRef('e.tourn', '=', 'tourn.id')
-			),
+			)]),
 			// Person is a judge in a category at this tournament
-			exists(
+			...(opts.judge === false ? [] : [exists(
 				selectFrom('judge')
 					.innerJoin('category', 'category.id', 'judge.category')
 					.select('judge.id')
 					.where('judge.person', '=', personId)
 					.whereRef('category.tourn', '=', 'tourn.id')
-			),
+			)]),
 			// Person has permission/chapter/school at this tournament
-			exists(
+			...(opts.coach === false ? [] : [exists(
 				selectFrom('permission')
 					.innerJoin('chapter', 'chapter.id', 'permission.chapter')
 					.innerJoin('school', 'school.chapter', 'chapter.id')
 					.select('permission.id')
 					.where('permission.person', '=', personId)
 					.whereRef('school.tourn', '=', 'tourn.id')
-			),
+			)]),
 			// Person is tab staff at this tournament
-			exists(
+			...(opts.tabber === false ? [] : [exists(
 				selectFrom('permission')
 					.select('permission.id')
 					.where('permission.person', '=', personId)
 					.whereRef('permission.tourn', '=', 'tourn.id')
-			),
+			)]),
 		]))
 		.orderBy('tourn.start', 'desc')
 		.execute();

@@ -18,6 +18,8 @@ import type {
 	BallotProgress,
 	BallotReview,
 	ClaimResponse,
+	ConflictChapterMatch,
+	ConflictPersonMatch,
 	CongressBallotContext,
 	CurrentBallot,
 	DebateBallotContext,
@@ -49,6 +51,7 @@ import type {
 	ResultSetSchema,
 	RoomView,
 	Session,
+	StandingConflict,
 	StudentSchema,
 	Tourn,
 	TournRoom,
@@ -4687,6 +4690,146 @@ export const getUserChaptersResponseMock = (): UserChapter[] =>
 		permission: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	}));
 
+export const getUserConflictsResponseMock = (): StandingConflict[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		person: faker.number.int({ min: 0, max: 9007199254740991 }),
+		conflicted: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		chapter: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		added_by: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		created_at: faker.helpers.arrayElement([
+			faker.date.past().toISOString().slice(0, 19) + 'Z',
+			null,
+		]),
+		Person: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				first: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		Chapter: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+				state: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+	}));
+
+export const getUserConflictAddResponseMock = (
+	overrideResponse: Partial<Extract<StandingConflict, object>> = {},
+): StandingConflict => ({
+	id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	person: faker.number.int({ min: 0, max: 9007199254740991 }),
+	conflicted: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	chapter: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	added_by: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	created_at: faker.helpers.arrayElement([
+		faker.date.past().toISOString().slice(0, 19) + 'Z',
+		null,
+	]),
+	Person: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			first: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			last: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	Chapter: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+			state: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getUserConflictsPeopleResponseMock = (): ConflictPersonMatch[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		first: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		last: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		Chapters: Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+		})),
+	}));
+
+export const getUserConflictsChaptersResponseMock =
+	(): ConflictChapterMatch[] =>
+		Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+			city: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			state: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		}));
+
 export const getRestAdsMockHandler = (
 	overrideResponse?:
 		| HomepageAd[]
@@ -6235,6 +6378,123 @@ export const getUserChaptersMockHandler = (
 		options,
 	);
 };
+
+export const getUserConflictsMockHandler = (
+	overrideResponse?:
+		| StandingConflict[]
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<StandingConflict[]> | StandingConflict[]),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/conflicts',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserConflictsResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserConflictAddMockHandler = (
+	overrideResponse?:
+		| StandingConflict
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<StandingConflict> | StandingConflict),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/conflicts',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserConflictAddResponseMock(),
+				{ status: 201 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserConflictsPeopleMockHandler = (
+	overrideResponse?:
+		| ConflictPersonMatch[]
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<ConflictPersonMatch[]> | ConflictPersonMatch[]),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/conflicts/people',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserConflictsPeopleResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserConflictsChaptersMockHandler = (
+	overrideResponse?:
+		| ConflictChapterMatch[]
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<ConflictChapterMatch[]> | ConflictChapterMatch[]),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/conflicts/chapters',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserConflictsChaptersResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserConflictRemoveMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.delete>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.delete(
+		'*/user/conflicts/:conflictId',
+		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
 export const getIndexCardsAPIMock = () => [
 	getRestAdsMockHandler(),
 	getRestCircuitsActiveMockHandler(),
@@ -6302,4 +6562,9 @@ export const getIndexCardsAPIMock = () => [
 	getUserStudentsLinkRequestsMockHandler(),
 	getUserStudentsClaimMockHandler(),
 	getUserChaptersMockHandler(),
+	getUserConflictsMockHandler(),
+	getUserConflictAddMockHandler(),
+	getUserConflictsPeopleMockHandler(),
+	getUserConflictsChaptersMockHandler(),
+	getUserConflictRemoveMockHandler(),
 ];

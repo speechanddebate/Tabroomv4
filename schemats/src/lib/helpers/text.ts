@@ -13,6 +13,9 @@ export const ucfirst = (lowered:string | null) => {
 	}
 };
 
+/** First and last name joined; empty when both are missing, so callers pick their own fallback */
+export const personName = (person: { first?: string | null; last?: string | null }): string => `${person.first ?? ''} ${person.last ?? ''}`.trim();
+
 export const eventType = (rawType:string) => {
 	if (rawType === 'mock_trial') return 'Mock Trial';
 	if (rawType === 'wsdc') return 'World Schools';

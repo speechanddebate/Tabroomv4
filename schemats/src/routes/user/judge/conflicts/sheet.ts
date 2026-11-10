@@ -3,6 +3,7 @@
  * mark; this only words it.
  */
 import type { ConflictCandidate, JudgeConflict } from '@tabroom/types';
+import { personName } from '$lib/helpers/text';
 
 /** How a marked conflict reads: the entry code with its event, or the school or region name */
 export function conflictLabel(conflict: Pick<JudgeConflict, 'type' | 'Entry' | 'School' | 'Region'>): string {
@@ -37,7 +38,7 @@ export function removeHint(conflict: Pick<JudgeConflict, 'EnteredBy'>): string {
 }
 
 const studentNames = (entry: Pick<ConflictCandidate, 'Students'>): string[] =>
-	entry.Students.map((student) => `${student.first ?? ''} ${student.last ?? ''}`.trim()).filter(Boolean);
+	entry.Students.map(personName).filter(Boolean);
 
 export const studentList = (entry: Pick<ConflictCandidate, 'Students'>): string => studentNames(entry).join(', ');
 
@@ -52,5 +53,3 @@ export function matchesFilter(entry: Searchable, filter: string): boolean {
 	const text = searchText(entry).toLowerCase();
 	return filter.toLowerCase().split(/\s+/).filter(Boolean).every((word) => text.includes(word));
 }
-
-export const filterCandidates = <T extends Searchable>(entries: T[], filter: string): T[] => entries.filter((entry) => matchesFilter(entry, filter));

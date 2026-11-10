@@ -12,6 +12,7 @@
 	import TableSearch from '$lib/components/utils/TableSearch.svelte';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
 	import { handleMutation, handleOrval } from '$lib/helpers/query';
+	import { personName } from '$lib/helpers/text';
 	import { toast } from '$lib/helpers/toasts';
 	import { createRestJudgesConflictAdd, createRestJudgesConflictRemove, createRestJudgesConflicts, getUserHomeQueryKey } from '$indexcards';
 	import type { PageData } from './$types';
@@ -54,7 +55,7 @@
 
 	const enteredBy = (conflict: JudgeConflict) => {
 		if (!conflict.EnteredBy) return '';
-		return conflict.EnteredBy.role === 'tab' ? 'Tab staff' : `${conflict.EnteredBy.first ?? ''} ${conflict.EnteredBy.last ?? ''}`.trim();
+		return conflict.EnteredBy.role === 'tab' ? 'Tab staff' : personName(conflict.EnteredBy);
 	};
 
 	type Region = JudgeConflicts['Candidates']['Regions'][number];

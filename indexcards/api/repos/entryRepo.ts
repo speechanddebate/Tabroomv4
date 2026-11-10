@@ -16,6 +16,8 @@ type entryOpts = {
 	active?: boolean,
 	/** entries one of the person's unretired students is on */
 	person?: number,
+	/** entries carrying a student linked to any of these people */
+	studentPersons?: number[],
 }
 function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 	let query = db.selectFrom('entry')
@@ -63,6 +65,15 @@ function buildEntryQuery(db: Database, opts: entryOpts = {}) {
 			.where('student.person', '=', opts.person!)
 			.where('student.retired', '=', 0)
 		)
+		: query;
+
+	query = opts.studentPersons
+		? query.where('entry.id', 'in', opts.studentPersons.length ? (eb) => eb
+			.selectFrom('entry_student')
+			.innerJoin('student', 'student.id', 'entry_student.student')
+			.select('entry_student.entry')
+			.where('student.person', 'in', opts.studentPersons!)
+		: [])
 		: query;
 
 	query = opts.limit

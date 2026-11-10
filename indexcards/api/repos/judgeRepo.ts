@@ -8,6 +8,7 @@ type queryOpts = {
 	limit?: number;
 	offset?: number;
 	person?: number;
+	persons?: number[];
 	person_request?: number;
 	settings?: boolean | string[];
 	tourns?: number[];
@@ -23,6 +24,7 @@ function buildJudgeQuery(db: Database, opts: queryOpts = {}) {
 	if(opts.limit) query = query.limit(opts.limit);
 	if(opts.offset) query = query.offset(opts.offset);
 	if(opts.person) query = query.where('judge.person', '=', opts.person);
+	if(opts.persons) query = query.where('judge.person', 'in', opts.persons);
 	if(opts.person_request) query = query.where('judge.person_request', '=', opts.person_request);
 	if(opts.schools) query = query.where('judge.school', 'in', opts.schools);
 	if(opts.tourns) query = query.where('judge.category', 'in', opts.tourns.length ? (eb) => eb
@@ -45,6 +47,22 @@ async function getJudges(db: Database, opts: queryOpts = {}) {
 	return await buildJudgeQuery(db, opts)
 	.selectAll('judge')
 	.execute();
+}
+
+/** The chapters each person has judged for, through their judge rows' schools, most recent first */
+async function getJudgedChapters(db: Database, personIds: number[]) {
+	return await buildJudgeQuery(db, { persons: personIds })
+		.innerJoin('school', 'school.id', 'judge.school')
+		.innerJoin('chapter', 'chapter.id', 'school.chapter')
+		.select((eb) => [
+			'judge.person',
+			'chapter.id',
+			'chapter.name',
+			eb.fn.max('judge.id').as('latest'),
+		])
+		.groupBy(['judge.person', 'chapter.id', 'chapter.name'])
+		.orderBy('latest', 'desc')
+		.execute();
 }
 
 async function createJudge(db: Database, data: Insertable<Judge> & { settings?: Settings}){
@@ -404,6 +422,7 @@ async function getPersonJudges(db: Database, personId: number, opts: queryOpts =
 export default {
 	getJudge,
 	getJudges,
+	getJudgedChapters,
 	getPersonJudges,
 	createJudge,
 	updateJudge,

@@ -26,7 +26,7 @@ afterEach(() => {
 describe('paradigmsController', () => {
 	describe('getParadigms', async () => {
 		it('should return a list of paradigms', async () => {
-			vi.spyOn(personRepo, 'personSearch').mockResolvedValue([
+			vi.spyOn(personRepo, 'findPersons').mockResolvedValue([
 				{ id: 1, first: 'Test', middle: null, last: 'Paradigm' },
 			]);
 			vi.spyOn(judgeRepo, 'getJudgesForPersons').mockResolvedValue({
@@ -44,7 +44,7 @@ describe('paradigmsController', () => {
 			});
 			await paradigmsController.getParadigms(req, res);
 			expect(res).not.toBeProblemResponse();
-			expect(personRepo.personSearch).toHaveBeenCalledWith(db, '', {
+			expect(personRepo.findPersons).toHaveBeenCalledWith(db, { name: undefined }, {
 				excludeBanned: true,
 				excludeUnconfirmedEmail: true,
 				hasValidParadigm: true,
@@ -65,7 +65,7 @@ describe('paradigmsController', () => {
 		it('does not return schools older than 5 years', async () => {
 			const fiveYearsAgo = new Date();
 			fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
-			vi.spyOn(personRepo, 'personSearch').mockResolvedValue([
+			vi.spyOn(personRepo, 'findPersons').mockResolvedValue([
 				{ id: 1, first: 'Test', middle: null, last: 'Paradigm' },
 			]);
 			vi.spyOn(judgeRepo, 'getJudgesForPersons').mockResolvedValue({
@@ -96,7 +96,7 @@ describe('paradigmsController', () => {
 
 		});
 		it('returns an empty array if no paradigms are found', async () => {
-			vi.spyOn(personRepo, 'personSearch').mockResolvedValue([]);
+			vi.spyOn(personRepo, 'findPersons').mockResolvedValue([]);
 			const { req, res } = createContext({
 				query: {},
 			});

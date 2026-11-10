@@ -149,6 +149,12 @@ describe('tournRepo', () => {
 				window.running.Tourn.id,
 				window.upcoming.Tourn.id,
 			].sort());
+
+			const idsWithout = async (roles: Parameters<typeof tournRepo.getPersonTourns>[2]) =>
+				(await tournRepo.getPersonTourns(db, Person.id, { endAfter: new Date(Date.now() - 7 * DAY), unpublished: true, ...roles })).map(tourn => tourn.id).sort();
+			expect(await idsWithout({ coach: false, tabber: false })).toEqual([window.endedRecently.Tourn.id, window.hidden.Tourn.id].sort());
+			expect(await idsWithout({ entry: false, judge: false })).toEqual([window.running.Tourn.id, window.upcoming.Tourn.id].sort());
+			expect(await idsWithout({ entry: false, judge: false, coach: false, tabber: false })).toEqual([]);
 		});
 
 		it('returns only running tournaments with startBefore and endAfter at now', async () => {

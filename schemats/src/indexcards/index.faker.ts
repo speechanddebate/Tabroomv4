@@ -15,6 +15,8 @@ import type {
 	BallotProgress,
 	BallotReview,
 	ClaimResponse,
+	ConflictChapterMatch,
+	ConflictPersonMatch,
 	CongressBallotContext,
 	CurrentBallot,
 	DebateBallotContext,
@@ -46,6 +48,7 @@ import type {
 	ResultSetSchema,
 	RoomView,
 	Session,
+	StandingConflict,
 	StudentSchema,
 	Tourn,
 	TournRoom,
@@ -4683,3 +4686,143 @@ export const getUserChaptersResponseMock = (): UserChapter[] =>
 		]),
 		permission: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	}));
+
+export const getUserConflictsResponseMock = (): StandingConflict[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		person: faker.number.int({ min: 0, max: 9007199254740991 }),
+		conflicted: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		chapter: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		added_by: faker.helpers.arrayElement([
+			faker.number.int({ min: 0, max: 9007199254740991 }),
+			null,
+		]),
+		created_at: faker.helpers.arrayElement([
+			faker.date.past().toISOString().slice(0, 19) + 'Z',
+			null,
+		]),
+		Person: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				first: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+				last: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		Chapter: faker.helpers.arrayElement([
+			{
+				id: faker.number.int({ min: 0, max: 9007199254740991 }),
+				name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+				state: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+	}));
+
+export const getUserConflictAddResponseMock = (
+	overrideResponse: Partial<Extract<StandingConflict, object>> = {},
+): StandingConflict => ({
+	id: faker.number.int({ min: 0, max: 9007199254740991 }),
+	person: faker.number.int({ min: 0, max: 9007199254740991 }),
+	conflicted: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	chapter: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	added_by: faker.helpers.arrayElement([
+		faker.number.int({ min: 0, max: 9007199254740991 }),
+		null,
+	]),
+	created_at: faker.helpers.arrayElement([
+		faker.date.past().toISOString().slice(0, 19) + 'Z',
+		null,
+	]),
+	Person: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			first: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			last: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	Chapter: faker.helpers.arrayElement([
+		{
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+			state: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		},
+		null,
+	]),
+	...overrideResponse,
+});
+
+export const getUserConflictsPeopleResponseMock = (): ConflictPersonMatch[] =>
+	Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		id: faker.number.int({ min: 0, max: 9007199254740991 }),
+		first: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		last: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		Chapters: Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+		})),
+	}));
+
+export const getUserConflictsChaptersResponseMock =
+	(): ConflictChapterMatch[] =>
+		Array.from(
+			{ length: faker.number.int({ min: 1, max: 10 }) },
+			(_, i) => i + 1,
+		).map(() => ({
+			id: faker.number.int({ min: 0, max: 9007199254740991 }),
+			name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+			city: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+			state: faker.helpers.arrayElement([
+				faker.string.alpha({ length: { min: 10, max: 20 } }),
+				null,
+			]),
+		}));
