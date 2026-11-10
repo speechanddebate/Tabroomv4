@@ -1,0 +1,27 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA to deploy (defaults to this commit)
+        required: false
+  workflow_call:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy images
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_SHA: ${{ inputs.sha || github.sha }}
+        run: |
+          install -d -m 700 ~/.ssh
+          (umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            ansible@control "$DEPLOY_SHA"
