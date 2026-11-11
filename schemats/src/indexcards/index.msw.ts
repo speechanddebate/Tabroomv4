@@ -50,6 +50,8 @@ import type {
 	RestCircuit,
 	ResultSetSchema,
 	RoomView,
+	ScheduledJobList,
+	ScheduledJobRun,
 	Session,
 	StandingConflict,
 	StudentSchema,
@@ -4830,6 +4832,73 @@ export const getUserConflictsChaptersResponseMock =
 			]),
 		}));
 
+export const getAdminJobsResponseMock = (
+	overrideResponse: Partial<Extract<ScheduledJobList, object>> = {},
+): ScheduledJobList => ({
+	jobs: Array.from(
+		{ length: faker.number.int({ min: 1, max: 10 }) },
+		(_, i) => i + 1,
+	).map(() => ({
+		name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+		description: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		Schedule: faker.helpers.arrayElement([
+			{ every: faker.number.float({ fractionDigits: 2 }) },
+			{
+				pattern: faker.string.alpha({ length: { min: 10, max: 20 } }),
+				tz: faker.string.alpha({ length: { min: 10, max: 20 } }),
+			},
+		]),
+		enabled: faker.datatype.boolean(),
+		nextRun: faker.helpers.arrayElement([
+			faker.date.past().toISOString().slice(0, 19) + 'Z',
+			null,
+		]),
+		Running: faker.helpers.arrayElement([
+			{ startedAt: faker.date.past().toISOString().slice(0, 19) + 'Z' },
+			null,
+		]),
+		queued: faker.datatype.boolean(),
+		LastRun: faker.helpers.arrayElement([
+			{
+				outcome: faker.helpers.arrayElement([
+					'completed',
+					'failed',
+				] as const),
+				finishedAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+				durationMs: faker.helpers.arrayElement([
+					faker.number.float({ fractionDigits: 2 }),
+					null,
+				]),
+				attempts: faker.number.float({ fractionDigits: 2 }),
+				result: {},
+				error: faker.helpers.arrayElement([
+					faker.string.alpha({ length: { min: 10, max: 20 } }),
+					null,
+				]),
+			},
+			null,
+		]),
+		lastSuccess: faker.helpers.arrayElement([
+			faker.date.past().toISOString().slice(0, 19) + 'Z',
+			null,
+		]),
+		overdue: faker.datatype.boolean(),
+		failing: faker.datatype.boolean(),
+	})),
+	...overrideResponse,
+});
+
+export const getAdminJobRunResponseMock = (
+	overrideResponse: Partial<Extract<ScheduledJobRun, object>> = {},
+): ScheduledJobRun => ({
+	name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	jobId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getRestAdsMockHandler = (
 	overrideResponse?:
 		| HomepageAd[]
@@ -6495,6 +6564,54 @@ export const getUserConflictRemoveMockHandler = (
 		options,
 	);
 };
+
+export const getAdminJobsMockHandler = (
+	overrideResponse?:
+		| ScheduledJobList
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<ScheduledJobList> | ScheduledJobList),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/admin/jobs',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getAdminJobsResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getAdminJobRunMockHandler = (
+	overrideResponse?:
+		| ScheduledJobRun
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<ScheduledJobRun> | ScheduledJobRun),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/admin/jobs/:jobName/run',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getAdminJobRunResponseMock(),
+				{ status: 202 },
+			);
+		},
+		options,
+	);
+};
 export const getIndexCardsAPIMock = () => [
 	getRestAdsMockHandler(),
 	getRestCircuitsActiveMockHandler(),
@@ -6567,4 +6684,6 @@ export const getIndexCardsAPIMock = () => [
 	getUserConflictsPeopleMockHandler(),
 	getUserConflictsChaptersMockHandler(),
 	getUserConflictRemoveMockHandler(),
+	getAdminJobsMockHandler(),
+	getAdminJobRunMockHandler(),
 ];

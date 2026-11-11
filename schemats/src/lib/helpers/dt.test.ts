@@ -1,4 +1,4 @@
-import { showDateTime, showDateRange, getWeek } from '$lib/helpers/dt';
+import { showDateTime, showDateRange, showRelative, getWeek } from '$lib/helpers/dt';
 
 describe('showDateRange', () => {
 	const short = (startISO: string, endISO: string, tz?: string) =>
@@ -65,6 +65,16 @@ describe('showDateTime', () => {
 		expect(() => showDateTime({ dt: undefined })).not.toThrow();
 	});
 });
+describe('showRelative', () => {
+	const now = '2026-11-11T12:00:00.000Z';
+
+	it('says how far ahead or behind a time is', () => {
+		expect(showRelative({ dtISO: '2026-11-11T12:20:00.000Z' }, now)).toBe('in 20 minutes');
+		expect(showRelative({ dtISO: '2026-11-11T09:00:00.000Z' }, now)).toBe('3 hours ago');
+		expect(showRelative({ dtISO: '2026-11-13T12:00:00.000Z' }, now)).toBe('in 2 days');
+	});
+});
+
 describe('getWeek', () => {
 	it('calculates the correct ISO week number', () => {
 		expect(getWeek(new Date('2024-01-01'))).toBe(1); // Monday in ISO week 1

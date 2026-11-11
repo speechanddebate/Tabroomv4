@@ -34,6 +34,16 @@ describe('Authorization Middleware', () => {
 			expect(res.status).toHaveBeenCalledWith(401);
 			expect(next).not.toHaveBeenCalled();
 		});
+		it('answers 401 to the anonymous actor a logged-out request carries', () => {
+			const {req, res, next} = createContext();
+			req.actor = createActor(req.db, null);
+
+			requireSiteAdmin(req,res,next);
+
+			expect(res.status).toHaveBeenCalledWith(401);
+			expect(res.status).not.toHaveBeenCalledWith(403);
+			expect(next).not.toHaveBeenCalled();
+		});
 		it('deny when not site_admin', () => {
 			const {req, res, next} = createContext({
 				person: { id: 1, site_admin: false },

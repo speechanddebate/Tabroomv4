@@ -83,6 +83,8 @@ import type {
 	RestTournsSectionsRoomJoinParams,
 	ResultSetSchema,
 	RoomView,
+	ScheduledJobList,
+	ScheduledJobRun,
 	ServiceUnavailableResponse,
 	Session,
 	StandingConflict,
@@ -14143,6 +14145,374 @@ export const createUserConflictRemove = <
 > => {
 	return createMutation(
 		() => ({ ...getUserConflictRemoveMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type adminJobsResponse200 = {
+	data: ScheduledJobList;
+	status: 200;
+};
+
+export type adminJobsResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type adminJobsResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type adminJobsResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type adminJobsResponse503 = {
+	data: void;
+	status: 503;
+};
+
+export type adminJobsResponseSuccess = adminJobsResponse200 & {
+	headers: Headers;
+};
+export type adminJobsResponseError = (
+	| adminJobsResponse401
+	| adminJobsResponse403
+	| adminJobsResponse500
+	| adminJobsResponse503
+) & {
+	headers: Headers;
+};
+
+export type adminJobsResponse =
+	| adminJobsResponseSuccess
+	| adminJobsResponseError;
+
+export const getAdminJobsUrl = () => {
+	return `${indexcardsApiBaseUrl()}/admin/jobs`;
+};
+
+/**
+ * Every job the API runs on a timer, by name, with its schedule, whether it is switched on here, its next and last runs, and whether it is overdue or failing. Site administrators only
+ * @summary List scheduled jobs
+ */
+export const adminJobs = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<adminJobsResponse> => {
+	const res = await (fetchFn ?? fetch)(getAdminJobsUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: adminJobsResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as adminJobsResponse;
+};
+
+export const getAdminJobsQueryKey = () => {
+	return [`${indexcardsApiBaseUrl()}/admin/jobs`] as const;
+};
+
+export const getAdminJobsQueryOptions = <
+	TData = Awaited<ReturnType<typeof adminJobs>>,
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ErrorResponseResponse
+		| void,
+>(options?: {
+	query?: Partial<
+		CreateQueryOptions<Awaited<ReturnType<typeof adminJobs>>, TError, TData>
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getAdminJobsQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof adminJobs>>> = ({
+		signal,
+	}) => adminJobs({ signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof adminJobs>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type AdminJobsQueryResult = NonNullable<
+	Awaited<ReturnType<typeof adminJobs>>
+>;
+export type AdminJobsQueryError =
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| ErrorResponseResponse
+	| void;
+
+/**
+ * @summary List scheduled jobs
+ */
+
+export function createAdminJobs<
+	TData = Awaited<ReturnType<typeof adminJobs>>,
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ErrorResponseResponse
+		| void,
+>(
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof adminJobs>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getAdminJobsQueryOptions(options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary List scheduled jobs
+ */
+export const prefetchAdminJobsQuery = async <
+	TData = Awaited<ReturnType<typeof adminJobs>>,
+	TError =
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| ErrorResponseResponse
+		| void,
+>(
+	queryClient: QueryClient,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof adminJobs>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getAdminJobsQueryOptions(options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type adminJobRunResponse202 = {
+	data: ScheduledJobRun;
+	status: 202;
+};
+
+export type adminJobRunResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type adminJobRunResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type adminJobRunResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type adminJobRunResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type adminJobRunResponse409 = {
+	data: void;
+	status: 409;
+};
+
+export type adminJobRunResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type adminJobRunResponse503 = {
+	data: void;
+	status: 503;
+};
+
+export type adminJobRunResponseSuccess = adminJobRunResponse202 & {
+	headers: Headers;
+};
+export type adminJobRunResponseError = (
+	| adminJobRunResponse400
+	| adminJobRunResponse401
+	| adminJobRunResponse403
+	| adminJobRunResponse404
+	| adminJobRunResponse409
+	| adminJobRunResponse500
+	| adminJobRunResponse503
+) & {
+	headers: Headers;
+};
+
+export type adminJobRunResponse =
+	| adminJobRunResponseSuccess
+	| adminJobRunResponseError;
+
+export const getAdminJobRunUrl = (jobName: string) => {
+	return `${indexcardsApiBaseUrl()}/admin/jobs/${jobName}/run`;
+};
+
+/**
+ * Queues one run of a scheduled job without changing its schedule. Refused while the job is switched off in this environment and while a run is already in progress or waiting. Site administrators only
+ * @summary Run a scheduled job now
+ */
+export const adminJobRun = async (
+	jobName: string,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<adminJobRunResponse> => {
+	const res = await (fetchFn ?? fetch)(getAdminJobRunUrl(jobName), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: adminJobRunResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as adminJobRunResponse;
+};
+
+export const getAdminJobRunMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| void
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof adminJobRun>>,
+		TError,
+		{ jobName: string },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof adminJobRun>>,
+	TError,
+	{ jobName: string },
+	TContext
+> => {
+	const mutationKey = ['adminJobRun'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof adminJobRun>>,
+		{ jobName: string }
+	> = (props) => {
+		const { jobName } = props ?? {};
+
+		return adminJobRun(jobName, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type AdminJobRunMutationResult = NonNullable<
+	Awaited<ReturnType<typeof adminJobRun>>
+>;
+
+export type AdminJobRunMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| void
+	| ErrorResponseResponse;
+
+/**
+ * @summary Run a scheduled job now
+ */
+export const createAdminJobRun = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| void
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof adminJobRun>>,
+			TError,
+			{ jobName: string },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof adminJobRun>>,
+	TError,
+	{ jobName: string },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getAdminJobRunMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

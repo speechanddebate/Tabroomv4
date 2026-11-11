@@ -22,6 +22,12 @@ export const tags: TagObject[] = [
 		description: 'Administrative functions for managing Tabroom servers',
 	},
 	{
+		name: 'admin:jobs',
+		summary: 'Scheduled jobs',
+		parent: 'Admin',
+		description: 'The jobs the API runs on a timer: their schedules and state, and running one on request',
+	},
+	{
 		name: 'admin:mail',
 		summary: 'Mail',
 		parent: 'Admin',

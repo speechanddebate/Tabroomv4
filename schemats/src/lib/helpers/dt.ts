@@ -177,6 +177,16 @@ export const showDateTime =  (dateProps:DtProps) => {
 	return fullDate;
 };
 
+// How far a time is from now, in words ("in 12 minutes", "3 hours ago").
+// nowISO pins "now" for tests and stories
+export const showRelative = (dateProps:DtProps, nowISO?:string) => {
+
+	const dt = dateProps.dateTime || parseDateTime(dateProps);
+	if (!dt) return '';
+
+	return dt.toRelative(nowISO ? { base: DateTime.fromISO(nowISO) } : undefined) || '';
+};
+
 // Format a range of Dates and Times depending on the mode setting
 export const showDateRange = (rangeProps:DtRangeProps): FormattedRanges => {
 

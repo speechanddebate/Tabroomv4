@@ -2,6 +2,7 @@ import { Router } from 'express';
 import tabRouter from './tab/indexRouter.js';
 import legacyCoachRouter from './legacy/coachRouter.js';
 import adminRouter from './admin/adminRouter.js';
+import jobsRouter from './admin/jobsRouter.js';
 import { requireSiteAdmin } from '../../../middleware/auth/authorization.js';
 
 import authRouter from './authRouter.js';
@@ -34,6 +35,8 @@ router.use('/rest'   , restRouter);
 router.use('/status' , statusRouter);
 router.use('/auth'   , authRouter);
 router.use('/user'   , requirePerson, userRouter);
+// The one part of /admin that ships: the rest stays behind HIDE_DEV_ENDPOINTS above
+router.use('/admin/jobs', requireSiteAdmin, jobsRouter);
 
 router.get('/', (req, res) => {
 	res.json(openApiSpec);

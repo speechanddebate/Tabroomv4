@@ -31,7 +31,8 @@ authMiddleware.add(requirePerson);
 
 // should be rolled into the RBAC scheme at some point
 export function requireSiteAdmin(req: Request, res: Response, next: NextFunction) {
-	if (!req.actor) {
+	// a request that isn't logged in carries an anonymous actor, so the answer is "log in", not "forbidden"
+	if (!req.actor || req.actor.type === 'anonymous') {
 		return Unauthorized(req, res,'User not Authenticated');
 	}
 	if (!req.actor.Person?.site_admin){
