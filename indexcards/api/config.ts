@@ -95,6 +95,10 @@ export const ConfigSchema = z.object({
 		 */
 		runWorkers: z.boolean().default(true),
 	}).prefault({}),
+	/** Scheduled jobs (services/queue/jobs). Each is off until an environment turns it on */
+	jobs: z.object({
+		learnCourseSync: z.object({ enabled: z.boolean().default(false) }).prefault({}),
+	}).prefault({}),
 	//------------------------------------------------------------------------------
 	// SECURITY
 	// -----------------------------------------------------------------------------

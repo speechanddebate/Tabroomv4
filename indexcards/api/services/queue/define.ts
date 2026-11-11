@@ -64,16 +64,29 @@ export type QueueOptions<Name extends string, Data, Result> = {
 	onFailed?: FailedHook<Data>;
 	/** Jobs to add on a timer, e.g. a sweep every few seconds. Default none */
 	schedulers?: QueueScheduler<Data>[];
+	/**
+	 * Which finished jobs stay in Redis. Default an hour of completed and a day of failed ones.
+	 * A scheduled queue keeps by count instead, so a daily job's last run is still there to report
+	 */
+	removeOnComplete?: DefaultJobOptions['removeOnComplete'];
+	removeOnFail?: DefaultJobOptions['removeOnFail'];
 };
 
 /**
- * A job BullMQ adds every `every` ms while enabled() is true. startQueues upserts it when enabled
- * and removes it when not, so turning a feature flag off stops the timer on the next start
+ * A job BullMQ adds on a timer while enabled() is true. startQueues upserts it when enabled and
+ * removes it when not, so turning a feature flag off stops the timer on the next start. One whose
+ * id is no longer listed on its queue is removed the same way
  */
 export type QueueScheduler<Data> = {
 	/** BullMQ's job scheduler id, unique within the queue */
 	id: string;
-	every: number;
+	/** What the job does, for a list of scheduled jobs */
+	description?: string;
+	/**
+	 * When the job is added: every so many ms, or on a cron pattern (five fields, or six with
+	 * seconds first) read in a named time zone so no job depends on the server's
+	 */
+	repeat: { every: number } | { pattern: string; tz: string };
 	job: { name: string; data: Data };
 	enabled: () => boolean;
 };
@@ -85,14 +98,18 @@ export type FailedHook<Data> = (job: Job<Data>, error: Error) => Promise<void>;
 export function defineQueue<Name extends string, Data, Result>(
 	options: QueueOptions<Name, Data, Result>,
 ): QueueDefinition<Name, Data, Result> {
-	const { name, processor, concurrency = 1, globalConcurrency, attempts = 3, backoffStrategy, onFailed, schedulers = [] } = options;
+	const {
+		name, processor, concurrency = 1, globalConcurrency, attempts = 3, backoffStrategy, onFailed, schedulers = [],
+		removeOnComplete = { age: 60 * 60, count: 5000 },
+		removeOnFail = { age: 24 * 60 * 60, count: 10000 },
+	} = options;
 	const jobOptions: DefaultJobOptions = {
 		attempts,
 		backoff: backoffStrategy
 			? { type: 'custom' }
 			: { type: 'exponential', delay: RETRY_DELAY },
-		removeOnComplete: { age: 60 * 60, count: 5000 },
-		removeOnFail: { age: 24 * 60 * 60, count: 10000 },
+		removeOnComplete,
+		removeOnFail,
 	};
 	return {
 		name,

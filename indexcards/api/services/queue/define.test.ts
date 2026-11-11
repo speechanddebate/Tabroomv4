@@ -39,10 +39,18 @@ describe('defineQueue', () => {
 	});
 
 	it('carries its job schedulers, none by default', () => {
-		const sweep = { id: 'things:sweep', every: 5_000, job: { name: 'sweep', data: {} }, enabled: () => true };
+		const sweep = { id: 'things:sweep', repeat: { every: 5_000 }, job: { name: 'sweep', data: {} }, enabled: () => true };
+		const nightly = { id: 'things:nightly', repeat: { pattern: '15 9 * * *', tz: 'America/Chicago' }, job: { name: 'nightly', data: {} }, enabled: () => true };
 
 		expect(defineQueue({ name: 'things', processor }).schedulers).toEqual([]);
-		expect(defineQueue({ name: 'things', processor, schedulers: [sweep] }).schedulers).toEqual([sweep]);
+		expect(defineQueue({ name: 'things', processor, schedulers: [sweep, nightly] }).schedulers).toEqual([sweep, nightly]);
+	});
+
+	it('keeps finished jobs as told, in the queue options and in flow nodes', () => {
+		const queue = defineQueue({ name: 'things', processor, removeOnComplete: { count: 100 }, removeOnFail: { count: 50 } });
+
+		expect(queue.jobOptions).toMatchObject({ removeOnComplete: { count: 100 }, removeOnFail: { count: 50 } });
+		expect(queue.job('one', undefined).opts).toMatchObject({ removeOnComplete: { count: 100 }, removeOnFail: { count: 50 } });
 	});
 
 	it('builds a flow node with the queue options under the job options', () => {

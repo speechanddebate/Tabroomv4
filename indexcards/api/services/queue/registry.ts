@@ -1,10 +1,12 @@
 import { emailQueue, pushQueue } from '../notifications/queues.js';
 import type { QueueDefinition } from './define.js';
+import { scheduledQueues } from './jobs/index.js';
 
 /** Every queue the API opens and runs workers for. The one place that knows which features have queues */
 export const queueDefinitions = [
 	emailQueue,
 	pushQueue,
+	...scheduledQueues,
 ] as const satisfies readonly QueueDefinition[];
 
 type Definition = typeof queueDefinitions[number];

@@ -1,10 +1,10 @@
-import type { ObservableCallback, ObservableResult } from '@opentelemetry/api';
+import type { BatchObservableCallback, BatchObservableResult, ObservableCallback, ObservableResult } from '@opentelemetry/api';
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import config from '../../config.js';
 import logger from '../../helpers/logger.js';
 import { startQueues, stopQueues } from './index.js';
 
-const { gauge, getJobCounts, redisDown, schedulers, globalConcurrency, upsertJobScheduler, removeJobScheduler, setGlobalConcurrency, removeGlobalConcurrency, waitUntilReady } = vi.hoisted(() => {
+const { gauge, batch, getJobCounts, getCompleted, getFailed, redisDown, schedulers, globalConcurrency, jobOptions, upsertJobScheduler, removeJobScheduler, getJobSchedulers, setGlobalConcurrency, removeGlobalConcurrency, waitUntilReady } = vi.hoisted(() => {
 	const callbacks = new Set<ObservableCallback>();
 	return {
 		gauge: {
@@ -13,14 +13,21 @@ const { gauge, getJobCounts, redisDown, schedulers, globalConcurrency, upsertJob
 			addCallback: (callback: ObservableCallback) => { callbacks.add(callback); },
 			removeCallback: (callback: ObservableCallback) => { callbacks.delete(callback); },
 		},
+		batch: { callbacks: new Set<BatchObservableCallback>(), create: vi.fn() },
 		getJobCounts: vi.fn(),
+		getCompleted: vi.fn(),
+		getFailed: vi.fn(),
 		redisDown: { value: false },
 		/** each queue's job schedulers, as its definition lists them */
-		schedulers: {} as Record<string, { id: string; every: number; job: object; enabled: () => boolean }[]>,
+		schedulers: {} as Record<string, { id: string; repeat: object; job: object; enabled: () => boolean }[]>,
 		/** each queue's global concurrency, as its definition sets it */
 		globalConcurrency: {} as Record<string, number>,
+		/** the options every queue's definition gives its jobs */
+		jobOptions: { attempts: 3, removeOnComplete: { count: 100 } },
 		upsertJobScheduler: vi.fn(),
 		removeJobScheduler: vi.fn(),
+		/** the schedulers Redis holds for a queue, whatever its definition says */
+		getJobSchedulers: vi.fn(),
 		setGlobalConcurrency: vi.fn(),
 		removeGlobalConcurrency: vi.fn(),
 		waitUntilReady: vi.fn(async () => undefined),
@@ -29,12 +36,22 @@ const { gauge, getJobCounts, redisDown, schedulers, globalConcurrency, upsertJob
 vi.mock('@opentelemetry/api', async (importOriginal) => ({
 	...await importOriginal<typeof import('@opentelemetry/api')>(),
 	metrics: {
-		getMeter: () => ({
-			createObservableGauge: (...args: unknown[]) => {
-				gauge.create(...args);
-				return gauge;
-			},
-		}),
+		getMeter: (meter: string) => (meter === 'bullmq'
+			? {
+				createObservableGauge: (...args: unknown[]) => {
+					gauge.create(...args);
+					return gauge;
+				},
+			}
+			: {
+				// The scheduler gauges stand in as their own names, which is what a batch result is observed against
+				createObservableGauge: (name: string, options: object) => {
+					batch.create(name, options);
+					return name;
+				},
+				addBatchObservableCallback: (callback: BatchObservableCallback) => { batch.callbacks.add(callback); },
+				removeBatchObservableCallback: (callback: BatchObservableCallback) => { batch.callbacks.delete(callback); },
+			}),
 	},
 }));
 vi.mock('bullmq', async (importOriginal) => ({
@@ -47,6 +64,9 @@ vi.mock('bullmq', async (importOriginal) => ({
 		getJobCounts = () => getJobCounts(this.name);
 		upsertJobScheduler = (...args: unknown[]) => upsertJobScheduler(this.name, ...args);
 		removeJobScheduler = (...args: unknown[]) => removeJobScheduler(this.name, ...args);
+		getJobSchedulers = () => getJobSchedulers(this.name);
+		getCompleted = (...args: unknown[]) => getCompleted(this.name, ...args);
+		getFailed = (...args: unknown[]) => getFailed(this.name, ...args);
 		setGlobalConcurrency = (...args: unknown[]) => setGlobalConcurrency(this.name, ...args);
 		removeGlobalConcurrency = () => removeGlobalConcurrency(this.name);
 		async close() {}
@@ -58,7 +78,7 @@ vi.mock('./connection.js', () => ({
 }));
 vi.mock('./registry.js', () => ({
 	queueNames: ['email', 'push'],
-	getDefinition: (name: string) => ({ jobOptions: {}, globalConcurrency: globalConcurrency[name], schedulers: schedulers[name] ?? [] }),
+	getDefinition: (name: string) => ({ jobOptions, globalConcurrency: globalConcurrency[name], schedulers: schedulers[name] ?? [] }),
 }));
 vi.mock('./workers.js', () => ({ closeWorkers: async () => undefined, startWorkers: () => undefined }));
 vi.mock('./flows.js', () => ({ closeFlows: async () => undefined, addFlow: async () => undefined }));
@@ -90,6 +110,7 @@ describe('startQueues job counts gauge', () => {
 		getJobCounts.mockReset().mockImplementation(async (name: string) => (
 			name === 'email' ? { waiting: 3, active: 1 } : { waiting: 0, active: 0 }
 		));
+		getJobSchedulers.mockReset().mockResolvedValue([]);
 	});
 
 	afterEach(async () => {
@@ -155,14 +176,133 @@ describe('startQueues job counts gauge', () => {
 	});
 });
 
+describe('startQueues scheduler gauges', () => {
+	const telemetry = { ...config.telemetry };
+	const sweep = { id: 'push:sweep', repeat: { every: 5_000 }, job: { name: 'sweep', data: {} }, enabled: () => true };
+
+	/** Runs the batch callback the way the SDK does at export, and returns what it observed by gauge name */
+	async function collectSchedulers() {
+		const observed: Array<[string, number, Record<string, unknown>]> = [];
+		const result = { observe: (metric: unknown, value: number, attributes = {}) => { observed.push([metric as string, value, attributes]); } } as BatchObservableResult;
+		for (const callback of batch.callbacks) {
+			await callback(result);
+		}
+		return observed;
+	}
+
+	beforeAll(() => {
+		Object.assign(config.telemetry, { enabled: true });
+	});
+
+	afterAll(() => {
+		Object.assign(config.telemetry, telemetry);
+	});
+
+	beforeEach(() => {
+		redisDown.value = false;
+		batch.create.mockClear();
+		getJobCounts.mockReset().mockResolvedValue({});
+		upsertJobScheduler.mockReset().mockResolvedValue(undefined);
+		// Only push has a scheduler, so a call for email would show up as an observation
+		schedulers.push = [sweep];
+		getJobSchedulers.mockReset().mockResolvedValue([{ key: 'push:sweep', next: 1_800_000_000_000 }]);
+		getCompleted.mockReset().mockResolvedValue([{ finishedOn: 1_799_999_000_500 }]);
+		getFailed.mockReset().mockResolvedValue([]);
+	});
+
+	afterEach(async () => {
+		await stopQueues();
+		delete schedulers.push;
+	});
+
+	it('reports when each scheduler is next due and when its queue last completed a job, in seconds', async () => {
+		await startQueues();
+
+		expect(batch.create).toHaveBeenCalledWith('tabroom.queue.scheduler.next_run', expect.objectContaining({ unit: 's' }));
+		expect(batch.create).toHaveBeenCalledWith('tabroom.queue.scheduler.last_success', expect.objectContaining({ unit: 's' }));
+		expect(await collectSchedulers()).toEqual([
+			['tabroom.queue.scheduler.next_run', 1_800_000_000, { 'bullmq.queue.name': 'push', 'tabroom.queue.scheduler.id': 'push:sweep' }],
+			['tabroom.queue.scheduler.last_success', 1_799_999_000.5, { 'bullmq.queue.name': 'push' }],
+		]);
+		expect(getCompleted).toHaveBeenCalledExactlyOnceWith('push', 0, 0);
+	});
+
+	it('reports when its queue last failed a job for good, once one has', async () => {
+		getFailed.mockResolvedValue([{ finishedOn: 1_799_999_500_000 }]);
+		await startQueues();
+
+		expect(batch.create).toHaveBeenCalledWith('tabroom.queue.scheduler.last_failure', expect.objectContaining({ unit: 's' }));
+		expect(await collectSchedulers()).toContainEqual(['tabroom.queue.scheduler.last_failure', 1_799_999_500, { 'bullmq.queue.name': 'push' }]);
+		expect(getFailed).toHaveBeenCalledExactlyOnceWith('push', 0, 0);
+	});
+
+	it('reports how long the last completed job ran, from when a worker took it', async () => {
+		getCompleted.mockResolvedValue([{ processedOn: 1_799_999_000_250, finishedOn: 1_799_999_000_500 }]);
+		await startQueues();
+
+		expect(batch.create).toHaveBeenCalledWith('tabroom.queue.scheduler.last_run_duration', expect.objectContaining({ unit: 's' }));
+		expect(await collectSchedulers()).toContainEqual(['tabroom.queue.scheduler.last_run_duration', 0.25, { 'bullmq.queue.name': 'push' }]);
+	});
+
+	it('reports no last success before the first run completes', async () => {
+		getCompleted.mockResolvedValue([]);
+		await startQueues();
+
+		expect(await collectSchedulers()).toEqual([
+			['tabroom.queue.scheduler.next_run', 1_800_000_000, expect.anything()],
+		]);
+	});
+
+	it('reports nothing for a queue whose schedulers are switched off', async () => {
+		getJobSchedulers.mockResolvedValue([]);
+		await startQueues();
+
+		expect(await collectSchedulers()).toEqual([]);
+	});
+
+	it('reports nothing while Redis is down', async () => {
+		await startQueues();
+		getJobSchedulers.mockClear();
+		redisDown.value = true;
+
+		expect(await collectSchedulers()).toEqual([]);
+		expect(getJobSchedulers).not.toHaveBeenCalled();
+	});
+
+	it('logs a queue it cannot read', async () => {
+		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => logger);
+		await startQueues();
+		getCompleted.mockRejectedValue(new Error('boom'));
+
+		expect(await collectSchedulers()).toEqual([]);
+		expect(warn).toHaveBeenCalledWith('Failed to read job schedulers on queue push', {
+			'event.name': 'queue.scheduler_times.exception',
+			error: expect.any(Error),
+		});
+		warn.mockRestore();
+	});
+
+	it('registers once however often the queues start, and stops when they stop', async () => {
+		await startQueues();
+		await startQueues();
+
+		expect(batch.callbacks.size).toBe(1);
+
+		await stopQueues();
+
+		expect(batch.callbacks.size).toBe(0);
+	});
+});
+
 describe('startQueues queue settings', () => {
-	const sweep = { id: 'push:sweep', every: 5_000, job: { name: 'sweep', data: {} } };
+	const sweep = { id: 'push:sweep', repeat: { every: 5_000 }, job: { name: 'sweep', data: {} } };
 
 	beforeEach(() => {
 		redisDown.value = false;
 		getJobCounts.mockReset().mockResolvedValue({});
 		upsertJobScheduler.mockReset().mockResolvedValue(undefined);
 		removeJobScheduler.mockReset().mockResolvedValue(true);
+		getJobSchedulers.mockReset().mockResolvedValue([]);
 		setGlobalConcurrency.mockReset().mockResolvedValue(1);
 		removeGlobalConcurrency.mockReset().mockResolvedValue(1);
 		waitUntilReady.mockReset().mockResolvedValue(undefined);
@@ -196,13 +336,51 @@ describe('startQueues queue settings', () => {
 		error.mockRestore();
 	});
 
-	it('adds an enabled scheduler with its interval and job', async () => {
+	it('adds an enabled scheduler with its interval, its job, and the queue job options', async () => {
 		schedulers.push = [{ ...sweep, enabled: () => true }];
 
 		await startQueues();
 
-		expect(upsertJobScheduler).toHaveBeenCalledWith('push', 'push:sweep', { every: 5_000 }, { name: 'sweep', data: {} });
+		expect(upsertJobScheduler).toHaveBeenCalledExactlyOnceWith('push', 'push:sweep', { every: 5_000 }, { name: 'sweep', data: {}, opts: jobOptions });
 		expect(removeJobScheduler).not.toHaveBeenCalled();
+	});
+
+	it('adds a cron scheduler with its pattern and time zone', async () => {
+		schedulers.push = [{ ...sweep, id: 'push:nightly', repeat: { pattern: '15 9 * * *', tz: 'America/Chicago' }, enabled: () => true }];
+
+		await startQueues();
+
+		expect(upsertJobScheduler).toHaveBeenCalledExactlyOnceWith('push', 'push:nightly', { pattern: '15 9 * * *', tz: 'America/Chicago' }, expect.objectContaining({ opts: jobOptions }));
+	});
+
+	it('removes schedulers Redis still holds that the queue no longer defines', async () => {
+		schedulers.push = [{ ...sweep, enabled: () => true }];
+		getJobSchedulers.mockImplementation(async (name: string) => (
+			name === 'push' ? [{ key: 'push:sweep' }, { key: 'push:renamed' }] : [{ key: 'email:deleted' }]
+		));
+		const info = vi.spyOn(logger, 'info').mockImplementation(() => logger);
+
+		await startQueues();
+
+		expect(removeJobScheduler.mock.calls).toEqual(expect.arrayContaining([['push', 'push:renamed'], ['email', 'email:deleted']]));
+		expect(removeJobScheduler).toHaveBeenCalledTimes(2);
+		expect(info).toHaveBeenCalledWith('Removed job schedulers no longer defined on queue push: push:renamed', { 'event.name': 'queue.scheduler.stale_removed' });
+		info.mockRestore();
+	});
+
+	it('logs a failure to list stale schedulers and still sets up the other queues', async () => {
+		schedulers.push = [{ ...sweep, enabled: () => true }];
+		getJobSchedulers.mockImplementation(async (name: string) => {
+			if (name === 'email') throw new Error('NOSCRIPT');
+			return [];
+		});
+		const error = vi.spyOn(logger, 'error').mockImplementation(() => logger);
+
+		await expect(startQueues()).resolves.toBeUndefined();
+
+		expect(error).toHaveBeenCalledWith('Failed to remove stale job schedulers on queue email', expect.objectContaining({ 'event.name': 'queue.scheduler.exception' }));
+		expect(upsertJobScheduler).toHaveBeenCalledWith('push', 'push:sweep', expect.anything(), expect.anything());
+		error.mockRestore();
 	});
 
 	it('removes a disabled scheduler, so turning its flag off stops it', async () => {
