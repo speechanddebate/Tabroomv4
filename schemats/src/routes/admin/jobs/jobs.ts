@@ -41,7 +41,8 @@ export function durationText(ms: number | null): string {
 	if (ms === null) return '';
 	if (ms < 1000) return `${ms} ms`;
 	if (ms < 60_000) return `${(ms / 1000).toFixed(1)} s`;
-	return `${Math.floor(ms / 60_000)} min ${Math.round((ms % 60_000) / 1000)} s`;
+	const seconds = Math.round(ms / 1000);
+	return `${Math.floor(seconds / 60)} min ${seconds % 60} s`;
 }
 
 /**

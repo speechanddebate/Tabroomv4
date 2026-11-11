@@ -69,6 +69,7 @@ describe('durationText', () => {
 		expect(durationText(205)).toBe('205 ms');
 		expect(durationText(4200)).toBe('4.2 s');
 		expect(durationText(185_000)).toBe('3 min 5 s');
+		expect(durationText(119_600)).toBe('2 min 0 s');
 		expect(durationText(null)).toBe('');
 	});
 });

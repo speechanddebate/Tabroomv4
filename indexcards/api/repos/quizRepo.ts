@@ -8,6 +8,8 @@ type queryOpts = {
 	offset?: number;
 	/** returns only quizzes with hidden: false, sitewide: true, and admin_only: false */
 	publicOnly?: boolean;
+	/** returns only quizzes earned by completing an NSDA Learn course */
+	learnCourse?: boolean;
 };
 function buildQuizQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('quiz');
@@ -15,6 +17,7 @@ function buildQuizQuery(db: Database, opts: queryOpts = {}) {
 	if (opts.ids) query = query.where('quiz.id', 'in', opts.ids);
 	if (opts.limit) query = query.limit(Number(opts.limit));
 	if (opts.offset) query = query.offset(Number(opts.offset));
+	if (opts.learnCourse) query = query.where('quiz.nsda_course', '>', 0);
 	if (opts.publicOnly) {
 		query = query.where('hidden', '=', 0)
 			.where('sitewide', '=', 1)

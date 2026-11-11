@@ -13,6 +13,16 @@ describe('quizRepo', () => {
 
 			expect(rows.map(quiz => quiz.id).sort()).toEqual([first.id, second.id].sort());
 		});
+
+		it('returns only the quizzes tied to an NSDA Learn course when asked', async () => {
+			const learn = await factories.quiz.create({ nsda_course: 117271 });
+			const zero = await factories.quiz.create({ nsda_course: 0 });
+			const none = await factories.quiz.create();
+
+			const rows = await quizRepo.getQuizzes(db, { ids: [learn.id, zero.id, none.id], learnCourse: true });
+
+			expect(rows.map(quiz => quiz.id)).toEqual([learn.id]);
+		});
 	});
 
 	describe('getPersonQuizzes', () => {

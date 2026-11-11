@@ -315,7 +315,7 @@ function buildSettingsRows({
  * @param {*} value  - the setting value
  * @returns an object with keys: value, value_text, value_date
  */
-function encodeSettingValue(value: NonNullable<SettingValue>, tag: string) {
+export function encodeSettingValue(value: NonNullable<SettingValue>, tag: string) {
 	const VALUE_TEXT_TAGS = ['livedoc_url'];
 
 	// Date → value_date

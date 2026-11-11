@@ -1,9 +1,15 @@
 import type { DBSchema, Database } from '../data/database.js';
+import changeLogRepo from './changeLogRepo.js';
 import { saveSettings, selectSettings, withTransaction, type Settings } from './utils/index.js';
 import type { Person } from '../data/schema.js';
 import type { Insertable, ExpressionBuilder } from 'kysely';
 
 type queryOpts = {
+	ids?: number[];
+	/** people whose main NSDA member id is one of these */
+	nsdaIds?: number[];
+	/** people whose main email is one of these; the column compares without regard to case */
+	emails?: string[];
 	settings?: boolean | string[];
 	/** also select the settings' created_at and timestamp as settingsTimestamps */
 	withTimestamps?: boolean;
@@ -35,6 +41,12 @@ async function buildPersonQuery(db: Database, opts: queryOpts = {}) {
 			withTimestamps: true,
 		}))
 	)
+	if(opts.ids)
+		query = query.where('person.id', 'in', opts.ids);
+	if(opts.nsdaIds)
+		query = query.where('person.nsda', 'in', opts.nsdaIds);
+	if(opts.emails)
+		query = query.where('person.email', 'in', opts.emails);
 	if(opts.excludeBanned)
 		query = query.where(isNotBanned);
 	if(opts.excludeUnconfirmedEmail)
@@ -181,6 +193,39 @@ export async function findPersons(db: Database, terms: PersonTerms, opts: queryO
 	return await query.selectAll('person').execute();
 }
 
+/**
+ * What ties a person's account to the NSDA: their main member id, email, and name, plus the
+ * second id and second email kept as the settings nsda_id and nsda_email. Narrow with ids,
+ * nsdaIds, or emails; they combine, so ask for one at a time to get people matching any
+ */
+export async function getNsdaLinks(db: Database, opts: Pick<queryOpts, 'ids' | 'nsdaIds' | 'emails'>) {
+	return await (await buildPersonQuery(db, { ...opts, settings: ['nsda_id', 'nsda_email'] }))
+		.select(['person.id', 'person.email', 'person.nsda', 'person.first', 'person.last'])
+		.execute();
+}
+
+/**
+ * Sets a person's main NSDA member id, or removes it when given null, and says why in their
+ * change log under the tag link. Both happen or neither does
+ */
+export async function setNsdaId(db: Database, personId: number, nsdaId: number | null, reason: string) {
+	await withTransaction(db, async (trx) => {
+		await trx.updateTable('person').set({ nsda: nsdaId }).where('person.id', '=', personId).execute();
+		await changeLogRepo.createChangeLog(trx, { tag: 'link', person: personId, description: reason });
+	});
+}
+
+/** The ids of the people who have a setting with one of these values, e.g. a second NSDA id */
+export async function getPersonIdsBySetting(db: Database, tag: string, values: string[]) {
+	// Starts from person_setting, not the person builder: the lookup is by the setting's value, which only its (tag, person) index reaches
+	const rows = await db.selectFrom('person_setting')
+		.select('person_setting.person')
+		.where('person_setting.tag', '=', tag)
+		.where('person_setting.value', 'in', values)
+		.execute();
+	return rows.map((row) => row.person).filter((person): person is number => person !== null);
+}
+
 export async function getPersonByUsername(db: Database, username: string, opts: queryOpts = {}) {
 	return (await buildPersonQuery(db, opts))
 		.where('person.email', '=', username)
@@ -240,6 +285,9 @@ export async function createPerson(db: Database, data: CreatePersonData) {
 
 export default {
 	getPerson,
+	getNsdaLinks,
+	setNsdaId,
+	getPersonIdsBySetting,
 	findPersons,
 	getPersonByUsername,
 	updatePerson,
