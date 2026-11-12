@@ -19,11 +19,7 @@ export async function updateAccess(req, res) {
 		return NotFound(req, res, 'No person found with that Tabroom ID');
 	}
 
-	if (
-		req.session.perms.tourn[targetEvent.tourn] === 'owner' ||
-    req.session.perms.tourn[targetEvent.tourn] === 'tabber' ||
-    req.session.perms.event[targetEvent.id] === 'tabber'
-	) {
+	if (await req.actor.can('event', 'write', targetEvent.id)) {
 		const currentPerm = await kdb.selectFrom('permission')
 			.selectAll()
 			.where('person', '=', targetPerson.id)
@@ -79,11 +75,7 @@ export async function deleteAccess(req, res) {
 	const targetEvent = await summon(kdb, 'event',req.params.eventId);
 	const targetPerson = await summon(kdb, 'person',req.params.personId);
 
-	if (
-		req.session.perms.tourn[targetEvent.tourn] === 'owner' ||
-    req.session.perms.tourn[targetEvent.tourn] === 'tabber' ||
-    req.session.perms.event[targetEvent.id] === 'tabber'
-	) {
+	if (await req.actor.can('event', 'write', targetEvent.id)) {
 		await kdb.deleteFrom('permission')
 			.where('person', '=', req.params.personId)
 			.where('event', '=', req.params.eventId)

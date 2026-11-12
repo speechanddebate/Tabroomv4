@@ -1,6 +1,5 @@
-// TODO: this tree is not mounted anywhere. Several of its controllers (tab/{tourn,event,category}/access.js,
-// tab/timeslot/blast.js, tab/tourn/backup.js restoreTourn) still read req.session.perms / req.session.tourn,
-// which no longer exist. Port them to req.actor.can() and load perms (router.param) before mounting.
+// TODO: this tree is not mounted anywhere. Its routers use requireAccess pairs policy.ts has no rule for
+// yet (panel write, rpool read and write), which throw at import; add them before mounting.
 import { Router } from 'express';
 
 import categoryRouter from './categoryRouter.js';

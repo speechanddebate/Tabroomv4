@@ -31,8 +31,8 @@ export async function getTournAttendance(req, res) {
 	}
 
 	// Limit those with only some access to those events they have access to.
-	const allowedEvents = req.actor.allowedIds('event', 'read');
-	const allowedCategories = req.actor.allowedIds('category', 'read');
+	const allowedEvents = await req.actor.which('event', 'read', { tourn: Number(tournId) });
+	const allowedCategories = await req.actor.which('category', 'read', { tourn: Number(tournId) });
 
 	// If not full access, filter to allowed events/categories
 	if (!allowedEvents.all) {
@@ -55,6 +55,9 @@ export async function getTournAttendance(req, res) {
 			queryLimit = sql`${queryLimit} and round.event IN (
 					select event.id from event where event.category IN (${sql.join(categoryIds)})
 				)`;
+		} else {
+			// a reader with no events or categories here (a circuit admin, say) sees no attendance
+			queryLimit = sql`${queryLimit} and false`;
 		}
 	}
 
@@ -608,10 +611,10 @@ export async function getTournDashboard(req, res) {
 	let queryLimit = sql``;
 
 	// Limit those with only some access to those events they have access to.
-	if (!req.actor.can('tourn', 'check', tournId)) {
+	if (!await req.actor.can('tourn', 'check', tournId)) {
 
-		const eventIds = req.actor.allowedIds('event', 'check').ids;
-		const categoryIds = req.actor.allowedIds('category', 'check').ids;
+		const eventIds = (await req.actor.which('event', 'check', { tourn: Number(tournId) })).ids;
+		const categoryIds = (await req.actor.which('category', 'check', { tourn: Number(tournId) })).ids;
 
 		if (eventIds.length > 0 && categoryIds.length > 0) {
 			queryLimit = sql` and (
@@ -633,6 +636,9 @@ export async function getTournDashboard(req, res) {
 					select event.id from event where event.category IN (${sql.join(categoryIds)})
 				)`;
 			replacements.categoryIds = categoryIds;
+		} else {
+			// a reader with no events or categories to check here sees no status
+			queryLimit = sql` and false`;
 		}
 	}
 

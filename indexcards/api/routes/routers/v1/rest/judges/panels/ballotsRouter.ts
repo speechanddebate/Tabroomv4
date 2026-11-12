@@ -9,8 +9,8 @@ import z from 'zod';
 // /v1/rest/judges/:judgeId/panels/:panelId/ballots
 //
 // A judge's ballot rows on a panel are one 'ballot', identified by (judgeId, panelId).
-// panelsRouter has already checked that the judge has a ballot on the panel.
-// Each route checks ballot/read or ballot/write; whether a change is allowed right now
+// panelsRouter has already hidden rounds that aren't out to judges. Each route checks
+// ballot/read or ballot/write, which needs a real ballot; whether a change is allowed right now
 // (confirmed, side disagreement) is up to the service.
 const router = Router({ mergeParams: true });
 

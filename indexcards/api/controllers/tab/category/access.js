@@ -22,10 +22,8 @@ export async function updateAccess(req, res) {
 		return BadRequest(req, res, 'No person found with that Tabroom ID');
 	}
 
-	if (
-		req.session.perms.tourn[targetCategory.tourn] !== 'owner' &&
-    req.session.perms.tourn[targetCategory.tourn] !== 'tabber'
-	) {
+	// classic lets only tourn-wide owners and tabbers manage a category's staff, not its own tabbers
+	if (!await req.actor.can('tourn', 'write', targetCategory.tourn)) {
 		return Forbidden(req, res, `You do not have access to change permissions in ${targetCategory.abbr}`);
 	}
 
@@ -81,10 +79,7 @@ export async function deleteAccess(req, res) {
 	const targetPerson = await personRepo.getPerson(db, req.params.personId,{ settings: true });
 	const targetCategory = await categoryRepo.getCategory(db, req.params.categoryId,{ settings: true });
 
-	if (
-		req.session.perms.tourn[targetCategory.tourn] !== 'owner' &&
-    req.session.perms.tourn[targetCategory.tourn] !== 'tabber'
-	) {
+	if (!await req.actor.can('tourn', 'write', targetCategory.tourn)) {
 		return Forbidden(req, res, `You do not have access to change permissions in ${targetCategory.abbr}`);
 	}
 

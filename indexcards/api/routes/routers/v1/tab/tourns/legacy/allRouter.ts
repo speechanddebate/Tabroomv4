@@ -39,7 +39,7 @@ router.route('/attendance')
 		},
 	};
 
-router.route('/category/:categoryId/checkin').post(requireAccess('category', 'write'), categoryCheckin).openapi = {
+router.route('/category/:categoryId/checkin').post(requireAccess('category', 'check'), categoryCheckin).openapi = {
 	path: '/tab/tourns/{tournId}/all/category/{categoryId}/checkin',
 	summary: 'Check in category',
 	operationId: 'tabTournAllCategoryCheckin',
@@ -50,7 +50,7 @@ router.route('/category/:categoryId/checkin').post(requireAccess('category', 'wr
 	responses: { 200: { description: 'Category checked in' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 
-router.route('/event/:eventId/checkin').post(requireAccess('event', 'write'), eventCheckin).openapi = {
+router.route('/event/:eventId/checkin').post(requireAccess('event', 'check'), eventCheckin).openapi = {
 	path: '/tab/tourns/{tournId}/all/event/{eventId}/checkin',
 	summary: 'Check in event',
 	operationId: 'tabTournAllEventCheckin',
@@ -61,7 +61,7 @@ router.route('/event/:eventId/checkin').post(requireAccess('event', 'write'), ev
 	responses: { 200: { description: 'Event checked in' }, default: { $ref: '#/components/responses/ErrorResponse' } },
 };
 
-router.route('/search/:searchString').get(requireAccess('tourn', 'read'), searchAttendees).openapi = {
+router.route('/search/:searchString').get(requireAccess('tourn', 'check'), searchAttendees).openapi = {
 	path: '/tab/tourns/{tournId}/all/search/{searchString}',
 	summary: 'Search tournament attendees',
 	operationId: 'tabTournAllSearch',

@@ -106,3 +106,12 @@ export async function ValidateRequest(req: Request, res: Response, next: NextFun
 	}
 
 }
+
+/**
+ * whether a path param or id part is a positive integer id. Guards that run before a route's
+ * ValidateRequest (requireAccess, policy middleware) check their ids with it
+ */
+export function isPositiveId(value: unknown) {
+	const id = Number(value);
+	return Number.isInteger(id) && id > 0;
+}

@@ -1,13 +1,9 @@
 import { sql } from 'kysely';
 import { db } from '../../../data/database.js';
 
-// TODO: stand-in for roundCheck from the removed helpers/auth.js, which read req.session.perms.
-// Port this to req.actor.can('round', 'write', roundId) before these routes are enabled.
-const roundCheck = async (req, res, _roundId) => false;
-
-// This function needs to be adapted to the new permissions model to enable it
-// to ONLY merge and unmerge the rounds that a given user has access to under
-// the events/category restrictions.  Also the frontend needs to change to allow
+// The route checks round write on the requested round. TODO: merging still touches every round in the
+// timeslot and judge category, including events the user may not write; limit it to
+// which('round', 'write', { tourn }) before enabling. Also the frontend needs to change to allow
 // it to be invoked; the URL is definitely now broken.
 
 // Merges and unmerges all the rounds in a given timeslot and judge category
@@ -16,13 +12,6 @@ const roundCheck = async (req, res, _roundId) => false;
 
 export async function mergeTimeslotRounds(req, res) {
 	const roundId = req.params.roundId;
-	const permOK = await roundCheck(req, res, roundId);
-	if (!permOK) {
-		res.status(200).json({
-			error   : true,
-			message : `You do not have permission to merge those rounds`,
-		});
-	}
 
 	try {
 		await sql`
@@ -61,14 +50,6 @@ export async function mergeTimeslotRounds(req, res) {
 
 export async function unmergeTimeslotRounds(req,res) {
 	const roundId = req.params.roundId;
-
-	const permOK = await roundCheck(req, res, roundId);
-	if (!permOK) {
-		res.status(200).json({
-			error   : true,
-			message : `You do not have permission to merge those rounds`,
-		});
-	}
 
 	try {
 		await sql`

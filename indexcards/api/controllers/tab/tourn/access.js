@@ -40,6 +40,9 @@ export async function updateAccess(req, res) {
 		return NotFound(req, res, 'No person found with that Tabroom ID');
 	}
 
+	// only owners manage owners and other people's contact rows
+	const isOwner = await req.actor.can('tourn', 'owner', req.params.tournId);
+
 	let tag = req.body.access_level;
 	if (tag === 'choose') {
 		tag = req.body.property_value;
@@ -68,7 +71,7 @@ export async function updateAccess(req, res) {
 				if (
 					perm.eventId
 					|| perm.categoryId
-					|| (perm.tag === 'owner' && req.session.perms.tourn[req.params.tournId] !== 'owner')
+					|| (perm.tag === 'owner' && !isOwner)
 				) {
 
 					logger.info(`Skipping deletion of ${perm.id} due to it not being tournament wide`);
@@ -109,7 +112,7 @@ export async function updateAccess(req, res) {
 		// Only a contact or owner may adjust who is a contact
 
 		if (
-			req.session.perms.tourn[req.params.tournId] !== 'owner'
+			!isOwner
 			&& (targetPerson.id !== req.person.id
 				|| req.body.property_value
 			)
@@ -198,9 +201,11 @@ export async function updateAccess(req, res) {
 		return BadRequest(req, res,`Access type ${req.params.access_type} unknown`);
 	}
 
-	if (!req.session.perms.tourn[req.params.tournId]
-		|| !target.mustBe.includes(req.session.perms.tourn[req.params.tournId])
-	) {
+	// owner grants need an owner; tabber and checker grants need tourn write (a tourn-wide owner or tabber)
+	const mayGrant = target.mustBe.includes('tabber')
+		? await req.actor.can('tourn', 'write', req.params.tournId)
+		: isOwner;
+	if (!mayGrant) {
 		return Forbidden(req, res, 'You do not have sufficient access to grant that level of permissions');
 	}
 
@@ -260,13 +265,11 @@ export async function deleteAccess(req, res) {
 		.execute();
 
 	const deletePerms = [];
+	const isOwner = await req.actor.can('tourn', 'owner', req.params.tournId);
 
 	for await (const perm of targetPerms) {
 
-		if (
-			perm.tag === 'owner'
-			&& req.session.perms.tourn[req.params.tournId] !== 'owner'
-		) {
+		if (perm.tag === 'owner' && !isOwner) {
 			return Forbidden(req, res,'Only an owner-level account may delete another owner account!');
 		}
 

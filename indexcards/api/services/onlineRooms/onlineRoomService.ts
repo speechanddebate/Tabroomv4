@@ -146,6 +146,7 @@ export async function getSectionRooms(db: Database, tournId: number, sectionIds:
 	if (!contexts.size) return resolved;
 
 	const panelIds = [...contexts.keys()];
+	// can() on the requested panels, usually one; which() would list every panel at the tourn
 	const [staff, judges, entryStudents] = await Promise.all([
 		Promise.all(panelIds.map(id => actor.can('panel', 'check', id))),
 		panelRepo.getPanelJudges(db, panelIds),
@@ -168,16 +169,13 @@ export async function getSectionRooms(db: Database, tournId: number, sectionIds:
 		return { room, roles, mode, observing, isStaff: staff[i] };
 	});
 
-	// a coach of the entry's school can observe it
-	const chapters = [...new Set(sections.flatMap(section => section.observing?.chapter ?? []))];
-	const coached = new Set(chapters.length
-		? (await permissionRepo.getPermissions(db, { person: person.id, chapters }))
-			.filter(perm => perm.tag === 'chapter')
-			.map(perm => perm.chapter)
-		: []);
+	// only ids count: a site admin gets all, but without a coach row they join as admin, not observer
+	const observable = sections.some(section => section.observing)
+		? (await actor.which('entry', 'observe', { tourn: tournId })).ids
+		: [];
 
 	const parts = sections.flatMap(({ observing, ...section }) => {
-		const observed = observing?.chapter && coached.has(observing.chapter) ? observing : undefined;
+		const observed = observing && observable.includes(observing.entryId) ? observing : undefined;
 		const role: Role | 'staff' | null = section.roles.judge ? 'judge'
 			: section.roles.entry ? 'competitor'
 			: observed ? 'observer'

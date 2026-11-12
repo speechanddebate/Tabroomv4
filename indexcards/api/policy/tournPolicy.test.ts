@@ -3,12 +3,11 @@ import { createPersonContext } from '../../tests/httpMocks.js';
 import { requirePublicForAttn, requirePublicTourn } from './tournPolicy.js';
 
 describe('requirePublicForAttn', () => {
-	// a person's request for the tourn, with the actor holding the given role on it
+	// a person's request for the tourn, holding the given permission row on it
 	async function requestFor(tournId: number, { role, site_admin = 0 }: { role?: string, site_admin?: number } = {}) {
 		const person = await factories.person.create({ site_admin });
-		const context = createPersonContext(person, { params: { tournId: String(tournId) } });
-		if (role) context.req.actor.grant([{ scope: 'tourn', id: tournId, role }]);
-		return context;
+		if (role) await factories.permission.create({ person: person.id, tourn: tournId, tag: role });
+		return createPersonContext(person, { params: { tournId: String(tournId) } });
 	}
 
 	it('passes a public tourn and loads it', async () => {
@@ -31,9 +30,10 @@ describe('requirePublicForAttn', () => {
 		expect(next).not.toHaveBeenCalled();
 	});
 
-	it.each(['checker', 'tabber', 'owner'])('passes a hidden tourn for a tourn %s', async (role) => {
+	// who counts as staff (tourn.staff) is relations.test.ts's job; one staff row stands in for all of them
+	it('passes a hidden tourn for its staff', async () => {
 		const tourn = await factories.tourn.create({ hidden: 1 });
-		const { req, res, next } = await requestFor(tourn.id, { role });
+		const { req, res, next } = await requestFor(tourn.id, { role: 'checker' });
 
 		await requirePublicForAttn(req, res, next);
 
@@ -47,6 +47,16 @@ describe('requirePublicForAttn', () => {
 		await requirePublicForAttn(req, res, next);
 
 		expect(next).toHaveBeenCalledWith();
+	});
+
+	it.each([requirePublicForAttn, requirePublicTourn])('%o returns 400 for a malformed tournId, before any lookup', async (middleware) => {
+		const { req, res, next } = createPersonContext(await factories.person.create(), { params: { tournId: 'abc' } });
+
+		await middleware(req, res, next);
+
+		expect(res.statusCode).toBe(400);
+		expect(res.body).toMatchObject({ detail: 'tournId must be a positive integer' });
+		expect(next).not.toHaveBeenCalled();
 	});
 
 	it('returns 404 for a tourn that does not exist', async () => {

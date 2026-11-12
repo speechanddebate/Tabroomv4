@@ -289,10 +289,6 @@ export async function restoreTourn(req,res) {
 		tournData.tournId = req.params.tournId;
 	}
 
-	if (!tournData.tournId) {
-		tournData.tournId = req.session.tourn;
-	}
-
 	// So since you haven't actually written this yet, how about you
 	// just punt here and call it a day before you do something
 	// actually destructive

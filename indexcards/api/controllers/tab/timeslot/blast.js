@@ -18,7 +18,7 @@ export async function blastTimeslotMessage(req, res) {
 		return BadRequest(req, res,`No message to blast was input`);
 	}
 
-	req.body.timeslotId = req.session.timeslot?.id;
+	req.body.timeslotId = req.params.timeslotId;
 
 	if (!req.body.timeslotId) {
 		return BadRequest(req, res, `No timeslot to blast was sent`);
@@ -26,16 +26,13 @@ export async function blastTimeslotMessage(req, res) {
 
 	delete req.body.roundId;
 	const options = {};
+	const timeslot = await summon(kdb, 'timeslot', req.params.timeslotId);
 
-	if (
-		req.session.perms.tourn[req.session.tourn.id] !== 'owner'
-		&& req.session.perms.tourn[req.session.tourn.id] !== 'tabber'
-	) {
-		if (req.session.perms.event) {
-			options.limits = { event: req.session.perms.event };
-		} else {
-			return Forbidden(req, res, 'You do not have access to any rounds to blast');
-		}
+	// tourn-wide tab blasts the whole timeslot; event tabbers only their own events. getFollowers reads the keys
+	if (!await req.actor.can('tourn', 'write', timeslot.tourn)) {
+		const { ids } = await req.actor.which('event', 'write', { tourn: timeslot.tourn });
+		if (!ids.length) return Forbidden(req, res, 'You do not have access to any rounds to blast');
+		options.limits = { event: Object.fromEntries(ids.map(id => [id, true])) };
 	}
 
 	const personIds = await getFollowers(req.body, options);
@@ -101,20 +98,13 @@ export async function blastTimeslotPairings(req, res) {
 		queryLimit = sql` and round.event IN (${sql.join(replacements.eventIds)}) `;
 	}
 
-	if (
-		req.session.perms.tourn[req.session.tourn.id] !== 'owner'
-		&& req.session.perms.tourn[req.session.tourn.id] !== 'tabber'
-	) {
+	const timeslot = await summon(kdb, 'timeslot', req.params.timeslotId);
 
-		if (req.session.perms.event) {
-			replacements.permEvents = Object.keys(req.session.perms.event);
-			const permEvents = replacements.permEvents.length > 0
-				? sql.join(replacements.permEvents)
-				: sql`NULL`;
-			queryLimit = sql`${queryLimit} and round.event IN (${permEvents}) `;
-		} else {
-			return Forbidden(req, res, 'You do not have access to any rounds to blast');
-		}
+	// tourn-wide tab blasts every round in the timeslot; event tabbers only their own events' rounds
+	if (!await req.actor.can('tourn', 'write', timeslot.tourn)) {
+		const { ids } = await req.actor.which('event', 'write', { tourn: timeslot.tourn });
+		if (!ids.length) return Forbidden(req, res, 'You do not have access to any rounds to blast');
+		queryLimit = sql`${queryLimit} and round.event IN (${sql.join(ids)}) `;
 	}
 
 	const { rows: rounds } = await sql`

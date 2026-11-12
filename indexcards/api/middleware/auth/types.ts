@@ -6,15 +6,6 @@ export type AuthError = Error & {
 	message: string;
 };
 
-/** a single permission loaded into the auth context for evaluation */
-export type Perm = {
-	scope: string;
-	id: number;
-	role: string;
-	categoryId?: number;
-	tournId?: number;
-};
-
 /** the person record attached to an authenticated session */
 export type SessionPerson = {
 	id: number;
@@ -34,9 +25,8 @@ export type ResourceId = number | Record<string, number>;
 type ActorMethods = {
 	can: (resource: string, action: string, resourceId: ResourceId) => Promise<boolean>;
 	assert: (resource: string, action: string, resourceId: ResourceId) => Promise<void>;
-	allowedIds: (resource: string, action: string, opts?: Record<string, unknown>) => { all: boolean; ids: number[] };
-	/** add perms to the set evaluated by can/assert/allowedIds. no-op for anonymous actors */
-	grant: (perms: Perm[]) => void;
+	/** the resources in one tourn the actor may act on; all is true for site admins, with no ids */
+	which: (resource: string, action: string, bound: { tourn: number }) => Promise<{ all: boolean; ids: ResourceId[] }>;
 };
 
 export type PersonActor = ActorMethods & {

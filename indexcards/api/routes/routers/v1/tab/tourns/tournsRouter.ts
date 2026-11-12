@@ -6,7 +6,6 @@ import categoriesRouter from './categoriesRouter.js';
 import schoolsRouter from './schoolsRouter.js';
 import sitesRouter from './sitesRouter.js';
 import timeslotsRouter from './timeslotsRouter.js';
-import { loadTournAuthContext } from '../../../../../middleware/auth/authContext.js';
 import { requireAccess } from '../../../../../middleware/auth/authorization.js';
 
 import legacyAllRouter from './legacy/allRouter.js';
@@ -17,7 +16,6 @@ import z from 'zod';
 
 const router = Router({mergeParams: true });
 
-router.param('tournId', loadTournAuthContext);
 
 router.route('/').post(ValidateRequest,tournController.createTourn).openapi = {
 	path: '/tab/tourns',
@@ -63,7 +61,7 @@ router.route('/:tournId').get(requireAccess('tourn', 'read'), ValidateRequest, t
 	},
 };
 
-router.route('/:tournId').put(requireAccess('tourn', 'update'), ValidateRequest, tournController.updateTourn).openapi = {
+router.route('/:tournId').put(requireAccess('tourn', 'write'), ValidateRequest, tournController.updateTourn).openapi = {
 	path: '/tab/tourns/{tournId}',
 	summary: 'Update tournament',
 	tags: ['tab:tournament'],
@@ -89,7 +87,7 @@ router.route('/:tournId').delete(requireAccess('tourn', 'owner'), ValidateReques
 	},
 };
 if (!config.features.HIDE_DEV_ENDPOINTS)
-	router.route('/:tournId/backup').post(requireAccess('tourn', 'read'), ValidateRequest, Backup).openapi = {
+	router.route('/:tournId/backup').post(requireAccess('tourn', 'owner'), ValidateRequest, Backup).openapi = {
 	path: '/tab/tourns/{tournId}/backup',
 	summary: 'Tournament Backup',
 	description: 'Creates a backup dump of the tournament data in JSON format',

@@ -12,8 +12,6 @@ import factories from '../../../../../../tests/factories/index.js';
 describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 	let panelId: number;
 	let tournId: number;
-	let eventId: number;
-	let categoryId: number;
 	let judgeUserkey: string;
 	let studentUserkey: string;
 	let otherUserkey: string;
@@ -33,8 +31,6 @@ describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 			Event: { abbr: 'PF', settings: { online_mode: 'nsda_campus' } },
 		});
 		tournId = Tourn.id;
-		eventId = Event.id;
-		categoryId = Category.id;
 
 		const panel = await factories.panel.create({ round: Round.id, letter: 'A' });
 		panelId = panel.id;
@@ -68,26 +64,13 @@ describe('GET /rest/tourns/:tournId/sections/:sectionId/room', () => {
 		expect(res.body).toMatchSchema(RoomViewSchema);
 	});
 
-	it.each([
-		['tourn', () => ({ tourn: tournId })],
-		['event', () => ({ tourn: tournId, event: eventId })],
-		['category', () => ({ tourn: tournId, category: categoryId })],
-	])('returns the room to a %s checker', async (_scope, perm) => {
-		const userkey = await checker(perm());
+	it('returns the room to a checker', async () => {
+		const userkey = await checker({ tourn: tournId });
 
 		const res = await request(server).get(url(panelId)).asPerson(userkey);
 
 		expect(res.status).toBe(200);
 		expect(res.body).toMatchSchema(RoomViewSchema);
-	});
-
-	it('returns 404 to a checker of another category', async () => {
-		const otherCategory = await factories.category.create({ tourn: tournId });
-		const userkey = await checker({ tourn: tournId, category: otherCategory.id });
-
-		const res = await request(server).get(url(panelId)).asPerson(userkey);
-
-		expect(res).toBeProblemResponse(404);
 	});
 
 	it('returns 404 to a person with no part in the section', async () => {

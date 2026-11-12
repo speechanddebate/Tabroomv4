@@ -1,14 +1,12 @@
 import { Router } from 'express';
 import { updateContact, deleteContact, userProfile } from '../../../../controllers/coach/contacts.js';
-import { loadChapterAuthContext } from '../../../../middleware/auth/authContext.js';
 import { requireAccess } from '../../../../middleware/auth/authorization.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import z from 'zod';
 
 const router = Router();
 
-router.param('chapterId', loadChapterAuthContext);
-router.use(requireAccess('chapter','write'));
+router.use('/:chapterId/school', requireAccess('chapter','write'));
 
 // /coach/{chapterId}/school/{schoolId}/updateContact
 router.route('/:chapterId/school/:schoolId/updateContact').post(ValidateRequest, updateContact).openapi = {

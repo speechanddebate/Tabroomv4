@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { loadJudgeAuthContext } from '../../../../../middleware/auth/authContext.js';
 import { ValidateRequest } from '../../../../../middleware/validation.js';
 import { requireAccess, requirePerson } from '../../../../../middleware/auth/authorization.js';
 import z from 'zod';
@@ -38,7 +37,6 @@ router.route('/unlinked/search')
 		},
 	};
 
-	router.param('judgeId', loadJudgeAuthContext);
 
 if(!config.features.HIDE_DEV_ENDPOINTS) {
 	router.use('/:judgeId/panels', panelsRouter);

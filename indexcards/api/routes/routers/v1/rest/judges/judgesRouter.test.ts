@@ -250,7 +250,8 @@ describe('GET /rest/judges/:judgeId/conflicts', () => {
 		expect(await request(server).get(url(s.Judge.id))).toBeProblemResponse(401);
 		expect(await request(server).get(url(s.Judge.id)).asPerson(strangerKey)).toBeProblemResponse(403);
 		expect(await request(server).get(url(s.Judge.id)).asPerson(otherJudgeKey)).toBeProblemResponse(403);
-		expect(await request(server).get(url(999999999)).asPerson(s.userkey)).toBeProblemResponse(404);
+		// a judge that doesn't exist matches no relation, so the answer doesn't reveal whether it exists
+		expect(await request(server).get(url(999999999)).asPerson(s.userkey)).toBeProblemResponse(403);
 	});
 });
 

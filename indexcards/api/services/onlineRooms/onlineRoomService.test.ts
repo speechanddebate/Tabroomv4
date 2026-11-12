@@ -65,31 +65,32 @@ async function createSection(overrides: SectionOverrides = {}) {
 
 type TestPerson = { id: number; first: string | null; last: string | null; email: string };
 
-// the person's actor, holding a checker perm on each of the given resources, e.g. 'tourn:12'
-function asPerson(person: TestPerson, site_admin = 0, ...checks: string[]): Actor {
-	const actor = createActor(db, { id: person.id, first: person.first, last: person.last, email: person.email, site_admin });
-	actor.grant(checks.map((check) => {
-		const [scope, id] = check.split(':');
-		return { scope, id: Number(id), role: 'checker' };
-	}));
-	return actor;
+function asPerson(person: TestPerson, site_admin = 0): Actor {
+	return createActor(db, { id: person.id, first: person.first, last: person.last, email: person.email, site_admin });
 }
 
-// each room looked up in its own tourn, as the routes do. isStaff grants the actor checker on that tourn
+// the person's actor after giving them a checker row in the tourn, or on one of its events or categories.
+// Scoped rows carry the tourn too, as classic writes them
+async function asChecker(person: TestPerson, tourn: number, scope: { event?: number, category?: number } = {}): Promise<Actor> {
+	await factories.permission.create({ person: person.id, tourn, tag: 'checker', ...scope });
+	return asPerson(person);
+}
+
+// each room looked up in its own tourn, as the routes do. isStaff gives the person a checker row on that tourn
 async function sectionRoom(sectionId: number, actor: Actor, { isStaff = false, observer }: { isStaff?: boolean, observer?: number } = {}) {
 	const tourn = await panelRepo.getPanelTourn(db, sectionId);
-	if (isStaff && tourn) actor.grant([{ scope: 'tourn', id: tourn.id, role: 'checker' }]);
+	if (isStaff && tourn) await factories.permission.create({ person: actor.id, tourn: tourn.id, tag: 'checker' });
 	return await getSectionRoom(db, tourn?.id ?? 0, sectionId, actor, { observer });
 }
 
 async function schoolRoom(school: { id: number; tourn: number | null }, actor: Actor, isStaff = false) {
-	if (isStaff && school.tourn) actor.grant([{ scope: 'tourn', id: school.tourn, role: 'checker' }]);
+	if (isStaff && school.tourn) await factories.permission.create({ person: actor.id, tourn: school.tourn, tag: 'checker' });
 	return await getSchoolRoom(db, school.tourn ?? 0, school.id, actor);
 }
 
 async function prepRoom(entry: { id: number; event: number | null }, actor: Actor, isStaff = false) {
 	const event = entry.event ? await eventRepo.getEvent(db, entry.event) : undefined;
-	if (isStaff && event?.tourn) actor.grant([{ scope: 'tourn', id: event.tourn, role: 'checker' }]);
+	if (isStaff && event?.tourn) await factories.permission.create({ person: actor.id, tourn: event.tourn, tag: 'checker' });
 	return await getEntryPrepRoom(db, event?.tourn ?? 0, entry.id, actor);
 }
 
@@ -334,10 +335,12 @@ describe('getSectionRoom', () => {
 
 		it('lets tab staff and site admins in', async () => {
 			const { panel } = await createSection({ eventSettings: { online_mode: 'nsda_campus', online_prepend_role: 1 } });
+			// separate people: a checker row written for the tab person would label the admin as tab too
 			const person = await factories.person.create({ first: 'Tia', last: 'Tab' });
+			const adminPerson = await factories.person.create({ first: 'Tia', last: 'Tab' });
 
 			const tab = await sectionRoom(panel.id, asPerson(person), { isStaff: true });
-			const admin = await sectionRoom(panel.id, asPerson(person, 1), { isStaff: false });
+			const admin = await sectionRoom(panel.id, asPerson(adminPerson, 1), { isStaff: false });
 
 			expect(tab?.launch?.campus).toMatchObject({ role: 'tab', displayName: 'Tab - Tia Tab' });
 			expect(admin?.launch?.campus).toMatchObject({ role: 'admin', displayName: 'Admin - Tia Tab' });
@@ -785,7 +788,7 @@ describe('utility rooms', () => {
 		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(studentPerson)))).toEqual(['Entry Lounge']);
 		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(judge)))).toEqual(['Judge Lounge']);
 		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(coach)))).toEqual(['Coach Lounge']);
-		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(studentPerson, 0, `event:${Event.id}`)))).toEqual(['Entry Lounge']);
+		expect(names(await getUtilityRooms(db, Tourn.id, await asChecker(studentPerson, Tourn.id, { event: Event.id })))).toEqual(['Entry Lounge']);
 	});
 
 	it('shows event and category tab rooms to their checkers', async () => {
@@ -793,11 +796,12 @@ describe('utility rooms', () => {
 			{ id: '1', name: 'Event Tab', type: 'jitsi', uuid: 'eventtab', access: 'tab', event_id: String(Event.id) },
 			{ id: '2', name: 'Category Tab', type: 'jitsi', uuid: 'categorytab', access: 'tab', category_id: String(Category.id) },
 		]);
-		const person = await factories.person.create();
+		const eventChecker = await asChecker(await factories.person.create(), Tourn.id, { event: Event.id });
+		const categoryChecker = await asChecker(await factories.person.create(), Tourn.id, { category: Category.id });
 
-		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `event:${Event.id}`)))).toEqual(['Event Tab']);
-		// a category checker checks in that category's events too
-		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `category:${Category.id}`)))).toEqual(['Event Tab', 'Category Tab']);
+		expect(names(await getUtilityRooms(db, Tourn.id, eventChecker))).toEqual(['Event Tab']);
+		// each tab room is checked against its own event or category
+		expect(names(await getUtilityRooms(db, Tourn.id, categoryChecker))).toEqual(['Category Tab']);
 	});
 
 	it('shows tab staff every room, marked as tab', async () => {
@@ -807,7 +811,7 @@ describe('utility rooms', () => {
 		]);
 		const person = await factories.person.create({ first: 'Tia', last: 'Tab' });
 
-		const rooms = await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `tourn:${Tourn.id}`));
+		const rooms = await getUtilityRooms(db, Tourn.id, await asChecker(person, Tourn.id));
 
 		expect(names(rooms)).toEqual(['Entry Lounge', 'Tab Room']);
 		expect(rooms?.[1].launch?.campus).toMatchObject({
@@ -851,7 +855,7 @@ describe('utility rooms', () => {
 		]);
 		const person = await factories.person.create();
 
-		const rooms = await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `tourn:${Tourn.id}`));
+		const rooms = await getUtilityRooms(db, Tourn.id, await asChecker(person, Tourn.id));
 
 		expect(rooms?.[0].display).toEqual({ kind: 'utility', id: 1, name: 'Zoom Lounge', joinable: true, hybrid: false, mapUrl: null });
 		expect(rooms?.[0].launch).toEqual({ url: 'https://zoom.test/lounge', password: null, campus: null });
@@ -867,7 +871,7 @@ describe('utility rooms', () => {
 		const person = await factories.person.create();
 
 		expect(await getUtilityRooms(db, Tourn.id, asPerson(coach))).toEqual([]);
-		expect(names(await getUtilityRooms(db, Tourn.id, asPerson(person, 0, `tourn:${Tourn.id}`)))).toEqual(['Coach Lounge']);
+		expect(names(await getUtilityRooms(db, Tourn.id, await asChecker(person, Tourn.id)))).toEqual(['Coach Lounge']);
 	});
 
 	it('returns null for a tourn that does not exist', async () => {

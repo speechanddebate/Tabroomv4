@@ -9,6 +9,7 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 	let otherUserkey: string;
 	let judgeId: number;
 	let panelId: number;
+	let releasedRoundId: number;
 	// The same judge's ballot on a round that isn't out to judges yet
 	let unpublishedPanelId: number;
 
@@ -23,6 +24,7 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		await factories.ballot.create({ judge: judge.id, panel: panel.id });
 		judgeId = judge.id;
 		panelId = panel.id;
+		releasedRoundId = Round.id;
 
 		const unpublishedRound = await factories.round.create({ event: Event.id, published: 0 });
 		const unpublishedPanel = await factories.panel.create({ round: unpublishedRound.id });
@@ -62,7 +64,7 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		expect(res).toBeProblemResponse(400);
 	});
 
-	it('returns 404 for a judge that does not exist', async () => {
+	it('returns 404 for a judge that does not exist, as for one that is not the caller', async () => {
 		const res = await request(server).get(url(999999999, panelId)).asPerson(judgeUserkey);
 
 		expect(res).toBeProblemResponse(404);
@@ -74,8 +76,8 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		expect(res).toBeProblemResponse(404);
 	});
 
-	it('returns 404 when the judge has no ballot on the panel', async () => {
-		const otherPanel = await factories.panel.create();
+	it('returns 404 when the judge has no ballot on a panel in a released round', async () => {
+		const otherPanel = await factories.panel.create({ round: releasedRoundId });
 
 		const res = await request(server).get(url(judgeId, otherPanel.id)).asPerson(judgeUserkey);
 
@@ -106,10 +108,11 @@ describe('/rest/judges/:judgeId/panels/:panelId', () => {
 		expect(res.status).toBe(status);
 	});
 
-	it.each(routes)('returns 403 on %s /ballots%s for a person who is not the judge', async (method, path) => {
+	// 404, not 403, so a stranger can't tell a released round from an unreleased one
+	it.each(routes)('returns 404 on %s /ballots%s for a person who is not the judge', async (method, path) => {
 		const res = await request(server)[method](url(judgeId, panelId) + path).asPerson(otherUserkey);
 
-		expect(res).toBeProblemResponse(403);
+		expect(res).toBeProblemResponse(404);
 	});
 
 	it.each(routes)('returns 401 on %s /ballots%s for anonymous callers', async (method, path) => {

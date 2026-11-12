@@ -3,7 +3,7 @@
  * Pure functions over rows the repos load; the SQL side of "which strikes a judge may see"
  * is strikeRepo's judgeVisible. Classic also lists the entries of any other category whose
  * pref pool holds the judge; no tournament since 2025 has used that, so the beta lists only
- * the judge's own category (Ryan, 2026-11-09).
+ * the judge's own category.
  */
 /** Whether a person may remove a strike from the sheet: one they entered, or one declared from the judge's side (classic's conflictee flag) */
 export function isRemovable(strike: { entered_by: number | null; conflictee: number }, personId: number): boolean {

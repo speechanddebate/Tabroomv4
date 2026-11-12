@@ -14,7 +14,7 @@ const schoolParams = tournParams.extend({
 	schoolId: z.coerce.number().int().positive(),
 });
 
-router.route('/').get( requireAccess('tourn', 'read'), ValidateRequest, controller.getSchools).openapi = {
+router.route('/').get( requireAccess('tourn', 'write'), ValidateRequest, controller.getSchools).openapi = {
 	path: '/tab/tourns/{tournId}/schools',
 	summary: 'Get Schools for Tournament',
 	description: 'Retrieves all schools associated with the specified tournament.',
@@ -64,7 +64,7 @@ router.route('/').post(requireAccess('tourn', 'write'), ValidateRequest, control
 	},
 };
 
-router.route('/:schoolId').get(   requireAccess('tourn', 'read'), ValidateRequest, controller.getSchool).openapi = {
+router.route('/:schoolId').get(   requireAccess('tourn', 'write'), ValidateRequest, controller.getSchool).openapi = {
 	path: '/tab/tourns/{tournId}/schools/{schoolId}',
 	summary: 'Get School by ID',
 	description: 'Retrieves a school by its ID within the specified tournament.',
