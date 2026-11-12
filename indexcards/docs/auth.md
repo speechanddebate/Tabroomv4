@@ -196,20 +196,20 @@ For each new relation, EXPLAIN the generated SQL on the dev DB (it has productio
 
 ### Authentication
 - **Strategies** ([`authentication.ts`](/api/middleware/auth/authentication.ts)): a strategy is `(db, { cookies, headers }) => AuthResult` (`none`, `invalid`, `forbidden`, or `success`). `Authenticate` tries each in order, and the first that isn't `none` decides. Today there's one, `cookieStrategy`. To add API keys, add a member to `AuthMethod` in [`types.ts`](/api/middleware/auth/types.ts), a strategy to `strategies`, and a scheme in [`security.ts`](/api/routes/openapi/security.ts).
-- **Sessions:** the session key is in the `TabroomToken` cookie (`config.cookie.name`), shared with classic. The cookie is `httpOnly`, `sameSite: lax`, on `config.cookie.domain`, and `secure` in production. An unknown key clears the cookie and continues anonymously. A banned person's session is deleted, with a 403. `last_access` is refreshed at most hourly.
-- **CSRF** ([`csrfMiddleware.ts`](/api/middleware/csrfMiddleware.ts)): cookie writes must carry an `Origin` in `config.csrf.trusted_origins`, or they get a 403. Non-cookie auth, `GET`/`HEAD`/`OPTIONS`, and `/v1/auth/login` are exempt.
+- **Sessions:** the session key is in the `TabroomToken` cookie (`config.cookie.name`), shared with classic. The cookie is `httpOnly`, `sameSite: lax`, on `config.cookie.domain`, and `secure` in production. An unknown or expired key clears the cookie and continues anonymously. `session.expires` is set by classic (48 hours on one-time-password logins) and compared with the database clock; a null `expires` never expires. A banned person's session is deleted, with a 403. Banned means a `banned` person setting other than empty or `'0'` (`isBanned` in [`AuthService.ts`](/api/services/AuthService.ts), shared by login and the cookie strategy). `last_access` is refreshed at most hourly.
+- **CSRF** ([`csrfMiddleware.ts`](/api/middleware/csrfMiddleware.ts)): cookie writes must carry an `Origin` in `config.csrf.trusted_origins`, or they get a 403. Non-cookie auth and `GET`/`HEAD`/`OPTIONS` are exempt. A login from a browser with no session is non-cookie auth, so it passes; a login from a browser that already has one is checked, so a cross-site page can't swap the account.
 
 ### `/auth` routes
 | route | what it does |
 | --- | --- |
-| `POST /v1/auth/login` | checks the username and password, creates a session, sets the cookie. 401 for bad credentials, 403 if banned. |
+| `POST /v1/auth/login` | checks the username and password, creates a session, sets the cookie. The session key is only in the cookie, never the body. 401 for bad credentials, 403 if banned. An unknown username still costs one password hash, so timing doesn't reveal which accounts exist. |
 | `POST /v1/auth/logout` | deletes the session and clears the cookie. Always 204. |
 | `POST /v1/auth/su` | site admins only: starts impersonating `suId`. Dev-gated. |
 | `POST /v1/auth/suend` | ends an su session. |
 | `POST /v1/auth/register` | creates an account and a session. Dev-gated. |
 | `GET /v1/user/session` | the logged-in `Person` and `Su`; schemats calls it on every page load. |
 
-su is stored on the session row: `su` sets `session.person` to the target and `session.su` to the admin, and `suend` swaps them back. Password reset and email confirmation still live in classic.
+su is stored on the session row: `su` sets `session.person` to the target and `session.su` to the admin, and `suend` swaps them back. su'ing again from inside an su session (possible only when the target is also a site admin) keeps the original admin in `session.su`, so `suend` always returns to them. Password reset and email confirmation still live in classic.
 
 ### Status codes
 | code | when |

@@ -1,4 +1,5 @@
 import personRepo from '../repos/personRepo.js';
+import crypto from 'crypto';
 import { verify, encrypt } from 'unixcrypt';
 import config from '../config.js';
 import sessionRepo from '../repos/sessionRepo.js';
@@ -14,10 +15,12 @@ export async function login(username: string, password: string, context: { ip?: 
 	const person = await personRepo.getPersonByUsername(db, username, { settings: ['banned'] });
 
 	if (!person || !person?.id || !person?.password) {
+		// costs the same hash as a wrong password, so response time doesn't reveal which accounts exist
+		verifyPassword(password, DUMMY_HASH);
 		throw AUTH_INVALID;
 	}
 
-	if (person.settings?.banned) {
+	if (isBanned(person.settings?.banned)) {
 		throw FORBIDDEN;
 	}
 	const ok = verifyPassword(password, person.password);
@@ -68,6 +71,13 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 
 export const AUTH_INVALID = Symbol('AUTH_INVALID');
 export const FORBIDDEN = Symbol('FORBIDDEN');
+
+const DUMMY_HASH = encrypt(crypto.randomBytes(16).toString('hex'));
+
+/** The value of a person's banned setting. Classic writes '1'; an empty or '0' value is not a ban */
+export function isBanned(value: string | null | undefined) {
+	return !!value && value !== '0';
+}
 
 export function getAuthCookieOptions(): CookieOptions {
 	const secure = process.env.NODE_ENV === 'production';

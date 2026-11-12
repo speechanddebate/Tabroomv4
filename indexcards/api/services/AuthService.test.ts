@@ -2,9 +2,28 @@
 import factories from '../../tests/factories/index.js';
 import { ValidationError } from '../helpers/errors/errors.js';
 
-import AuthService,{ AUTH_INVALID }  from './AuthService.js';
+import AuthService,{ AUTH_INVALID, isBanned }  from './AuthService.js';
+
+vi.mock('unixcrypt', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('unixcrypt')>();
+	return { ...actual, verify: vi.fn(actual.verify) };
+});
+const unixcrypt = await import('unixcrypt');
 
 describe('AuthService', () => {
+
+	describe('isBanned', () => {
+		it.each([
+			['1', true],
+			['yes', true],
+			['0', false],
+			['', false],
+			[null, false],
+			[undefined, false],
+		])('%j is %s', (value, expected) => {
+			expect(isBanned(value)).toBe(expected);
+		});
+	});
 
 	describe('login', () => {
 		it('authenticates a user with valid credentials', async () => {
@@ -19,9 +38,11 @@ describe('AuthService', () => {
 			expect(result.token).toBeDefined();
 			expect(result.person?.id).toBe(Person.id);
 		});
-		it('throws AUTH_INVALID when user is not found', async () => {
-			//Act
+		it('throws AUTH_INVALID when user is not found, after hashing the password', async () => {
+			const verify = vi.spyOn(unixcrypt, 'verify');
+
 			await expect(AuthService.login('username', 'password')).rejects.toBe(AUTH_INVALID);
+			expect(verify).toHaveBeenCalledOnce();
 		});
 		it('throws AUTH_INVALID for invalid credentials', async () => {
 			const password = 'mypassword';

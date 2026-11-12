@@ -2162,7 +2162,6 @@ export const getRestNotifyEmailUnsubscribeResponseMock = (
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
-	token: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	Person: {
 		id: faker.number.int({ min: -9007199254740991, max: 9007199254740991 }),
 		email: faker.string.alpha({ length: { min: 10, max: 20 } }),

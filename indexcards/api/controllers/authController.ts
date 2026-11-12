@@ -24,7 +24,6 @@ export async function login(req: Request, res: Response) {
 
 	const { person, token } = result;
 	const validatedResponse = LoginResponseSchema.parse({
-		token: token,
 		Person: { //should conform to personSchema
 			id: person?.id,
 			email: person?.email,
@@ -59,7 +58,7 @@ export async function su(req: Request, res: Response){
 
 	await sessionRepo.updateSession(db,sessionId,{
 		person: suTarget.id,
-		su: req.person.id,
+		su: req.auth.su?.id ?? req.person.id,
 	});
 	return res.status(204).send();
 }
@@ -93,10 +92,6 @@ export async function register(req: Request, res: Response){
 	}
 	const { personId, token } = result;
 
-	const response = {
-		token: token,
-		personId: personId,
-	};
 	res.cookie(config.cookie.name, token, authService.getAuthCookieOptions());
-	return res.json(response);
+	return res.json({ personId });
 }

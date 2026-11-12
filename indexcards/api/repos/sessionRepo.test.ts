@@ -1,6 +1,7 @@
 
 import sessionRepo from './sessionRepo.js';
 import { db } from '../data/database.js';
+import { sql } from 'kysely';
 import factories from '../../tests/factories/index.js';
 
 const Person = await factories.person.create();
@@ -66,6 +67,15 @@ describe('findByUserKey', () => {
 		const session = await sessionRepo.findByUserKey(db, Session.userkey);
 		expect(session).toBeDefined();
 		expect(session?.Person?.banned).toBe('1');
+	});
+	it.each([
+		['an expired session', sql<Date>`now() - interval 1 minute`, false],
+		['a session that has not expired yet', sql<Date>`now() + interval 1 minute`, true],
+	])('%s', async (_, expires, found) => {
+		const Session = await factories.session.create({ person: Person.id });
+		await db.updateTable('session').set({ expires }).where('id', '=', Session.id).execute();
+
+		expect(!!await sessionRepo.findByUserKey(db, Session.userkey)).toBe(found);
 	});
 
 });

@@ -39,16 +39,21 @@ describe('csrfMiddleware', () => {
 		}
 	);
 
-	it('skips CSRF check for /auth/login', async () => {
+	// a cross-site page must not be able to log a logged-in browser into another account
+	it('checks /auth/login when the browser already has a session', async () => {
 		const { req, res, next } = createContext({
 			auth: cookieAuth,
 			method: 'POST',
 			path: '/v1/auth/login',
+			headers: {
+				origin: 'https://evil.example.com',
+			},
 		});
 
 		await csrfMiddleware(req, res, next);
 
-		expect(next).toHaveBeenCalledOnce();
+		expect(next).not.toHaveBeenCalled();
+		expect(res.status).toHaveBeenCalledWith(403);
 	});
 
 	it('allows request when Origin is trusted', async () => {

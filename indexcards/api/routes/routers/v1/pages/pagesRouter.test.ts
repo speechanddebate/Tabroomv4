@@ -99,6 +99,15 @@ describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
 
 		expect(res).toBeProblemResponse(404);
 	});
+	it('Returns 404 for a hidden tourn', async () => {
+		const tourn = await factories.tourn.create({ hidden: 1 });
+		const res = await request(server)
+			.get(`/v1/pages/invite/${tourn.id}/CX/1/results`)
+			.set('Accept', 'application/json');
+
+		expect(res).toBeProblemResponse(404);
+		expect(res.body.detail).toBe('No such tournament found');
+	});
 });
 
 describe.each([

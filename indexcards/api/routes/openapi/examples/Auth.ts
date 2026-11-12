@@ -9,7 +9,6 @@ export const LoginRequest = {
 	password: 'password123',
 } satisfies z.input<typeof LoginRequestSchema>;
 export const LoginResponse = {
-	token: 'example-token',
 	Person: {
 		id: 1,
 		email: 'johndoe@tabroom.com',

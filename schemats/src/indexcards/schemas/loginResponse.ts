@@ -11,6 +11,5 @@ import type { LoginResponsePerson } from './loginResponsePerson';
  * A response for a login request
  */
 export interface LoginResponse {
-	token: string;
 	Person: LoginResponsePerson;
 }

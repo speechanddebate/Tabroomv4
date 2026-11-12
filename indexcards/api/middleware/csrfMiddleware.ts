@@ -12,11 +12,6 @@ export default async function csrfMiddleware(req: Request, res: Response, next: 
 		return next();
 	}
 
-	// Skip endpoints that don't require CSRF
-	if (req.path === '/v1/auth/login') {
-		return next();
-	}
-
 	//validate csrf
 	const origin = req.headers['origin'];
 	if(origin && config.csrf.trusted_origins.includes(origin)){

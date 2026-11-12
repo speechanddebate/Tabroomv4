@@ -16,7 +16,6 @@ export const LoginRequestSchema = z.object({
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 
 export const LoginResponseSchema = z.object({
-	token: z.string(),
 	Person: z.object({
 		id: z.int(),
 		email: z.string(),

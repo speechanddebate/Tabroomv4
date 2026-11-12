@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { encrypt } from 'unixcrypt';
 import config from '../config.js';
 import logger from '../helpers/logger.js';
-import type { Insertable, Updateable } from 'kysely';
+import { sql, type Insertable, type Updateable } from 'kysely';
 
 type queryOpts = {
 	/** Only logins that can receive push under this VAPID key: subscribed under it, not turned off, and not su'd */
@@ -37,6 +37,8 @@ export const findByUserKey = async (
 	)
 	.leftJoin('person as su', 'su.id', 'session.su')
 	.where('session.userkey', '=', userkey)
+	// classic sets expires on one-time-password logins (48 hours) and checks it against the database clock
+	.where(eb => eb.or([eb('session.expires', 'is', null), eb('session.expires', '>', sql<Date>`now()`)]))
 	.select([
 		'session.id',
 		'session.ip',

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import config from '../../config.js';
-import authService from '../../services/AuthService.js';
+import authService, { isBanned } from '../../services/AuthService.js';
 import { createActor } from './authorization.js';
 import { Forbidden } from '../../helpers/problem.js';
 import sessionRepo from '../../repos/sessionRepo.js';
@@ -20,7 +20,7 @@ export const cookieStrategy: AuthStrategy = async (db, { cookies }) => {
 		return { status: 'invalid', clearCookie: true };
 	}
 
-	if (session.Person.banned == '1') {
+	if (isBanned(session.Person.banned)) {
 		await sessionRepo.deleteSession(db, session.id);
 		return { status: 'forbidden', detail: 'User is banned' };
 	}

@@ -31,7 +31,7 @@ describe('authController',() => {
 			await expect(controller.login(req, res)).rejects.toThrow('Some other error');
 		});
 
-		it('sets cookies and returns token + user on success', async () => {
+		it('sets the session cookie and returns the user on success', async () => {
 			const fakeResult = {
 				token: 'jwt123',
 				person: { id: 42, email: 'test@test.com' },
@@ -56,7 +56,7 @@ describe('authController',() => {
 
 			// Response body
 			const json = res.json.mock.calls[0][0];
-			expect(json.token).toBe('jwt123');
+			expect(json).not.toHaveProperty('token');
 			expect(json.Person.id).toBe(42);
 			expect(json.Person.email).toBe('test@test.com');
 		});
@@ -208,7 +208,7 @@ describe('authController',() => {
 				req.body,
 				{ ip: req.ip, agentData: 'Mozilla' }
 			);
-			expect(res.json).toHaveBeenCalledWith(fakeResult);
+			expect(res.json).toHaveBeenCalledWith({ personId: 55 });
 			expect(res.cookie).toHaveBeenCalledWith(config.cookie.name, 'jwt456', expect.any(Object));
 		});
 

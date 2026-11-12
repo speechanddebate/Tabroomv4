@@ -4,6 +4,15 @@ import factories from '../../../../tests/factories/index.js';
 import sessionRepo from '../../../repos/sessionRepo.js';
 import personRepo from '../../../repos/personRepo.js';
 import { db } from '../../../data/database.js';
+import config from '../../../config.js';
+import type { Response } from 'supertest';
+
+/** The session key from the response's Set-Cookie header; login and register don't return it in the body */
+function sessionKey(res: Response) {
+	const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
+	const cookie = cookies.find(c => c.startsWith(`${config.cookie.name}=`));
+	return decodeURIComponent(cookie!.split(';')[0].slice(config.cookie.name.length + 1));
+}
 
 let adminId! : number, userId!: number;
 describe('Auth Router', () => {
@@ -28,9 +37,9 @@ describe('Auth Router', () => {
 				.expect('Content-Type', /json/)
 				.expect(200);
 			assert.isObject(res.body, 'Response is an object');
-			assert.containsAllKeys(res.body, ['Person', 'token'], 'Response has person object and session token');
+			expect(Object.keys(res.body)).toEqual(['Person']);
 
-			const session = await sessionRepo.findByUserKey(db,res.body.token);
+			const session = await sessionRepo.findByUserKey(db, sessionKey(res));
 			expect(session).not.toBeNull();
 			expect(session!.person).toBe(Person.id);
 		});
@@ -95,7 +104,7 @@ describe('Auth Router', () => {
 				.expect('Content-Type', /json/)
 				.expect(200);
 
-			const token = loginRes.body.token;
+			const token = sessionKey(loginRes);
 
 			await request(server)
 				.post('/v1/auth/logout')
@@ -151,9 +160,10 @@ describe('Auth Router', () => {
 
 			expect(res).not.toBeProblemResponse();
 			assert.isObject(res.body, 'Response is an object');
-			assert.containsAllKeys(res.body, ['personId', 'token'], 'Response has personId and session token');
+			expect(Object.keys(res.body)).toEqual(['personId']);
 			const person = await personRepo.getPerson(db, res.body.personId);
 			expect(person).toBeDefined();
+			expect((await sessionRepo.findByUserKey(db, sessionKey(res)))?.person).toBe(res.body.personId);
 		});
 	});
 	describe('/su', () => {
@@ -173,7 +183,7 @@ describe('Auth Router', () => {
 				.expect('Content-Type', /json/)
 				.expect(200);
 
-			const token = loginRes.body.token;
+			const token = sessionKey(loginRes);
 
 			const suTarget = await factories.person.create({
 				password: 'securepassword',
@@ -186,6 +196,19 @@ describe('Auth Router', () => {
 				//.expect(204);
 
 			expect(res).not.toBeProblemResponse();
+		});
+		it('keeps the original admin when su\'ing again from inside an su session', async () => {
+			const admin = await factories.person.create({ site_admin: 1 });
+			const nextTarget = await factories.person.create();
+			const { userkey } = await factories.session.create({ person: admin.id });
+			// su requires the current person to be a site admin, so only an admin target can su again
+			await request(server).post('/v1/auth/su').asPerson(userkey).send({ suId: adminId }).expect(204);
+
+			const res = await request(server).post('/v1/auth/su').asPerson(userkey).send({ suId: nextTarget.id });
+
+			const session = await sessionRepo.findByUserKey(db, userkey);
+			expect(res.status).toBe(204);
+			expect(session).toMatchObject({ person: nextTarget.id, su: admin.id });
 		});
 		it('fails to start an su session with invalid suId', async () => {
 			const Person = await factories.person.create({
@@ -203,7 +226,7 @@ describe('Auth Router', () => {
 				.expect('Content-Type', /json/)
 				.expect(200);
 
-			const token = loginRes.body.token;
+			const token = sessionKey(loginRes);
 
 			const res = await request(server)
 				.post('/v1/auth/su')
