@@ -4345,6 +4345,10 @@ export const getUserStudentsLinkRequestsResponseMock = (): StudentSchema[] =>
 					]),
 					undefined,
 				]),
+				confirmed: faker.helpers.arrayElement([
+					faker.datatype.boolean(),
+					undefined,
+				]),
 				district: faker.helpers.arrayElement([
 					faker.helpers.arrayElement([
 						faker.number.float({ fractionDigits: 2 }),
@@ -4637,6 +4641,10 @@ export const getUserChaptersResponseMock = (): UserChapter[] =>
 				faker.number.float({ fractionDigits: 2 }),
 				null,
 			]),
+			undefined,
+		]),
+		confirmed: faker.helpers.arrayElement([
+			faker.datatype.boolean(),
 			undefined,
 		]),
 		district: faker.helpers.arrayElement([

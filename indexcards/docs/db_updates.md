@@ -13,7 +13,14 @@ Run the up, the down, and the up again against the dev database to make sure bot
 
 ## 1. Regenerate the Kysely types
 
-The table types in `api/data/schema.ts` are generated from the live schema by `kysely-codegen`. Regenerate them against a database that already has the schema changes applied, writing to `api/data/schema.ts`. **Do not hand-edit that file** — changes will be overwritten the next time it is generated.
+The table types in `api/data/schema.ts` are generated from the live schema by `kysely-codegen`. Regenerate them against a database that already has the schema changes applied:
+
+```bash
+npm run codegen                  # the database in config/config.json
+NODE_ENV=test npm run codegen    # the test database
+```
+
+**Do not hand-edit that file** — changes will be overwritten the next time it is generated.
 
 After regenerating, review the diff in `api/data/schema.ts` and run `npm run typecheck` to find code affected by the change.
 
@@ -26,7 +33,7 @@ npm run updateTestFile
 ```
 
 This script:
-1. Prunes the test database to a minimal known-good state (`tests/createTestDatabase.js`)
+1. Prunes the test database to a minimal known-good state and anonymizes what's left (`tests/createTestDatabase.js`). A new table or column holding personal data (names, emails, IPs, usernames) must be truncated or anonymized there, or it ships in `tests/test.sql`.
 2. Dumps the result with `mariadb-dump`
 3. Strips `DEFINER` tags and writes the output to `tests/test.sql`
 

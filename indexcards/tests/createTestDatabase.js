@@ -121,6 +121,10 @@ const pruneDatabase = async () => {
 	await sql`
 		truncate table change_log;
 	`.execute(db);
+	logger.progress('pruning login_log...');
+	await sql`
+		truncate table login_log;
+	`.execute(db);
 	logger.progress('pruning site...');
 	await sql`
 		delete from site where not exists (select ts.id from tourn_site ts where ts.site = site.id);

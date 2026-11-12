@@ -26,7 +26,7 @@ Every package in `indexcards/package.json`, grouped by what it does, with what c
 | mariadb | ^3.5.4 | Driver and connection pool | `kysely-mariadb` accepts `^3.4.5` only. |
 | kysely | ^0.29.6 | Query builder | `kysely-mariadb` and `kysely-codegen` accept `<1.0`. |
 | kysely-mariadb | ^0.1.3 | Kysely dialect for the mariadb driver | Pre-1.0 and low activity; its peer ranges gate mariadb and kysely majors. |
-| kysely-codegen | dev ^0.20.0 | Regenerates `api/data/db.d.ts` | None. |
+| kysely-codegen | dev ^0.20.0 | Regenerates `api/data/schema.ts` (`npm run codegen`, `scripts/codegen.ts`) | The script calls the `generate()` API with the app's mariadb connection; the CLI's mysql dialect needs `mysql2`, which isn't installed. An upgrade must keep that API. |
 
 ## Validation and API docs
 

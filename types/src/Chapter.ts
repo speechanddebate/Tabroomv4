@@ -16,6 +16,7 @@ export const ChapterSchema = z.object({
 	self_prefs: z.coerce.boolean().nullish(),
 	level: z.string().nullish(),
 	nsda: z.number().nullish(),
+	confirmed: z.coerce.boolean().nullish(),
 	district: z.number().nullish(),
 	naudl: z.coerce.boolean().nullish(),
 	ipeds: z.string().nullish(),

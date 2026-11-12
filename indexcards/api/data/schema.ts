@@ -66,6 +66,7 @@ export interface CampusLog {
   description: Generated<string>;
   entry: Generated<number | null>;
   id: Generated<number>;
+  ip: Generated<string | null>;
   judge: Generated<number | null>;
   marker: Generated<number | null>;
   panel: Generated<number | null>;
@@ -122,6 +123,7 @@ export interface ChangeLog {
   event: Generated<number | null>;
   fine: Generated<number | null>;
   id: Generated<number>;
+  ip: Generated<string | null>;
   judge: Generated<number | null>;
   new_panel: Generated<number | null>;
   old_panel: Generated<number | null>;
@@ -138,6 +140,7 @@ export interface Chapter {
   ceeb: Generated<string | null>;
   city: Generated<string | null>;
   coaches: Generated<string | null>;
+  confirmed: Generated<number>;
   country: Generated<string | null>;
   created_at: Generated<Date | null>;
   district: Generated<number | null>;
@@ -636,6 +639,18 @@ export interface JudgeSetting {
   value_text: Generated<string | null>;
 }
 
+export interface LoginLog {
+  banned: Generated<number>;
+  created_at: Generated<Date | null>;
+  description: Generated<string | null>;
+  id: Generated<number>;
+  ip: Generated<string | null>;
+  person: Generated<number | null>;
+  revoked: Generated<number>;
+  timestamp: Generated<Date>;
+  username: Generated<string | null>;
+}
+
 export interface Message {
   body: Generated<string | null>;
   created_at: Generated<Date | null>;
@@ -651,7 +666,7 @@ export interface Message {
   sender: Generated<number | null>;
   sender_string: Generated<string | null>;
   subject: Generated<string | null>;
-  timestamp: Generated<Date | null>;
+  timestamp: Generated<Date>;
   tourn: Generated<number | null>;
   url: Generated<string | null>;
   visible_at: Generated<Date | null>;
@@ -731,6 +746,7 @@ export interface Person {
   middle: Generated<string | null>;
   no_email: Generated<number>;
   nsda: Generated<number | null>;
+  pass_expires: Generated<Date | null>;
   pass_timestamp: Generated<Date | null>;
   password: Generated<string | null>;
   phone: Generated<number | null>;
@@ -1126,6 +1142,7 @@ export interface Session {
   agent_data: Generated<string | null>;
   created_at: Generated<Date | null>;
   defaults: Generated<string | null>;
+  expires: Generated<Date | null>;
   geoip: Generated<string | null>;
   id: Generated<number>;
   ip: Generated<string | null>;
@@ -1527,6 +1544,7 @@ export interface DB {
   judge: Judge;
   judge_hire: JudgeHire;
   judge_setting: JudgeSetting;
+  login_log: LoginLog;
   message: Message;
   nsda_category: NsdaCategory;
   panel: Panel;

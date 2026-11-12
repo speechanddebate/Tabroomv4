@@ -38,6 +38,8 @@ export interface UserChapter {
 	/** @nullable */
 	nsda?: number | null;
 	/** @nullable */
+	confirmed?: boolean | null;
+	/** @nullable */
 	district?: number | null;
 	/** @nullable */
 	naudl?: boolean | null;

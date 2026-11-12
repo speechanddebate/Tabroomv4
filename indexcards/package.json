@@ -20,7 +20,8 @@
 		"lint:fix": "oxlint --fix .",
 		"format": "prettier --write .",
 		"format-check": "prettier --check .",
-		"updateTestFile": "NODE_ENV=test tsx scripts/updateTestFile.js"
+		"updateTestFile": "NODE_ENV=test tsx scripts/updateTestFile.js",
+		"codegen": "tsx scripts/codegen.ts"
 	},
 	"engines": {
 		"node": ">= 24.13.1"
