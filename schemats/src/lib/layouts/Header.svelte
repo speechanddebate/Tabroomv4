@@ -71,7 +71,7 @@
 <div>
 	<Navbar
 		class = 'items-start flex-nowrap flex-row
-			bg-primary-deep
+			bg-backdrop
 			sm:px-2 xl:px-4'
 		breakpoint="lg"
 		fluid = {true}
@@ -133,7 +133,7 @@
 					order-2'
 			{activeUrl}
 			classes={{
-				ul: 'bg-primary-deep border-primary-strong lg:bg-inherit lg:border-none lg:flex-row lg:justify-around lg:p-2 lg:text-xs lg:font-medium lg:mt-0 xl:mt-0',
+				ul: 'bg-backdrop border-primary-strong lg:bg-inherit lg:border-none lg:flex-row lg:justify-around lg:p-2 lg:text-xs lg:font-medium lg:mt-0 xl:mt-0',
 				active: '!text-white font-semibold underline underline-offset-4 decoration-accent decoration-solid hover:bg-primary-strong hover:!text-white lg:hover:bg-transparent lg:hover:!text-accent lg:hover:underline lg:ps-2 lg:pe-2 lg:w-[12ex] xl:w-[12ex]',
 				nonActive: '!text-primary-soft tracking-wide hover:bg-primary-strong hover:!text-white lg:hover:bg-transparent lg:hover:!text-accent lg:hover:underline lg:hover:underline-offset-4 lg:ps-2 lg:pe-2 lg:w-[11ex] xl:w-[12ex]',
 			}}

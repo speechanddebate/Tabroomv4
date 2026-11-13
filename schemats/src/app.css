@@ -27,6 +27,9 @@
 	--color-accent         : #fec937; /* Tabroom yellow */
 	--color-accent-soft    : #fef8ef; /* Row hover */
 
+	--color-backdrop       : var(--color-primary-deep); /* Header, footer, and page background behind the content card */
+	--color-backdrop-end   : var(--color-primary);
+
 	--color-page           : #e5ebed;
 	--color-surface        : #fefefe;
 	--color-surface-alt    : #f5f5f5;
@@ -70,6 +73,12 @@
 	--color-secondary-700 : var(--color-accent);
 	--color-secondary-800 : var(--color-accent);
 	--color-secondary-900 : var(--color-accent);
+}
+
+/* Classic staging.css green, so staging is never mistaken for prod */
+html[data-env='staging'] {
+	--color-backdrop     : #244500;
+	--color-backdrop-end : #578415;
 }
 
 @source '../node_modules/flowbite-svelte/dist';

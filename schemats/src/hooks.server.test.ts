@@ -7,6 +7,7 @@ vi.mock('$app/env/public', () => ({
 }));
 vi.mock('$app/env/private', () => ({
 	AUTH_COOKIE: 'Tabroom_Cookie',
+	SITE_ENV: 'staging',
 }));
 
 const { mockUserSession } = vi.hoisted(() => ({
@@ -82,8 +83,17 @@ describe('Handle Hook', () => {
 
 		expect(event.locals.requestId).toBeDefined();
 		expect(event.locals.Session).toBeNull();
-		expect(resolve).toHaveBeenCalledWith(event);
+		expect(resolve).toHaveBeenCalledWith(event, expect.any(Object));
 		expect(response).toEqual(new Response('ok'));
+	});
+	it('fills the html data-env placeholder with SITE_ENV', async () => {
+		const resolve = vi.fn().mockResolvedValue(new Response('ok'));
+
+		await handle({ event: createRequestEvent(), resolve });
+
+		const { transformPageChunk } = resolve.mock.calls[0][1];
+		expect(transformPageChunk({ html: '<html data-env="%tabroom.env%">', done: true }))
+			.toBe('<html data-env="staging">');
 	});
 	it('bootstraps user session and attaches to locals', async () => {
 		const sessionData = { Person: { id: 1, name: 'Alice' } };
@@ -100,7 +110,7 @@ describe('Handle Hook', () => {
 		const response = await handle({ event, resolve });
 
 		expect(event.locals.Session).toEqual(sessionData);
-		expect(resolve).toHaveBeenCalledWith(event);
+		expect(resolve).toHaveBeenCalledWith(event, expect.any(Object));
 		expect(response).toEqual(new Response('ok'));
 	});
 	it('continues without session if api returns 401', async () => {
@@ -117,7 +127,7 @@ describe('Handle Hook', () => {
 		const response = await handle({ event, resolve });
 
 		expect(event.locals.Session).toBeNull();
-		expect(resolve).toHaveBeenCalledWith(event);
+		expect(resolve).toHaveBeenCalledWith(event, expect.any(Object));
 		expect(response).toEqual(new Response('ok'));
 	});
 	it('logs and continues if session bootstrap returns non-401 error', async () => {

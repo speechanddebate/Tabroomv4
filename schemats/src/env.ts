@@ -32,6 +32,10 @@ export const variables = defineEnvVars({
 		schema: z.stringbool().default(true),
 		description: 'Whether pages still in development return a 404. default: true',
 	},
+	SITE_ENV: {
+		schema: z.enum(['production', 'staging', 'dev']).default('dev'),
+		description: 'Deployment environment; staging paints the page background green. default: dev',
+	},
 	HOME_FEATURES: {
 		public: true,
 		schema: z.string().default(''),

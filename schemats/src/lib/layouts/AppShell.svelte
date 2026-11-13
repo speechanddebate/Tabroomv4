@@ -17,7 +17,7 @@
 <FeedbackBanner />
 <Header {logoutFn} {notificationCount} {suEndFn} />
 
-<main class= 'bg-linear-to-b from-primary-deep to-primary px-2 sm:px-6 min-h-full'>
+<main class= 'bg-linear-to-b from-backdrop to-backdrop-end px-2 sm:px-6 min-h-full'>
 	<div class='
 		min-h-[80vh]
 		border-warning

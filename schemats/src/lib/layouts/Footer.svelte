@@ -24,7 +24,7 @@
 <div>
 
 	<Footer
-		class="bg-primary-deep rounded-none shadow-none"
+		class="bg-backdrop rounded-none shadow-none"
 		role="contentinfo"
 	>
 		<div class='items-center py- w-full block'>
