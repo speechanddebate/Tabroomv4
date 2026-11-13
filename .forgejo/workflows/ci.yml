@@ -198,7 +198,7 @@ jobs:
   build:
     name: Build
     needs: [indexcards-unit, schemats-unit, a11y, e2e]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
     uses: ./.forgejo/workflows/build.yml
     with:
       channel: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
@@ -207,7 +207,7 @@ jobs:
   deploy:
     name: Deploy
     needs: [build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     uses: ./.forgejo/workflows/deploy.yml
     with:
       target: production
@@ -216,7 +216,7 @@ jobs:
   deploy-staging:
     name: Deploy staging
     needs: [build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    if: github.ref == 'refs/heads/staging'
     uses: ./.forgejo/workflows/deploy.yml
     with:
       target: staging
