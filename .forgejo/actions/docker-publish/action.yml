@@ -10,6 +10,9 @@ inputs:
     required: true
   registry_password:
     required: true
+  channel:
+    required: true
+    description: Moving tag docker-build added, production or staging
 
 runs:
   using: composite
@@ -30,8 +33,8 @@ runs:
           "${{ inputs.registry }}/nsda/${{ inputs.image }}:${FORGEJO_SHA}"
 
         docker tag \
-          "${{ inputs.image }}:production" \
-          "${{ inputs.registry }}/nsda/${{ inputs.image }}:production"
+          "${{ inputs.image }}:${{ inputs.channel }}" \
+          "${{ inputs.registry }}/nsda/${{ inputs.image }}:${{ inputs.channel }}"
 
     - name: Push image
       shell: bash
@@ -41,5 +44,5 @@ runs:
         echo "Pushing ${IMAGE}:${FORGEJO_SHA}"
         docker push "${IMAGE}:${FORGEJO_SHA}"
 
-        echo "Pushing ${IMAGE}:production"
-        docker push "${IMAGE}:production"
+        echo "Pushing ${IMAGE}:${{ inputs.channel }}"
+        docker push "${IMAGE}:${{ inputs.channel }}"

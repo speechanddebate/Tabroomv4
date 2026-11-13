@@ -3,8 +3,18 @@ name: Build
 on:
   # manual trigger for emergencies
   workflow_dispatch:
-  # called by ci.yml once all checks pass on main
+    inputs:
+      channel:
+        description: Moving tag for the images
+        type: choice
+        options: [production, staging]
+        default: production
+  # called by ci.yml once all checks pass on main or staging
   workflow_call:
+    inputs:
+      channel:
+        type: string
+        required: true
 
 jobs:
   build-indexcards:
@@ -19,11 +29,13 @@ jobs:
         with:
           image: indexcards
           dockerfile: indexcards/Dockerfile
+          channel: ${{ inputs.channel }}
 
       - name: Publish image
         uses: ./.forgejo/actions/docker-publish
         with:
           image: indexcards
+          channel: ${{ inputs.channel }}
           registry_username: ${{ secrets.REGISTRY_USERNAME }}
           registry_password: ${{ secrets.REGISTRY_PASSWORD }}
 
@@ -39,10 +51,12 @@ jobs:
         with:
           image: schemats
           dockerfile: schemats/Dockerfile
+          channel: ${{ inputs.channel }}
 
       - name: Publish image
         uses: ./.forgejo/actions/docker-publish
         with:
           image: schemats
+          channel: ${{ inputs.channel }}
           registry_username: ${{ secrets.REGISTRY_USERNAME }}
           registry_password: ${{ secrets.REGISTRY_PASSWORD }}

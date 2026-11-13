@@ -9,15 +9,26 @@ inputs:
     required: true
     description: Path to Dockerfile
 
+  channel:
+    required: true
+    description: Moving tag added next to the commit SHA, production or staging
+
 runs:
   using: composite
   steps:
     - name: Build image
       shell: bash
+      env:
+        CHANNEL: ${{ inputs.channel }}
       run: |
+        case "$CHANNEL" in
+          production|staging) ;;
+          *) echo "docker-build: channel must be production or staging, got '$CHANNEL'" >&2; exit 1 ;;
+        esac
+
         docker build \
           -f "${{ inputs.dockerfile }}" \
           --build-arg GIT_COMMIT="$(git rev-parse --short HEAD)" \
           -t "${{ inputs.image }}:${FORGEJO_SHA}" \
-          -t "${{ inputs.image }}:production" \
+          -t "${{ inputs.image }}:${CHANNEL}" \
           .

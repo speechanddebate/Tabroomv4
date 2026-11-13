@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - staging
   pull_request:
     branches:
       - main
+      - staging
 
 jobs:
   lint:
@@ -196,15 +198,28 @@ jobs:
   build:
     name: Build
     needs: [indexcards-unit, schemats-unit, a11y, e2e]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
     uses: ./.forgejo/workflows/build.yml
+    with:
+      channel: ${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }}
     secrets: inherit
 
   deploy:
     name: Deploy
     needs: [build]
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.forgejo/workflows/deploy.yml
+    with:
+      target: production
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy staging
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    uses: ./.forgejo/workflows/deploy.yml
+    with:
+      target: staging
     secrets: inherit
 
   notify:

@@ -3,10 +3,19 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: Where to deploy; production runs only from main, staging only from staging
+        type: choice
+        options: [production, staging]
+        default: production
       sha:
         description: Full commit SHA to deploy (defaults to this commit)
         required: false
   workflow_call:
+    inputs:
+      target:
+        type: string
+        required: true
 
 jobs:
   deploy:
@@ -15,15 +24,42 @@ jobs:
     steps:
       - name: Deploy images
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          TARGET: ${{ inputs.target }}
+          REF: ${{ github.ref }}
           DEPLOY_SHA: ${{ inputs.sha || github.sha }}
+          # Both pairs are passed under their own names and the script picks one, so an unset
+          # staging secret fails the deploy instead of an expression falling back to prod's.
+          PRODUCTION_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          PRODUCTION_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          STAGING_SSH_KEY: ${{ secrets.STAGING_DEPLOY_SSH_KEY }}
+          STAGING_KNOWN_HOSTS: ${{ vars.STAGING_DEPLOY_KNOWN_HOSTS }}
         run: |
-          install -d -m 700 ~/.ssh
-          (umask 077; printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key)
-          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          fail() { echo "deploy: $*" >&2; exit 1; }
 
-          # Job containers can't resolve internal names.
+          case "$TARGET" in
+            production)
+              branch=main
+              key="$PRODUCTION_SSH_KEY"
+              known_hosts="$PRODUCTION_KNOWN_HOSTS"
+              # Job containers can't resolve internal names.
+              dest=(-o HostName=10.19.25.1 -o HostKeyAlias=control ansible@control)
+              ;;
+            staging)
+              branch=staging
+              key="$STAGING_SSH_KEY"
+              known_hosts="$STAGING_KNOWN_HOSTS"
+              dest=(-p 1925 deploy@vpn.debatefail.com)
+              ;;
+            *) fail "target must be production or staging, got '$TARGET'" ;;
+          esac
+
+          [ "$REF" = "refs/heads/$branch" ] || fail "$TARGET deploys only run from $branch, not $REF"
+          [ -n "$key" ] || fail "no SSH key secret set for $TARGET"
+          [ -n "$known_hosts" ] || fail "no known hosts variable set for $TARGET"
+
+          install -d -m 700 ~/.ssh
+          (umask 077; printf '%s\n' "$key" > ~/.ssh/deploy_key)
+          printf '%s\n' "$known_hosts" > ~/.ssh/known_hosts
+
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
-            -o HostName=10.19.25.1 -o HostKeyAlias=control \
-            ansible@control "$DEPLOY_SHA"
+            "${dest[@]}" "$DEPLOY_SHA"
