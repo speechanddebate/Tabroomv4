@@ -5,7 +5,7 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
-import type { ProblemSchemaIssues } from './problemSchemaIssues';
+import type { ProblemIssue } from './problemIssue';
 
 export interface ProblemSchema {
 	/** A URI reference that identifies the problem type. */
@@ -22,6 +22,6 @@ export interface ProblemSchema {
 	detail?: string;
 	/** A URI reference to the specific occurrence. */
 	instance?: string;
-	/** Additional details about the error, such as validation issues. */
-	issues?: ProblemSchemaIssues;
+	/** The rules the request broke, one entry per failure, each tied to a field when it has one. */
+	issues?: ProblemIssue[];
 }

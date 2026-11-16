@@ -263,7 +263,9 @@ async function updateParadigm(req: ValidatedRequest, res: Response) {
 
 	const naughtywords = profanityCheck(req.body.paradigm);
 	if(naughtywords.length > 0){
-		return BadRequest(req, res, 'paradigm contains prohibited words', { words: naughtywords });
+		return BadRequest(req, res, 'paradigm contains prohibited words', [
+			{ path: ['paradigm'], code: 'custom', message: `Remove these words: ${naughtywords.join(', ')}` },
+		]);
 	}
 	const cleanParadigm = sanitizeHTML(req.body.paradigm, { restrictive: true });
 	if(cleanParadigm !== req.body.paradigm){

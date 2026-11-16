@@ -21,12 +21,12 @@ export function sendProblem(req: Request, res: Response, {
 	});
 }
 
-export function BadRequest(req: Request, res: Response, detail?: string, issues = {}){
+export function BadRequest(req: Request, res: Response, detail?: string, issues: { path: PropertyKey[], message: string, code: string }[] = []){
 	return sendProblem(req, res, {
 		title: 'Request Validation Failed',
 		status: 400,
 		detail,
-		issues,
+		issues: issues as Problem['issues'],
 	});
 }
 //I hate that the 401 Unauthorized is technically for unauthenticated issues but we live in a society after all

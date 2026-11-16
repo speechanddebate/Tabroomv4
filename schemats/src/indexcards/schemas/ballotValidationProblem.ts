@@ -6,7 +6,7 @@
  * OpenAPI spec version: 1.2.0
  */
 import type { BallotError } from './ballotError';
-import type { BallotValidationProblemIssues } from './ballotValidationProblemIssues';
+import type { ProblemIssue } from './problemIssue';
 
 export interface BallotValidationProblem {
 	/** A URI reference that identifies the problem type. */
@@ -23,8 +23,8 @@ export interface BallotValidationProblem {
 	detail?: string;
 	/** A URI reference to the specific occurrence. */
 	instance?: string;
-	/** Additional details about the error, such as validation issues. */
-	issues?: BallotValidationProblemIssues;
+	/** The rules the request broke, one entry per failure, each tied to a field when it has one. */
+	issues?: ProblemIssue[];
 	/** Every reason the ballot can't be saved */
 	errors: BallotError[];
 }
