@@ -10,6 +10,8 @@ type queryOpts = {
 	nsdaIds?: number[];
 	/** people whose main email is one of these; the column compares without regard to case */
 	emails?: string[];
+	/** people with one of these phone numbers */
+	phones?: number[];
 	settings?: boolean | string[];
 	/** also select the settings' created_at and timestamp as settingsTimestamps */
 	withTimestamps?: boolean;
@@ -47,6 +49,8 @@ async function buildPersonQuery(db: Database, opts: queryOpts = {}) {
 		query = query.where('person.nsda', 'in', opts.nsdaIds);
 	if(opts.emails)
 		query = query.where('person.email', 'in', opts.emails);
+	if(opts.phones)
+		query = query.where('person.phone', 'in', opts.phones);
 	if(opts.excludeBanned)
 		query = query.where(isNotBanned);
 	if(opts.excludeUnconfirmedEmail)

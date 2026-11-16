@@ -38,9 +38,24 @@ export class Draft<T extends Record<string, unknown>> {
 		this.values = structuredClone($state.snapshot(this.saved) as T);
 	}
 
-	/** After a save succeeds: the fields that were sent become saved */
-	commit(sent: Partial<T>) {
-		this.saved = { ...($state.snapshot(this.saved) as T), ...structuredClone(sent) };
+	/**
+	 * After a save succeeds: the fields that were sent become saved. Pass `stored` when the server
+	 * keeps a field in another form than it was typed ("+1 (555) 123-4567" stored as 5551234567);
+	 * a field still showing what was sent then shows the stored form, and one edited again while
+	 * the save was in flight keeps the edit. Only the sent fields are taken from `stored`, so a field
+	 * that changed on the server meanwhile doesn't turn into an unsaved change.
+	 */
+	commit(sent: Partial<T>, stored: Partial<T> = sent) {
+		const values = $state.snapshot(this.values) as T;
+		const saved = { ...($state.snapshot(this.saved) as T) };
+		for (const key of Object.keys(sent) as (keyof T)[]) {
+			const kept = structuredClone(key in stored ? stored[key] : sent[key]) as T[keyof T];
+			if (JSON.stringify(values[key]) === JSON.stringify(sent[key])) {
+				this.values[key] = kept;
+			}
+			saved[key] = structuredClone(kept);
+		}
+		this.saved = saved;
 	}
 
 	/** Replaces both copies, e.g. with the server's values after a refetch */

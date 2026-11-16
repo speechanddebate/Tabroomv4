@@ -108,6 +108,8 @@ import type {
 	UserJudgesHistoryParams,
 	UserParadigm,
 	UserParadigmOutput,
+	UserProfile,
+	UserProfileUpdate,
 	UserSession,
 	UserStudentsClaimParams,
 	UserTournsBallotsParams,
@@ -14310,6 +14312,357 @@ export const createUserConflictRemove = <
 > => {
 	return createMutation(
 		() => ({ ...getUserConflictRemoveMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userProfileResponse200 = {
+	data: UserProfile;
+	status: 200;
+};
+
+export type userProfileResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userProfileResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userProfileResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userProfileResponseSuccess = userProfileResponse200 & {
+	headers: Headers;
+};
+export type userProfileResponseError = (
+	| userProfileResponse401
+	| userProfileResponse404
+	| userProfileResponse500
+) & {
+	headers: Headers;
+};
+
+export type userProfileResponse =
+	| userProfileResponseSuccess
+	| userProfileResponseError;
+
+export const getUserProfileUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/profile`;
+};
+
+/**
+ * The logged-in person's name, contact details, address, time zone and email preferences. Allowed while su'd
+ * @summary Get profile
+ */
+export const userProfile = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userProfileResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserProfileUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userProfileResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userProfileResponse;
+};
+
+export const getUserProfileQueryKey = () => {
+	return [`${indexcardsApiBaseUrl()}/user/profile`] as const;
+};
+
+export const getUserProfileQueryOptions = <
+	TData = Awaited<ReturnType<typeof userProfile>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(options?: {
+	query?: Partial<
+		CreateQueryOptions<
+			Awaited<ReturnType<typeof userProfile>>,
+			TError,
+			TData
+		>
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserProfileQueryKey();
+
+	const queryFn: QueryFunction<Awaited<ReturnType<typeof userProfile>>> = ({
+		signal,
+	}) => userProfile({ signal, ...fetchOptions }, fetcherFn);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
+		Awaited<ReturnType<typeof userProfile>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserProfileQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userProfile>>
+>;
+export type UserProfileQueryError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get profile
+ */
+
+export function createUserProfile<
+	TData = Awaited<ReturnType<typeof userProfile>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userProfile>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getUserProfileQueryOptions(options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get profile
+ */
+export const prefetchUserProfileQuery = async <
+	TData = Awaited<ReturnType<typeof userProfile>>,
+	TError = UnauthorizedResponse | NotFoundResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userProfile>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserProfileQueryOptions(options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type userProfileUpdateResponse200 = {
+	data: UserProfile;
+	status: 200;
+};
+
+export type userProfileUpdateResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userProfileUpdateResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userProfileUpdateResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userProfileUpdateResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userProfileUpdateResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userProfileUpdateResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userProfileUpdateResponseSuccess = userProfileUpdateResponse200 & {
+	headers: Headers;
+};
+export type userProfileUpdateResponseError = (
+	| userProfileUpdateResponse400
+	| userProfileUpdateResponse401
+	| userProfileUpdateResponse403
+	| userProfileUpdateResponse404
+	| userProfileUpdateResponse409
+	| userProfileUpdateResponse500
+) & {
+	headers: Headers;
+};
+
+export type userProfileUpdateResponse =
+	| userProfileUpdateResponseSuccess
+	| userProfileUpdateResponseError;
+
+export const getUserProfileUpdateUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/profile`;
+};
+
+/**
+ * Saves the fields sent and leaves the rest as they are; one invalid field saves nothing. A phone, ZIP or postal code that is sent is checked against the country the profile will have after the save; stored values are not re-checked when only the country changes. A phone number on another account is 409. While a password change is required, every save is 403. Allowed while su'd
+ * @summary Update profile
+ */
+export const userProfileUpdate = async (
+	userProfileUpdate?: UserProfileUpdate,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userProfileUpdateResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserProfileUpdateUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(userProfileUpdate),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userProfileUpdateResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userProfileUpdateResponse;
+};
+
+export const getUserProfileUpdateMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userProfileUpdate>>,
+		TError,
+		{ data?: UserProfileUpdate },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userProfileUpdate>>,
+	TError,
+	{ data?: UserProfileUpdate },
+	TContext
+> => {
+	const mutationKey = ['userProfileUpdate'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userProfileUpdate>>,
+		{ data?: UserProfileUpdate }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return userProfileUpdate(data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserProfileUpdateMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userProfileUpdate>>
+>;
+export type UserProfileUpdateMutationBody = UserProfileUpdate | undefined;
+export type UserProfileUpdateMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Update profile
+ */
+export const createUserProfileUpdate = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userProfileUpdate>>,
+			TError,
+			{ data?: UserProfileUpdate },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userProfileUpdate>>,
+	TError,
+	{ data?: UserProfileUpdate },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserProfileUpdateMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

@@ -303,6 +303,8 @@ export * from './userJudgesClaimParams';
 export * from './userJudgesHistoryParams';
 export * from './userParadigm';
 export * from './userParadigmOutput';
+export * from './userProfile';
+export * from './userProfileUpdate';
 export * from './userSession';
 export * from './userStudentsClaimParams';
 export * from './userTournsBallotsParams';

@@ -82,6 +82,12 @@ export const tags: TagObject[] = [
 		description: 'Endpoints related to a users session',
 	},
 	{
+		name: 'user:profile',
+		summary: 'Profile',
+		parent: 'User',
+		description: 'The logged-in person\'s own profile',
+	},
+	{
 		name: 'tab:sites-rooms',
 		summary: 'Sites & Rooms',
 		parent: 'Tournament Management',

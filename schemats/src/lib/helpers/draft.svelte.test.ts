@@ -48,6 +48,29 @@ describe('Draft', () => {
 		expect(draft.changed).toEqual({ last: 'Smith' });
 	});
 
+	it('shows the stored form of a sent field, but keeps an edit made during the save', () => {
+		const draft = createDraft(profile());
+		draft.values.first = '  Ava ';
+		draft.values.last = 'smith';
+		const sent = draft.changed;
+		draft.values.last = 'Smith';
+		draft.commit(sent, { first: 'Ava', last: 'smith' });
+
+		expect(draft.values.first).toBe('Ava');
+		expect(draft.saved.first).toBe('Ava');
+		expect(draft.values.last).toBe('Smith');
+		expect(draft.changed).toEqual({ last: 'Smith' });
+	});
+
+	it('takes only the sent fields from stored, so a server-side change isn\'t an unsaved change', () => {
+		const draft = createDraft(profile());
+		draft.values.first = 'Ava';
+		draft.commit(draft.changed, { ...profile(), first: 'Ava', last: 'Changed elsewhere' });
+
+		expect(draft.saved.last).toBe(profile().last);
+		expect(draft.changes).toBe(0);
+	});
+
 	it('resets both copies to new saved values', () => {
 		const draft = createDraft(profile());
 		draft.values.first = 'Ava';

@@ -1,0 +1,3 @@
+ALTER TABLE person
+	ADD INDEX person_phone (phone),
+	ALGORITHM=INPLACE, LOCK=NONE;
