@@ -36,6 +36,11 @@ if (telemetry.enabled) {
 		instrumentations: [getNodeAutoInstrumentations({
 			// a span for every file read is noise
 			'@opentelemetry/instrumentation-fs': { enabled: false },
+			// HAProxy and the container healthchecks probe /v1/status every few seconds; counting those would inflate
+			// request rate and drag down latency percentiles.
+			'@opentelemetry/instrumentation-http': {
+				ignoreIncomingRequestHook: (req) => req.url?.split('?')[0] === '/v1/status',
+			},
 		})],
 	});
 

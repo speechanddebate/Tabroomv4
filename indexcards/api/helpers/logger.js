@@ -189,6 +189,9 @@ export const setupRequest = (req, res, next) => {
 			rpcMetadata.route = route;
 		}
 
+		// health probes hit /status every few seconds; only a failing one is worth a line
+		if (route === '/status' && res.statusCode < 400) return;
+
 		requestLogger.info('Request handled', {
 			method: req.method,
 			url: req.originalUrl ?? '',
