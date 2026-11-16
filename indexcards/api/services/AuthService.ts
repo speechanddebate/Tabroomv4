@@ -4,6 +4,7 @@ import { verify, encrypt } from 'unixcrypt';
 import config from '../config.js';
 import sessionRepo from '../repos/sessionRepo.js';
 import { ValidationError } from '../helpers/errors/errors.js';
+import { parseUserAgent } from '../helpers/userAgent.js';
 import { db } from '../data/database.js';
 import type { Person } from '../data/schema.js';
 import type { CookieOptions } from 'express';
@@ -31,7 +32,7 @@ export async function login(username: string, password: string, context: { ip?: 
 	const { userkey } = await sessionRepo.createSession(db,{
 		person  : person.id,
 		ip        : ip,
-		agent_data : agentData,
+		agent_data : agentData ? JSON.stringify(parseUserAgent(agentData)) : null,
 	});
 	//TODO enforce limits
 
@@ -64,7 +65,7 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 	const { userkey } = await sessionRepo.createSession(db,{
 		person: Person.id,
 		ip,
-		agent_data: agentData,
+		agent_data: agentData ? JSON.stringify(parseUserAgent(agentData)) : null,
 	});
 	return {personId: Person.id, token: userkey};
 }

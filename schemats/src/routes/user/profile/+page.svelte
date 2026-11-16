@@ -6,7 +6,10 @@
 	import { Switch } from '$lib/components/forms';
 	import { createPushState } from '$lib/helpers/pushState.svelte';
 	import { handleOrval } from '$lib/helpers/query';
+	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
 	import ProfileForm from './ProfileForm.svelte';
+	import ProfileSidebar from './ProfileSidebar.svelte';
+	import SessionList from './SessionList.svelte';
 
 	// Also edited on classic, so a reload fetches it fresh rather than showing a stored copy
 	const profileQuery = createUserProfile(() => ({ query: { meta: { persist: false } } }));
@@ -27,64 +30,72 @@
 	const link = 'font-semibold text-primary-strong underline';
 </script>
 
-<div class="@container flex flex-1 flex-col gap-3 bg-surface-alt p-3">
-	<h2 class="font-display text-3xl text-primary-deep normal-case tracking-normal">Your profile</h2>
+<WithSidebar canvas>
+	<div class="@container flex flex-1 flex-col gap-3">
+		<h2 class="font-display text-3xl text-primary-deep normal-case tracking-normal">Your profile</h2>
 
-	{#if profile?.forcePasswordChange}
-		<!-- Classic's rule: nothing else on the page until the password is changed -->
-		<section class={card} aria-labelledby="profile-forced" data-testid="forced-password-change">
-			<h3 id="profile-forced" class={cardTitle}>Change your password</h3>
-			<p class="text-sm text-text">
-				Your password was reset, so you need to choose a new one before you can edit your profile.
-				<a class={link} href={classicProfile}>Change your password on the classic site</a>
-			</p>
-		</section>
-	{:else}
-		{#if profile}
-			<ProfileForm {profile} />
-		{/if}
-
-		<div class="grid items-start gap-3 @3xl:grid-cols-2">
-			<section class={card} aria-labelledby="profile-password">
-				<h3 id="profile-password" class={cardTitle}>Password</h3>
+		{#if profile?.forcePasswordChange}
+			<!-- Classic's rule: nothing else on the page until the password is changed -->
+			<section class={card} aria-labelledby="profile-forced" data-testid="forced-password-change">
+				<h3 id="profile-forced" class={cardTitle}>Change your password</h3>
 				<p class="text-sm text-text">
-					<a class={link} href={classicProfile}>Change your password</a> on the classic site.
+					Your password was reset, so you need to choose a new one before you can edit your profile.
+					<a class={link} href={classicProfile}>Change your password on the classic site</a>
 				</p>
 			</section>
+		{:else}
+			{#if profile}
+				<ProfileForm {profile} />
+			{/if}
 
-			<section class={card} aria-labelledby="profile-devices">
-				<h3 id="profile-devices" class={cardTitle}>Devices</h3>
-				<Switch
-					checked={push.state === 'on'}
-					disabled={!canToggle || push.busy}
-					label="Receive notifications on this browser"
-					save={on => (on ? push.enable() : push.turnOff())}
-				/>
-				{#if push.state === 'on'}
-					<Button
-						class="self-start"
-						disabled={push.busy}
-						onclick={push.sendTest}
-						size="sm"
-						variant="outline"
-					>
-						Send test notification
-					</Button>
-				{/if}
-
-				{#if push.state === 'unsupported'}
-					<p class="text-sm text-muted" data-testid="push-note">This browser doesn't support push notifications.</p>
-				{:else if push.state === 'su'}
-					<p class="text-sm text-muted" data-testid="push-note">Push notifications can't be changed while su'd.</p>
-				{:else if push.state === 'unavailable'}
-					<p class="text-sm text-muted" data-testid="push-note">Push notifications aren't available right now.</p>
-				{:else if push.state === 'denied'}
-					<p class="text-sm text-muted" data-testid="push-note">
-						Notifications from Tabroom are blocked in this browser. To get them, open your
-						browser's site settings for Tabroom and allow notifications.
+			<div class="grid items-start gap-3 @3xl:grid-cols-2">
+				<section class={card} aria-labelledby="profile-password">
+					<h3 id="profile-password" class={cardTitle}>Password</h3>
+					<p class="text-sm text-text">
+						<a class={link} href={classicProfile}>Change your password</a> on the classic site.
 					</p>
-				{/if}
-			</section>
-		</div>
-	{/if}
-</div>
+				</section>
+
+				<section class={card} aria-labelledby="profile-devices">
+					<h3 id="profile-devices" class={cardTitle}>Devices</h3>
+					<Switch
+						checked={push.state === 'on'}
+						disabled={!canToggle || push.busy}
+						label="Receive notifications on this browser"
+						save={on => (on ? push.enable() : push.turnOff())}
+					/>
+					{#if push.state === 'on'}
+						<Button
+							class="self-start"
+							disabled={push.busy}
+							onclick={push.sendTest}
+							size="sm"
+							variant="outline"
+						>
+							Send test notification
+						</Button>
+					{/if}
+
+					{#if push.state === 'unsupported'}
+						<p class="text-sm text-muted" data-testid="push-note">This browser doesn't support push notifications.</p>
+					{:else if push.state === 'su'}
+						<p class="text-sm text-muted" data-testid="push-note">Push notifications can't be changed while su'd.</p>
+					{:else if push.state === 'unavailable'}
+						<p class="text-sm text-muted" data-testid="push-note">Push notifications aren't available right now.</p>
+					{:else if push.state === 'denied'}
+						<p class="text-sm text-muted" data-testid="push-note">
+							Notifications from Tabroom are blocked in this browser. To get them, open your
+							browser's site settings for Tabroom and allow notifications.
+						</p>
+					{/if}
+
+					<SessionList tz={profile?.tz ?? null} />
+				</section>
+			</div>
+		{/if}
+	</div>
+
+	{#snippet sidebar()}
+		<ProfileSidebar forcePasswordChange={profile?.forcePasswordChange ?? false} />
+	{/snippet}
+</WithSidebar>

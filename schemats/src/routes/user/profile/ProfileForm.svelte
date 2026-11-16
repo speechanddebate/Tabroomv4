@@ -31,8 +31,8 @@
 	let saving = $state(false);
 	const errors = $derived(fieldErrors(problem));
 
-	const card = 'raised @container flex flex-col gap-3 p-4';
-	const cardTitle = 'font-display text-xl text-primary-deep normal-case tracking-normal';
+	// a legend sits outside its fieldset's flex flow, so the gap below it is its own margin
+	const legend = 'mb-3 font-display text-xl text-primary-deep normal-case tracking-normal';
 
 	beforeNavigate((navigation) => {
 		if (!draft.changes) {
@@ -73,62 +73,71 @@
 	};
 </script>
 
-<form class={['grid items-start gap-3 @3xl:grid-cols-2', classOverride]} onsubmit={save}>
-	<FormProblem class="@3xl:col-span-2" {problem} />
+<form class={['flex flex-col gap-3', classOverride]} onsubmit={save}>
+	<FormProblem {problem} />
 
-	<section class={card} aria-labelledby="profile-about">
-		<h3 id="profile-about" class={cardTitle}>About you</h3>
-		<div class="grid gap-3 @sm:grid-cols-3">
-			<TextInput autocomplete="given-name" error={errors.first} label="First name" required bind:value={draft.values.first} />
-			<TextInput autocomplete="additional-name" error={errors.middle} label="Middle name" bind:value={draft.values.middle} />
-			<TextInput autocomplete="family-name" error={errors.last} label="Last name" required bind:value={draft.values.last} />
-		</div>
-		<!-- Bottom-aligned so the inputs line up when only one field has a description -->
-		<div class="grid items-end gap-3 @sm:grid-cols-2">
-			<TextInput
-				description="Shown to judges and competitors in your rounds, not on the public site."
-				error={errors.pronoun}
-				label="Pronouns"
-				bind:value={draft.values.pronoun}
-			/>
-			<TextInput autocomplete="tel" error={errors.phone} label="Phone" type="tel" bind:value={draft.values.phone} />
-		</div>
-		<div class="flex flex-col gap-0.5 text-sm" data-testid="profile-email">
-			<span class="font-semibold text-text">Email</span>
-			<span class="text-text">{profile.email}</span>
-			{#if profile.emailUnconfirmed}
-				<span class="text-xs text-muted">Not confirmed yet</span>
-			{/if}
-			<a class="text-xs font-semibold text-primary-strong underline" href={`${CLASSIC_URL}/user/login/profile.mhtml`}>
-				Change your email on the classic site
-			</a>
-		</div>
-		{#if !profile.emailUnconfirmed}
-			<Checkbox
-				description="You'll miss tournament announcements. Password and email notices still come."
-				label="Don't send me email"
-				bind:checked={draft.values.noEmail}
-			/>
-		{/if}
-	</section>
+	<div class="raised @container p-4">
+		<div class="grid items-start gap-x-8 gap-y-6 @3xl:grid-cols-2">
+			<!-- Each group is its own container so its field rows break on its own width -->
+			<div class="@container min-w-0">
+				<fieldset class="flex min-w-0 flex-col gap-3">
+					<legend class={legend}>About you</legend>
+					<div class="grid gap-3 @sm:grid-cols-3">
+						<TextInput autocomplete="given-name" error={errors.first} label="First name" required bind:value={draft.values.first} />
+						<TextInput autocomplete="additional-name" error={errors.middle} label="Middle name" bind:value={draft.values.middle} />
+						<TextInput autocomplete="family-name" error={errors.last} label="Last name" required bind:value={draft.values.last} />
+					</div>
+					<!-- Bottom-aligned so the inputs line up when only one field has a description -->
+					<div class="grid items-end gap-3 @sm:grid-cols-2">
+						<TextInput
+							description="Shown to judges and competitors in your rounds, not on the public site."
+							error={errors.pronoun}
+							label="Pronouns"
+							bind:value={draft.values.pronoun}
+						/>
+						<TextInput autocomplete="tel" error={errors.phone} label="Phone" type="tel" bind:value={draft.values.phone} />
+					</div>
+					<div class="flex flex-col gap-0.5 text-sm" data-testid="profile-email">
+						<span class="font-semibold text-text">Email</span>
+						<span class="text-text">{profile.email}</span>
+						{#if profile.emailUnconfirmed}
+							<span class="text-xs text-muted">Not confirmed yet</span>
+						{/if}
+						<a class="text-xs font-semibold text-primary-strong underline" href={`${CLASSIC_URL}/user/login/profile.mhtml`}>
+							Change your email on the classic site
+						</a>
+					</div>
+					{#if !profile.emailUnconfirmed}
+						<Checkbox
+							description="You'll miss tournament announcements. Password and email notices still come."
+							label="Don't send me email"
+							bind:checked={draft.values.noEmail}
+						/>
+					{/if}
+				</fieldset>
+			</div>
 
-	<section class={card} aria-labelledby="profile-address">
-		<h3 id="profile-address" class={cardTitle}>Address and time zone</h3>
-		<TextInput autocomplete="street-address" error={errors.street} label="Street address" bind:value={draft.values.street} />
-		<div class="grid gap-3 @sm:grid-cols-[2fr_1fr_1fr]">
-			<TextInput autocomplete="address-level2" error={errors.city} label="City" bind:value={draft.values.city} />
-			<Select autocomplete="address-level1" error={errors.state} label="State" options={STATE_GROUPS} bind:value={draft.values.state} />
-			{#if showsZip(draft.values.country)}
-				<TextInput autocomplete="postal-code" error={errors.zip} label="ZIP code" bind:value={draft.values.zip} />
-			{:else}
-				<TextInput autocomplete="postal-code" error={errors.postal} label="Postal code" bind:value={draft.values.postal} />
-			{/if}
+			<div class="@container min-w-0">
+				<fieldset class="flex min-w-0 flex-col gap-3">
+					<legend class={legend}>Address and time zone</legend>
+					<TextInput autocomplete="street-address" error={errors.street} label="Street address" bind:value={draft.values.street} />
+					<div class="grid gap-3 @sm:grid-cols-[2fr_1fr_1fr]">
+						<TextInput autocomplete="address-level2" error={errors.city} label="City" bind:value={draft.values.city} />
+						<Select autocomplete="address-level1" error={errors.state} label="State" options={STATE_GROUPS} bind:value={draft.values.state} />
+						{#if showsZip(draft.values.country)}
+							<TextInput autocomplete="postal-code" error={errors.zip} label="ZIP code" bind:value={draft.values.zip} />
+						{:else}
+							<TextInput autocomplete="postal-code" error={errors.postal} label="Postal code" bind:value={draft.values.postal} />
+						{/if}
+					</div>
+					<div class="grid gap-3 @sm:grid-cols-2">
+						<Select autocomplete="country" error={errors.country} label="Country" options={countries} bind:value={draft.values.country} />
+						<Select error={errors.tz} label="Time zone" options={zones} bind:value={draft.values.tz} />
+					</div>
+				</fieldset>
+			</div>
 		</div>
-		<div class="grid gap-3 @sm:grid-cols-2">
-			<Select autocomplete="country" error={errors.country} label="Country" options={countries} bind:value={draft.values.country} />
-			<Select error={errors.tz} label="Time zone" options={zones} bind:value={draft.values.tz} />
-		</div>
-	</section>
+	</div>
 
-	<SaveBar class="@3xl:col-span-2" changes={draft.changes} ondiscard={discard} {saving} />
+	<SaveBar changes={draft.changes} ondiscard={discard} {saving} />
 </form>

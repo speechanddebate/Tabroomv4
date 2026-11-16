@@ -11595,6 +11595,169 @@ export const prefetchUserSessionsQuery = async <
 	return queryClient;
 };
 
+export type userSessionEndResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userSessionEndResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userSessionEndResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userSessionEndResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userSessionEndResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userSessionEndResponseSuccess = userSessionEndResponse204 & {
+	headers: Headers;
+};
+export type userSessionEndResponseError = (
+	| userSessionEndResponse400
+	| userSessionEndResponse401
+	| userSessionEndResponse404
+	| userSessionEndResponse500
+) & {
+	headers: Headers;
+};
+
+export type userSessionEndResponse =
+	| userSessionEndResponseSuccess
+	| userSessionEndResponseError;
+
+export const getUserSessionEndUrl = (sessionId: number) => {
+	return `${indexcardsApiBaseUrl()}/user/sessions/${sessionId}`;
+};
+
+/**
+ * Logs out one of the user's other logins, which also stops push to it. The current session is 400 (log out instead); another person's session is 404. Allowed while su'd
+ * @summary End a session
+ */
+export const userSessionEnd = async (
+	sessionId: number,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userSessionEndResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserSessionEndUrl(sessionId), {
+		credentials: 'include',
+		...options,
+		method: 'DELETE',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userSessionEndResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userSessionEndResponse;
+};
+
+export const getUserSessionEndMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userSessionEnd>>,
+		TError,
+		{ sessionId: number },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userSessionEnd>>,
+	TError,
+	{ sessionId: number },
+	TContext
+> => {
+	const mutationKey = ['userSessionEnd'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userSessionEnd>>,
+		{ sessionId: number }
+	> = (props) => {
+		const { sessionId } = props ?? {};
+
+		return userSessionEnd(sessionId, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserSessionEndMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userSessionEnd>>
+>;
+
+export type UserSessionEndMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary End a session
+ */
+export const createUserSessionEnd = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userSessionEnd>>,
+			TError,
+			{ sessionId: number },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userSessionEnd>>,
+	TError,
+	{ sessionId: number },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserSessionEndMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
 export type userJudgesLinkRequestsResponse200 = {
 	data: UnlinkedJudgeSchema[];
 	status: 200;

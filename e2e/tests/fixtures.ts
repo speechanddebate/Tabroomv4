@@ -14,8 +14,10 @@ export type TestPerson = Awaited<ReturnType<typeof factories.person.create>> & {
 type Fixtures = {
 	/** a fresh person with a known password */
 	person: TestPerson;
-	/** logs the person in through the API, sharing the browser context's cookies */
-	login: (person: TestPerson) => Promise<void>;
+	/** logs the person in through the API, sharing the cookies of the given page's context (page by default) */
+	login: (person: TestPerson, on?: Page) => Promise<void>;
+	/** a page in a second browser context with its own cookies, for a second login */
+	otherPage: Page;
 };
 
 export const createPerson = async (password = 'password'): Promise<TestPerson> => {
@@ -43,12 +45,18 @@ export const test = base.extend<Fixtures>({
 	},
 
 	login: async ({ page }, use) => {
-		await use(async (person) => {
-			const res = await page.request.post(`${API_URL}/v1/auth/login`, {
+		await use(async (person, on = page) => {
+			const res = await on.request.post(`${API_URL}/v1/auth/login`, {
 				data: { username: person.email, password: person.password },
 			});
 			expect(res.status(), 'login should succeed').toBe(200);
 		});
+	},
+
+	otherPage: async ({ browser }, use) => {
+		const context = await browser.newContext();
+		await use(await context.newPage());
+		await context.close();
 	},
 });
 

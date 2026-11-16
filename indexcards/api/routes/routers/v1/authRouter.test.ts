@@ -43,6 +43,20 @@ describe('Auth Router', () => {
 			expect(session).not.toBeNull();
 			expect(session!.person).toBe(Person.id);
 		});
+		it('stores the browser in classic\'s agent_data shape', async () => {
+			const password = 'securepassword';
+			const Person = await factories.person.create({ password });
+
+			const res = await request(server)
+				.post('/v1/auth/login')
+				.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
+				.send({ username: Person.email, password })
+				.expect(200);
+
+			const { id } = (await sessionRepo.findByUserKey(db, sessionKey(res)))!;
+			const row = await db.selectFrom('session').select('agent_data').where('id', '=', id).executeTakeFirstOrThrow();
+			expect(JSON.parse(row.agent_data!)).toMatchObject({ browser: 'Chrome', browser_version: '131.0.0.0', os: 'Windows 10' });
+		});
 		it('Fails to log in with incorrect password', async () => {
 			const Person = await factories.person.create({
 				password: 'securepassword',

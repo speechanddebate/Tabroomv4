@@ -3811,7 +3811,11 @@ export const getUserSessionsResponseMock = (): UserSession[] =>
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
-		agent: faker.helpers.arrayElement([
+		browser: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		os: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),

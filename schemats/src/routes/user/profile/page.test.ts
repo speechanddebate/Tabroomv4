@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import type { UserProfile } from '@tabroom/types';
+import type { UserProfile, UserSession } from '@tabroom/types';
 
 import ProfilePage from './+page.svelte';
 import type { PushState } from '$lib/helpers/pushState.svelte';
@@ -28,6 +28,10 @@ const mocks = vi.hoisted(() => ({
 	profile: null as UserProfile | null,
 	updateMutateAsync: vi.fn(),
 	setQueryData: vi.fn(),
+	invalidateQueries: vi.fn(),
+	sessions: [] as UserSession[],
+	endMutateAsync: vi.fn(),
+	toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 	beforeNavigate: vi.fn(),
 	push: {
 		state: null as PushState | null,
@@ -45,8 +49,10 @@ vi.mock('$app/navigation', () => ({ beforeNavigate: mocks.beforeNavigate }));
 
 vi.mock('@tanstack/svelte-query', async () => ({
 	...await vi.importActual<typeof import('@tanstack/svelte-query')>('@tanstack/svelte-query'),
-	useQueryClient: () => ({ setQueryData: mocks.setQueryData }),
+	useQueryClient: () => ({ setQueryData: mocks.setQueryData, invalidateQueries: mocks.invalidateQueries }),
 }));
+
+vi.mock('$lib/helpers/toasts', () => ({ toast: mocks.toast }));
 
 vi.mock('$indexcards', () => ({
 	createUserProfile: () => ({
@@ -58,6 +64,15 @@ vi.mock('$indexcards', () => ({
 	}),
 	createUserProfileUpdate: () => ({ mutateAsync: mocks.updateMutateAsync }),
 	getUserProfileQueryKey: () => ['/v1/user/profile'],
+	createUserSessions: () => ({
+		data: { status: 200, data: mocks.sessions },
+		error: null,
+		isError: false,
+		isSuccess: true,
+		isLoading: false,
+	}),
+	createUserSessionEnd: () => ({ mutateAsync: mocks.endMutateAsync }),
+	getUserSessionsQueryKey: () => ['/v1/user/sessions'],
 }));
 
 vi.mock('$lib/helpers/pushState.svelte', () => ({
@@ -73,6 +88,8 @@ describe('Profile page', () => {
 		mocks.push.state = 'undecided';
 		mocks.push.busy = false;
 		mocks.updateMutateAsync.mockImplementation(async ({ data }) => ({ status: 200, data: { ...mocks.profile, ...data } }));
+		mocks.sessions = [];
+		mocks.endMutateAsync.mockResolvedValue({ status: 204, data: undefined });
 	});
 
 	afterEach(() => {
@@ -273,6 +290,118 @@ describe('Profile page', () => {
 				.toHaveAttribute('href', 'https://www.tabroom.com/user/login/profile.mhtml');
 			expect(screen.queryByLabelText(/First name/)).not.toBeInTheDocument();
 			expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+			expect(screen.queryByTestId('sessions')).not.toBeInTheDocument();
+		});
+	});
+
+	describe('sidebar', () => {
+		it('says the account functions are still on classic, with one link there', () => {
+			render(ProfilePage);
+
+			const functions = within(screen.getByTestId('account-functions'));
+			expect(functions.getByText(/still on the classic site/)).toBeInTheDocument();
+			expect(functions.getAllByRole('link')).toHaveLength(1);
+			expect(functions.getByRole('link', { name: 'Your profile on the classic site' }))
+				.toHaveAttribute('href', 'https://www.tabroom.com/user/login/profile.mhtml');
+			expect(screen.getByRole('heading', { name: 'Don\'t Share Passwords' })).toBeInTheDocument();
+			expect(screen.getByRole('heading', { name: 'Privacy' })).toBeInTheDocument();
+		});
+
+		it('shows only the notices while a password change is required', () => {
+			mocks.profile = { ...baseProfile, forcePasswordChange: true };
+			render(ProfilePage);
+
+			expect(screen.queryByTestId('account-functions')).not.toBeInTheDocument();
+			expect(screen.getByRole('heading', { name: 'Don\'t Share Passwords' })).toBeInTheDocument();
+		});
+	});
+
+	describe('sessions', () => {
+		const session = (overrides: Partial<UserSession>): UserSession => ({
+			id: 1,
+			current: false,
+			subscribed: false,
+			disabled: false,
+			host: null,
+			browser: 'Chrome',
+			os: 'Windows 10',
+			ip: '203.0.113.7',
+			last_access: '2026-11-16T14:05:00.000Z',
+			created_at: '2026-11-01T14:05:00.000Z',
+			...overrides,
+		});
+
+		const rows = () => within(screen.getByTestId('sessions')).getAllByRole('row').slice(1);
+
+		it('lists the current session first, marked and not endable', () => {
+			mocks.sessions = [
+				session({ id: 2, browser: 'Safari', os: 'iOS 18.1' }),
+				session({ id: 1, current: true, browser: 'Firefox', os: 'Linux' }),
+			];
+			render(ProfilePage);
+
+			const [first, second] = rows();
+			expect(first).toHaveTextContent('Firefox on Linux');
+			expect(first).toHaveTextContent('This browser');
+			expect(within(first!).queryByRole('button')).not.toBeInTheDocument();
+			expect(second).toHaveTextContent('Safari on iOS 18.1');
+			expect(within(second!).getByRole('button', { name: 'End session on Safari on iOS 18.1' })).toBeEnabled();
+		});
+
+		it('shows the IP and last active in the person\'s time zone', () => {
+			mocks.sessions = [session({ id: 2 })];
+			render(ProfilePage);
+
+			const [row] = rows();
+			expect(row).toHaveTextContent('203.0.113.7');
+			expect(row!.textContent).toMatch(/8:05/);
+		});
+
+		it('says so when the browser is unknown', () => {
+			mocks.sessions = [session({ id: 2, browser: null, os: null })];
+			render(ProfilePage);
+
+			expect(rows()[0]).toHaveTextContent('Unknown browser');
+		});
+
+		it('ends a session and refreshes the list', async () => {
+			mocks.sessions = [session({ id: 1, current: true }), session({ id: 2, browser: 'Safari', os: 'macOS Catalina' })];
+			const user = userEvent.setup();
+			render(ProfilePage);
+
+			await user.click(screen.getByRole('button', { name: 'End session on Safari on macOS Catalina' }));
+
+			expect(mocks.endMutateAsync).toHaveBeenCalledWith({ sessionId: 2 });
+			expect(mocks.toast.success).toHaveBeenCalledWith({ message: 'Logged out Safari on macOS Catalina' });
+			expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['/v1/user/sessions'] });
+		});
+
+		it('shows the problem and no success when ending is refused', async () => {
+			mocks.sessions = [session({ id: 2 })];
+			mocks.endMutateAsync.mockResolvedValue({
+				status: 404,
+				data: { type: 'about:blank', title: 'Not Found', status: 404, detail: 'Session 2 not found' },
+			});
+			const user = userEvent.setup();
+			render(ProfilePage);
+
+			await user.click(screen.getByRole('button', { name: /End session/ }));
+
+			expect(mocks.toast.success).not.toHaveBeenCalled();
+			expect(mocks.toast.warning).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Session 2 not found' }));
+			expect(mocks.invalidateQueries).toHaveBeenCalled();
+		});
+
+		it('shows the error and no success when the request fails', async () => {
+			mocks.sessions = [session({ id: 2 })];
+			mocks.endMutateAsync.mockRejectedValue(new TypeError('Failed to fetch'));
+			const user = userEvent.setup();
+			render(ProfilePage);
+
+			await user.click(screen.getByRole('button', { name: /End session/ }));
+
+			expect(mocks.toast.success).not.toHaveBeenCalled();
+			expect(mocks.toast.error).toHaveBeenCalledWith(expect.objectContaining({ detail: 'Failed to fetch' }));
 		});
 	});
 

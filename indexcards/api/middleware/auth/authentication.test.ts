@@ -162,7 +162,7 @@ describe('Authentication Middleware', () => {
 				},
 			});
 			vi.spyOn(sessionRepo, 'findByUserKey').mockResolvedValueOnce(mockSession({ banned: '1' }));
-			vi.spyOn(sessionRepo, 'deleteSession').mockResolvedValueOnce();
+			vi.spyOn(sessionRepo, 'deleteSession').mockResolvedValueOnce(true);
 
 			//Act
 			await Authenticate(req, res, next);
@@ -239,7 +239,7 @@ describe('Authentication Middleware', () => {
 				...mockSession({ banned: '1' }),
 				last_access: null,
 			});
-			vi.spyOn(sessionRepo, 'deleteSession').mockResolvedValueOnce();
+			vi.spyOn(sessionRepo, 'deleteSession').mockResolvedValueOnce(true);
 			const touch = vi.spyOn(sessionRepo, 'updateSession').mockResolvedValueOnce();
 
 			await Authenticate(req, res, next);

@@ -1,10 +1,13 @@
-import { NotFound } from '../../helpers/problem.js';
+import { BadRequest, NotFound } from '../../helpers/problem.js';
+import logger from '../../helpers/logger.js';
+import { readAgent } from '../../helpers/userAgent.js';
 import sessionRepo from '../../repos/sessionRepo.js';
 import { db } from '../../data/database.js';
 import { getPerson } from '../../middleware/auth/authorization.js';
 import { getVapid } from '../../services/notifications/channels/webpush.js';
 
 import type { Request, Response } from 'express';
+import type { ValidatedRequest } from '../../middleware/validation.js';
 import type { UserSession } from '@tabroom/types';
 
 /** The current session: its id and the person it belongs to, plus the su admin while su'd */
@@ -48,7 +51,7 @@ export const getSessions = async (req: Request, res: Response) => {
 			subscribed: Boolean(endpoint),
 			disabled: Boolean(row.push_disabled),
 			host: endpoint ? endpointHost(endpoint) : null,
-			agent: row.agent_data,
+			...readAgent(row.agent_data),
 			ip: row.ip,
 			last_access: row.last_access?.toISOString() ?? null,
 			created_at: row.created_at?.toISOString() ?? null,
@@ -56,4 +59,27 @@ export const getSessions = async (req: Request, res: Response) => {
 	});
 
 	return res.status(200).json(sessions);
+};
+
+/**
+ * Ends one of the person's other logins. Someone else's session is 404 like a missing one, so
+ * ids don't leak. Allowed while su'd. Push stops with it, since the subscription lives on the row
+ */
+export const endSession = async (req: ValidatedRequest, res: Response) => {
+	const person = getPerson(req);
+	const sessionId = Number(req.params.sessionId);
+
+	if (sessionId === req.auth.sessionId) {
+		return BadRequest(req, res, 'Log out to end the session you are using');
+	}
+	if (!await sessionRepo.deleteSession(db, sessionId, { ownedBy: person.id })) {
+		return NotFound(req, res, `Session ${sessionId} not found`);
+	}
+
+	const by = req.auth.su ? ` by ${req.auth.su.email} while su'd as ${person.email}` : '';
+	logger.info(`Session ${sessionId} ended${by}`, {
+		'event.name': 'account.session.ended',
+		person: person.id,
+	});
+	return res.status(204).end();
 };
