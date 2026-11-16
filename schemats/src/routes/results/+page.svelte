@@ -45,6 +45,7 @@
 			</h5>
 
 			<SchoolYearSelector
+				hideLabel
 				oldestYear={2011}
 				bind:value={schoolYearValue}
 			/>

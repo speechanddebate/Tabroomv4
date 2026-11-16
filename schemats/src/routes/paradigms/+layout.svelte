@@ -2,8 +2,8 @@
 	import { createRestParadigmsInfinite } from '$indexcards';
 	import { page } from '$app/state';
 	import { setContext } from 'svelte';
-	import { Search } from 'flowbite-svelte';
 	import Button from '$lib/components/Button.svelte';
+	import { TextInput } from '$lib/components/forms';
 
 	import { handleOrval } from '$lib/helpers/query';
 	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
@@ -59,25 +59,19 @@
 </script>
 
 {#snippet searchBox()}
-	<form data-sveltekit-replacestate data-sveltekit-reset="false" method="GET" role="search">
-		<Search
-			id="paradigm-search"
+	<form class="flex items-end gap-2" data-sveltekit-replacestate data-sveltekit-reset="false" method="GET" role="search">
+		<TextInput
+			class="flex-1"
+			autocomplete="off"
+			label="Search paradigms"
 			name="search"
-			aria-label="Search paradigms"
-			placeholder="ex: Winston Smith"
+			placeholder="Winston Smith"
 			type="search"
 			value={searchTerm}
-		>
-			<Button
-				class="me-1"
-				color="primary"
-				disabled={paradigmsQuery.isLoading}
-				size="sm"
-				type="submit"
-			>
-				{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
-			</Button>
-		</Search>
+		/>
+		<Button color="primary" disabled={paradigmsQuery.isLoading} type="submit">
+			{paradigmsQuery.isLoading ? 'Searching...' : 'Search'}
+		</Button>
 	</form>
 {/snippet}
 

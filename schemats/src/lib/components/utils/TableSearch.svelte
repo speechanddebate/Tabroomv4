@@ -5,6 +5,7 @@
  * can filter, hidden ones included, ordered by `meta.filterOrder`.
  * Render it in Table's `above` snippet: `{#snippet above(table)}<TableSearch {table} />{/snippet}`
  */
+	import { Select, TextInput } from '$lib/components/forms';
 	import type { AppTable } from './table.types';
 
 	let {
@@ -14,8 +15,6 @@
 		table: AppTable<TData>,
 		placeholder?: string,
 	} = $props();
-
-	const id = $props.id();
 
 	type Searchable = { id: string; label: string; options?: string[]; order: number };
 
@@ -53,39 +52,37 @@
 </script>
 
 {#if selected}
-	<div class="mb-2 flex flex-wrap items-center gap-2" role="search">
+	<!-- Bottom-aligned: only the column picker shows its label -->
+	<div class="mb-2 flex flex-wrap items-end gap-2" role="search">
 		<!-- a lone searchable column needs no picker; the input's label names it -->
 		{#if columns.length > 1}
-			<label class="text-xs font-semibold" for="{id}-column">Search by</label>
-			<select
-				id="{id}-column"
-				class="rounded border border-border-strong bg-surface py-1 pr-8 pl-2 text-sm"
+			<Select
+				class="min-w-40"
+				label="Search by"
 				onchange={pickColumn}
+				options={columns.map((column) => ({ value: column.id, label: column.label }))}
+				size="sm"
 				value={selected.id}
-			>
-				{#each columns as column (column.id)}
-					<option value={column.id}>{column.label}</option>
-				{/each}
-			</select>
+			/>
 		{/if}
 		{#if selected.options}
-			<select
-				class="rounded border border-border-strong bg-surface py-1 pr-8 pl-2 text-sm"
-				aria-label="{selected.label} value"
+			<Select
+				class="min-w-32"
+				hideLabel
+				label="{selected.label} value"
 				onchange={search}
+				options={[{ value: '', label: 'Any' }, ...selected.options.map((option) => ({ value: option, label: option }))]}
+				size="sm"
 				bind:value
-			>
-				<option value="">Any</option>
-				{#each selected.options as option (option)}
-					<option value={option}>{option}</option>
-				{/each}
-			</select>
+			/>
 		{:else}
-			<input
-				class="w-64 max-w-full rounded border border-border-strong px-2 py-1 text-sm"
-				aria-label="Search {selected.label}"
+			<TextInput
+				class="w-64 max-w-full"
+				hideLabel
+				label="Search {selected.label}"
 				oninput={search}
 				placeholder="{placeholder} {selected.label}"
+				size="sm"
 				type="search"
 				bind:value
 			/>

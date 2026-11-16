@@ -9,6 +9,7 @@
 		RestJudgesUnlinkedSearchParams,
 	} from '$indexcards/schemas';
 	import Button from '$lib/components/Button.svelte';
+	import { TextInput } from '$lib/components/forms';
 	import { renderSnippet } from '@tanstack/svelte-table';
 
 	import QueryTable from '$lib/components/utils/QueryTable.svelte';
@@ -155,22 +156,10 @@
 			spellings below.
 		</p>
 
-		<form class="mt-3 grid pb-3 gap-3 sm:grid-cols-[1fr_1fr_auto]" onsubmit={handleSearchSubmit}>
-			<input
-				name="first"
-				class="w-full rounded-md border border-border-strong px-3 py-2 text-sm"
-				placeholder="First name"
-				type="text"
-				bind:value={firstInput}
-			/>
-			<input
-				name="last"
-				class="w-full rounded-md border border-border-strong px-3 py-2 text-sm"
-				placeholder="Last name"
-				type="text"
-				bind:value={lastInput}
-			/>
-			<Button class="sm:self-end" color="primary" type="submit">
+		<form class="mt-3 grid items-end gap-3 pb-3 sm:grid-cols-[1fr_1fr_auto]" onsubmit={handleSearchSubmit}>
+			<TextInput autocomplete="off" label="First name" name="first" bind:value={firstInput} />
+			<TextInput autocomplete="off" label="Last name" name="last" bind:value={lastInput} />
+			<Button color="primary" type="submit">
 				{unlinkedSearchQuery.isFetching ? 'Searching...' : 'Search'}
 			</Button>
 		</form>

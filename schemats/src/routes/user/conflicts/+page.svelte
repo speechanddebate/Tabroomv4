@@ -7,6 +7,7 @@
 	import type { ConflictChapterMatch, ConflictPersonMatch, StandingConflict, StandingConflictRequest } from '@tabroom/types';
 	import { renderSnippet } from '@tanstack/svelte-table';
 	import Button from '$lib/components/Button.svelte';
+	import { TextInput } from '$lib/components/forms';
 	import Table from '$lib/components/utils/Table.svelte';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
 	import { handleMutation, handleOrval } from '$lib/helpers/query';
@@ -101,8 +102,6 @@
 	]);
 
 	const heading = 'text-base font-semibold text-text';
-	const field = 'w-full rounded-md border border-border-strong px-3 py-2 text-sm';
-	const label = 'block text-xs font-semibold text-muted';
 </script>
 
 {#snippet removeCell(conflict: StandingConflict)}
@@ -145,20 +144,11 @@
 
 <section class="mt-6">
 	<h3 class="{heading} mb-1">Add a person</h3>
-	<form class="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]" onsubmit={searchPeople}>
-		<label>
-			<span class={label}>Last name</span>
-			<input name="last" class={field} autocomplete="off" type="text" bind:value={last} />
-		</label>
-		<label>
-			<span class={label}>First name</span>
-			<input name="first" class={field} autocomplete="off" type="text" bind:value={first} />
-		</label>
-		<label>
-			<span class={label}>Email</span>
-			<input name="email" class={field} autocomplete="off" type="email" bind:value={email} />
-		</label>
-		<Button class="sm:self-end" color="primary" type="submit">{peopleQuery.isFetching ? 'Searching…' : 'Search'}</Button>
+	<form class="grid items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]" onsubmit={searchPeople}>
+		<TextInput autocomplete="off" label="Last name" name="last" bind:value={last} />
+		<TextInput autocomplete="off" label="First name" name="first" bind:value={first} />
+		<TextInput autocomplete="off" label="Email" name="email" type="email" bind:value={email} />
+		<Button color="primary" type="submit">{peopleQuery.isFetching ? 'Searching…' : 'Search'}</Button>
 	</form>
 	{#if peopleTerms !== null}
 		<div class="mt-3">
@@ -177,12 +167,9 @@
 
 <section class="mt-6">
 	<h3 class="{heading} mb-1">Add a school</h3>
-	<form class="grid gap-3 sm:grid-cols-[1fr_auto]" onsubmit={searchChapters}>
-		<label>
-			<span class={label}>School name</span>
-			<input name="chapter" class={field} autocomplete="off" type="text" bind:value={chapterName} />
-		</label>
-		<Button class="sm:self-end" color="primary" type="submit">{chaptersQuery.isFetching ? 'Searching…' : 'Search'}</Button>
+	<form class="grid items-end gap-3 sm:grid-cols-[1fr_auto]" onsubmit={searchChapters}>
+		<TextInput autocomplete="off" label="School name" name="chapter" bind:value={chapterName} />
+		<Button color="primary" type="submit">{chaptersQuery.isFetching ? 'Searching…' : 'Search'}</Button>
 	</form>
 	{#if chapterTerm !== null}
 		<div class="mt-3">

@@ -97,4 +97,27 @@ describe('Login page redirect', () => {
 			expect(mockGoto).not.toHaveBeenCalled();
 		});
 	});
+
+	it('puts validation messages under their fields', async () => {
+		mockMutateAsync.mockResolvedValueOnce({
+			data: {
+				type   : 'about:blank',
+				title  : 'Request Validation Failed',
+				status : 400,
+				issues : [{ path: ['password'], code: 'too_small', message: 'Enter your password' }],
+			},
+			status: 400,
+		});
+		render(LoginPage);
+
+		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
+		await userEvent.type(screen.getByLabelText(/password/i), 'x');
+		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+		await waitFor(() => {
+			expect(screen.getByLabelText(/password/i)).toHaveAccessibleDescription('Enter your password');
+		});
+		expect(screen.getByLabelText(/password/i)).toBeInvalid();
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+	});
 });

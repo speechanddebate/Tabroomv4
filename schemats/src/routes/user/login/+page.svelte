@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { Problem } from '$indexcards/schemas/problem';
+	import type { Problem } from '@tabroom/types';
 	import { createAuthLogin } from '$indexcards';
-	import { Alert } from 'flowbite-svelte';
 	import { handleMutation } from '$lib/helpers/query';
+	import { fieldErrors } from '$lib/helpers/forms';
+	import Button from '$lib/components/Button.svelte';
+	import { FormProblem, TextInput } from '$lib/components/forms';
 
 	let username = $state('');
 	let password = $state('');
 	let error: Problem | null = $state(null);
 	let isSubmitting = $state(false);
+
+	const errors = $derived(fieldErrors(error));
 
 	const redirectParam = $derived(page.url.searchParams.get('redirect'));
 	const reasonParam = $derived(page.url.searchParams.get('reason'));
@@ -65,65 +69,36 @@
 	};
 </script>
 
-<div class="flex w-full justify-center py-10">
-	<div class="w-full max-w-md bg-surface-alt border border-border rounded-md p-6">
-		<h2 class="text-xl font-semibold text-primary-deep">Sign in</h2>
-		<p class="text-sm text-muted mb-4">
-			Use the email address tied to your Tabroom account.
-		</p>
+<div class="flex w-full justify-center px-4 py-10">
+	<div class="raised flex w-full max-w-md flex-col gap-4 p-6">
+		<div class="flex flex-col gap-1">
+			<h2 class="font-display text-3xl text-primary-deep normal-case tracking-normal">Sign in</h2>
+			<span class="text-sm text-muted">Use the email address tied to your Tabroom account.</span>
+		</div>
 		{#if reasonParam === 'auth'}
-			<Alert class="mb-4" color="red">
-				<div class="font-semibold">Authentication Required</div>
-				<div class="text-sm">You must be signed in to access this page.</div>
-			</Alert>
-		{/if}
-
-		{#if error}
-			<Alert class="mb-4" color="red">
-				<div class="font-semibold">{error.title}</div>
-				<div class="text-sm">{error.detail}</div>
-				{#if error.status}
-					<div class="text-xs opacity-80">Status: {error.status}</div>
-				{/if}
-			</Alert>
+			<FormProblem problem={{ title: 'Authentication Required', detail: 'You must be signed in to access this page.' }} />
 		{/if}
 
 		<form class="flex flex-col gap-4" onsubmit={submit}>
-			<label class="flex flex-col gap-1">
-				<span class="text-sm font-semibold">Email</span>
-				<input
-					class="form-input p-2 rounded border border-border-strong"
-					autocomplete="username"
-					required
-					bind:value={username}
-				/>
-			</label>
-
-			<label class="flex flex-col gap-1">
-				<span class="text-sm font-semibold">Password</span>
-				<input
-					class="form-input p-2 rounded border border-border-strong"
-					autocomplete="current-password"
-					required
-					type="password"
-					bind:value={password}
-				/>
-			</label>
-
-			<button
-				class="
-					bg-success
-					text-white
-					font-semibold
-					rounded-md
-					py-2
-					hover:brightness-90
-					disabled:opacity-60"
-				disabled={isSubmitting}
-				type="submit"
-			>
+			<FormProblem problem={error} />
+			<TextInput
+				autocomplete = "username"
+				error        = {errors.username}
+				label        = "Email"
+				required
+				bind:value   = {username}
+			/>
+			<TextInput
+				autocomplete = "current-password"
+				error        = {errors.password}
+				label        = "Password"
+				required
+				type         = "password"
+				bind:value   = {password}
+			/>
+			<Button color="success" disabled={isSubmitting} type="submit">
 				{isSubmitting ? 'Signing in...' : 'Sign in'}
-			</button>
+			</Button>
 		</form>
 	</div>
 </div>

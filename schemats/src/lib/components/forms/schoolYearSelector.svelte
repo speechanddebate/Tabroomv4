@@ -4,10 +4,13 @@
  *  The value is a string in the format "YYYY-YYYY", representing the start and end years of the school year.
 */
 	import { SvelteDate } from 'svelte/reactivity';
+	import Select from './Select.svelte';
 
 	type Props = {
 		value?: string,
 		oldestYear?: number,
+		// For a page whose heading already says "School year"
+		hideLabel?: boolean,
 	};
 
 	const now = new SvelteDate();
@@ -17,35 +20,18 @@
 	let {
 		value = $bindable(`${currentSchoolYearStart}-${currentSchoolYearStart + 1}`),
 		oldestYear = 2011,
+		hideLabel = false,
 	}: Props = $props();
 
-	const schoolYearStarts = $derived.by(() => {
-		return Array.from(
+	const options = $derived(
+		Array.from(
 			{ length: currentSchoolYearStart - oldestYear + 1 },
-			(_, index) => currentSchoolYearStart - index,
-		);
-	});
-
-	const onChange = (event: Event) => {
-		const target = event.currentTarget as HTMLSelectElement;
-		value = target.value;
-	};
+			(_, index) => {
+				const start = currentSchoolYearStart - index;
+				return { value: `${start}-${start + 1}`, label: `${start}-${start + 1}` };
+			},
+		),
+	);
 </script>
 
-<div class="w-full">
-	<label class='text-xs font-semibold' for='schoolYearStart'>
-		Select school-year start
-	</label>
-	<select
-		id='schoolYearStart'
-		class='mt-1 w-full rounded border border-border-strong bg-surface px-2 py-1 text-sm'
-		onchange={onChange}
-		value={value}
-	>
-		{#each schoolYearStarts as startYear (startYear)}
-			<option value={`${startYear}-${startYear + 1}`}>
-				{startYear}-{startYear + 1}
-			</option>
-		{/each}
-	</select>
-</div>
+<Select {hideLabel} label="School year" {options} bind:value />
