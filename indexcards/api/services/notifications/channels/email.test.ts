@@ -422,6 +422,37 @@ describe('emailMessage', () => {
 		expect(mail.html).not.toContain('/user/profile');
 	});
 
+	it('sends to a given address instead of the person\'s, without an unsubscribe link or headers', async () => {
+		const message = await newMessage({ body: 'Your address was changed.' });
+
+		await expect(emailMessage(message.id, { to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
+
+		const mail = sent();
+		expect(mail.to).toBe('"Pat Coach" <old.address@example.org>');
+		expect(mail.headers).toBeUndefined();
+		expect(mail.text).not.toContain('unsubscribe');
+	});
+
+	it('treats a blank to address as none: ordinary mail to the person, with the unsubscribe link', async () => {
+		const message = await newMessage();
+
+		await expect(emailMessage(message.id, { to: '  ' })).resolves.toEqual({ status: 'sent' });
+
+		const mail = sent();
+		expect(mail.to).toBe(`"Pat Coach" <${Person.email}>`);
+		expect(mail.headers?.['List-Unsubscribe']).toBeDefined();
+	});
+
+	it('sends to a given address for a person with none of their own', async () => {
+		// Addresses are unique, so only one person can have a blank one; reuse it across runs
+		const NoAddress = await db.selectFrom('person').select('id').where('email', '=', '').executeTakeFirst()
+			?? await factories.person.create({ email: '' });
+		const message = await newMessage({ person: NoAddress.id });
+
+		await expect(emailMessage(message.id, { to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
+		expect(sent().to).toContain('old.address@example.org');
+	});
+
 	it('skips a message that does not exist', async () => {
 		await expect(emailMessage(999999999)).resolves.toEqual({ status: 'skipped', skipped: 'no message' });
 		expect(sendMail).not.toHaveBeenCalled();

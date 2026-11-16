@@ -21,8 +21,11 @@ export type inputData = {
 	replyTo?       : string
 	emailId?       : number // The blast's email row, when the caller recorded one
 	tourn?         : number
-	email?         : string[]
 	ignoreNoEmail? : boolean
+	/** Where email waits in the queue: high for mail someone is waiting on (a confirmation code), low for big blasts. Default normal */
+	priority?      : EmailPriority
+	/** An address to email instead of the person's own, such as their old one after a change; one recipient only */
+	to?            : string
 	push?          : PushMessageOptions
 	/** Each channel has its own default (see the schema); a caller names only the channels it wants different */
 	channels?: {
@@ -49,8 +52,9 @@ export const NotificationRequestSchema = z.object({
 	replyTo       : z.string().optional(),
 	emailId       : z.number().optional(),
 	tourn         : z.number().optional(),
-	email         : z.array(z.string()).optional(),
 	ignoreNoEmail  : z.boolean().optional(),
+	priority       : z.enum(['low', 'normal', 'high']).default('normal'),
+	to             : z.email().optional(),
 	push: z.object({
 		sessions : z.array(z.number()).optional(),
 		ttl      : z.int().min(0).optional(),
@@ -63,6 +67,9 @@ export const NotificationRequestSchema = z.object({
 		email   : z.boolean().default(true),
 		webpush : z.boolean().default(true),
 	}).prefault({})
+}).refine((request) => !request.to || request.ids.length === 1, {
+	message: 'A to address needs exactly one recipient',
+	path: ['to'],
 });
 export type NotificationRequest = z.infer<typeof NotificationRequestSchema>;
 
@@ -77,11 +84,13 @@ export type notifyResponse = {
 	jobs?   : { push: number; email: number }
 }
 
+export type EmailPriority = 'low' | 'normal' | 'high';
+
 /**
- * Email jobs yield to anything added without a priority, so the transactional mail that
- * comes later (password resets, confirmations) jumps ahead of a blast in progress
+ * BullMQ runs jobs added without a priority first, then the lowest number. So high goes in with
+ * none and jumps ahead of a blast in progress; low waits behind every other email
  */
-const EMAIL_JOB_PRIORITY = 10;
+const EMAIL_JOB_PRIORITY = { normal: 10, low: 20 } as const;
 
 /** Push without VAPID keys is an environment choice, so it is said once per process, not per notification */
 let warnedPushUnconfigured = false;
@@ -121,7 +130,7 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 
 	// No email job for anyone email can't reach; the job checks again at send time for changes since
 	const reachable = request.channels.email
-		? await emailRecipients(request.ids, request.ignoreNoEmail === true)
+		? await emailRecipients(request.ids, { ignoreNoEmail: request.ignoreNoEmail === true, hasAddress: Boolean(request.to) })
 		: new Set<number>();
 
 	// No push job for anyone without a login that can receive push, which is most people.
@@ -194,9 +203,10 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			deliveries.push(emailQueue.job('email', {
 				message: message.id,
 				...(request.ignoreNoEmail ? { ignoreNoEmail: true } : {}),
+				...(request.to ? { to: request.to } : {}),
 			}, {
 				jobId: `message-${message.id}`,
-				priority: EMAIL_JOB_PRIORITY,
+				...(request.priority === 'high' ? {} : { priority: EMAIL_JOB_PRIORITY[request.priority] }),
 				ignoreDependencyOnFailure: true,
 			}));
 		}
@@ -205,15 +215,19 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 	return { messages, deliveries };
 }
 
-/** The ids among these people who have an address and have not opted out (or all with one, for account mail) */
-async function emailRecipients(ids: number[], ignoreNoEmail: boolean): Promise<Set<number>> {
+/**
+ * The ids among these people who have an address and have not opted out. Account mail
+ * (ignoreNoEmail) reaches the opted out; a request with its own to address (hasAddress)
+ * needs none from the person
+ */
+async function emailRecipients(ids: number[], opts: { ignoreNoEmail: boolean; hasAddress: boolean }): Promise<Set<number>> {
 	const people = await db.selectFrom('person')
 		.select(['id', 'email', 'no_email'])
 		.where('id', 'in', ids)
 		.execute();
 
 	return new Set(people
-		.filter((person) => person.email.trim() !== '' && (ignoreNoEmail || !person.no_email))
+		.filter((person) => (opts.hasAddress || person.email.trim() !== '') && (opts.ignoreNoEmail || !person.no_email))
 		.map((person) => person.id));
 }
 

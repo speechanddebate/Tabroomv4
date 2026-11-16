@@ -198,6 +198,8 @@ export type EmailMessageResult = {
 export type EmailMessageOptions = {
 	/** Send even to a person who opted out, for mail about an action on their own account */
 	ignoreNoEmail?: boolean;
+	/** Send here instead of the person's address, such as their old one after a change */
+	to?: string;
 };
 
 const DEFAULT_SUBJECT = 'Message from Tabroom.com';
@@ -234,21 +236,23 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 	// null is a job queued before delivery was recorded
 	if (row.email_status && row.email_status !== 'queued') return skip('already delivered', `already ${row.email_status}`);
 	if (row.deleted_at) return skip('deleted');
-	if (!row.person_email.trim()) return skip('no address', `person ${row.person_id} has no address`);
+	const to = options.to?.trim();
+	const address = to || row.person_email.trim();
+	if (!address) return skip('no address', `person ${row.person_id} has no address`);
 	if (row.no_email && !options.ignoreNoEmail) return skip('opted out', `person ${row.person_id} opted out`);
 
-	const person = { id: row.person_id, email: row.person_email.trim() };
 	const name = [row.first, row.last].filter(Boolean).join(' ').replace(/"/g, '').trim();
 	const content = row.body ?? row.email_content ?? '';
 	const link = row.url ? absoluteUrl(row.url) : null;
-	// Mail about the person's own account goes out even to someone opted out, so an unsubscribe link would be misleading
-	const token = options.ignoreNoEmail ? null : await unsubscribeToken(person);
+	// Mail about the person's own account goes out even to someone opted out, so an unsubscribe link would be
+	// misleading; and a token names the person's current address, so mail sent anywhere else can't carry one
+	const token = options.ignoreNoEmail || to ? null : await unsubscribeToken({ id: row.person_id, email: address });
 
 	// From stays in our own domain so the relay signs it; whoever should get the answers goes in
 	// Reply-To. A blast's email row can name both; a plain message names only the reply address,
 	// which is what its sender_string has always meant to the inbox
 	const outbound: OutboundEmail = {
-		to: name ? `"${name}" <${person.email}>` : person.email,
+		to: name ? `"${name}" <${address}>` : address,
 		from: row.sender_raw || config.mail.from,
 		subject: SUBJECT_PREFIX + (row.subject || row.email_subject || DEFAULT_SUBJECT),
 		text: [

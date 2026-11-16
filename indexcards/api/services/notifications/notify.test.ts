@@ -289,6 +289,69 @@ describe('notify', () => {
 			expect(latest.emailed_at).toBeInstanceOf(Date);
 		});
 
+		it('queues email to a given address, whatever the person\'s own address is', async () => {
+			// Addresses are unique, so only one person can have a blank one; reuse it across runs
+			const NoAddress = await db.selectFrom('person').select('id').where('email', '=', '').executeTakeFirst()
+				?? await factories.person.create({ email: '' });
+
+			const response = await notify({
+				...base,
+				ids: [NoAddress.id],
+				to: 'old.address@example.org',
+				ignoreNoEmail: true,
+				channels: { inbox: false, webpush: false },
+			});
+
+			expect(response.jobs).toEqual({ push: 0, email: 1 });
+			const [latest] = (await messageRows([NoAddress.id])).slice(-1);
+			expect(emailJobs()[0].data).toEqual({ message: latest.id, ignoreNoEmail: true, to: 'old.address@example.org' });
+			expect(latest.email_status).toBe('queued');
+		});
+
+		it('still skips someone opted out when the request names a to address', async () => {
+			const OptedOut = await factories.person.create({ no_email: 1 });
+
+			const response = await notify({ ...base, ids: [OptedOut.id], to: 'old.address@example.org', channels: { inbox: false, webpush: false } });
+
+			expect(response.jobs).toEqual({ push: 0, email: 0 });
+			const [message] = await messageRows([OptedOut.id]);
+			expect(message.email_status).toBe('skipped');
+		});
+
+		it('queues high priority email with no job priority, so it runs ahead of every other email', async () => {
+			const response = await notify({ ...base, ids: [people[0]], priority: 'high', channels: { inbox: false, webpush: false } });
+
+			expect(response.jobs).toEqual({ push: 0, email: 1 });
+			expect(emailJobs()[0].opts).not.toHaveProperty('priority');
+			expect(emailJobs()[0].opts).toMatchObject({ ignoreDependencyOnFailure: true });
+		});
+
+		it.each([
+			['normal', 10],
+			['low', 20],
+		] as const)('queues %s priority email behind high', async (priority, expected) => {
+			await notify({ ...base, ids: [people[0]], priority, channels: { inbox: false, webpush: false } });
+
+			expect(emailJobs()[0].opts).toMatchObject({ priority: expected });
+		});
+
+		it('refuses a priority it doesn\'t know', async () => {
+			// @ts-expect-error the type allows only the three levels
+			const response = await notify({ ...base, ids: [people[0]], priority: 'urgent', channels: { webpush: false } });
+
+			expect(response.error).toBe(true);
+		});
+
+		it.each([
+			['more than one recipient', { to: 'old.address@example.org' }, 2],
+			['an address that isn\'t one', { to: 'not an address' }, 1],
+		])('refuses a to address with %s', async (_case, extra, count) => {
+			const response = await notify({ ...base, ids: people.slice(0, count), ...extra, channels: { webpush: false } });
+
+			expect(response.error).toBe(true);
+			expect(addJobs).not.toHaveBeenCalled();
+		});
+
 		it('queues no email jobs when the channel is off', async () => {
 			const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
 

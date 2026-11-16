@@ -1,15 +1,12 @@
-import { hkdfSync } from 'node:crypto';
-import { SignJWT, jwtVerify } from 'jose';
-import config from '../../config.js';
-import logger from '../../helpers/logger.js';
+import { signToken, verifyToken } from '../tokens.js';
 
 /**
  * Unsubscribe links carry a per-person token so that following one, or a mail provider
- * POSTing it (RFC 8058 one-click), opts that person out without a login. The token is an
- * HS256 JWT naming the person and their address: no table, it stops working if the
- * address changes, and it expires after a year. All it can do is set no_email, so it
- * is kept valid for as long as an email plausibly sits in an inbox: a dead unsubscribe
- * link gets the spam button pressed instead, which costs more than an opt-out
+ * POSTing it (RFC 8058 one-click), opts that person out without a login. The token (see
+ * tokens.ts) names the person and their address: it stops working if the address changes,
+ * and it expires after a year. All it can do is set no_email, so it is kept valid for as
+ * long as an email plausibly sits in an inbox: a dead unsubscribe link gets the spam button
+ * pressed instead, which costs more than an opt-out
  */
 
 export type UnsubscribePerson = { id: number; email: string };
@@ -20,50 +17,23 @@ export type UnsubscribeClaims = { id: number; email: string };
 /** How long a link works, in seconds */
 export const UNSUBSCRIBE_TOKEN_MAX_AGE = 365 * 24 * 60 * 60;
 
-const ISSUER = 'tabroom';
-/** The audience claim ties a token to this one use, so a token issued for another purpose can't opt someone out */
-const AUDIENCE = 'unsubscribe';
-const ALGORITHM = 'HS256';
-
-let warnedEmptySecret = false;
-
-/** The signing key, derived from the secret shared with classic so no extra config is needed */
-function signingKey(): Uint8Array {
-	if (!config.shared_secret && !warnedEmptySecret) {
-		warnedEmptySecret = true;
-		logger.warn('shared_secret is empty, unsubscribe tokens are signed with a key anyone can derive');
-	}
-	return new Uint8Array(hkdfSync('sha256', config.shared_secret, '', 'tabroom unsubscribe', 32));
-}
-
 const normalize = (email: string) => email.trim().toLowerCase();
-const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 /** The token for a person's unsubscribe link */
-export async function unsubscribeToken(person: UnsubscribePerson, issuedAt = nowSeconds()): Promise<string> {
-	return await new SignJWT({ email: normalize(person.email) })
-		.setProtectedHeader({ alg: ALGORITHM })
-		.setSubject(String(person.id))
-		.setIssuer(ISSUER)
-		.setAudience(AUDIENCE)
-		.setIssuedAt(issuedAt)
-		.setExpirationTime(issuedAt + UNSUBSCRIBE_TOKEN_MAX_AGE)
-		.sign(signingKey());
+export async function unsubscribeToken(person: UnsubscribePerson, issuedAt?: number): Promise<string> {
+	return await signToken('unsubscribe', person.id, { email: normalize(person.email) }, UNSUBSCRIBE_TOKEN_MAX_AGE, issuedAt);
 }
 
-/** The claims of a token we issued that is still in date, or null for anything else: malformed, tampered, expired, or for another purpose */
+/**
+ * The claims of a token we issued that is still in date, or null for anything else: malformed,
+ * tampered, expired, or for another audience. An old link isn't worth telling apart, since the
+ * page can only offer the same thing either way
+ */
 export async function verifyUnsubscribeToken(token: string): Promise<UnsubscribeClaims | null> {
-	let payload;
-	try {
-		({ payload } = await jwtVerify(token, signingKey(), { algorithms: [ALGORITHM], issuer: ISSUER, audience: AUDIENCE }));
-	} catch {
-		return null;
-	}
+	const verified = await verifyToken('unsubscribe', token);
+	if (!verified || !('subject' in verified) || typeof verified.claims.email !== 'string') return null;
 
-	const id = Number(payload.sub);
-	if (!Number.isInteger(id) || id <= 0 || typeof payload.email !== 'string') return null;
-
-	return { id, email: payload.email };
+	return { id: verified.subject, email: verified.claims.email };
 }
 
 /** Whether the token was issued to the address this person has now; a changed address retires every earlier link */

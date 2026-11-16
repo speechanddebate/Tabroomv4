@@ -7,10 +7,14 @@ import { RetryAfterError } from '../queue/backoff.js';
 import { emailMessage, type EmailMessageResult } from './channels/email.js';
 import { isPushConfigured, pushMessage, type PushMessageOptions, type PushMessageResult } from './channels/webpush.js';
 
-// Job data is ids only; the job loads the rest from the database
-
-/** ignoreNoEmail is the one piece of request context the job can't reload: mail about the person's own account goes out even to someone opted out */
-export type EmailJobData = { message: number, ignoreNoEmail?: boolean };
+/**
+ * Request context the job can't reload. ignoreNoEmail: mail about the person's own account goes
+ * out even to someone opted out. to: an address that replaces the person's own (read at send
+ * time otherwise), such as their old one after a change; it is the one address held in job data,
+ * kept in Redis only as long as the queue keeps finished jobs (an hour, or a day after a failure)
+ * it may be wise to modify the message table to store this so it is kept out of Redis
+ */
+export type EmailJobData = { message: number, ignoreNoEmail?: boolean, to?: string };
 /** sent lists the logins earlier attempts reached; push is the request's narrowing and send options, which the job can't reload */
 export type PushJobData = { message: number, sent?: number[], push?: PushMessageOptions };
 
@@ -113,7 +117,7 @@ export const processEmail: Processor<EmailJobData, EmailJobResult> = async (job)
 		warnedLogMode = false;
 	}
 
-	const result = await emailMessage(job.data.message, { ignoreNoEmail: job.data.ignoreNoEmail });
+	const result = await emailMessage(job.data.message, { ignoreNoEmail: job.data.ignoreNoEmail, to: job.data.to });
 
 	if (result.status === 'retry') {
 		throw new Error(`Email for message ${job.data.message} needs another try, the relay or the network was busy`);
