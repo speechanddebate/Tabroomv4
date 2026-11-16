@@ -72,9 +72,18 @@ describe('GET /pages/invite/nsdaCategories', () => {
 });
 
 describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
+	let userkey: string;
+	beforeAll(async () => {
+		({ userkey } = await factories.session.create());
+	});
+
+	it('Returns 401 to a logged-out caller', async () => {
+		expect(await request(server).get(`/v1/pages/invite/31059/CX/5/results`)).toBeProblemResponse(401);
+	});
 	it('Returns win loss results for a debate round', async () => {
 		const res = await request(server)
 			.get(`/v1/pages/invite/31059/CX/5/results`)
+			.asPerson(userkey)
 			.set('Accept', 'application/json')
 			.expect('Content-Type', /json/)
 			.expect(200);
@@ -85,6 +94,7 @@ describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
 	it('Returns ranked results for a congress round', async () => {
 		const res = await request(server)
 			.get(`/v1/pages/invite/26661/HSE/3/results`)
+			.asPerson(userkey)
 			.set('Accept', 'application/json')
 			.expect('Content-Type', /json/)
 			.expect(200);
@@ -95,6 +105,7 @@ describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
 	it('Returns 404 when the round has no public results', async () => {
 		const res = await request(server)
 			.get(`/v1/pages/invite/31059/CX/999/results`)
+			.asPerson(userkey)
 			.set('Accept', 'application/json');
 
 		expect(res).toBeProblemResponse(404);
@@ -103,6 +114,7 @@ describe('GET /pages/invite/:tournId/:eventAbbr/:roundName/results', () => {
 		const tourn = await factories.tourn.create({ hidden: 1 });
 		const res = await request(server)
 			.get(`/v1/pages/invite/${tourn.id}/CX/1/results`)
+			.asPerson(userkey)
 			.set('Accept', 'application/json');
 
 		expect(res).toBeProblemResponse(404);

@@ -9,6 +9,7 @@ import config from '../../../../config.js';
 
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import { requirePublicTourn } from '../../../../policy/tournPolicy.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 const router = Router();
 
 // These paths are bolted onto /v1/pages
@@ -128,7 +129,7 @@ router.route('/invite/:tournId/:eventAbbr/:roundName').get(ValidateRequest, sche
 };
 }
 
-router.route('/invite/:tournId/:eventAbbr/:roundName/results').get(requirePublicTourn, ValidateRequest, pageResultController.getRoundResults).openapi = {
+router.route('/invite/:tournId/:eventAbbr/:roundName/results').get(requirePerson, requirePublicTourn, ValidateRequest, pageResultController.getRoundResults).openapi = {
 	path        : '/pages/invite/{tournId}/{eventAbbr}/{roundName}/results',
 	summary     : 'Round published results',
 	description : 'Returns results display information for a given round',

@@ -124,6 +124,16 @@ describe('setupRequest route template', () => {
 		}));
 	});
 
+	it('logs the session, the person it acts as, and the admin who su\'d', () => {
+		const info = vi.spyOn(requestLogger, 'info');
+
+		handle({ originalUrl: '/v1/user/home', person: { id: 22 }, auth: { sessionId: 7, su: { id: 11 } } });
+		handle({ originalUrl: '/v1/status' });
+
+		expect(info).toHaveBeenNthCalledWith(1, 'Request handled', expect.objectContaining({ session: 7, person: 22, su: 11 }));
+		expect(info).toHaveBeenNthCalledWith(2, 'Request handled', expect.objectContaining({ session: null, person: null, su: null }));
+	});
+
 	it('leaves the route unset when no route matched', () => {
 		const info = vi.spyOn(requestLogger, 'info');
 

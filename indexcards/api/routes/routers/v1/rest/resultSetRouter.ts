@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as controller from '../../../../controllers/rest/resultSetController.js';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import { ResultSetSchema, EventResultSetsSchema } from '@tabroom/types';
 import config from '../../../../config.js';
 
@@ -12,6 +13,9 @@ import config from '../../../../config.js';
 // Bolted onto /tourns/:tournId/results
 
 const router = Router({ mergeParams: true });
+
+// Results need a login, as in classic, to keep scrapers' load off the DB
+router.use(requirePerson);
 
 router.route('/').get(ValidateRequest, controller.getResultSets).openapi = {
 	path        : '/rest/tourns/{tournId}/results',

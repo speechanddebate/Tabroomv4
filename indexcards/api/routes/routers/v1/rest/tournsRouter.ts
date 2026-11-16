@@ -4,6 +4,7 @@ import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 import * as controller from '../../../../controllers/rest/tournsController.js';
 import { requirePublicForAttn, requirePublicTourn } from '../../../../policy/tournPolicy.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import roundRouter from './roundRouter.js';
 import resultSetRouter from './resultSetRouter.js';
 import eventRouter from './eventRouter.js';
@@ -139,7 +140,7 @@ router.route('/:tournId/files').get(ValidateRequest, controller.getPublishedFile
 	},
 };
 
-router.route('/:tournId/schedule').get(ValidateRequest, controller.getSchedule).openapi = {
+router.route('/:tournId/schedule').get(requirePerson, ValidateRequest, controller.getSchedule).openapi = {
 	path: '/rest/tourns/{tournId}/schedule',
 	summary: 'Get tournament schedule',
 	tags: ['Tournaments'],

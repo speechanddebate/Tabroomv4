@@ -196,6 +196,8 @@ export const setupRequest = (req, res, next) => {
 			route: route ?? null,
 			ip: req.ip,
 			session: req.auth?.sessionId ?? null,
+			person: req.person?.id ?? null,
+			su: req.auth?.su?.id ?? null,
 			statusCode: `${res.statusCode ?? ''}`,
 			responseTimeMs: `${duration}`,
 		});

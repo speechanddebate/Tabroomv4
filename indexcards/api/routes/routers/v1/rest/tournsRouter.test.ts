@@ -148,12 +148,17 @@ describe('GET /rest/tourns/:tournId/invite', () => {
 	});
 });
 describe('GET /rest/tourns/:tournId/schedule', () => {
+	it('Returns 401 to a logged-out caller', async () => {
+		expect(await request(server).get(`/v1/rest/tourns/${testTourn.id}/schedule`)).toBeProblemResponse(401);
+	});
 	it('Returns the rounds in the tournament schedule', async () => {
 		// The schedule leaves out attendee events, so the event type is fixed
 		const { Tourn, Round } = await factories.tourn.createFull({ Event: { type: 'debate' } });
+		const { userkey } = await factories.session.create();
 
 		const res = await request(server)
             .get(`/v1/rest/tourns/${Tourn.id}/schedule`)
+			.asPerson(userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);

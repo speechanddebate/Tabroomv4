@@ -57,3 +57,9 @@ describe('GET /rest/tourns/:tournId/events/:eventAbbr/field', () => {
 		expect(res).toBeProblemResponse(404);
 	});
 });
+
+describe('GET /events/:eventId/results', () => {
+	it('Returns 401 to a logged-out caller', async () => {
+		expect(await request(server).get(`/v1/rest/tourns/31059/events/1/results`)).toBeProblemResponse(401);
+	});
+});

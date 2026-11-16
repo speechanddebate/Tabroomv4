@@ -4,6 +4,7 @@ import config from '../../../../config.js';
 import { EventFieldSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 
 const router = Router({ mergeParams: true });
 // Bolted onto /tourns/:tournId/events
@@ -36,7 +37,7 @@ router.route('/').get(ValidateRequest, controller.getEvents).openapi = {
 }
 
 if(!config.features.HIDE_DEV_ENDPOINTS) {
-router.route('/:eventId/results').get(ValidateRequest, controller.getResults).openapi = {
+router.route('/:eventId/results').get(requirePerson, ValidateRequest, controller.getResults).openapi = {
 	path        : '/rest/tourns/{tournId}/events/{eventId}/results',
 	summary     : 'Get Published Results by Event',
 	description : 'Given an Event ID, get published result records of the entries therein',

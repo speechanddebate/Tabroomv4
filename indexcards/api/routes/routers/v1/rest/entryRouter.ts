@@ -3,6 +3,7 @@ import * as controller from '../../../../controllers/rest/entryController.js';
 import z from 'zod';
 
 import { ValidateRequest } from '../../../../middleware/validation.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import config from '../../../../config.js';
 
 const router = Router({ mergeParams: true });
@@ -13,7 +14,7 @@ const router = Router({ mergeParams: true });
 // results == round outcomes and scores
 // records == both!
 if(!config.features.HIDE_DEV_ENDPOINTS) {
-	router.route('/:entryId/records').get(ValidateRequest, controller.getEntryRecords).openapi = {
+	router.route('/:entryId/records').get(requirePerson, ValidateRequest, controller.getEntryRecords).openapi = {
 	path        : '/rest/tourns/{tournId}/entries/{entryId}/records',
 	summary     : 'Entry Tournament Records',
 	description : 'Shows the published available pairings and results data for a given entry',

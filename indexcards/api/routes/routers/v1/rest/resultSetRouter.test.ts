@@ -1,12 +1,26 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
+import factories from '../../../../../tests/factories/index.js';
 import { ResultSetSchema, EventResultSetsSchema } from '@tabroom/types';
 import z from 'zod';
 
 describe('GET /results', () => {
+	let userkey: string;
+	beforeAll(async () => {
+		({ userkey } = await factories.session.create());
+	});
+
+	it.each([
+		'/v1/rest/tourns/31059/results',
+		'/v1/rest/tourns/31059/results/329545',
+	])('Returns 401 to a logged-out caller for %s', async (path) => {
+		expect(await request(server).get(path)).toBeProblemResponse(401);
+	});
+
 	it('Returns result sets for a valid tournID', async () => {
 		const res = await request(server)
             .get(`/v1/rest/tourns/31059/results`)
+			.asPerson(userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);
@@ -18,6 +32,7 @@ describe('GET /results', () => {
 	it('Returns a particular result set for a valid tournID and rsID', async () => {
 		const res = await request(server)
             .get(`/v1/rest/tourns/31059/results/329545`)
+			.asPerson(userkey)
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(200);

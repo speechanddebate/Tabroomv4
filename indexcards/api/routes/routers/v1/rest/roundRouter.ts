@@ -4,6 +4,7 @@ import config from '../../../../config.js';
 import { PublishedRoundSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
+import { requirePerson } from '../../../../middleware/auth/authorization.js';
 
 const router = Router({ mergeParams: true });
 
@@ -20,7 +21,7 @@ const roundParams = z.object({
 // brackets == primary results data up to this round
 // records  == both!
 
-router.route('/').get(ValidateRequest, controller.getPublishedRounds).openapi = {
+router.route('/').get(requirePerson, ValidateRequest, controller.getPublishedRounds).openapi = {
 	path: '/rest/tourns/{tournId}/rounds',
 	summary: 'Get Tourn Published Rounds',
 	description: 'Retrieve a list of published rounds for an entire tournament.',
@@ -102,7 +103,7 @@ router.route('/:roundId/brackets').get(ValidateRequest, controller.getPublishedB
 	},
 };
 
-router.route('/:roundId/results').get(ValidateRequest, controller.getPublishedResults).openapi = {
+router.route('/:roundId/results').get(requirePerson, ValidateRequest, controller.getPublishedResults).openapi = {
 	path        : '/rest/tourns/{tournId}/rounds/{roundId}/results',
 	summary     : 'Get Published Results for a Round',
 	description : 'Gets the outcome scores of the present round if published',
