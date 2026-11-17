@@ -1,7 +1,7 @@
 <script lang='ts'>
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
-	import { Tabs as FlowbiteTabs, TabItem as FlowbiteTabItem, Tooltip } from 'flowbite-svelte';
+	import { Tooltip } from 'flowbite-svelte';
 	import { setTabsContext, type TabEntry } from './context';
 
 	type Props = {
@@ -17,22 +17,14 @@
 		children,
 		label        = 'Tabs',
 		class        : className = '',
-		contentClass = 'mt-0 rounded',
+		contentClass = 'pt-4',
 		onchange,
 	}: Props = $props();
 
 	let items: TabEntry[] = $state.raw([]);
 
-	// The selected panel tab's id, which flowbite sets
-	let selected: string | undefined = $state();
-
-	// Flowbite's first selection on mount isn't a change
-	const select = (id: string | undefined) => {
-		const changed = selected !== undefined && id !== undefined && id !== selected;
-		selected = id;
-		const title = items.find( (item) => item.id === id)?.title;
-		if (changed && title !== undefined) onchange?.(title);
-	};
+	// The panel tab the user picked; until then `open` or the first usable tab wins
+	let chosenId: string | undefined = $state();
 
 	setTabsContext({
 		register: (entry) => {
@@ -43,12 +35,10 @@
 		},
 	});
 
-	// Links render as our own nav; panels render through flowbite's tabs,
-	// which track the selected panel themselves.
 	const linkMode = $derived(items.some( (item) => item.href));
 
 	// Link tab matching the current page. Exact matches always win.
-	const activeId = $derived.by( () => {
+	const activeLinkId = $derived.by( () => {
 		const path = page.url.pathname;
 
 		return (items.find( (item) => item.href === path)
@@ -58,115 +48,133 @@
 			))?.id;
 	});
 
-	// The accent line under the strip, in both modes.
-	const stripClass = `
-		flex space-x-2 rtl:space-x-reverse overflow-x-auto
-		border-b-2 border-accent
+	const selectedPanel = $derived(
+		items.find( (item) => item.id === chosenId && !item.disabled)
+		?? items.find( (item) => item.open && !item.disabled)
+		?? items.find( (item) => !item.disabled)
+	);
+
+	const activeId = $derived(linkMode ? activeLinkId : selectedPanel?.id);
+
+	const choose = (item: TabEntry) => {
+		if (item.disabled || item.id === selectedPanel?.id) return;
+		chosenId = item.id;
+		onchange?.(item.title);
+	};
+
+	// Manual activation: arrows move focus and Enter or Space selects, so onchange
+	// (which saves ballot feedback) doesn't fire on every arrow press
+	const moveFocus = (event: KeyboardEvent) => {
+		const tabs = [...(event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role=tab]')];
+		const from = tabs.indexOf(document.activeElement as HTMLElement);
+		const to = {
+			ArrowRight : (from + 1) % tabs.length,
+			ArrowLeft  : (from - 1 + tabs.length) % tabs.length,
+			Home       : 0,
+			End        : tabs.length - 1,
+		}[event.key];
+
+		if (to === undefined || from === -1) return;
+		event.preventDefault();
+		tabs[to].focus();
+	};
+
+	const stripClass = 'flex gap-1 overflow-x-auto border-b border-border';
+
+	// The outline sits inside the tab because the scrolling strip clips anything outside it
+	const tabClass = `
+		inline-flex shrink-0 items-center gap-1.5
+		border-b-2 px-3 py-2
+		text-sm font-semibold
+		focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-strong
 	`;
 
-	const tabBase = `
-		inline-block p-2 px-4
-		rounded-t-sm
-		text-sm text-center
-		font-semibold
-	`;
-
-	const disabledClass = `
-		text-muted
-		bg-page
-		cursor-not-allowed
-	`;
-
-	const linkActiveClass = `
-		text-primary-strong
-		bg-surface
-		hover:text-primary-deep hover:bg-surface-alt
-	`;
-
-	const linkInactiveClass = `
-		text-text
-		bg-page
-		hover:bg-accent-soft
-	`;
-
-	const panelActiveClass = `
-		text-primary-strong
-		bg-primary-soft
-	`;
-
-	const panelInactiveClass = `
-		hover:text-primary-deep hover:bg-accent-soft
-	`;
-
+	const stateClass = (item: TabEntry) => item.disabled
+		? 'cursor-not-allowed border-transparent text-muted opacity-50'
+		: item.id === activeId
+			? 'border-primary-strong text-primary-strong'
+			: 'cursor-pointer border-transparent text-muted hover:border-border-strong hover:text-text';
 </script>
 
 <!-- TabItems only register themselves here; they render nothing. -->
 {@render children()}
+
+{#snippet title(item: TabEntry)}
+	{item.title}
+	{#if item.alert}
+		<!-- The ring keeps the dot visible on a filled background -->
+		<span class='size-2 rounded-full bg-danger ring-2 ring-surface' aria-hidden='true'></span>
+		<span class='sr-only'>(needs attention)</span>
+	{/if}
+{/snippet}
 
 <div class='tabs {className}'>
 	{#if linkMode}
 		<nav aria-label={label}>
 			<ul class={stripClass}>
 				{#each items as item (item.id)}
-					<li class='group shrink-0 focus-within:z-10'>
-						{#if item.disabled}
+					<li class='shrink-0'>
+						{#if item.disabled || !item.href}
 							<!-- Focusable so keyboard users can reach the tooltip -->
 							<span
-								class         = '{tabBase} {disabledClass}'
+								id            = {item.id}
+								class         = '{tabClass} {stateClass(item)}'
 								aria-disabled = 'true'
 								role          = 'link'
 								tabindex      = '0'
 							>
-								{item.title}
+								{@render title(item)}
 							</span>
 						{:else}
 							<a
-								class        = '{tabBase} {item.id === activeId ? linkActiveClass : linkInactiveClass}'
+								id           = {item.id}
+								class        = '{tabClass} {stateClass(item)}'
 								aria-current = {item.id === activeId ? 'page' : undefined}
 								href         = {item.href}
 							>
-								{item.title}
+								{@render title(item)}
 							</a>
-						{/if}
-						{#if item.tooltip}
-							<Tooltip placement='bottom'>{item.tooltip}</Tooltip>
 						{/if}
 					</li>
 				{/each}
 			</ul>
 		</nav>
 	{:else}
-		<FlowbiteTabs
-			class      = {stripClass}
-			aria-label = {label}
-			classes    = {{ content: contentClass }}
-			divider    = {false}
-			bind:selected = {() => selected, select}
-		>
+		<div class={stripClass} aria-label={label} onkeydown={moveFocus} role='tablist' tabindex='-1'>
 			{#each items as item (item.id)}
-				<FlowbiteTabItem
-					activeClass   = '{tabBase} {panelActiveClass}'
-					disabled      = {item.disabled}
-					inactiveClass = '{tabBase} {item.disabled ? disabledClass : panelInactiveClass}'
-					key           = {item.id}
-					open          = {item.open}
-					title         = {item.title}
+				<!-- Disabled tabs stay focusable (aria-disabled, not disabled) so their tooltip can be reached -->
+				<button
+					id            = {item.id}
+					class         = '{tabClass} {stateClass(item)}'
+					aria-controls = '{item.id}-panel'
+					aria-disabled = {item.disabled || undefined}
+					aria-selected = {item.id === activeId}
+					onclick       = {() => choose(item)}
+					role          = 'tab'
+					tabindex      = {item.id === activeId ? 0 : -1}
+					type          = 'button'
 				>
-					{@render item.children?.()}
-				</FlowbiteTabItem>
+					{@render title(item)}
+				</button>
 			{/each}
-		</FlowbiteTabs>
+		</div>
 
-		<!--
-			A Tooltip with no triggeredBy attaches to its previous sibling, which here
-			is flowbite's role=presentation <li>, and makes it focusable.
-			if we ever get rid of flowbite, we can probably preserve this tooltip behavior 
-			by attaching it directly to the tab button.
-		-->
-		{#each items as item (item.id)}
-			{#if item.tooltip}
-				<Tooltip placement='bottom' triggeredBy='#{item.id}'>{item.tooltip}</Tooltip>
-			{/if}
-		{/each}
+		{#if selectedPanel}
+			<div
+				id              = '{selectedPanel.id}-panel'
+				class           = {contentClass}
+				aria-labelledby = {selectedPanel.id}
+				role            = 'tabpanel'
+				tabindex        = '0'
+			>
+				{@render selectedPanel.children?.()}
+			</div>
+		{/if}
 	{/if}
+
+	{#each items as item (item.id)}
+		{#if item.tooltip}
+			<Tooltip placement='bottom' triggeredBy='#{item.id}'>{item.tooltip}</Tooltip>
+		{/if}
+	{/each}
 </div>

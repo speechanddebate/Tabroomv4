@@ -10,6 +10,7 @@ export type TabEntry = {
 	readonly exact          : boolean,
 	readonly open           : boolean,
 	readonly disabled       : boolean,
+	readonly alert          : boolean,
 	readonly tooltip?       : string,
 	readonly children?      : Snippet,
 };

@@ -15,6 +15,7 @@
 		exact?         : boolean,
 		open?          : boolean,
 		disabled?      : boolean,
+		alert?         : boolean,
 		tooltip?       : string,
 		children?      : Snippet,
 	};
@@ -26,6 +27,7 @@
 		exact    = false,
 		open     = false,
 		disabled = false,
+		alert    = false,
 		tooltip,
 		children,
 	}: Props = $props();
@@ -41,6 +43,7 @@
 		get exact()         { return exact; },
 		get open()          { return open; },
 		get disabled()      { return disabled; },
+		get alert()         { return alert; },
 		get tooltip()       { return tooltip; },
 		get children()      { return children; },
 	});
@@ -58,5 +61,6 @@ A tab inside `<Tabs>`.
 @prop exact          Link tabs: active only on an exact href match
 @prop open           Panel tabs: select this tab until the user picks another
 @prop disabled
+@prop alert          Marks the tab as needing attention with a red dot
 @prop tooltip
 -->

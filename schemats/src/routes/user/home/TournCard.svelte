@@ -106,7 +106,7 @@
 			<Tabs label="{tourn.name} sections">
 				{#each tourn.roles as role, idx (role)}
 					<TabItem open={idx === 0} title={tabTitle(role)}>
-						<div class="pt-4"><RoleSection {role} {tourn} /></div>
+						<RoleSection {role} {tourn} />
 					</TabItem>
 				{/each}
 			</Tabs>
