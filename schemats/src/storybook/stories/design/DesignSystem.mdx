@@ -1,16 +1,38 @@
-import { Meta, ColorPalette, ColorItem, Typeset } from '@storybook/addon-docs/blocks';
+import { Meta, ColorPalette, ColorItem, Unstyled } from '@storybook/addon-docs/blocks';
 
-<Meta title="Design System/Proposed Palette" />
+<Meta title="Design System/Overview" />
 
-{/* Storybook does not load static/font/fonts.css globally; app.html does. */}
-<link rel="stylesheet" href="/font/fonts.css" />
+# Design System
 
-# Proposed Palette
+The colors, type, and surfaces every Tabroom page is built from. The tokens
+live in the `@theme` block of `src/app.css`, and Tailwind turns each one into
+utilities: `--color-primary-strong` gives `bg-primary-strong`,
+`text-primary-strong`, `border-primary-strong`, and so on.
 
-The Tabroom color tokens, defined in `src/app.css`. Values on this page are
-hard-coded copies, so update both together.
+The color swatches and contrast samples on this page are hard-coded copies of
+those values, so update both together. The type and elevation samples render
+with the real styles.
 
-## Brand
+## Rules
+
+- Use a token for every color. No hex values and no stock Tailwind palette
+  classes (`bg-gray-100`, `text-blue-600`) in components.
+- Do not use the numbered shades (`bg-primary-700`, `ring-secondary-300`).
+  They exist only so Flowbite's internals resolve to our palette, and they go
+  away when Flowbite does.
+- `primary` and `accent` are decoration. Text and control edges use
+  `primary-strong`, `primary-deep`, or a status color, all of which pass
+  contrast on `surface`.
+- Never signal with color alone. Links inside prose are underlined, and a
+  status color comes with a label or icon.
+- Every interactive element shows the same focus indicator:
+  `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-strong`.
+- Reach for an existing component before styling an element by hand. The
+  [component stories](#components) show every variant.
+
+## Color
+
+### Brand
 
 <ColorPalette>
 	<ColorItem
@@ -45,7 +67,26 @@ hard-coded copies, so update both together.
 	/>
 </ColorPalette>
 
-## Neutrals
+### Backdrop
+
+The header, the footer, and the gradient behind the content card. `backdrop`
+and `backdrop-end` alias `primary-deep` and `primary`; staging overrides them
+with classic's green so it is never mistaken for production.
+
+<ColorPalette>
+	<ColorItem
+		title="backdrop / backdrop-end"
+		subtitle="Production"
+		colors={{ backdrop: '#00445f', 'backdrop-end': '#00abe8' }}
+	/>
+	<ColorItem
+		title="backdrop / backdrop-end"
+		subtitle="Staging (html[data-env='staging'])"
+		colors={{ backdrop: '#244500', 'backdrop-end': '#578415' }}
+	/>
+</ColorPalette>
+
+### Neutrals
 
 <ColorPalette>
 	<ColorItem
@@ -70,7 +111,11 @@ hard-coded copies, so update both together.
 	/>
 </ColorPalette>
 
-## Status
+### Status
+
+Each status has a base for text, borders, and solid fills, and a soft tint for
+badge and alert backgrounds. The one exception is the solid warning button,
+which fills with `accent` and dark text because yellow cannot hold white text.
 
 <ColorPalette>
 	<ColorItem
@@ -95,9 +140,11 @@ hard-coded copies, so update both together.
 	/>
 </ColorPalette>
 
-## Contrast
+### Contrast
 
-WCAG AA requires 4.5:1 for text and 3:1 for control boundaries and focus indicators.
+WCAG AA requires 4.5:1 for text and 3:1 for control boundaries and focus
+indicators. A pairing that is not in this table needs its ratio checked before
+it ships.
 
 export const C = {
 	primary: '#00abe8', 'primary-strong': '#016f94', 'primary-deep': '#00445f', 'primary-soft': '#dfeff6',
@@ -168,216 +215,117 @@ export const Pair = ({ fg, bg }) => <><code>{fg}</code> on <code>{bg}</code></>;
 
 ## Type
 
-<Typeset
-	fontFamily="PTSans-Narrow-Bold"
-	fontSizes={['2rem', '1.5rem', '1.25rem', '1.125rem']}
-	sampleText="Round 3 Pairings"
-/>
+Three families, each a Tailwind font utility.
 
-<Typeset
-	fontFamily="open_sans"
-	fontSizes={['0.875rem', '0.75rem']}
-	sampleText="Body text at 14px, with small text at 12px for table headers and notes."
-/>
+<table>
+	<thead>
+		<tr><th>Utility</th><th>Family</th><th>Use</th></tr>
+	</thead>
+	<tbody>
+		<tr><td><code>font-display</code></td><td>PTSans-Narrow-Bold</td><td>Headings</td></tr>
+		<tr><td><code>font-sans</code></td><td>open_sans</td><td>Body text and controls. The default.</td></tr>
+		<tr><td><code>font-mono</code></td><td>Inconsolata</td><td>Text inputs, scores, and numbers that line up in columns</td></tr>
+	</tbody>
+</table>
 
-<Typeset
-	fontFamily="Inconsolata"
-	fontSizes={['0.875rem']}
-	sampleText="0123456789 · 28.5 · 29.0 · W 3-0"
-/>
+Headings and paragraphs get their size from the base styles in `src/app.css`,
+so a bare `<h2>` already looks right. This sample renders with those styles.
 
-## In context
+<Unstyled>
+	<div className="raised font-sans text-text p-4">
+		<h1>h1 · Round 3 Pairings</h1>
+		<h2>h2 · Round 3 Pairings</h2>
+		<h3>h3 · Round 3 Pairings</h3>
+		<h4>h4 · Round 3 Pairings</h4>
+		<h5>h5 · Round 3 Pairings</h5>
+		<h6>h6 · Round 3 Pairings</h6>
+		<p>Body text is 14px open_sans. <strong>Strong text</strong> is semibold in <code>primary-deep</code>.</p>
+		<p className="text-xs text-muted">Small text is 12px (text-xs), for table headers, hints, and notes.</p>
+		<input type="text" aria-label="Text input sample" className="rounded border border-border-strong px-2 py-1 text-sm" defaultValue="28.5" />
+	</div>
+</Unstyled>
 
-A rough mock of the base styles using these tokens.
+<table>
+	<thead>
+		<tr><th>Element</th><th>Family</th><th>Size</th><th>Case</th></tr>
+	</thead>
+	<tbody>
+		<tr><td><code>h1</code></td><td>PTSans-Narrow-Bold</td><td>3.75rem</td><td>Uppercase</td></tr>
+		<tr><td><code>h2</code></td><td>PTSans-Narrow</td><td>3rem</td><td>Uppercase</td></tr>
+		<tr><td><code>h3</code></td><td>PTSans-Narrow-Bold</td><td>2.25rem</td><td>Uppercase</td></tr>
+		<tr><td><code>h4</code></td><td>PTSans-Narrow-Bold</td><td>1.75rem</td><td>As written</td></tr>
+		<tr><td><code>h5</code></td><td>PTSans-Narrow-Bold</td><td>1.5rem</td><td>As written</td></tr>
+		<tr><td><code>h6</code></td><td>PTSans-Narrow</td><td>1.25rem</td><td>As written</td></tr>
+		<tr><td><code>p</code></td><td>open_sans</td><td>14px</td><td>As written</td></tr>
+	</tbody>
+</table>
 
-<style>{`
-	.ds-preview {
-		--primary: #00abe8;
-		--primary-strong: #016f94;
-		--primary-soft: #dfeff6;
-		--accent: #fec937;
-		--accent-soft: #fef8ef;
-		--page: #e5ebed;
-		--surface: #fefefe;
-		--surface-alt: #f5f5f5;
-		--border: #dddddd;
-		--border-strong: #8a8a8a;
-		--text: #222222;
-		--muted: #666666;
-		--success: #3f7500;
-		--success-soft: #e4eed9;
-		--warning: #826100;
-		--warning-soft: #fef3dd;
-		--danger: #ba1d00;
-		--danger-soft: #f6d9d9;
-		--radius: 4px;
+Headings inside a sidebar (`.menu`) step down: `h1` is 2.75rem, `h2` 2rem,
+`h3` 1.875rem, and `h4` 1.5rem.
 
-		background: var(--page);
-		color: var(--text);
-		font-family: open_sans, ui-sans-serif, system-ui, sans-serif;
-		font-size: 14px;
-		padding: 24px;
-		border-radius: var(--radius);
-	}
-	.ds-preview * { box-sizing: border-box; }
-	.ds-preview .layout { display: flex; gap: 16px; align-items: flex-start; }
-	.ds-preview .main {
-		flex: 1;
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 24px;
-	}
-	.ds-preview .sidebar { width: 240px; display: flex; flex-direction: column; gap: 16px; }
-	.ds-preview h2, .ds-preview h4 {
-		font-family: PTSans-Narrow-Bold, sans-serif;
-		margin: 0 0 4px;
-		color: var(--text);
-		border: none;
-	}
-	.ds-preview h2 { font-size: 1.5rem; text-transform: uppercase; letter-spacing: .5px; }
-	.ds-preview h4 { font-size: 1.125rem; }
-	.ds-preview .subtitle { color: var(--muted); margin: 0 0 16px; }
-	.ds-preview .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-	.ds-preview .actions { display: flex; gap: 8px; }
-	.ds-preview a { color: var(--primary-strong); text-decoration: none; }
-	.ds-preview a:hover { text-decoration: underline; }
-	/* Link color alone is 2.8:1 against body text, so prose links need an underline (1.4.1). */
-	.ds-preview p a { text-decoration: underline; }
-	.ds-preview :focus-visible { outline: 2px solid var(--primary-strong); outline-offset: 2px; }
+## Elevation
 
-	.ds-preview .btn {
-		font: inherit;
-		font-weight: 600;
-		padding: 6px 12px;
-		border-radius: var(--radius);
-		border: 1px solid transparent;
-		cursor: pointer;
-	}
-	.ds-preview .btn-primary { background: var(--primary-strong); color: #fff; }
-	.ds-preview .btn-primary:hover { background: #015a78; }
-	.ds-preview .btn-secondary { background: var(--surface); color: var(--primary-strong); border-color: var(--border-strong); }
-	.ds-preview .btn-secondary:hover { background: var(--primary-soft); }
-	.ds-preview .btn-danger { background: var(--danger); color: #fff; }
-	.ds-preview .btn-ghost { background: transparent; color: var(--primary-strong); }
-	.ds-preview .btn-ghost:hover { background: var(--primary-soft); }
+Four levels, lowest to highest. Three of them are utilities defined in
+`src/app.css`; use them instead of combining a background, border, and shadow
+by hand.
 
-	.ds-preview table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-	.ds-preview th {
-		text-align: left;
-		font-size: 12px;
-		font-weight: 600;
-		padding: 4px 8px;
-		border-bottom: 2px solid var(--accent);
-	}
-	.ds-preview td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
-	.ds-preview tbody tr:nth-child(even) { background: var(--surface-alt); }
-	.ds-preview tbody tr:hover { background: var(--accent-soft); }
-	.ds-preview .num { font-family: Inconsolata, monospace; }
+<table>
+	<thead>
+		<tr><th>Level</th><th>Class</th><th>Use</th></tr>
+	</thead>
+	<tbody>
+		<tr><td>Canvas</td><td><code>bg-page</code></td><td>The page area behind cards</td></tr>
+		<tr><td>Sunken</td><td><code>sunken</code></td><td>A well inside a card</td></tr>
+		<tr><td>Raised</td><td><code>raised</code></td><td>Cards</td></tr>
+		<tr><td>Overlay</td><td><code>overlay</code></td><td>Menus, toasts, and drawers</td></tr>
+	</tbody>
+</table>
 
-	.ds-preview .badge {
-		display: inline-block;
-		font-size: 12px;
-		font-weight: 600;
-		padding: 1px 8px;
-		border-radius: 999px;
-	}
-	.ds-preview .badge-success { background: var(--success-soft); color: var(--success); }
-	.ds-preview .badge-warning { background: var(--warning-soft); color: var(--warning); }
-	.ds-preview .badge-danger { background: var(--danger-soft); color: var(--danger); }
-
-	.ds-preview .alert {
-		margin-top: 16px;
-		padding: 8px 12px;
-		border-radius: var(--radius);
-		border-left: 4px solid;
-	}
-	.ds-preview .alert-warning { background: var(--warning-soft); border-color: var(--warning); }
-	.ds-preview .alert-success { background: var(--success-soft); border-color: var(--success); }
-
-	.ds-preview .panel {
-		background: var(--surface);
-		border: 1px solid var(--border);
-		border-radius: var(--radius);
-		padding: 12px;
-	}
-	.ds-preview .panel-note { border-left: 3px solid var(--primary); }
-	.ds-preview .sidelink {
-		display: block;
-		padding: 6px 8px;
-		margin-bottom: 2px;
-		border-radius: var(--radius);
-		color: var(--text);
-	}
-	.ds-preview .sidelink:hover { background: var(--accent-soft); text-decoration: none; }
-	.ds-preview .sidelink.active { background: var(--primary-soft); color: var(--primary-strong); font-weight: 600; }
-
-	.ds-preview label { display: block; font-weight: 600; font-size: 12px; margin: 12px 0 4px; }
-	.ds-preview input {
-		font: inherit;
-		width: 100%;
-		padding: 6px 8px;
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius);
-		background: var(--surface);
-	}
-	.ds-preview .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
-`}</style>
-
-<div className="ds-preview">
-	<div className="layout">
-		<div className="main">
-			<div className="header">
-				<div>
-					<h2>Round 3 Pairings</h2>
-					<p className="subtitle">Varsity Lincoln-Douglas · Saturday 10:30 AM</p>
-				</div>
-				<div className="actions">
-					<button className="btn btn-ghost">Print</button>
-					<button className="btn btn-secondary">Edit</button>
-					<button className="btn btn-primary">Publish</button>
-				</div>
-			</div>
-
-			<table>
-				<thead>
-					<tr><th>Room</th><th>Aff</th><th>Neg</th><th>Judge</th><th>Status</th></tr>
-				</thead>
-				<tbody>
-					<tr><td>101</td><td><a href="#">Lincoln HS AB</a></td><td><a href="#">Douglas Prep CD</a></td><td>Smith, J.</td><td><span className="badge badge-success">Entered</span></td></tr>
-					<tr><td>102</td><td><a href="#">Westside EF</a></td><td><a href="#">Central GH</a></td><td>Jones, K.</td><td><span className="badge badge-warning">Started</span></td></tr>
-					<tr><td>103</td><td><a href="#">North IJ</a></td><td><a href="#">South KL</a></td><td>Lee, M.</td><td><span className="badge badge-danger">Not started</span></td></tr>
-					<tr><td>104</td><td><a href="#">East MN</a></td><td><a href="#">Valley OP</a></td><td>Garcia, R.</td><td><span className="badge badge-success">Entered</span></td></tr>
-				</tbody>
-			</table>
-
-			<div className="alert alert-warning" role="alert"><strong>Warning:</strong> 2 judges are double-booked in this timeslot.</div>
-			<div className="alert alert-success" role="status"><strong>Done:</strong> Pairings published 10:12 AM.</div>
-
-			<p style={{ marginTop: '16px' }}>
-				Ballots are due 15 minutes after the round starts. See the <a href="#">judge instructions</a> for
-				late ballot policy.
-			</p>
-
-			<div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
-				<button className="btn btn-danger">Dump round</button>
-			</div>
-		</div>
-
-		<div className="sidebar">
-			<div className="panel">
-				<h4>Rounds</h4>
-				<a className="sidelink" href="#">Round 1</a>
-				<a className="sidelink" href="#">Round 2</a>
-				<a className="sidelink active" href="#">Round 3</a>
-				<a className="sidelink" href="#">Round 4</a>
-			</div>
-			<div className="panel panel-note">
-				<h4>Speaker points</h4>
-				<label htmlFor="ds-points">Points</label>
-				<input id="ds-points" className="num" defaultValue="28.5" />
-				<div className="hint">Range 25.0 – 30.0, tenths allowed.</div>
+<Unstyled>
+	<div className="bg-page font-sans text-text rounded-md p-6 text-sm">
+		<div className="mb-3 font-semibold">Canvas</div>
+		<div className="raised">
+			<div className="p-4 font-semibold">Raised</div>
+			<div className="sunken border-y p-4 font-semibold">Sunken</div>
+			<div className="p-4">
+				<div className="overlay w-48 p-4 font-semibold">Overlay</div>
 			</div>
 		</div>
 	</div>
-</div>
+</Unstyled>
+
+- Only `shadow-sm`, `shadow-lg`, and `inset-shadow-xs` belong to the system.
+  To restyle a level, redefine that `--shadow-*` token in `@theme`.
+- Raised and overlay keep their border because forced colors mode drops box
+  shadows.
+- `sunken` sets no border or radius. A well that runs edge to edge in a card
+  takes `border-y`; an inset one takes a full border.
+- Tinted surfaces such as alerts and prompts keep their own background and
+  add `shadow-sm` directly.
+
+## Shape
+
+- Controls (buttons, inputs) use `rounded`, 4px.
+- Cards and overlays use `rounded-md`, 6px, which `raised` and `overlay`
+  already set.
+- Pills and switch tracks use `rounded-full`.
+- Borders are 1px `border` when decorative and `border-strong` on a control,
+  where the edge has to reach 3:1.
+
+## Components
+
+Build pages from these before writing new markup.
+
+- **Button** (`src/lib/components/Button.svelte`): [all variants](?path=/story/components-button--all-variants).
+- **Form fields** (`src/lib/components/forms`): [text input](?path=/story/components-forms-textinput--types),
+  [select](?path=/story/components-forms-select--flat-options),
+  [checkbox](?path=/story/components-forms-checkbox--unchecked),
+  [switch](?path=/story/components-forms-switch--saves-on-change), and
+  [choice tiles](?path=/story/components-forms-choicetiles--ballot-winner).
+- **Whole forms**: [user profile](?path=/story/components-forms-examples--user-profile) and
+  [judge category](?path=/story/components-forms-examples--judge-category).
+- **Table** (`src/lib/components/tables`): [sortable](?path=/story/components-table--sortable).
+- **Tabs** (`src/lib/components/Tabs`): [panels](?path=/story/components-tabs--panels).
+- **Page layout** (`src/lib/layouts`): [page with sidebar](?path=/story/layouts-page--sidebar-short-page),
+  [header](?path=/story/layouts-header--logged-in), and
+  [footer](?path=/story/layouts-footer--default).

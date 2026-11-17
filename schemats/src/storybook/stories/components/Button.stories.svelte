@@ -6,6 +6,7 @@
 	const { Story } = defineMeta({
 		title     : 'Components/Button',
 		component : Button,
+		tags      : ['autodocs'],
 		argTypes  : {
 			color    : { control: 'select', options: ['default', 'primary', 'success', 'warning', 'danger', 'tertiary'] },
 			variant  : { control: 'select', options: ['solid', 'outline', 'ghost'] },

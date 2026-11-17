@@ -13,6 +13,7 @@
 	const { Story } = defineMeta({
 		title: 'Components/Table',
 		component: Table,
+		tags: ['autodocs'],
 	});
 
 	type Person = { id: number; name: string; school: string; joined: string };

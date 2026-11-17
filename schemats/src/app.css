@@ -16,8 +16,8 @@
 	--font-display: PTSans-Narrow-Bold, PTSans-Narrow, sans-serif;
 
 /*
- * Palette. Previewed with contrast ratios in
- * src/storybook/stories/design/ProposedPalette.mdx
+ * Palette. Documented with contrast ratios in
+ * src/storybook/stories/design/DesignSystem.mdx
  */
 	--color-primary        : #00abe8; /* Tabroom blue. Decoration only, 2.6:1 on white */
 	--color-primary-strong : #016f94; /* Buttons, links, focus rings */
@@ -84,7 +84,7 @@ html[data-env='staging'] {
 @source '../node_modules/flowbite-svelte/dist';
 
 /*
- * Elevation levels, previewed in src/storybook/stories/design/Elevation.stories.svelte:
+ * Elevation levels, previewed in src/storybook/stories/design/DesignSystem.mdx:
  * canvas (bg-page, WithSidebar canvas) < sunken (wells inside a card) < raised
  * (cards) < overlay (menus, toasts, drawers). Only shadow-sm, shadow-lg, and
  * inset-shadow-xs belong to the system; restyle them by redefining those

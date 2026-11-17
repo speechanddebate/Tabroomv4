@@ -5,6 +5,8 @@
 
 	const { Story } = defineMeta({
 		title: 'Components/Editor',
+		component: Editor,
+		tags: ['autodocs'],
 	});
 </script>
 
@@ -12,7 +14,7 @@
 	let content = $state('<p>Hello World!</p>');
 </script>
 
-<Story name="Default">
+<Story name="Default" asChild>
 	<Editor bind:content />
 
 	<div style="margin-top: 20px; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-surface-alt);">
@@ -24,6 +26,7 @@
 <!-- The toolbar must still show: Placeholder dispatches a transaction while the editor is built -->
 <Story
 	name="Placeholder"
+	asChild
 	play={async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(await canvas.findByTitle('Undo')).toBeInTheDocument();
