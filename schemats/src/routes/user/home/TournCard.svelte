@@ -53,7 +53,7 @@
 		</div>
 		<a
 			class="inline-flex items-center gap-1 text-sm text-primary-strong hover:underline"
-			href="/index/tourn/index.mhtml?tourn_id={tourn.id}"
+			href="/invite/{tourn.webname}"
 		>{tourn.webname}.tabroom.com<ExternalLink aria-hidden="true" size="12" /></a>
 	</div>
 {/snippet}
