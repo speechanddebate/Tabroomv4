@@ -112,6 +112,7 @@ import type {
 	UserJudgesHistoryParams,
 	UserParadigm,
 	UserParadigmOutput,
+	UserPasswordChange,
 	UserProfile,
 	UserProfileUpdate,
 	UserSession,
@@ -15215,6 +15216,190 @@ export const createUserProfileUpdate = <
 > => {
 	return createMutation(
 		() => ({ ...getUserProfileUpdateMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userPasswordChangeResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userPasswordChangeResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userPasswordChangeResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userPasswordChangeResponse403 = {
+	data: ForbiddenResponse;
+	status: 403;
+};
+
+export type userPasswordChangeResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userPasswordChangeResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
+export type userPasswordChangeResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userPasswordChangeResponseSuccess =
+	userPasswordChangeResponse204 & {
+		headers: Headers;
+	};
+export type userPasswordChangeResponseError = (
+	| userPasswordChangeResponse400
+	| userPasswordChangeResponse401
+	| userPasswordChangeResponse403
+	| userPasswordChangeResponse404
+	| userPasswordChangeResponse429
+	| userPasswordChangeResponse500
+) & {
+	headers: Headers;
+};
+
+export type userPasswordChangeResponse =
+	| userPasswordChangeResponseSuccess
+	| userPasswordChangeResponseError;
+
+export const getUserPasswordChangeUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/profile/password`;
+};
+
+/**
+ * Replaces the person's password.
+ * @summary Change password
+ */
+export const userPasswordChange = async (
+	userPasswordChange?: UserPasswordChange,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userPasswordChangeResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserPasswordChangeUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(userPasswordChange),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userPasswordChangeResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userPasswordChangeResponse;
+};
+
+export const getUserPasswordChangeMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userPasswordChange>>,
+		TError,
+		{ data?: UserPasswordChange },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userPasswordChange>>,
+	TError,
+	{ data?: UserPasswordChange },
+	TContext
+> => {
+	const mutationKey = ['userPasswordChange'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userPasswordChange>>,
+		{ data?: UserPasswordChange }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return userPasswordChange(data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserPasswordChangeMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userPasswordChange>>
+>;
+export type UserPasswordChangeMutationBody = UserPasswordChange | undefined;
+export type UserPasswordChangeMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| ForbiddenResponse
+	| NotFoundResponse
+	| TooManyRequestsResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Change password
+ */
+export const createUserPasswordChange = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| ForbiddenResponse
+		| NotFoundResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userPasswordChange>>,
+			TError,
+			{ data?: UserPasswordChange },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userPasswordChange>>,
+	TError,
+	{ data?: UserPasswordChange },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserPasswordChangeMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

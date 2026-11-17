@@ -87,3 +87,25 @@ export const UserProfileUpdateSchema = z.object({
 }) satisfies ZodOpenApiSchemaObject;
 
 export type UserProfileUpdate = z.infer<typeof UserProfileUpdateSchema>;
+
+/**
+ * A password change, checked for form only
+**/
+export const UserPasswordChangeSchema = z.object({
+	currentPassword: z.string().min(1, 'Enter your current password').max(512),
+	newPassword: z.string()
+		.min(8, 'Use at least 8 characters')
+		.max(512, 'Use 512 characters or fewer')
+		// Classic's login strips trailing whitespace, so a password ending in it could never log in there
+		.refine(value => value === value.trim(), 'Remove the spaces at the start and end')
+		.meta({ description: 'At least 8 characters of any kind' }),
+	repeatPassword: z.string().meta({ description: 'The new password again' }),
+}).strict().refine(change => change.newPassword === change.repeatPassword, {
+	message: 'The passwords don\'t match',
+	path: ['repeatPassword'],
+}).meta({
+	id: 'UserPasswordChange',
+	description: 'The logged in person\'s current password and the one to replace it',
+}) satisfies ZodOpenApiSchemaObject;
+
+export type UserPasswordChange = z.infer<typeof UserPasswordChangeSchema>;

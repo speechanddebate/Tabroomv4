@@ -3,6 +3,8 @@ import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import logger from '../../../../helpers/logger.js';
 import { db } from '../../../../data/database.js';
+import personRepo from '../../../../repos/personRepo.js';
+import { verifyPassword } from '../../../../services/AuthService.js';
 import { sql } from 'kysely';
 import { UserProfileSchema } from '@tabroom/types';
 import type { UserProfile } from '@tabroom/types';
@@ -672,6 +674,164 @@ describe('Profile Router', () => {
 
 			expect(await patch(userkey, { email: newAddress(), currentPassword: PASSWORD }).expect(429)).toBeProblemResponse(429);
 			await patch(userkey, { first: 'Avery' }).expect(200);
+		});
+	});
+
+	describe('POST /v1/user/profile/password', () => {
+		const PASSWORD = 'current-pass-123';
+		const NEXT = 'a-brand-new-pass';
+
+		const change = (userkey: string, body: object) => request(server).post('/v1/user/profile/password').asPerson(userkey).send(body);
+		const next = (newPassword: string) => ({ currentPassword: PASSWORD, newPassword, repeatPassword: newPassword });
+		const sessionsOf = async (id: number) => (await db.selectFrom('session').select('userkey').where('person', '=', id).execute())
+			.map(session => session.userkey);
+
+		beforeEach(() => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+		});
+
+		it('stores the new password as classic does, lifts a required change, retires reset links, and ends every other session', async () => {
+			const { id, userkey } = await newPerson({
+				password: PASSWORD,
+				no_email: 1,
+				settings: { force_password_change: 1, pass_changekey: 'ABC123', pass_change_expires: '2026-11-17 12:00:00' },
+			});
+			const other = await factories.session.create({ person: id });
+			const Admin = await factories.person.create({ site_admin: 1 });
+			personIds.push(Admin.id);
+			const su = await factories.session.create({ person: id, su: Admin.id });
+			const info = vi.spyOn(logger, 'info');
+
+			await change(userkey, next(NEXT)).expect(204);
+
+			const person = await personRepo.getPerson(db, id, { settings: ['force_password_change', 'pass_changekey', 'pass_change_expires'] });
+			expect(person?.password).toMatch(/^\$6\$/);
+			expect(verifyPassword(NEXT, person!.password!)).toBe(true);
+			expect(verifyPassword(PASSWORD, person!.password!)).toBe(false);
+			expect(Math.abs(person!.pass_timestamp!.getTime() - Date.now())).toBeLessThan(5000);
+			expect(person?.settings ?? {}).toEqual({});
+
+			// An admin's su session stays: it was never opened with the person's password
+			expect((await sessionsOf(id)).sort()).toEqual([userkey, su.userkey].sort());
+			await request(server).get('/v1/user/profile').asPerson(other.userkey).expect(401);
+			await request(server).get('/v1/user/profile').asPerson(userkey).expect(200);
+
+			// Account mail: sent even to someone opted out, ahead of any blast, and kept out of the inbox
+			const [job] = emailJobs();
+			expect(job.data).toMatchObject({ kind: 'account' });
+			expect(job.opts).not.toHaveProperty('priority');
+			const [notice] = await db.selectFrom('message').select(['subject', 'visible_at']).where('person', '=', id).execute();
+			expect(notice).toEqual({ subject: 'Your Tabroom.com password has been changed', visible_at: null });
+
+			expect(info).toHaveBeenCalledWith(expect.any(String), { 'event.name': 'account.password.changed', person: id });
+			expect(JSON.stringify(info.mock.calls)).not.toContain(NEXT);
+		});
+
+		it('takes a current password hashed by classic\'s Perl crypt', async () => {
+			const { id, userkey } = await newPerson();
+			// perl -e 'print crypt("classic-pass-123", q{$6$tabroomfixture$})'
+			await db.updateTable('person')
+				.set({ password: '$6$tabroomfixture$ivQCjxsQ.RlAsFy/l7FM04DA0gUR1f/anFf/hL1S/lnxRnEcsSikV/fKWFtSCOCzQIcnhdktaXbhcfVX6i0hJ1' })
+				.where('id', '=', id)
+				.execute();
+
+			await change(userkey, { currentPassword: 'classic-pass-123', newPassword: NEXT, repeatPassword: NEXT }).expect(204);
+
+			expect(verifyPassword(NEXT, (await stored(id)).password!)).toBe(true);
+		});
+
+		it('still changes the password when the notice can\'t be queued', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			addJobs.mockRejectedValue(new Error('Job queues are not connected to Redis'));
+			const error = vi.spyOn(logger, 'error').mockImplementation(() => logger);
+
+			await change(userkey, next(NEXT)).expect(204);
+
+			expect(verifyPassword(NEXT, (await stored(id)).password!)).toBe(true);
+			expect(error).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ 'event.name': 'account.password.notice.exception' }));
+		});
+
+		it('refuses a wrong current password, and an account that has none', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const before = (await stored(id)).password;
+			const other = await factories.session.create({ person: id });
+
+			const res = await change(userkey, { ...next(NEXT), currentPassword: 'not-the-password' }).expect(403);
+
+			expect(res).toBeProblemResponse(403);
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['currentPassword'], message: 'That password isn\'t right' })]);
+			expect((await stored(id)).password).toBe(before);
+			expect(await sessionsOf(id)).toContain(other.userkey);
+			expect(emailJobs()).toEqual([]);
+
+			// A one-time-code login has no password to give; it sets one through "forgot password"
+			const passwordless = await newPerson();
+			await db.updateTable('person').set({ password: null }).where('id', '=', passwordless.id).execute();
+			await change(passwordless.userkey, next(NEXT)).expect(403);
+			expect((await stored(passwordless.id)).password).toBeNull();
+		});
+
+		it.each([
+			['is the current one', PASSWORD, 'newPassword'],
+			['is under 8 characters', 'short12', 'newPassword'],
+			['holds a banned word in any case', 'MyDebate1', 'newPassword'],
+			['holds another banned word', 'INTERPrules', 'newPassword'],
+			['starts or ends with a space', ' a-brand-new-pass', 'newPassword'],
+		])('refuses a new password that %s', async (_case, newPassword, field) => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const before = (await stored(id)).password;
+
+			const res = await change(userkey, next(newPassword)).expect(400);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: [field] })]);
+			expect((await stored(id)).password).toBe(before);
+		});
+
+		it('refuses a new password that is the person\'s email or full name, in any case', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD, first: 'Avery', last: 'Stonebridge' });
+			const { email, password: before } = await stored(id);
+
+			for (const newPassword of [email.toUpperCase(), 'avery stonebridge']) {
+				const res = await change(userkey, next(newPassword)).expect(400);
+				expect(res.body.issues).toEqual([expect.objectContaining({ path: ['newPassword'] })]);
+			}
+			expect((await stored(id)).password).toBe(before);
+		});
+
+		it('refuses a repeat that doesn\'t match', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const before = (await stored(id)).password;
+
+			const res = await change(userkey, { currentPassword: PASSWORD, newPassword: NEXT, repeatPassword: `${NEXT}!` }).expect(400);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['repeatPassword'] })]);
+			expect((await stored(id)).password).toBe(before);
+		});
+
+		it('refuses while su\'d, changing nothing and not counting against the person', async () => {
+			const Admin = await factories.person.create({ site_admin: 1 });
+			personIds.push(Admin.id);
+			const Target = await newPerson({ password: PASSWORD });
+			const before = (await stored(Target.id)).password;
+			const { userkey } = await factories.session.create({ person: Target.id, su: Admin.id });
+
+			for (let attempt = 0; attempt < 11; attempt++) {
+				expect(await change(userkey, next(NEXT)).expect(403)).toBeProblemResponse(403);
+			}
+
+			expect((await stored(Target.id)).password).toBe(before);
+			await change(Target.userkey, next(NEXT)).expect(204);
+		});
+
+		it('stops after 10 wrong passwords, even for the right one, counted together with email changes', async () => {
+			const { userkey } = await newPerson({ password: PASSWORD });
+
+			for (let attempt = 0; attempt < 5; attempt++) {
+				await change(userkey, { ...next(NEXT), currentPassword: 'wrong' }).expect(403);
+				await patch(userkey, { email: `rate.${attempt}.${Date.now()}@example.org`, currentPassword: 'wrong' }).expect(403);
+			}
+
+			expect(await change(userkey, next(NEXT)).expect(429)).toBeProblemResponse(429);
 		});
 	});
 });

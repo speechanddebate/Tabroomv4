@@ -1,18 +1,19 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { EmailConfirmRequestSchema, UserProfileSchema, UserProfileUpdateSchema } from '@tabroom/types';
+import { EmailConfirmRequestSchema, UserPasswordChangeSchema, UserProfileSchema, UserProfileUpdateSchema } from '@tabroom/types';
 import { RateLimitExceeded } from '../../../../helpers/problem.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
-import { confirmEmail, resendEmailConfirmation, show, update } from '../../../../controllers/user/profile.js';
+import { changeOwnPassword, confirmEmail, resendEmailConfirmation, show, update } from '../../../../controllers/user/profile.js';
 
 const router = Router();
 
-// a borrowed login gets 10 wrong current passwords per 15 minutes; requests without one, and accepted ones (any status but 403), never count
+// a borrowed login gets 10 wrong current passwords per 15 minutes; requests without one, and accepted ones (any status but 403), never count.
+// An su'd admin's refusals (also 403) aren't guesses, and mustn't lock the person out
 const PASSWORD_LIMIT = 10;
 const passwordLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
 	limit: PASSWORD_LIMIT,
-	skip: (req) => !req.body?.currentPassword,
+	skip: (req) => !req.body?.currentPassword || Boolean(req.auth?.su),
 	skipSuccessfulRequests: true,
 	requestWasSuccessful: (_req, res) => res.statusCode !== 403,
 	keyGenerator: (req) => `current-password:${req.person?.id}`,
@@ -84,6 +85,28 @@ router.route('/').patch(ValidateRequest, passwordLimiter, update).openapi = {
 		403: { $ref: '#/components/responses/Forbidden' },
 		404: { $ref: '#/components/responses/NotFound' },
 		409: { $ref: '#/components/responses/Conflict' },
+		429: { $ref: '#/components/responses/TooManyRequests' },
+	},
+};
+
+router.route('/password').post(ValidateRequest, passwordLimiter, changeOwnPassword).openapi = {
+	summary: 'Change password',
+	description: `Replaces the person's password.`,
+	path: '/user/profile/password',
+	operationId: 'UserPasswordChange',
+	tags: ['Orval', 'user:profile'],
+	requestBody: {
+		content: {
+			'application/json': {
+				schema: UserPasswordChangeSchema,
+			},
+		},
+	},
+	responses: {
+		204: { description: 'The password is changed' },
+		400: { $ref: '#/components/responses/BadRequest' },
+		403: { $ref: '#/components/responses/Forbidden' },
+		404: { $ref: '#/components/responses/NotFound' },
 		429: { $ref: '#/components/responses/TooManyRequests' },
 	},
 };

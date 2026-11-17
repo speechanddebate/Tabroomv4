@@ -79,6 +79,47 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 	return {personId: Person.id, token: userkey};
 }
 
+export type PasswordChangeOutcome = 'changed' | 'notFound' | 'wrongPassword' | 'sameAsCurrent' | 'bannedWord' | 'isEmailOrName';
+
+// Classic's list: the words a speech and debate password is most often built on
+const BANNED_PASSWORD_WORDS = ['debate', 'speech', 'forensics', 'congress', 'mocktrial', 'extemp', 'oratory', 'interp'];
+
+/**
+ * Replaces a person's password, whose form the request schema has already checked. Here go the
+ * rules for what a password may be: the current one is right, and the new one differs from it,
+ * holds no banned word, and isn't the person's email or name. A change ends their other sessions, lifts a required
+ * password change, and retires any reset link. Stored as classic stores it, so the password logs
+ * in on both sites
+ */
+export async function changePassword(
+	personId: number,
+	sessionId: number | null,
+	currentPassword: string,
+	newPassword: string,
+): Promise<PasswordChangeOutcome> {
+	const person = await personRepo.getPerson(db, personId);
+	if (!person) return 'notFound';
+
+	// An account with no password sets its first one through "forgot password", which proves the
+	// inbox is theirs. A login by one-time code doesn't stand in for the current password
+	if (!person.password || !verifyPassword(currentPassword, person.password)) return 'wrongPassword';
+
+	if (newPassword === currentPassword) return 'sameAsCurrent';
+	const candidate = newPassword.toLowerCase();
+	if (BANNED_PASSWORD_WORDS.some(word => candidate.includes(word))) return 'bannedWord';
+	const taken = [person.email, [person.first, person.last].filter(Boolean).join(' ')].map(value => value.trim().toLowerCase());
+	if (taken.includes(candidate)) return 'isEmailOrName';
+
+	await personRepo.updatePerson(db, personId, {
+		password: hashPassword(newPassword),
+		pass_timestamp: new Date(),
+		settings: { force_password_change: null, pass_change_expires: null, pass_changekey: null },
+	});
+	await sessionRepo.deleteSessions(db, personId, { except: sessionId ?? undefined });
+
+	return 'changed';
+}
+
 export const AUTH_INVALID = Symbol('AUTH_INVALID');
 export const FORBIDDEN = Symbol('FORBIDDEN');
 

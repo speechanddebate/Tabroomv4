@@ -177,6 +177,18 @@ export const deleteSession = async (db: Database, id: number, opts: { ownedBy?: 
 	return result.numDeletedRows > 0;
 };
 
+/**
+ * Deletes a person's own sessions, except one to keep. Sessions an admin su'd into stay: they were
+ * never opened with the person's password. Returns how many were deleted
+ */
+export const deleteSessions = async (db: Database, personId: number, opts: { except?: number } = {}) => {
+	let query = db.deleteFrom('session').where('session.person', '=', personId).where('session.su', 'is', null);
+	if (opts.except) {
+		query = query.where('session.id', '!=', opts.except);
+	}
+	return Number((await query.executeTakeFirst()).numDeletedRows);
+};
+
 /** The push subscription columns of a session, or undefined if the session doesn't exist */
 export const getPushStatus = async (db: Database, sessionId: number) => {
 	return await db.selectFrom('session')
@@ -379,6 +391,7 @@ export default {
 	findByUserKey,
 	getSession,
 	deleteSession,
+	deleteSessions,
 	updateSession,
 	createSession,
 	getPushStatus,

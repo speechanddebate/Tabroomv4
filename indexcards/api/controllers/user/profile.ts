@@ -1,10 +1,13 @@
 import type { Response } from 'express';
-import type { EmailConfirmRequest, UserProfileUpdate } from '@tabroom/types';
+import type { EmailConfirmRequest, UserPasswordChange, UserProfileUpdate } from '@tabroom/types';
 import { BadRequest, Conflict, Forbidden, Gone, NotFound } from '../../helpers/problem.js';
 import logger from '../../helpers/logger.js';
 import type { ValidatedRequest } from '../../middleware/validation.js';
 import { getPerson } from '../../middleware/auth/authorization.js';
 import { db } from '../../data/database.js';
+import { changePassword } from '../../services/AuthService.js';
+import { notify } from '../../services/notifications/notify.js';
+import { passwordChanged } from '../../services/notifications/templates/account/passwordChanged.js';
 import { getProfile, updateProfile } from '../../services/profile/profileService.js';
 import { confirmCode, resendConfirmation } from '../../services/profile/emailConfirm.js';
 import { maskEmail } from '../../services/notifications/unsubscribe.js';
@@ -42,6 +45,52 @@ export async function update(req: ValidatedRequest, res: Response) {
 		});
 	}
 	res.json(outcome.profile);
+}
+
+/** What the person is told when the service turns down the password they chose */
+const REFUSED_PASSWORD = {
+	sameAsCurrent: 'Choose a password different from your current one',
+	bannedWord: 'Choose a password without common speech and debate words, such as debate, speech, or congress',
+	isEmailOrName: 'Choose a password that isn\'t your email or your name',
+};
+
+export async function changeOwnPassword(req: ValidatedRequest, res: Response) {
+	const person = getPerson(req);
+	if (req.auth.su) return Forbidden(req, res, 'Passwords can\'t be changed while su\'d');
+
+	const { currentPassword, newPassword } = req.body as UserPasswordChange;
+	const outcome = await changePassword(person.id, req.auth.sessionId, currentPassword, newPassword);
+
+	if (outcome === 'notFound') return NotFound(req, res, 'Your account was not found');
+	if (outcome === 'wrongPassword') {
+		return Forbidden(req, res, 'That password isn\'t right', {
+			issues: [{ path: ['currentPassword'], message: 'That password isn\'t right', code: 'custom' }],
+		});
+	}
+	if (outcome !== 'changed') {
+		return BadRequest(req, res, 'Some fields need attention', [{ path: ['newPassword'], message: REFUSED_PASSWORD[outcome], code: 'custom' }]);
+	}
+
+	logger.info('Password changed, other sessions ended', { 'event.name': 'account.password.changed', person: person.id });
+
+	// The password is already changed; a notice that can't be queued mustn't read as a failed change
+	try {
+		const { subject, html } = passwordChanged();
+		await notify({
+			ids: [person.id],
+			subject,
+			html: html.value,
+			kind: 'account',
+			priority: 'high',
+			channels: { inbox: false, push: false },
+		});
+	} catch (error) {
+		logger.error(`Could not queue the password changed notice for person ${person.id}`, {
+			'event.name': 'account.password.notice.exception',
+			error,
+		});
+	}
+	res.status(204).end();
 }
 
 export async function confirmEmail(req: ValidatedRequest, res: Response) {
