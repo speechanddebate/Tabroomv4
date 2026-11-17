@@ -13,6 +13,8 @@
 		parameters: {
 			layout: 'fullscreen',
 		},
+		// Below lg the sidebar starts closed off-screen; these stories check the modules, not the drawer
+		globals: { viewport: { value: 'desktop', isRotated: false } },
 	});
 </script>
 

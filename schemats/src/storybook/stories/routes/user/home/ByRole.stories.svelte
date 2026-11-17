@@ -72,7 +72,8 @@
 	{#snippet template()}{@render threePhases(['tab', 'coach'])}{/snippet}
 </Story>
 
-<Story name="Other combinations">
+<!-- A gallery that repeats the same tournament, so its rounds tables share a name; a real home page has one card per tournament -->
+<Story name="Other combinations" parameters={{ a11y: { config: { rules: [{ id: 'landmark-unique', enabled: false }] } } }}>
 	{#snippet template()}
 		<div class="flex flex-col gap-12">
 			{#each others as other (other.name)}

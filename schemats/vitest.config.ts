@@ -38,10 +38,14 @@ export default defineConfig({
 				test: {
 					name: 'a11y',
 					testTimeout: process.env.CI ? 60_000 : undefined,
+					// Storybook resizes the frame before every story, so the size goes to
+					// .storybook/vitest.setup.ts as the default viewport, not to Playwright
+					provide: { storybookViewport },
+					setupFiles: ['./.storybook/vitest.setup.ts'],
 					browser: {
 						enabled: true,
 						headless: true,
-						provider: playwright({ contextOptions: { viewport: storybookViewport } }),
+						provider: playwright(),
 						instances: [{ browser: 'chromium' }],
 					},
 				},

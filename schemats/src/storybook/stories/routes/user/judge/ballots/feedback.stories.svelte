@@ -124,10 +124,11 @@
 	}}
 />
 
-<!-- Switching boxes saves right away, and the text is still there on the way back -->
+<!-- Switching boxes saves right away, and the text is still there on the way back. Wide, because it clicks the tab strip. -->
 <Story
 	name="Switch Boxes"
 	args={{ context: debate }}
+	globals={{ viewport: { value: 'desktop', isRotated: false } }}
 	parameters={{ msw: { handlers: recordSaves } }}
 	play={async ({ canvasElement }) => {
 		const canvas = within(canvasElement);

@@ -9,6 +9,9 @@
 		title: 'Components/Tabs',
 		component: Tabs,
 	});
+
+	// Stories that drive the tab strip, which only shows from sm up
+	const wide = { viewport: { value: 'desktop', isRotated: false } };
 </script>
 
 <Story name="Panels" args={{ label: 'Tournament details' }}>
@@ -20,9 +23,10 @@
 
 <!-- One selected and one unselected tab with an alert -->
 <Story
-	name = "Alerts"
-	args = {{ label: 'Tournament details' }}
-	play = {async ({ canvasElement }) => {
+	name    = "Alerts"
+	args    = {{ label: 'Tournament details' }}
+	globals = {wide}
+	play    = {async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		await expect(canvas.getByRole('tab', { name: 'Entries (needs attention)' })).toBeInTheDocument();
 		await expect(canvas.getByRole('tab', { name: 'Judges (needs attention)' })).toBeInTheDocument();
@@ -36,9 +40,10 @@
 
 <!-- Arrows move focus without selecting; Enter selects. Disabled tabs take focus but not selection. -->
 <Story
-	name = "Panels Keyboard"
-	args = {{ label: 'Tournament details', onchange: fn() }}
-	play = {async ({ canvasElement, args }) => {
+	name    = "Panels Keyboard"
+	args    = {{ label: 'Tournament details', onchange: fn() }}
+	globals = {wide}
+	play    = {async ({ canvasElement, args }) => {
 		const canvas = within(canvasElement);
 		const [first, second, , disabled] = canvas.getAllByRole('tab');
 
@@ -73,9 +78,10 @@
 
 <!-- onchange fires when the user picks another tab, not for the first selection -->
 <Story
-	name = "Panels On Change"
-	args = {{ label: 'Tournament details', onchange: fn() }}
-	play = {async ({ canvasElement, args }) => {
+	name    = "Panels On Change"
+	args    = {{ label: 'Tournament details', onchange: fn() }}
+	globals = {wide}
+	play    = {async ({ canvasElement, args }) => {
 		const canvas = within(canvasElement);
 		await expect(args.onchange).not.toHaveBeenCalled();
 		await userEvent.click(canvas.getByRole('tab', { name: 'Tab 2' }));

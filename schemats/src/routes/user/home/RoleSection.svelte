@@ -229,7 +229,9 @@
 				{/if}
 
 				{#if entry.Rounds.length > 0}
-					<div class="mt-3 overflow-x-auto">
+					<!-- Focusable so keyboard users can scroll the table sideways on a phone (axe scrollable-region-focusable) -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<div class="mt-3 overflow-x-auto" aria-label="Rounds for {entry.code} at {tourn.name}" role="region" tabindex="0">
 						<table class="w-full min-w-xl text-left text-sm">
 							<thead class="border-b-2 border-border-strong text-xs text-muted">
 								<tr>
