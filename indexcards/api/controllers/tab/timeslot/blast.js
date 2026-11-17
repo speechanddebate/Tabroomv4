@@ -1,5 +1,4 @@
 import { getFollowers } from '../../../helpers/followers.js';
-import logger from '../../../helpers/logger.js';
 import { notify } from '../../../services/notifications/notify.js';
 import { blastRoundPairing } from '../round/blast.js';
 import { BadRequest, Forbidden } from '../../../helpers/problem.js';
@@ -39,16 +38,11 @@ export async function blastTimeslotMessage(req, res) {
 	const tourn = await summon(kdb, 'tourn',req.params.tournId);
 
 	const notifyResponse = await notify({
-		from        : `${tourn.name} <${tourn.webname}@www.tabroom.com>` ,
-		fromAddress : `<${tourn.webname}@www.tabroom.com>`               ,
-		ids         : personIds                                           ,
-		text        : req.body.message                                    ,
+		ids   : personIds,
+		text  : req.body.message,
+		kind  : 'tourn',
+		tourn : tourn.id,
 	});
-
-	if (notifyResponse.error) {
-		logger.error(notifyResponse.message);
-		return res.status(200).json(notifyResponse);
-	}
 
 	let roundQuery = kdb.selectFrom('round')
 		.select('id')
@@ -67,9 +61,9 @@ export async function blastTimeslotMessage(req, res) {
 		const pushPromise = changeLogRepo.createChangeLog(kdb, {
 			tag    : 'blast',
 			person : req.person?.id,
-			count  : notifyResponse.push?.count || 0,
+			count  : notifyResponse.jobs.push,
 			round  : round.id,
-			description : `${req.body.message} sent to whole timeslot. ${notifyResponse.inbox || 0} recipients`,
+			description : `${req.body.message} sent to whole timeslot. ${notifyResponse.messages} recipients`,
 		});
 
 		promises.push(pushPromise);
@@ -77,7 +71,7 @@ export async function blastTimeslotMessage(req, res) {
 
 	await Promise.all(promises);
 
-	const message = `Message sent to whole timeslot. ${notifyResponse.inbox || 0} recipients messaged, ${notifyResponse.web || 0} by web and ${notifyResponse.email || 0} by email`;
+	const message = `Message sent to whole timeslot. ${notifyResponse.messages} recipients messaged, ${notifyResponse.jobs.push} by web and ${notifyResponse.jobs.email} by email`;
 	return res.status(200).json({
 		error: false,
 		message,
@@ -211,7 +205,7 @@ export async function messageFreeJudges(req, res) {
 		const ids = [judge.person];
 
 		if (judge.followers) {
-			ids.push(...judge.followers.split(','));
+			ids.push(...judge.followers.split(',').map(Number));
 		}
 
 		const subject = `Judge ${judge.first} ${judge.last} Released`;
@@ -222,17 +216,16 @@ export async function messageFreeJudges(req, res) {
 			ids,
 			text,
 			subject,
-			from        : `${tourn.name} <${tourn.webname}@www.tabroom.com>` ,
-			fromAddress : `<${tourn.webname}@www.tabroom.com>`               ,
+			kind  : 'tourn',
+			tourn : tourn.id,
 		});
 
 		promises.push(promise);
 	}
 
-	await Promise.all(promises);
-	for (const promise of promises) {
-		totals.web += promise.web;
-		totals.email += promise.email;
+	for (const response of await Promise.all(promises)) {
+		totals.web += response.jobs.push;
+		totals.email += response.jobs.email;
 	}
 
 	const rounds = await kdb.selectFrom('round')
@@ -313,6 +306,7 @@ export async function messageReleasedJudges(req, res) {
 		emails : 0 ,
 	};
 
+	const tourn = await summon(kdb, 'tourn', req.params.tournId);
 	const promises = [];
 
 	for (const judge of releasedJudges) {
@@ -321,7 +315,7 @@ export async function messageReleasedJudges(req, res) {
 		const ids = [judge.person];
 
 		if (judge.followers) {
-			ids.push(...judge.followers.split(','));
+			ids.push(...judge.followers.split(',').map(Number));
 		}
 
 		const subject = `Judge ${judge.first} ${judge.last} Released`;
@@ -332,16 +326,16 @@ export async function messageReleasedJudges(req, res) {
 			ids,
 			text,
 			subject,
+			kind  : 'tourn',
+			tourn : tourn.id,
 		});
 
 		promises.push(notifyResponse);
 	}
 
-	await Promise.all(promises);
-
-	for (const promise of promises) {
-		totals.web += promise.web;
-		totals.email += promise.email;
+	for (const response of await Promise.all(promises)) {
+		totals.web += response.jobs.push;
+		totals.email += response.jobs.email;
 	}
 
 	const rounds = await kdb.selectFrom('round')

@@ -1,3 +1,4 @@
+import config from '../../config.js';
 import { signToken, verifyToken } from '../tokens.js';
 
 /**
@@ -22,6 +23,11 @@ const normalize = (email: string) => email.trim().toLowerCase();
 /** The token for a person's unsubscribe link */
 export async function unsubscribeToken(person: UnsubscribePerson, issuedAt?: number): Promise<string> {
 	return await signToken('unsubscribe', person.id, { email: normalize(person.email) }, UNSUBSCRIBE_TOKEN_MAX_AGE, issuedAt);
+}
+
+/** The schemats page with the unsubscribe button, for the email footer and for browsers that open the API link */
+export function unsubscribePageUrl(token: string): string {
+	return `${config.schemats_url}/unsubscribe/${encodeURIComponent(token)}`;
 }
 
 /**

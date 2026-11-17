@@ -109,25 +109,19 @@ export const sendTestPush = async (req: Request, res: Response) => {
 			ids: [person.id],
 			subject: 'Test notification',
 			text: 'Notifications from Tabroom are working on this browser.',
-			body: null,
 			url: '/user/profile',
 			channels: { inbox: false, email: false },
 			// A test that turns up an hour later is no use
 			push: { sessions: [sessionId], ttl: 60, urgency: 'high' },
 		});
 	} catch (error) {
-		// notify() logs a queue that won't take the job, but nothing else it throws (the database, say)
+		// notify() logs a queue that won't take the job, but nothing else it throws (the database, a request it refuses)
 		logger.error('Could not send a test notification', { 'event.name': 'notification.push.test.exception', error });
 		return ServiceUnavailable(req, res, failed);
 	}
 
-	// notify() answers a request it refuses instead of throwing; this one is built here, so that is a bug
-	if (response.error) {
-		logger.error(`Test notification request was refused: ${response.message}`, { 'event.name': 'notification.push.test.exception' });
-		return ServiceUnavailable(req, res, failed);
-	}
 	// The login stopped being able to receive push between the check above and notify()'s own
-	if (!response.jobs?.push) {
+	if (!response.jobs.push) {
 		return Conflict(req, res, 'Push notifications aren\'t on for this browser');
 	}
 

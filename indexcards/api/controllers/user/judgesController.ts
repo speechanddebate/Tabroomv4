@@ -12,12 +12,12 @@ import changeLogRepo from '../../repos/changeLogRepo.js';
 import { profanityCheck, sanitizeHTML } from '../../helpers/text.js';
 import { BadRequest, Forbidden, NotFound } from '../../helpers/problem.js';
 import { notify } from '../../services/notifications/notify.js';
+import { linkRequest } from '../../services/notifications/templates/chapter/linkRequest.js';
 import logger from '../../helpers/logger.js';
 import { db } from '../../data/database.js';
 import { getPerson } from '../../middleware/auth/authorization.js';
 import type { Request, Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
-import type { SessionPerson } from '../../middleware/auth/types.js';
 
 async function linkRequests(req: Request, res: Response) {
 	const person = getPerson(req);
@@ -107,10 +107,17 @@ async function claimRequest(req: ValidatedRequest, res: Response) {
 		});
 	}
 	if(admins.some(a => a.email && !a.no_email)) {
-		const emailData = buildChapterJudgeClaimEmail(chapterJudge, person);
+		const { subject, html } = linkRequest({
+			record: 'judge',
+			name: [chapterJudge.first, chapterJudge.last].filter(Boolean).join(' '),
+			chapter: chapterJudge.chapter,
+			requester: person,
+		});
 		await notify({
 			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
-			...emailData,
+			subject,
+			html: html.value,
+			replyTo: `${person.first} ${person.last} <${person.email}>`,
 		});
 	} else {
 		logger.warn('Chapter with id ' + chapterJudge.chapter + ' has no admins setup to receive emails. Cannot send judge claim notification email.');
@@ -304,20 +311,4 @@ export default {
 	getParadigm,
 	updateParadigm,
 	getLiveDocs,
-};
-
-function buildChapterJudgeClaimEmail(
-	chapterJudge: NonNullable<Awaited<ReturnType<typeof chapterJudgeRepo.getChapterJudge>>>, 
-	person: SessionPerson) {
-	let text = `The Tabroom user \n\n${person.first} ${person.last} (${person.email}) \n\n
-	has requested online access to updates, ballots and texts for judge ${chapterJudge.first} ${chapterJudge.last} in your team roster.\n\n
-	If these are the same people, approve this request by logging into Tabroom and visiting\n\n
-	https://tabroom.com/user/chapter/judges.mhtml?chapter_id=${chapterJudge.chapter}\n\n
-	If this is not authorized, you do not need to do anything.\n\n`;
-	return {
-		subject: `[Tabroom] ${person.email} requests access to judge ${chapterJudge.first} ${chapterJudge.last}`,
-		from: `Tabroom Link <judgelink_${String(Date.now()).slice(-6)}@www.tabroom.com>`,
-		replyTo: `${person.first} ${person.last} <${person.email}>`,
-		text,
-	};
 };

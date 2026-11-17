@@ -1,6 +1,5 @@
 import { sql } from 'kysely';
 import { getFollowers, getPairingFollowers } from '../../../helpers/followers.js';
-import logger from '../../../helpers/logger.js';
 import { notify } from '../../../services/notifications/notify.js';
 import { sendPairingBlast, formatPairingBlast } from '../../../helpers/pairing.js';
 import { db as kdb } from '../../../data/database.js';
@@ -23,35 +22,24 @@ export async function blastSectionMessage(req, res) {
 		req.body
 	);
 
-	const seconds = Math.floor(Date.now() / 1000);
-	const numberwang = seconds.toString().substring(-5);
-
-	const from = `${tourn.name} <${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	const fromAddress = `<${tourn.webname}_${numberwang}@www.tabroom.com>`;
-
 	const notifyResponse = await notify({
-		ids         : personIds,
-		text        : req.body.message,
-		from,
-		fromAddress,
+		ids   : personIds,
+		text  : req.body.message,
+		kind  : 'tourn',
+		tourn : tourn.id,
 	});
-
-	if (notifyResponse.error) {
-		logger.error(notifyResponse.message);
-		return res.status(200).json(notifyResponse);
-	}
 
 	await changeLogRepo.createChangeLog(kdb, {
 		tag         : 'blast',
-		description : `${req.body.message} sent to ${notifyResponse.push?.count || 0} web and ${notifyResponse.email?.count || 0} email recipients `,
+		description : `${req.body.message} sent to ${notifyResponse.jobs.push} web and ${notifyResponse.jobs.email} email recipients `,
 		person      : req.person?.id,
-		count       : notifyResponse.push?.count || 0,
+		count       : notifyResponse.jobs.push,
 		panel       : req.params.sectionId,
 	});
 
 	return res.status(200).json({
 		error   : false,
-		message : notifyResponse.message,
+		message : `Notification queued for ${notifyResponse.messages} people`,
 	});
 };
 
@@ -64,12 +52,6 @@ export async function blastSectionPairing(req, res) {
 
 	const blastData = await formatPairingBlast(queryData, req);
 	const tourn = await summon(kdb, 'tourn',req.params.tournId);
-
-	const seconds = Math.floor(Date.now() / 1000);
-	const numberwang = seconds.toString().substring(-5);
-
-	blastData.from = `${tourn.name} <${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	blastData.fromAddress = `<${tourn.webname}_${numberwang}@www.tabroom.com>`;
 
 	const followers = await getPairingFollowers(
 		queryData.replacements,

@@ -15,21 +15,16 @@ export async function blastRoundMessage(req, res) {
 	const personIds = await getFollowers(req.body);
 	const tourn = await summon(kdb, 'tourn',req.params.tournId);
 
-	const seconds = Math.floor(Date.now() / 1000);
-	const numberwang = seconds.toString().substring(-5);
-	const from = `${tourn.name} <${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	const fromAddress = `<${tourn.webname}_${numberwang}@www.tabroom.com>`;
-
 	const blast = await notify({
 		ids: personIds,
 		text: req.body.message,
-		from,
-		fromAddress,
+		kind: 'tourn',
+		tourn: tourn.id,
 	});
 
 	const logMessage = {
 		tag: 'blast',
-		description: `${req.body.message} sent.  ${blast.message}`,
+		description: `${req.body.message} sent to ${blast.messages} people`,
 		round: req.body.roundId,
 	};
 
@@ -41,7 +36,7 @@ export async function blastRoundMessage(req, res) {
 
 	await changeLogRepo.createChangeLog(kdb, logMessage);
 
-	const message = `Message sent to whole timeslot. ${blast.inbox || 0} recipients messaged, ${blast.web || 0} by web and ${blast.email || 0} by email`;
+	const message = `Message sent to whole timeslot. ${blast.messages} recipients messaged, ${blast.jobs.push} by web and ${blast.jobs.email} by email`;
 
 	return res.status(200).json({
 		error: false,
@@ -263,13 +258,7 @@ export async function blastRoundPairing(req, res) {
       where tourn.id = ${req.params.tournId}
   `.execute(kdb);
 
-	const tourn = tourns.shift();
-	const seconds = Math.floor(Date.now() / 1000);
-	const numberwang = seconds.toString().substring(-5);
-
-	blastData.from = `${tourn.name} <${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	blastData.fromAddress = `<${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	blastData.tourn = tourn.id;
+	blastData.tourn = tourns.shift().id;
 
 	const blast = sendPairingBlast(followers, blastData, req, res);
 

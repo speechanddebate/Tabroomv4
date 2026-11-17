@@ -1,5 +1,7 @@
 import { metrics } from '@opentelemetry/api';
 import type { Database } from '../data/database.js';
+import { sanitizeHTML } from '../helpers/text.js';
+import { INBOX_HTML } from '../services/notifications/templates/html.js';
 import type { Message } from '../data/schema.js';
 import type { Insertable, Selectable } from 'kysely';
 
@@ -61,7 +63,7 @@ async function getMessage(db: Database, messageId: number, personId?: number, op
 	return row ? {
 		id: row.id,
 		subject: row.subject,
-		body: row.body,
+		body: row.body && sanitizeHTML(row.body, INBOX_HTML),
 		url: row.url,
 		deleted_at: row.deleted_at?.toISOString() ?? null,
 		visible_at: row.visible_at?.toISOString(),
@@ -81,7 +83,7 @@ async function getMessage(db: Database, messageId: number, personId?: number, op
 			: null,
 		Email: row.email_id
 			? {
-				content: row.email_content,
+				content: row.email_content && sanitizeHTML(row.email_content, INBOX_HTML),
 			}
 			: null,
 	} : undefined;
@@ -111,7 +113,7 @@ async function getMessages(db: Database, personId: number, opts: queryOpts = {} 
 	return data.map((row) => ({
 		id: row.id,
 		subject: row.subject,
-		body: row.body,
+		body: row.body && sanitizeHTML(row.body, INBOX_HTML),
 		url: row.url,
 		deleted_at: row.deleted_at?.toISOString() ?? null,
 		visible_at: row.visible_at?.toISOString(),
@@ -131,7 +133,7 @@ async function getMessages(db: Database, personId: number, opts: queryOpts = {} 
 			: null,
 		Email: row.email_id
 			? {
-				content: row.email_content,
+				content: row.email_content && sanitizeHTML(row.email_content, INBOX_HTML),
 			}
 			: null,
 	}));

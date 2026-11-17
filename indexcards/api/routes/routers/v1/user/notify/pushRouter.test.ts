@@ -509,7 +509,7 @@ describe('Push Router', () => {
 			expect(await messageRow(jobs[0].data.message)).toEqual({
 				person: personId,
 				subject: 'Test notification',
-				body: 'Notifications from Tabroom are working on this browser.',
+				body: '<p>Notifications from Tabroom are working on this browser.</p>',
 				url: '/user/profile',
 				visible_at: null,
 				push_status: 'queued',

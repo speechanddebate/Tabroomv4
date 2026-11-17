@@ -152,6 +152,24 @@ describe('Inbox Router', () => {
 			expect(res).not.toBeProblemResponse();
 			expect(res.body).toMatchSchema(InboxMessageSchema);
 		});
+		it('cleans a body another system wrote as typed, in the message and in the list', async () => {
+			const Email = await factories.email.create({ content: '<p>Schedule</p><iframe src="https://example.com"></iframe>' });
+			const Message = await factories.message.create({
+				person: personId,
+				email: Email.id,
+				body: '<p onclick="alert(1)">Room <b>12</b></p><script>alert(1)</script><img src="https://example.com/map.png" style="position: fixed;">',
+			});
+			const clean = {
+				body: '<p>Room <b>12</b></p><img src="https://example.com/map.png" />',
+				Email: { content: '<p>Schedule</p>' },
+			};
+
+			const one = await request(server).get(`/v1/user/inbox/${Message.id}`).asPerson(userkey).expect(200);
+			expect(one.body).toMatchObject(clean);
+
+			const list = await request(server).get('/v1/user/inbox').asPerson(userkey).expect(200);
+			expect(list.body.find((message: { id: number }) => message.id === Message.id)).toMatchObject(clean);
+		});
 		it('returns 404 when the message does not exist', async () => {
 			const res = await request(server)
 				.get(`/v1/user/inbox/${nonExistentId}`)

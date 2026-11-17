@@ -65,9 +65,6 @@ export const shareRooms = async (roundId) => {
 
 		if (ids.length < 1) continue;
 
-		let messageText = `Share speech documents for this round (10mb limit, docs only) by replying to`;
-		messageText += ` this email with a file attachment, or going to https://share.tabroom.com/${phrase} \n`;
-
 		let messageHTML = `<p>Share speech documents for this round (10mb limit, docs only) by replying to`;
 		messageHTML += ` this email with a file attachment, or going to `;
 		messageHTML += `<a href="https://share.tabroom.com/${phrase}">https://share.tabroom.com/${phrase}</a></p>`;
@@ -75,16 +72,14 @@ export const shareRooms = async (roundId) => {
 		const response = await notify({
 			ids,
 			subject  : `${section.tournName} ${section.roundLabel || `Round ${section.roundName}`} (${phrase}) - Speech Documents`,
-			text     : messageText,
 			html     : messageHTML,
-			from     : 'Tabroom Share <share@share.tabroom.com>',
 			replyTo  : `${phrase}@share.tabroom.com`,
 			tourn    : section.tournId,
 			// The invite asks for a reply with a file, which only email can carry
-			channels : { inbox: false, webpush: false },
+			channels : { inbox: false, push: false },
 		});
 
-		counter += response.email;
+		counter += response.jobs.email;
 	}
 
 	return counter;

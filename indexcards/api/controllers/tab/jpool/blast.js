@@ -1,5 +1,5 @@
 import { notify } from '../../../services/notifications/notify.js';
-import { BadRequest, UnexpectedError } from '../../../helpers/problem.js';
+import { BadRequest } from '../../../helpers/problem.js';
 import { sql } from 'kysely';
 import { db as kdb } from '../../../data/database.js';
 import { summon } from '../../../repos/utils/index.js';
@@ -71,18 +71,13 @@ export async function blastJudges(req, res) {
 	});
 
 	const tourn = await summon(kdb, 'tourn',req.params.tournId);
-	const seconds = Math.floor(Date.now() / 1000);
-	const numberwang = seconds.toString().substring(-5);
-
-	const from = `${tourn.name} <${tourn.webname}_${numberwang}@www.tabroom.com>`;
-	const fromAddress = `<${tourn.webname}_${numberwang}@www.tabroom.com>`;
 
 	const blastResponse = await notify({
 		ids     : jpoolJudgeArray,
 		text    : req.body.message,
 		subject : req.body.subject || `Message to ${jpool.name} judges`,
-		from,
-		fromAddress,
+		kind    : 'tourn',
+		tourn   : tourn.id,
 	});
 
 	const { rows: rawRounds } = await sql`
@@ -104,10 +99,6 @@ export async function blastJudges(req, res) {
 	});
 
 	await Promise.all(promises);
-
-	if (blastResponse.error) {
-		return UnexpectedError(req, res, blastResponse.message);
-	}
 
 	res.status(200).json(blastResponse);
 };

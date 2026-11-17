@@ -6,6 +6,7 @@ import {
 	UNSUBSCRIBE_TOKEN_MAX_AGE,
 	maskEmail,
 	matchesUnsubscribeToken,
+	unsubscribePageUrl,
 	unsubscribeToken,
 	verifyUnsubscribeToken,
 } from './unsubscribe.js';
@@ -129,6 +130,21 @@ describe('matchesUnsubscribeToken', () => {
 	it('rejects another person or a changed address', () => {
 		expect(matchesUnsubscribeToken({ ...person, id: 1 }, claims)).toBe(false);
 		expect(matchesUnsubscribeToken({ ...person, email: 'new@example.com' }, claims)).toBe(false);
+	});
+});
+
+describe('unsubscribePageUrl', () => {
+	const originalSchematsUrl = config.schemats_url;
+
+	afterEach(() => {
+		config.schemats_url = originalSchematsUrl;
+	});
+
+	it('points at the schemats unsubscribe page and encodes the token', () => {
+		config.schemats_url = 'https://www.example.org';
+
+		expect(unsubscribePageUrl('abc.def-ghi_jkl')).toBe('https://www.example.org/unsubscribe/abc.def-ghi_jkl');
+		expect(unsubscribePageUrl('a/b?c')).toBe('https://www.example.org/unsubscribe/a%2Fb%3Fc');
 	});
 });
 

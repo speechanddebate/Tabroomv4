@@ -6,6 +6,7 @@
 //   npx tsx scripts/testNotify.ts 1 2 3           those person ids, skipping any that don't exist
 //   npx tsx scripts/testNotify.ts --email 1 2 3   also queue an email job per person (watch Mailpit at localhost:8025)
 //   npx tsx scripts/testNotify.ts --push 1 2 3    also queue a push job per person
+//   npx tsx scripts/testNotify.ts --email --tourn 42 1 2   as tournament 42's staff: html with markup the sanitizer strips, and the tournament footer
 import { db } from '../api/data/database.js';
 import logger from '../api/helpers/logger.js';
 import { notify } from '../api/services/notifications/notify.js';
@@ -15,9 +16,11 @@ const args = process.argv.slice(2);
 const channels = {
 	inbox: true,
 	email: args.includes('--email'),
-	webpush: args.includes('--push'),
+	push: args.includes('--push'),
 };
-const requested = args.filter((arg) => !arg.startsWith('--')).map(Number);
+const tournAt = args.indexOf('--tourn');
+const tourn = tournAt >= 0 ? Number(args[tournAt + 1]) : undefined;
+const requested = args.filter((arg, i) => !arg.startsWith('--') && (tournAt < 0 || i !== tournAt + 1)).map(Number);
 
 try {
 	// Always query: destroying a pool that never ran a query leaves the process hanging
@@ -39,16 +42,22 @@ try {
 
 	const response = await notify({
 		ids,
-		text: 'Test notification from scripts/testNotify.ts',
-		// The request schema requires these keys, even when null
-		subject: 'Test notification',
-		body: null,
+		...(tourn
+			? {
+				kind: 'tourn',
+				tourn,
+				// The div, image, script, class, and javascript: link are what the sanitizer must strip
+				html: '<div class="x"><p>Rounds start at <b>8:00 a.m.</b> in <span style="color: #ba1d00; position: absolute;">Room 12</span>.</p>'
+					+ '<img src="https://example.com/pixel.gif"><script>alert(1)</script>'
+					+ '<p><a href="javascript:alert(1)">Bad link</a> · <a href="https://www.tabroom.com">Good link</a></p></div>',
+			}
+			: { text: 'Test notification from scripts/testNotify.ts' }),
+		subject: tourn ? 'Test tournament message' : 'Test notification',
 		url: '/user/home',
-		from: 'Tab <tab@tabroom.com>',
 		channels,
-	} as unknown as Parameters<typeof notify>[0]);
+	});
 
-	logger.info(`notify() for people ${ids.join(', ')}: ${response.message}`);
+	logger.info(`notify() for people ${ids.join(', ')}: queued ${response.jobs.email} email and ${response.jobs.push} push job(s)`);
 } catch (err) {
 	logger.error('Test notify failed', err);
 	process.exitCode = 1;

@@ -8,6 +8,9 @@ import { db } from '../../../../../../api/data/database.js';
 import chapterJudgeRepo from '../../../../../repos/chapterJudgeRepo.js';
 import judgeRepo from '../../../../../repos/judgeRepo.js';
 
+const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+vi.mock('../../../../../services/queue/index.js', async (original) => ({ ...await original(), addJobs }));
+
 describe('judgesRouter', () => {
 	let personId : number;
 	let userkey: string;
@@ -71,6 +74,23 @@ describe('judgesRouter', () => {
 			//assert that the chapter judge's person_request is updated and that an email was sent to the chapter email with the correct content
 			const updatedChapterJudge = await chapterJudgeRepo.getChapterJudge(db,ChapterJudge.id);
 			expect(updatedChapterJudge?.person_request).toBe(personId);
+		});
+		it('emails the chapter admins about the claim', async () => {
+			const Chapter = await factories.chapter.create();
+			const ChapterJudge = await factories.chapterJudge.create({ person_request: null, chapter: Chapter.id });
+			const Admin = await factories.person.create({ no_email: 0 });
+			await factories.permission.create({ person: Admin.id, chapter: Chapter.id, tag: 'chapter' });
+			addJobs.mockReset().mockResolvedValue(undefined);
+
+			await request(server)
+				.post('/v1/user/judges/claim')
+				.query({ chapterJudgeId: ChapterJudge.id })
+				.asPerson(userkey)
+				.expect(200);
+
+			const messages = await db.selectFrom('message').select(['subject', 'email_status']).where('person', '=', Admin.id).execute();
+			expect(messages).toEqual([{ subject: expect.stringContaining('requests access to judge'), email_status: 'queued' }]);
+			expect(addJobs).toHaveBeenCalledOnce();
 		});
 		it('should auto-approve a claim request if the user is a chapter admin', async () => {
 			//setup - create a chapter judge with no person_request

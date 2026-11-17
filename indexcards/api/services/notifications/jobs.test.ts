@@ -180,14 +180,20 @@ describe('processEmail', () => {
 
 	it('emails the message and reports the status', async () => {
 		await expect(processEmail(fakeJob<EmailJobData>({ message: 5 }))).resolves.toEqual({ status: 'sent' });
-		expect(emailMessage).toHaveBeenCalledWith(5, { ignoreNoEmail: undefined });
+		expect(emailMessage).toHaveBeenCalledWith(5, { kind: undefined, to: undefined });
 		expect(recordDelivery).toHaveBeenCalledWith(expect.anything(), 5, 'email', 'sent');
 	});
 
-	it('forwards the account-mail flag', async () => {
-		await processEmail(fakeJob<EmailJobData>({ message: 5, ignoreNoEmail: true }));
+	it.each(['account', 'tourn'] as const)('forwards the %s kind', async (kind) => {
+		await processEmail(fakeJob<EmailJobData>({ message: 5, kind }));
 
-		expect(emailMessage).toHaveBeenCalledWith(5, { ignoreNoEmail: true });
+		expect(emailMessage).toHaveBeenCalledWith(5, { kind, to: undefined });
+	});
+
+	it('forwards the to address', async () => {
+		await processEmail(fakeJob<EmailJobData>({ message: 5, kind: 'account', to: 'old.address@example.org' }));
+
+		expect(emailMessage).toHaveBeenCalledWith(5, { kind: 'account', to: 'old.address@example.org' });
 	});
 
 	it.each(['logged', 'rejected'] as const)('passes %s through and records it', async (status) => {

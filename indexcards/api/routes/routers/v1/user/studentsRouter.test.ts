@@ -6,6 +6,9 @@ import { ClaimResponseSchema, StudentSchema } from '@tabroom/types';
 import studentRepo from '../../../../repos/studentRepo.js';
 import { db } from '../../../../data/database.js';
 
+const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+vi.mock('../../../../services/queue/index.js', async (original) => ({ ...await original(), addJobs }));
+
 describe('studentsRouter', () => {
 	let personId : number;
 	let userkey: string;
@@ -36,6 +39,23 @@ describe('studentsRouter', () => {
 			});
 			const updatedStudent = await studentRepo.getStudent(db, Student.id);
 			expect(updatedStudent?.person_request).toBe(personId);
+		});
+		it('emails the chapter admins about the claim', async () => {
+			const Chapter = await factories.chapter.create();
+			const Student = await factories.student.create({ person_request: null, chapter: Chapter.id });
+			const Admin = await factories.person.create({ no_email: 0 });
+			await factories.permission.create({ person: Admin.id, chapter: Chapter.id, tag: 'chapter' });
+			addJobs.mockReset().mockResolvedValue(undefined);
+
+			await request(server)
+				.post('/v1/user/students/claim')
+				.query({ studentId: Student.id })
+				.asPerson(userkey)
+				.expect(200);
+
+			const messages = await db.selectFrom('message').select(['subject', 'email_status']).where('person', '=', Admin.id).execute();
+			expect(messages).toEqual([{ subject: expect.stringContaining('requests access to competitor'), email_status: 'queued' }]);
+			expect(addJobs).toHaveBeenCalledOnce();
 		});
 		it('should return 400 if the user is already linked to a student on the roster', async () => {
 			//setup - create a chapter student with a person_request for the user

@@ -1,6 +1,7 @@
 import studentRepo from '../../repos/studentRepo.js';
 import { BadRequest } from '../../helpers/problem.js';
 import { notify } from '../../services/notifications/notify.js';
+import { linkRequest } from '../../services/notifications/templates/chapter/linkRequest.js';
 import chapterRepo from '../../repos/chapterRepo.js';
 import logger from '../../helpers/logger.js';
 import  { db } from '../../data/database.js';
@@ -9,7 +10,6 @@ import { getPerson } from '../../middleware/auth/authorization.js';
 
 import type { Request, Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
-import type { SessionPerson } from '../../middleware/auth/types.js';
 
 async function linkRequests(req: Request, res: Response) {
 	const person = getPerson(req);
@@ -66,10 +66,17 @@ async function claimRequest(req: ValidatedRequest, res: Response) {
 	await studentRepo.updateStudent(db, studentId, { person_request: person.id });
 
 	if(admins.some(a => a.email && !a.no_email)) {
-		const emailData = buildChapterStudentClaimEmail(Student, person);
+		const { subject, html } = linkRequest({
+			record: 'competitor',
+			name: [Student.first, Student.last].filter(Boolean).join(' '),
+			chapter: Student.chapter,
+			requester: person,
+		});
 		await notify({
 			ids: admins.filter(a => a.email && !a.no_email).map(a => a.id),
-			...emailData,
+			subject,
+			html: html.value,
+			replyTo: `${person.first} ${person.last} <${person.email}>`,
 		});
 	} else {
 		logger.warn('Chapter with id ' + Student.chapter + ' has no admins setup to receive emails. Cannot send student claim notification email.');
@@ -83,20 +90,4 @@ async function claimRequest(req: ValidatedRequest, res: Response) {
 export default {
 	linkRequests,
 	claimRequest,
-};
-
-function buildChapterStudentClaimEmail(
-	chapterStudent: NonNullable<Awaited<ReturnType<typeof studentRepo.getStudent>>>, 
-	person: SessionPerson) {
-	let text = `The Tabroom user \n\n${person.first} ${person.last} (${person.email}) \n\n
-	has requested online access to updates, ballots and texts for competitor ${chapterStudent.first} ${chapterStudent.last} on your team roster.\n\n
-	If these are the same people, approve this request by logging into Tabroom and visiting\n\n
-	https://tabroom.com/user/chapter/students.mhtml?chapter_id=${chapterStudent.chapter}\n\n
-	If this is not authorized, you do not need to do anything.\n\n`;
-	return {
-		subject: `[Tabroom] ${person.email} requests access to competitor ${chapterStudent.first} ${chapterStudent.last}`,
-		from: `Tabroom Link <studentlink_${String(Date.now()).slice(-6)}@www.tabroom.com>`,
-		replyTo: `${person.first} ${person.last} <${person.email}>`,
-		text,
-	};
 };

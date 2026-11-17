@@ -3,7 +3,7 @@ import factories from "../../../tests/factories/index.js";
 import { db } from "../../data/database.js";
 import logger from "../../helpers/logger.js";
 import messageRepo from "../../repos/messageRepo.js";
-import { notify, prepNotify, validateNotificationRequest, NotificationRequestSchema } from "./notify.js";
+import { notify, prepNotify, validateNotificationRequest, NotificationRequestError, NotificationRequestSchema } from "./notify.js";
 
 const KEY = 'abcdef0123456789';
 const { addJobs, vapid } = vi.hoisted(() => ({
@@ -21,35 +21,43 @@ describe("Request Validation", () => {
 		const validInput = {
 			ids: [1, 2, 3],
 			text: "test message",
-			subject: null,
-			body: null,
-			url: null,
-			channels: { email: false, webpush: false },
+			channels: { email: false, push: false },
 		};
 		expect(validateNotificationRequest(validInput)).toMatchSchema(NotificationRequestSchema);
 	});
 	it("applies each channel's default unless the request sets it", async () => {
-		const everywhere = validateNotificationRequest({ ids: [1], text: "test message", subject: null, body: null, url: null });
-		expect(everywhere.channels).toEqual({ inbox: true, email: true, webpush: true });
+		const everywhere = validateNotificationRequest({ ids: [1], text: "test message" });
+		expect(everywhere.channels).toEqual({ inbox: true, email: true, push: true });
 
-		const emailOnly = validateNotificationRequest({ ids: [1], text: "test message", subject: null, body: null, url: null, channels: { inbox: false, webpush: false } });
-		expect(emailOnly.channels).toEqual({ inbox: false, email: true, webpush: false });
+		const emailOnly = validateNotificationRequest({ ids: [1], text: "test message", channels: { inbox: false, push: false } });
+		expect(emailOnly.channels).toEqual({ inbox: false, email: true, push: false });
 	});
-	it("should reject duplicate IDs", async () => {
-		const invalidInput = {
-			ids: [1, 1, 2],
-			text: "test message",
-			channels: { email: false, webpush: false },
-		};
-		expect(() => validateNotificationRequest(invalidInput)).toThrow();
+	it("accepts html without text", async () => {
+		const request = validateNotificationRequest({ ids: [1], html: "<p>test message</p>" });
+		expect(request.text).toBeUndefined();
+		expect(request.html).toBe("<p>test message</p>");
 	});
-	it("should reject an empty ID array", async () => {
-		const invalidInput = {
-			ids: [],
-			text: "test message",
-			channels: { email: false, webpush: false },
-		};
-		expect(() => validateNotificationRequest(invalidInput)).toThrow();
+	it("rejects a request with neither text nor html", async () => {
+		expect(() => validateNotificationRequest({ ids: [1] })).toThrow();
+	});
+	it("rejects a request with both text and html", async () => {
+		expect(() => validateNotificationRequest({ ids: [1], text: "test message", html: "<p>test message</p>" })).toThrow();
+	});
+	it("drops repeated IDs", async () => {
+		expect(validateNotificationRequest({ ids: [1, 1, 2], text: "test message" }).ids).toEqual([1, 2]);
+	});
+	it("accepts an empty ID array", async () => {
+		expect(validateNotificationRequest({ ids: [], text: "test message" }).ids).toEqual([]);
+	});
+	it.each([
+		['the request', { fromAddress: '<tab@tabroom.com>' }],
+		['channels', { channels: { webpush: false } }],
+		['push', { push: { topic: 'round-3' } }],
+	])("rejects a key it doesn't know on %s", async (_where, extra) => {
+		expect(() => validateNotificationRequest({ ids: [1], text: "test message", ...extra })).toThrow();
+	});
+	it("needs only recipients and a message", async () => {
+		expect(() => validateNotificationRequest({ ids: [1], text: "test message" })).not.toThrow();
 	});
 });
 
@@ -60,8 +68,7 @@ describe('notify', () => {
 		.orderBy('id')
 		.execute();
 
-	// The schema requires these keys even when null
-	const base = { subject: 'Round 3 posted', body: null, url: '/user/home', text: 'You are in room 12', from: 'Tab <tab@tabroom.com>' };
+	const base = { subject: 'Round 3 posted', url: '/user/home', text: 'You are in room 12', replyTo: 'Tab <tab@tabroom.com>' };
 
 	let people: number[];
 	/** Each person's one login that can receive push, in the order of people */
@@ -88,13 +95,13 @@ describe('notify', () => {
 
 		const response = await notify({ ...base, ids: people, sender: Sender.id, channels: { email: false } });
 
-		expect(response).toMatchObject({ error: false, inbox: 2, jobs: { push: 2 } });
+		expect(response).toEqual({ messages: 2, jobs: { push: 2, email: 0 } });
 
 		const messages = await messageRows(people);
 		expect(messages.map(message => message.person)).toEqual(people);
 		expect(messages[0]).toMatchObject({
 			subject: 'Round 3 posted',
-			body: 'You are in room 12',
+			body: '<p>You are in room 12</p>',
 			url: '/user/home',
 			sender: Sender.id,
 			sender_string: 'Tab <tab@tabroom.com>',
@@ -137,7 +144,7 @@ describe('notify', () => {
 	it('settles only the channels that had jobs when the queue will not take them', async () => {
 		addJobs.mockRejectedValue(new Error('Timed out adding jobs'));
 
-		await expect(notify({ ...base, ids: people, channels: { webpush: false } })).rejects.toThrow('Timed out');
+		await expect(notify({ ...base, ids: people, channels: { push: false } })).rejects.toThrow('Timed out');
 
 		const messages = await messageRows(people);
 		expect(messages.every(message => message.email_status === 'failed')).toBe(true);
@@ -145,7 +152,7 @@ describe('notify', () => {
 	});
 
 	it('queues no push jobs when the channel is off', async () => {
-		const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
+		const response = await notify({ ...base, ids: people, channels: { email: false, push: false } });
 
 		expect(response.jobs).toEqual({ push: 0, email: 0 });
 		const messages = await messageRows(people);
@@ -227,7 +234,7 @@ describe('notify', () => {
 		it('uses the channel defaults when none are named, queueing an email job per recipient after the push jobs', async () => {
 			const response = await notify({ ...base, ids: people });
 
-			expect(response).toMatchObject({ error: false, inbox: 2, email: 2, jobs: { push: 2, email: 2 } });
+			expect(response).toEqual({ messages: 2, jobs: { push: 2, email: 2 } });
 
 			const messages = await messageRows(people);
 			expect(emailJobs()).toEqual(messages.map(message => ({
@@ -250,7 +257,7 @@ describe('notify', () => {
 		it('writes the message but queues no email for someone opted out', async () => {
 			const OptedOut = await factories.person.create({ no_email: 1 });
 
-			const response = await notify({ ...base, ids: [...people, OptedOut.id], channels: { webpush: false } });
+			const response = await notify({ ...base, ids: [...people, OptedOut.id], channels: { push: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 2 });
 			const [skipped] = await messageRows([OptedOut.id]);
@@ -266,11 +273,11 @@ describe('notify', () => {
 		it('queues account mail to someone opted out and marks the job', async () => {
 			const OptedOut = await factories.person.create({ no_email: 1 });
 
-			const response = await notify({ ...base, ids: [OptedOut.id], ignoreNoEmail: true, channels: { inbox: false, webpush: false } });
+			const response = await notify({ ...base, ids: [OptedOut.id], kind: 'account', channels: { inbox: false, push: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			const [message] = await messageRows([OptedOut.id]);
-			expect(emailJobs()[0].data).toEqual({ message: message.id, ignoreNoEmail: true });
+			expect(emailJobs()[0].data).toEqual({ message: message.id, kind: 'account' });
 			expect(message.email_status).toBe('queued');
 		});
 
@@ -279,7 +286,7 @@ describe('notify', () => {
 			const NoAddress = await db.selectFrom('person').select('id').where('email', '=', '').executeTakeFirst()
 				?? await factories.person.create({ email: '' });
 
-			const response = await notify({ ...base, ids: [NoAddress.id, people[0]], channels: { inbox: false, webpush: false } });
+			const response = await notify({ ...base, ids: [NoAddress.id, people[0]], channels: { inbox: false, push: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([people[0]]))[0].id });
@@ -298,28 +305,25 @@ describe('notify', () => {
 				...base,
 				ids: [NoAddress.id],
 				to: 'old.address@example.org',
-				ignoreNoEmail: true,
-				channels: { inbox: false, webpush: false },
+				kind: 'account',
+				channels: { inbox: false, push: false },
 			});
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			const [latest] = (await messageRows([NoAddress.id])).slice(-1);
-			expect(emailJobs()[0].data).toEqual({ message: latest.id, ignoreNoEmail: true, to: 'old.address@example.org' });
+			expect(emailJobs()[0].data).toEqual({ message: latest.id, kind: 'account', to: 'old.address@example.org' });
 			expect(latest.email_status).toBe('queued');
 		});
 
-		it('still skips someone opted out when the request names a to address', async () => {
-			const OptedOut = await factories.person.create({ no_email: 1 });
+		it.each(['tabroom', 'tourn'] as const)('refuses a to address on %s mail', async (kind) => {
+			await expect(notify({ ...base, ids: [people[0]], kind, tourn: 1, to: 'old.address@example.org', channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
 
-			const response = await notify({ ...base, ids: [OptedOut.id], to: 'old.address@example.org', channels: { inbox: false, webpush: false } });
-
-			expect(response.jobs).toEqual({ push: 0, email: 0 });
-			const [message] = await messageRows([OptedOut.id]);
-			expect(message.email_status).toBe('skipped');
+			expect(addJobs).not.toHaveBeenCalled();
 		});
 
 		it('queues high priority email with no job priority, so it runs ahead of every other email', async () => {
-			const response = await notify({ ...base, ids: [people[0]], priority: 'high', channels: { inbox: false, webpush: false } });
+			const response = await notify({ ...base, ids: [people[0]], priority: 'high', channels: { inbox: false, push: false } });
 
 			expect(response.jobs).toEqual({ push: 0, email: 1 });
 			expect(emailJobs()[0].opts).not.toHaveProperty('priority');
@@ -330,32 +334,85 @@ describe('notify', () => {
 			['normal', 10],
 			['low', 20],
 		] as const)('queues %s priority email behind high', async (priority, expected) => {
-			await notify({ ...base, ids: [people[0]], priority, channels: { inbox: false, webpush: false } });
+			await notify({ ...base, ids: [people[0]], priority, channels: { inbox: false, push: false } });
 
 			expect(emailJobs()[0].opts).toMatchObject({ priority: expected });
 		});
 
 		it('refuses a priority it doesn\'t know', async () => {
 			// @ts-expect-error the type allows only the three levels
-			const response = await notify({ ...base, ids: [people[0]], priority: 'urgent', channels: { webpush: false } });
-
-			expect(response.error).toBe(true);
+			await expect(notify({ ...base, ids: [people[0]], priority: 'urgent', channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
 		});
 
 		it.each([
 			['more than one recipient', { to: 'old.address@example.org' }, 2],
 			['an address that isn\'t one', { to: 'not an address' }, 1],
 		])('refuses a to address with %s', async (_case, extra, count) => {
-			const response = await notify({ ...base, ids: people.slice(0, count), ...extra, channels: { webpush: false } });
+			await expect(notify({ ...base, ids: people.slice(0, count), kind: 'account', ...extra, channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
 
-			expect(response.error).toBe(true);
 			expect(addJobs).not.toHaveBeenCalled();
 		});
 
-		it('queues no email jobs when the channel is off', async () => {
-			const response = await notify({ ...base, ids: people, channels: { email: false, webpush: false } });
+		it('marks the email job for tournament mail, and leaves the default tabroom kind off the job', async () => {
+			const Tourn = await factories.tourn.create();
 
-			expect(response.email).toBe(0);
+			await notify({ ...base, ids: [people[0]], kind: 'tourn', tourn: Tourn.id, channels: { inbox: false, push: false } });
+
+			const [message] = await messageRows([people[0]]);
+			// Staff-typed mail goes out under the tournament's name unless the caller says otherwise
+			expect(emailJobs()[0].data).toEqual({ message: message.id, kind: 'tourn', as: 'tourn' });
+
+			addJobs.mockClear();
+			await notify({ ...base, ids: [people[1]], tourn: Tourn.id, channels: { inbox: false, push: false } });
+
+			expect(emailJobs()[0].data).toEqual({ message: (await messageRows([people[1]]))[0].id });
+		});
+
+		it('marks the email job with whose name it goes out under when the caller says', async () => {
+			const Tourn = await factories.tourn.create();
+			const Sender = await factories.person.create();
+			const off = { inbox: false, push: false };
+
+			await notify({ ...base, ids: [people[0]], tourn: Tourn.id, as: 'tourn', channels: off });
+			await notify({ ...base, ids: [people[1]], sender: Sender.id, as: 'person', channels: off });
+			await notify({ ...base, ids: [people[0]], kind: 'tourn', tourn: Tourn.id, as: 'tabroom', channels: off });
+
+			expect(addJobs.mock.calls.map(([jobs]) => jobs[0].data)).toEqual([
+				{ message: expect.any(Number), as: 'tourn' },
+				{ message: expect.any(Number), as: 'person' },
+				{ message: expect.any(Number), kind: 'tourn' },
+			]);
+		});
+
+		it.each([
+			['as a tournament with no tourn', { as: 'tourn' }],
+			['as a person with no sender', { as: 'person' }],
+		] as const)('refuses mail sent %s', async (_case, extra) => {
+			await expect(notify({ ...base, ids: [people[0]], ...extra, channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
+
+			expect(addJobs).not.toHaveBeenCalled();
+		});
+
+		it('refuses tournament mail with no tourn', async () => {
+			await expect(notify({ ...base, ids: [people[0]], kind: 'tourn', channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
+
+			expect(addJobs).not.toHaveBeenCalled();
+		});
+
+		it('refuses a kind it doesn\'t know', async () => {
+			// @ts-expect-error the type allows only the three kinds
+			await expect(notify({ ...base, ids: [people[0]], kind: 'staff', channels: { push: false } }))
+				.rejects.toThrow(NotificationRequestError);
+		});
+
+		it('queues no email jobs when the channel is off', async () => {
+			const response = await notify({ ...base, ids: people, channels: { email: false, push: false } });
+
+			expect(response.jobs.email).toBe(0);
 			expect(emailJobs()).toEqual([]);
 			expect((await messageRows(people)).every(message => message.email_status === null && message.emailed_at === null)).toBe(true);
 		});
@@ -372,23 +429,54 @@ describe('notify', () => {
 	it('links a blast email row and leaves the content to it', async () => {
 		const email = await factories.email.create({ content: '<p>Room 12</p>' });
 
-		await notify({ ...base, ids: people, html: '<p>Room 12</p>', emailId: email.id, channels: { email: false, webpush: false } });
+		await notify({ ...base, text: undefined, ids: people, html: '<p>Room 12</p>', emailId: email.id, channels: { email: false, push: false } });
 
 		expect((await messageRows(people))[0]).toMatchObject({ email: email.id, body: null });
 	});
 
 	it('stores html as the body and adds the footer', async () => {
-		await notify({ ...base, ids: people, html: '<p>Room 12</p>', append: 'Sent by Tab', channels: { email: false, webpush: false } });
+		await notify({ ...base, text: undefined, ids: people, html: '<p>Room 12</p>', append: 'Sent by Tab', channels: { email: false, push: false } });
 
-		expect((await messageRows(people))[0].body).toBe('<p>Room 12</p>\nSent by Tab');
+		expect((await messageRows(people))[0].body).toBe('<p>Room 12</p><p>Sent by Tab</p>');
+	});
+
+	it('stores text as escaped html, so nothing in it is read as markup', async () => {
+		await notify({ ...base, ids: people, text: 'Pat <script>alert(1)</script> asks\nspeaks < 26', append: 'A & B', channels: { email: false, push: false } });
+
+		expect((await messageRows(people))[0].body)
+			.toBe('<p>Pat &lt;script&gt;alert(1)&lt;/script&gt; asks<br>speaks &lt; 26</p><p>A &amp; B</p>');
+	});
+
+	it('stores only what tournament staff may send of the html they typed', async () => {
+		const Tourn = await factories.tourn.create();
+		const html = '<div class="x"><p>Rounds start at <b>8:00</b>.</p><img src="https://example.com/pixel.gif">'
+			+ '<script>alert(1)</script><p><a href="javascript:alert(1)">Bad</a></p></div>';
+
+		await notify({ ...base, text: undefined, ids: people, html, kind: 'tourn', tourn: Tourn.id, channels: { email: false, push: false } });
+
+		expect((await messageRows(people))[0].body).toBe('<p>Rounds start at <b>8:00</b>.</p><p><a>Bad</a></p>');
+	});
+
+	it('stores html Tabroom built as it is', async () => {
+		const html = '<div><p><a href="https://www.tabroom.com" style="display: inline-block;">Confirm</a></p></div>';
+
+		await notify({ ...base, text: undefined, ids: people, html, kind: 'account', channels: { email: false, push: false } });
+
+		expect((await messageRows(people))[0].body).toBe(html);
+	});
+
+	it('stores html as the body', async () => {
+		await notify({ ...base, text: undefined, ids: people, html: '<p>Room 12</p>', channels: { email: false, push: false } });
+
+		expect((await messageRows(people))[0].body).toBe('<p>Room 12</p>');
 	});
 
 	it('keeps a footer on the message even when linked to an email row', async () => {
 		const email = await factories.email.create();
 
-		await notify({ ...base, ids: people, emailId: email.id, append: 'Sent by Tab', channels: { email: false, webpush: false } });
+		await notify({ ...base, ids: people, emailId: email.id, append: 'Sent by Tab', channels: { email: false, push: false } });
 
-		expect((await messageRows(people))[0].body).toBe('You are in room 12\nSent by Tab');
+		expect((await messageRows(people))[0].body).toBe('<p>You are in room 12</p><p>Sent by Tab</p>');
 	});
 
 	it('prepNotify writes the records and builds the deliveries without queueing', async () => {
@@ -401,13 +489,15 @@ describe('notify', () => {
 	});
 
 	it('prepNotify throws on an invalid request', async () => {
-		await expect(prepNotify({ ...base, ids: [], channels: { email: false, webpush: false } })).rejects.toThrow('Invalid notification request');
+		await expect(prepNotify({ ...base, ids: people, html: '<p>Room 12</p>' })).rejects.toThrow('Invalid notification request');
+		expect(await messageRows(people)).toEqual([]);
 	});
 
-	it('rejects an invalid request without writing anything', async () => {
-		const response = await notify({ ...base, ids: [], channels: { email: false, webpush: false } });
+	it('notifies nobody when there are no recipients', async () => {
+		const insertInto = vi.spyOn(db, 'insertInto');
 
-		expect(response).toMatchObject({ error: true, inbox: 0 });
-		expect(addJobs).not.toHaveBeenCalled();
+		expect(await notify({ ...base, ids: [] })).toEqual({ messages: 0, jobs: { push: 0, email: 0 } });
+		expect(insertInto).not.toHaveBeenCalled();
+		insertInto.mockRestore();
 	});
 });

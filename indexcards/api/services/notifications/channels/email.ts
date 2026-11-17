@@ -6,13 +6,16 @@ import nodemailer, {
 	type SMTPPoolSentMessageInfo,
 	type Transporter,
 } from 'nodemailer';
-import { convert } from 'html-to-text';
 import config from '../../../config.js';
 import { db } from '../../../data/database.js';
 import logger from '../../../helpers/logger.js';
-import { unsubscribeToken } from '../unsubscribe.js';
+import { sanitizeHTML } from '../../../helpers/text.js';
+import { EMAIL_HTML, raw, textToHtml } from '../templates/html.js';
+import { renderEmail, type EmailShellInput } from '../templates/shell.js';
+import type { EmailKind, EmailSender } from '../notify.js';
+import { unsubscribePageUrl, unsubscribeToken } from '../unsubscribe.js';
 
-/** One message for one address. Formatting (subject prefix, footer, list headers) is the caller's */
+/** One message for one address. Formatting (subject prefix, shell, list headers) is the caller's */
 export type OutboundEmail = {
 	/** One recipient, as a bare address or `Name <address>` */
 	to: string;
@@ -196,14 +199,15 @@ export type EmailMessageResult = {
 };
 
 export type EmailMessageOptions = {
-	/** Send even to a person who opted out, for mail about an action on their own account */
-	ignoreNoEmail?: boolean;
+	/** Default tabroom; account mail reaches someone opted out */
+	kind?: EmailKind;
+	/** Whose name it goes out under. Default tabroom */
+	as?: EmailSender;
 	/** Send here instead of the person's address, such as their old one after a change */
 	to?: string;
 };
 
 const DEFAULT_SUBJECT = 'Message from Tabroom.com';
-/** The prefix every notification subject has carried since classic, so filters built on it keep working */
 const SUBJECT_PREFIX = '[TAB] ';
 const UNSUBSCRIBE_PATH = '/v1/rest/notify/email/unsubscribe/';
 
@@ -217,9 +221,14 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 	const row = await db.selectFrom('message')
 		.innerJoin('person', 'person.id', 'message.person')
 		.leftJoin('email', 'email.id', 'message.email')
+		.leftJoin('tourn', 'tourn.id', 'message.tourn')
+		.leftJoin('person as sender', 'sender.id', 'message.sender')
 		.select([
-			'message.id', 'message.subject', 'message.body', 'message.url', 'message.sender_string', 'message.deleted_at', 'message.email_status',
+			'message.id', 'message.subject', 'message.body', 'message.sender_string', 'message.deleted_at', 'message.email_status',
+			'message.timestamp',
 			'email.content as email_content', 'email.subject as email_subject', 'email.sender_raw', 'email.metadata',
+			'tourn.name as tourn_name', 'tourn.webname as tourn_webname',
+			'sender.first as sender_first', 'sender.last as sender_last', 'sender.email as sender_email',
 			'person.id as person_id', 'person.email as person_email', 'person.no_email', 'person.first', 'person.last',
 		])
 		.where('message.id', '=', messageId)
@@ -239,43 +248,53 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 	const to = options.to?.trim();
 	const address = to || row.person_email.trim();
 	if (!address) return skip('no address', `person ${row.person_id} has no address`);
-	if (row.no_email && !options.ignoreNoEmail) return skip('opted out', `person ${row.person_id} opted out`);
+	if (row.no_email && options.kind !== 'account') return skip('opted out', `person ${row.person_id} opted out`);
 
 	const name = [row.first, row.last].filter(Boolean).join(' ').replace(/"/g, '').trim();
-	const content = row.body ?? row.email_content ?? '';
-	const link = row.url ? absoluteUrl(row.url) : null;
+	// A message's own body was made safe html when notify() wrote it. A blast's email row is
+	// whatever its composer stored, text or html, so that is still worked out and cleaned here
+	const blast = row.email_content ?? '';
+	const blastHtml = isHtml(blast) ? raw(blast) : textToHtml(blast);
+	const content = row.body !== null
+		? raw(row.body)
+		: options.kind === 'tourn' ? raw(sanitizeHTML(blastHtml.value, EMAIL_HTML)) : blastHtml;
 	// Mail about the person's own account goes out even to someone opted out, so an unsubscribe link would be
 	// misleading; and a token names the person's current address, so mail sent anywhere else can't carry one
-	const token = options.ignoreNoEmail || to ? null : await unsubscribeToken({ id: row.person_id, email: address });
+	const token = options.kind === 'account' || to ? null : await unsubscribeToken({ id: row.person_id, email: address });
+
+	if (options.kind === 'tourn' && !row.tourn_name) {
+		logger.warn(`Tournament message ${messageId} has no tournament to name, sending it with the Tabroom footer`, {
+			'event.name': 'notification.email.tourn_missing',
+		});
+	}
+	const shell: EmailShellInput = !token
+		? { kind: 'account', content }
+		: options.kind === 'tourn' && row.tourn_name
+			? { kind: 'tourn', content, unsubscribeUrl: unsubscribePageUrl(token), tournName: row.tourn_name, messageId }
+			: { kind: 'tabroom', content, unsubscribeUrl: unsubscribePageUrl(token) };
 
 	// From stays in our own domain so the relay signs it; whoever should get the answers goes in
 	// Reply-To. A blast's email row can name both; a plain message names only the reply address,
 	// which is what its sender_string has always meant to the inbox
+	const sentAs = senderOf(row, options.as);
 	const outbound: OutboundEmail = {
 		to: name ? `"${name}" <${address}>` : address,
-		from: row.sender_raw || config.mail.from,
+		from: row.sender_raw || sentAs.from,
 		subject: SUBJECT_PREFIX + (row.subject || row.email_subject || DEFAULT_SUBJECT),
-		text: [
-			isHtml(content) ? plainText(content) : content,
-			link ? `Read more: ${link}` : null,
-			textFooter(token),
-		].filter(Boolean).join('\n\n'),
+		...renderEmail(shell),
+		headers: {
+			'Auto-Submitted': 'auto-generated',
+			'X-Auto-Response-Suppress': 'OOF, AutoReply',
+		},
 	};
 
-	const replyTo = metadataReplyTo(row.metadata) ?? row.sender_string?.trim();
+	const replyTo = metadataReplyTo(row.metadata) ?? (row.sender_string?.trim() || sentAs.replyTo);
 	if (replyTo) outbound.replyTo = replyTo;
-
-	if (isHtml(content)) {
-		outbound.html = [
-			content,
-			link ? `<p>Read more: <a href="${link}">${link}</a></p>` : null,
-			htmlFooter(token),
-		].filter(Boolean).join('\n');
-	}
 
 	// RFC 8058: with both headers, mail clients show their own Unsubscribe button and POST without opening a page
 	if (token) {
 		outbound.headers = {
+			...outbound.headers,
 			'List-Unsubscribe': `<${config.url}${UNSUBSCRIBE_PATH}${token}>`,
 			'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
 		};
@@ -285,46 +304,52 @@ export async function emailMessage(messageId: number, options: EmailMessageOptio
 	return { status: result.status };
 }
 
-/** Whether the inbox body is html rather than plain text */
+/**
+ * The From an email goes out under and, for a person, where replies go. Every address is in
+ * mail.from's domain, which the relay signs. The local part carries the last six digits of the
+ * message's epoch seconds, as classic's does; taken from the row, so the recipients of one
+ * notification and every retry share an address. Mail whose tournament or sender is gone goes
+ * out as Tabroom
+ */
+function senderOf(
+	row: {
+		id: number;
+		timestamp: Date;
+		tourn_name: string | null;
+		tourn_webname: string | null;
+		sender_first: string | null;
+		sender_last: string | null;
+		sender_email: string | null;
+	},
+	as: EmailSender = 'tabroom',
+): { from: string; replyTo?: string } {
+	// The domain of mail.from, bare or named: "live@www.tabroom.com", "Tabroom <live@www.tabroom.com>"
+	const domain = config.mail.from.match(/@([^>\s]+)/)?.[1];
+	const nonce = String(Math.floor(row.timestamp.getTime() / 1000)).slice(-6);
+
+	// Anything a webname holds that an address can't is dropped: "big tourn!" becomes "bigtourn"
+	const webname = row.tourn_webname?.replace(/[^\w.-]/g, '');
+	if (as === 'tourn' && domain && row.tourn_name && webname) {
+		return { from: `"${row.tourn_name.replace(/"/g, '').trim()}" <${webname}_${nonce}@${domain}>` };
+	}
+
+	const name = [row.sender_first, row.sender_last].filter(Boolean).join(' ').replace(/"/g, '').trim();
+	const address = row.sender_email?.trim();
+	if (as === 'person' && domain && name && address) {
+		return { from: `"${name}" <${nonce}@${domain}>`, replyTo: `"${name}" <${address}>` };
+	}
+
+	if (as !== 'tabroom') {
+		logger.warn(`Message ${row.id} has no ${as === 'tourn' ? 'tournament' : 'sender'} to send as, sending it as Tabroom`, {
+			'event.name': 'notification.email.sender_missing',
+		});
+	}
+	return { from: config.mail.from };
+}
+
+/** Whether a blast's stored content is html rather than plain text */
 function isHtml(content: string): boolean {
 	return /<[a-z][\s\S]*>/i.test(content);
-}
-
-/** The inbox html as readable plain text, paragraphs kept, images dropped, links shown after their text */
-function plainText(html: string): string {
-	return convert(html, {
-		wordwrap: 78,
-		selectors: [{ selector: 'img', format: 'skip' }],
-	}).trim();
-}
-
-/** A message url as a link that works from an email: site-relative paths get the site in front */
-function absoluteUrl(url: string): string {
-	return url.startsWith('/') ? `${config.schemats_url}${url}` : url;
-}
-
-const profileUrl = () => `${config.schemats_url}/user/profile`;
-const unsubscribeUrl = (token: string) => `${config.schemats_url}/unsubscribe/${token}`;
-
-function textFooter(token: string | null): string {
-	const lines = ['----------------------------'];
-	if (token) {
-		lines.push(
-			'You received this email because you have an account on Tabroom.com.',
-			`Stop these emails: ${unsubscribeUrl(token)}`,
-			`Or manage them from your profile: ${profileUrl()}`,
-		);
-	} else {
-		// Account mail goes out whatever the email setting says, so there is nothing to point the person at
-		lines.push('You received this email because of an action on your Tabroom.com account.');
-	}
-	return lines.join('\n');
-}
-
-function htmlFooter(token: string | null): string {
-	return token
-		? `<hr><p>You received this email because you have an account on Tabroom.com. <a href="${unsubscribeUrl(token)}">Stop these emails</a> or manage them from <a href="${profileUrl()}">your profile</a>.</p>`
-		: '<hr><p>You received this email because of an action on your Tabroom.com account.</p>';
 }
 
 /** The Reply-To a blast's email row recorded, when its metadata is JSON that carries one */

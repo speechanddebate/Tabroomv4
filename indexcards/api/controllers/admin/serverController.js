@@ -215,7 +215,7 @@ const notifyCloudAdmins = async (req, log, subject) => {
 	const message = {
 		ids     : adminIds,
 		html    : log,
-		from    : `${sender.first} ${sender.last} <${sender.email}>`,
+		replyTo : `${sender.first} ${sender.last} <${sender.email}>`,
 		subject : `Tabroom Cloud Change: ${subject}`,
 	};
 

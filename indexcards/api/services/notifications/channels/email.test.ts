@@ -302,10 +302,12 @@ describe('emailMessage', () => {
 
 	const newMessage = async (overrides = {}) => await factories.message.create({ person: Person.id, ...overrides });
 
-	it('builds the email from the message row with the footer and list headers', async () => {
+	const autoReplyHeaders = { 'Auto-Submitted': 'auto-generated', 'X-Auto-Response-Suppress': 'OOF, AutoReply' };
+
+	it('builds the email from the message row with the shell, list headers, and auto-reply headers', async () => {
 		const message = await newMessage({
 			subject: 'Round 3 posted',
-			body: 'You are in room 12',
+			body: '<p>You are in room 12</p>',
 			url: '/user/judge/ballot/1',
 			sender_string: 'Tab <tab@tabroom.com>',
 		});
@@ -318,14 +320,18 @@ describe('emailMessage', () => {
 		expect(mail.from).toBe(config.mail.from);
 		expect(mail.replyTo).toBe('Tab <tab@tabroom.com>');
 		expect(mail.subject).toBe('[TAB] Round 3 posted');
-		expect(mail.html).toBeUndefined();
-		expect(mail.text).toContain('You are in room 12');
-		expect(mail.text).toContain('Read more: https://www.example.org/user/judge/ballot/1');
-		expect(mail.text).toContain('Stop these emails: https://www.example.org/unsubscribe/');
+		expect(mail.html).toContain('<p>You are in room 12</p>');
+		expect(mail.html).toContain('>Tabroom.com</div>');
+		expect(mail.text).toMatch(/^You are in room 12\n/);
+		// The url is the inbox and push tap target; a link the email should show is in the body
+		expect(mail.html).not.toContain('/user/judge/ballot/1');
+		expect(mail.text).not.toContain('/user/judge/ballot/1');
+		expect(mail.text).toContain('Unsubscribe: https://www.example.org/unsubscribe/');
 		expect(mail.text).toContain('https://www.example.org/user/profile');
 
 		const token = headerToken(mail);
 		expect(mail.headers).toEqual({
+			...autoReplyHeaders,
 			'List-Unsubscribe': `<https://api.example.org/v1/rest/notify/email/unsubscribe/${token}>`,
 			'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
 		});
@@ -334,32 +340,49 @@ describe('emailMessage', () => {
 	});
 
 	it('fills in the subject and sends with no reply-to when the message names no sender', async () => {
-		const message = await newMessage({ subject: null, sender_string: null, url: null });
+		const message = await newMessage({ subject: null, sender_string: null });
 
 		await emailMessage(message.id);
 
 		expect(sent().subject).toBe('[TAB] Message from Tabroom.com');
 		expect(sent().from).toBe(config.mail.from);
 		expect(sent().replyTo).toBeUndefined();
-		expect(sent().text).not.toContain('Read more');
+	});
+
+	it('sends a message\'s own body as the html it was stored as, without guessing its format', async () => {
+		// notify() escaped this when it wrote the row; a second guess would treat "< 26 need review" as a tag
+		const message = await newMessage({ body: '<p>Room A &amp; B<br>speaks &lt; 26 need review</p>' });
+
+		await emailMessage(message.id);
+
+		expect(sent().html).toContain('<p>Room A &amp; B<br>speaks &lt; 26 need review</p>');
+		expect(sent().text).toMatch(/^Room A & B\nspeaks < 26 need review\n/);
+	});
+
+	it('escapes a blast email row\'s plain text in the html part', async () => {
+		const email = await factories.email.create({ content: 'Room A & B\nspeaks < 26 need review' });
+		const message = await newMessage({ body: null, email: email.id });
+
+		await emailMessage(message.id);
+
+		expect(sent().html).toContain('<p>Room A &amp; B<br>speaks &lt; 26 need review</p>');
+		expect(sent().text).toMatch(/^Room A & B\nspeaks < 26 need review\n/);
 	});
 
 	it('sends html with a flattened text version and both footers', async () => {
 		const message = await newMessage({
 			body: '<p>Your round is in <a href="https://example.com/room">room 12</a>.</p><img src="x.png"><p>Go <b>now</b>.</p>',
-			url: 'https://www.example.org/pairings',
 		});
 
 		await emailMessage(message.id);
 
 		const mail = sent();
 		expect(mail.html).toContain('<p>Your round is in <a href="https://example.com/room">room 12</a>.</p>');
-		expect(mail.html).toContain('<p>Read more: <a href="https://www.example.org/pairings">https://www.example.org/pairings</a></p>');
-		expect(mail.html).toMatch(/<hr><p>You received this email because you have an account on Tabroom.com. <a href="https:\/\/www.example.org\/unsubscribe\/[^"]+">Stop these emails<\/a> or manage them from <a href="https:\/\/www.example.org\/user\/profile">your profile<\/a>.<\/p>$/);
+		expect(mail.html).toMatch(/<a href="https:\/\/www.example.org\/unsubscribe\/[^"]+" style="[^"]*">Unsubscribe<\/a> · <a href="https:\/\/www.example.org\/user\/profile" style="[^"]*">Email settings<\/a>/);
 		expect(mail.text).toContain('Your round is in room 12 [https://example.com/room].');
 		expect(mail.text).toContain('Go now.');
 		expect(mail.text).not.toContain('<');
-		expect(mail.text).toContain('Stop these emails:');
+		expect(mail.text).toContain('Unsubscribe:');
 	});
 
 	it('uses the blast email row for content, subject, from, and reply-to when the message has none of its own', async () => {
@@ -409,14 +432,14 @@ describe('emailMessage', () => {
 		const OptedOut = await factories.person.create({ no_email: 1 });
 		const message = await newMessage({ person: OptedOut.id, body: '<p>Your password was changed.</p>' });
 
-		await expect(emailMessage(message.id, { ignoreNoEmail: true })).resolves.toEqual({ status: 'sent' });
+		await expect(emailMessage(message.id, { kind: 'account' })).resolves.toEqual({ status: 'sent' });
 
 		const mail = sent();
-		expect(mail.headers).toBeUndefined();
+		expect(mail.headers).toEqual(autoReplyHeaders);
 		expect(mail.text).not.toContain('unsubscribe');
-		expect(mail.text).toContain('because of an action on your Tabroom.com account');
+		expect(mail.text).toContain('because of a change to your Tabroom.com account');
 		expect(mail.html).not.toContain('unsubscribe');
-		expect(mail.html).toContain('because of an action on your Tabroom.com account');
+		expect(mail.html).toContain('because of a change to your Tabroom.com account');
 		// The email setting does not stop account mail, so the footer points nowhere
 		expect(mail.text).not.toContain('/user/profile');
 		expect(mail.html).not.toContain('/user/profile');
@@ -425,11 +448,11 @@ describe('emailMessage', () => {
 	it('sends to a given address instead of the person\'s, without an unsubscribe link or headers', async () => {
 		const message = await newMessage({ body: 'Your address was changed.' });
 
-		await expect(emailMessage(message.id, { to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
+		await expect(emailMessage(message.id, { kind: 'account', to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
 
 		const mail = sent();
 		expect(mail.to).toBe('"Pat Coach" <old.address@example.org>');
-		expect(mail.headers).toBeUndefined();
+		expect(mail.headers).toEqual(autoReplyHeaders);
 		expect(mail.text).not.toContain('unsubscribe');
 	});
 
@@ -449,7 +472,7 @@ describe('emailMessage', () => {
 			?? await factories.person.create({ email: '' });
 		const message = await newMessage({ person: NoAddress.id });
 
-		await expect(emailMessage(message.id, { to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
+		await expect(emailMessage(message.id, { kind: 'account', to: 'old.address@example.org' })).resolves.toEqual({ status: 'sent' });
 		expect(sent().to).toContain('old.address@example.org');
 	});
 
@@ -505,11 +528,146 @@ describe('emailMessage', () => {
 		await expect(emailMessage(message.id)).resolves.toEqual({ status: 'retry' });
 	});
 
+	describe('who it is from', () => {
+		// 2026-11-17T18:00:00Z is 1794938400 in epoch seconds
+		const timestamp = new Date('2026-11-17T18:00:00Z');
+		const originalFrom = config.mail.from;
+
+		beforeEach(() => {
+			config.mail.from = 'Tabroom <live@mail.example.org>';
+		});
+
+		afterEach(() => {
+			config.mail.from = originalFrom;
+		});
+
+		it('sends tournament mail under the tournament\'s name, from an address of its own in our domain', async () => {
+			const Tourn = await factories.tourn.create({ name: 'The "Big" Tournament', webname: 'big tourn!' });
+			const message = await newMessage({ tourn: Tourn.id, timestamp, sender_string: 'tab@bigtourn.org' });
+
+			await emailMessage(message.id, { as: 'tourn' });
+
+			expect(sent().from).toBe('"The Big Tournament" <bigtourn_938400@mail.example.org>');
+			expect(sent().replyTo).toBe('tab@bigtourn.org');
+		});
+
+		it('sends a person\'s mail under their name, with replies to their own address', async () => {
+			const Sender = await factories.person.create({ first: 'Sam', last: 'Tabber' });
+			const message = await newMessage({ sender: Sender.id, timestamp, sender_string: null });
+
+			await emailMessage(message.id, { as: 'person' });
+
+			expect(sent().from).toBe('"Sam Tabber" <938400@mail.example.org>');
+			expect(sent().replyTo).toBe(`"Sam Tabber" <${Sender.email}>`);
+		});
+
+		it('lets the request\'s reply address win over the sender\'s own', async () => {
+			const Sender = await factories.person.create();
+			const message = await newMessage({ sender: Sender.id, sender_string: 'office@example.org' });
+
+			await emailMessage(message.id, { as: 'person' });
+
+			expect(sent().replyTo).toBe('office@example.org');
+		});
+
+		it('keeps a blast email row\'s own From ahead of the request\'s', async () => {
+			const Tourn = await factories.tourn.create();
+			const email = await factories.email.create({ sender_raw: 'Composer <composer_1@www.tabroom.com>' });
+			const message = await newMessage({ tourn: Tourn.id, email: email.id });
+
+			await emailMessage(message.id, { as: 'tourn' });
+
+			expect(sent().from).toBe('Composer <composer_1@www.tabroom.com>');
+		});
+
+		it.each([
+			['tourn', 'tournament'],
+			['person', 'sender'],
+		] as const)('sends as Tabroom and warns when the %s it should name is gone', async (as, missing) => {
+			const message = await newMessage({ tourn: null, sender: null, sender_string: null });
+
+			await emailMessage(message.id, { as });
+
+			expect(sent().from).toBe('Tabroom <live@mail.example.org>');
+			expect(sent().replyTo).toBeUndefined();
+			expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(`no ${missing} to send as`), {
+				'event.name': 'notification.email.sender_missing',
+			});
+		});
+	});
+
 	it('logs instead of sending in log mode', async () => {
 		config.mail = mailConfig({ mode: 'log' });
 		const message = await newMessage();
 
 		await expect(emailMessage(message.id)).resolves.toEqual({ status: 'logged' });
 		expect(sendMail).not.toHaveBeenCalled();
+	});
+
+	describe('tournament mail', () => {
+		const staffHtml = '<div class="x"><p>Rounds start at <b>8:00</b>.</p><img src="https://example.com/pixel.gif">'
+			+ '<script>alert(1)</script><p><a href="javascript:alert(1)">Bad</a></p></div>';
+
+		let Tourn: { id: number; name: string };
+
+		beforeAll(async () => {
+			Tourn = await factories.tourn.create({ name: 'Big Tournament' });
+		});
+
+		// A message's own body is sanitized when notify() writes it; a blast's email row is cleaned here
+		const blastMessage = async (content: string, tourn: number | null) => await newMessage({
+			body: null,
+			email: (await factories.email.create({ content })).id,
+			tourn,
+		});
+
+		it('sanitizes a blast row\'s staff html and names the tournament in the footer with a report link', async () => {
+			const message = await blastMessage(staffHtml, Tourn.id);
+
+			await expect(emailMessage(message.id, { kind: 'tourn' })).resolves.toEqual({ status: 'sent' });
+
+			const mail = sent();
+			expect(mail.html).toContain('<p>Rounds start at <b>8:00</b>.</p><p><a>Bad</a></p>');
+			// The shell's own wordmark is divs, so look for the staff div by its class
+			expect(mail.html).not.toContain('class="x"');
+			expect(mail.html).not.toContain('pixel.gif');
+			expect(mail.html).not.toContain('<script');
+			expect(mail.html).not.toContain('javascript:');
+			expect(mail.html).toContain('Big Tournament sent this message through Tabroom.com.');
+			expect(mail.html).toContain(`mailto:help@tabroom.com?subject=${encodeURIComponent(`Report message ${message.id} from Big Tournament`)}`);
+			expect(mail.text).toContain('Report this message: mailto:help@tabroom.com');
+			expect(mail.headers?.['List-Unsubscribe']).toBeDefined();
+		});
+
+		it('keeps a blast row\'s plain-text staff message as escaped paragraphs', async () => {
+			const message = await blastMessage('Room A & B\n\nBring a timer', Tourn.id);
+
+			await emailMessage(message.id, { kind: 'tourn' });
+
+			expect(sent().html).toContain('<p>Room A &amp; B</p><p>Bring a timer</p>');
+		});
+
+		it('gives Tabroom mail about a tournament no disclaimer and no sanitizing', async () => {
+			const message = await newMessage({ body: '<div><p>Pairings are up.</p></div>', tourn: Tourn.id });
+
+			await emailMessage(message.id);
+
+			expect(sent().html).toContain('<div><p>Pairings are up.</p></div>');
+			expect(sent().html).not.toContain('sent this message through Tabroom.com');
+			expect(sent().html).not.toContain('Report this message');
+		});
+
+		it('falls back to the Tabroom footer and warns when the tournament is gone, still sanitizing', async () => {
+			const message = await blastMessage(staffHtml, null);
+
+			await expect(emailMessage(message.id, { kind: 'tourn' })).resolves.toEqual({ status: 'sent' });
+
+			expect(sent().html).not.toContain('Report this message');
+			expect(sent().html).toContain('Unsubscribe</a>');
+			expect(sent().html).not.toContain('<script');
+			expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining(`message ${message.id}`), {
+				'event.name': 'notification.email.tourn_missing',
+			});
+		});
 	});
 });

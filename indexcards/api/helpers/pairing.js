@@ -557,12 +557,15 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 
 	Object.keys(blastData.judges).forEach( (judgeId) => {
 		if (followers.judges[judgeId]) {
+			const message = blastData.judges[judgeId];
 			const promise = notify({
-				ids    : followers.judges[judgeId],
-				append : blastData.append,
-				from   : blastData.from,
-				tourn  : blastData.tourn,
-				...blastData.judges[judgeId],
+				ids     : followers.judges[judgeId],
+				append  : blastData.append,
+				tourn   : blastData.tourn,
+				as      : 'tourn',
+				subject : message.subject,
+				url     : message.url,
+				...(message.html ? { html: message.html } : { text: message.text }),
 			});
 			promises.push(promise);
 		}
@@ -570,12 +573,14 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 
 	Object.keys(blastData.entries).forEach( (entryId) => {
 		if (followers.entries[entryId]) {
+			const message = blastData.entries[entryId];
 			const promise = notify({
-				ids    : followers.entries[entryId],
-				append : blastData.append,
-				from   : blastData.from,
-				tourn  : blastData.tourn,
-				...blastData.entries[entryId],
+				ids     : followers.entries[entryId],
+				append  : blastData.append,
+				tourn   : blastData.tourn,
+				as      : 'tourn',
+				subject : message.subject,
+				...(message.html ? { html: message.html } : { text: message.text }),
 			});
 			promises.push(promise);
 		}
@@ -584,11 +589,12 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 	Object.keys(blastData.schools).forEach( (schoolId) => {
 		if (followers.schools[schoolId]) {
 			const promise = notify({
-				ids    : followers.schools[schoolId],
-				append : blastData.append,
-				from   : blastData.from,
-				tourn  : blastData.tourn,
-				...blastData.schools[schoolId],
+				ids     : followers.schools[schoolId],
+				append  : blastData.append,
+				tourn   : blastData.tourn,
+				as      : 'tourn',
+				subject : blastData.schools[schoolId].subject,
+				text    : blastData.schools[schoolId].text,
 			});
 			promises.push(promise);
 		}
@@ -599,12 +605,8 @@ export const sendPairingBlast = async (followers, blastData, req, res) => {
 		Promise.all(promises).then( (values) => {
 
 			for (const notifyResponse of values) {
-				blastResponse.email += notifyResponse.email;
-				blastResponse.web += notifyResponse.web;
-				blastResponse.inbox += notifyResponse.inbox;
-				if (notifyResponse.error) {
-					blastResponse.error = true;
-				}
+				blastResponse.email += notifyResponse.jobs.email;
+				blastResponse.web += notifyResponse.jobs.push;
 			}
 
 			if (blastResponse.error) {

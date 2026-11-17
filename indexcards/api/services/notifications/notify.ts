@@ -1,90 +1,105 @@
 import { z } from "zod";
 import { db } from "../../data/database.js";
 import logger from "../../helpers/logger.js";
+import { sanitizeHTML } from "../../helpers/text.js";
 import messageRepo from "../../repos/messageRepo.js";
 import sessionRepo from "../../repos/sessionRepo.js";
 import { addJobs, type FlowNode } from "../queue/index.js";
 import { emailQueue, pushQueue } from "./queues.js";
-import { getVapid, type PushMessageOptions } from "./channels/webpush.js";
+import { getVapid } from "./channels/webpush.js";
+import { EMAIL_HTML, textToHtml } from "./templates/html.js";
 
-export type inputData = {
-	ids     : number[]
-	text    : string // Text of the message to send
-	subject? : string // Subject line of the emails/blasts.  Optional.
-	body?    : string | null // The schema requires the key (null is fine) though the message body comes from html or text
-	url?     : string // URL appended to the email or where the click-through of
-			  // notification lands.  Optional.
-	append?  : string // Text appended to the message as a footer. Optional.
-	html?          : string
-	sender?        : number
-	from?          : string
-	replyTo?       : string
-	emailId?       : number // The blast's email row, when the caller recorded one
-	tourn?         : number
-	ignoreNoEmail? : boolean
-	/** Where email waits in the queue: high for mail someone is waiting on (a confirmation code), low for big blasts. Default normal */
-	priority?      : EmailPriority
-	/** An address to email instead of the person's own, such as their old one after a change; one recipient only */
-	to?            : string
-	push?          : PushMessageOptions
-	/** Each channel has its own default (see the schema); a caller names only the channels it wants different */
-	channels?: {
-		inbox?   : boolean
-		email?   : boolean
-		webpush? : boolean
-	}
-}
 /**
- * represents a valid notification request that can be delivered
+ * Who the email is from, which decides its footer. account: about the person's own account, so it
+ * reaches someone opted out and offers no unsubscribe. tabroom: everything else Tabroom writes,
+ * including mail generated from a tournament's data. tourn: free text a tournament's staff typed,
+ * sanitized and footed as the tournament's
  */
-export const NotificationRequestSchema = z.object({
-	ids     : z.array(z.number()).nonempty().refine((arr) => arr.every((v, i, a) => a.indexOf(v) === i), {
-		message: "IDs must be unique"
-	}),
-	text    : z.string().max(65535), //mariadb text limit
-	subject : z.string().max(255).nullable(),
-	body    : z.string().nullable(),
-	url     : z.string().max(511).nullable(),
+export const EmailKindSchema = z.enum(['account', 'tabroom', 'tourn']);
+export type EmailKind = z.infer<typeof EmailKindSchema>;
+
+/**
+ * Whose name the email goes out under, which decides its From and where replies go. tabroom: the
+ * configured address. tourn: the tournament's name on an address of its own. person: the sender's
+ * name, with replies to their own address
+ */
+export const EmailSenderSchema = z.enum(['tabroom', 'tourn', 'person']);
+export type EmailSender = z.infer<typeof EmailSenderSchema>;
+
+/**
+ * A notification to deliver. Strict at every level, so a key the service doesn't know is refused
+ * rather than dropped
+ */
+export const NotificationRequestSchema = z.strictObject({
+	/** The people to notify; repeats are dropped, and none at all is a notification to nobody */
+	ids     : z.array(z.number()).transform((ids) => [...new Set(ids)]),
+	subject : z.string().max(255).optional(),
+	/** The message as plain text; a request carries this or html, never both */
+	text    : z.string().max(65535).optional(), //mariadb text limit
+	html    : z.string().optional(),
+	/** Where an inbox or push click-through lands; never shown in the email */
+	url     : z.string().max(511).optional(),
+	/**
+	 * @deprecated Plain text added after the body as its own paragraphs. The caller or its
+	 * template builds the whole message instead; removed once the pairing blasts stop passing it
+	 */
 	append  : z.string().optional(),
-	html          : z.string().optional(),
-	sender        : z.number().optional(),
-	from          : z.string().optional(),
-	replyTo       : z.string().optional(),
-	emailId       : z.number().optional(),
-	tourn         : z.number().optional(),
-	ignoreNoEmail  : z.boolean().optional(),
-	priority       : z.enum(['low', 'normal', 'high']).default('normal'),
-	to             : z.email().optional(),
-	push: z.object({
+	/** The person the inbox shows as the sender */
+	sender  : z.number().optional(),
+	replyTo : z.string().optional(),
+	/** The blast's email row, when the caller recorded one */
+	emailId : z.number().optional(),
+	tourn   : z.number().optional(),
+	/** tourn needs tourn */
+	kind    : EmailKindSchema.default('tabroom'),
+	/** Default tourn for tourn mail, tabroom otherwise. tourn needs tourn, person needs sender */
+	as      : EmailSenderSchema.optional(),
+	/** Where email waits in the queue: high for mail someone is waiting on (a confirmation code), low for big blasts */
+	priority : z.enum(['low', 'normal', 'high']).default('normal'),
+	/** An address to email instead of the person's own, such as their old one after a change; account mail to one recipient only */
+	to      : z.email().optional(),
+	push: z.strictObject({
 		sessions : z.array(z.number()).optional(),
 		ttl      : z.int().min(0).optional(),
 		urgency  : z.enum(['very-low', 'low', 'normal', 'high']).optional(),
 	}).optional(),
 	// Each channel carries its own default, so a caller names only the ones it wants different.
 	// The general-purpose channels default on; a channel for particular cases (SMS, say) would default off
-	channels: z.object({
-		inbox   : z.boolean().default(true),
-		email   : z.boolean().default(true),
-		webpush : z.boolean().default(true),
+	channels: z.strictObject({
+		inbox : z.boolean().default(true),
+		email : z.boolean().default(true),
+		push  : z.boolean().default(true),
 	}).prefault({})
-}).refine((request) => !request.to || request.ids.length === 1, {
-	message: 'A to address needs exactly one recipient',
+}).refine((request) => !request.to || (request.kind === 'account' && request.ids.length === 1), {
+	// Only account mail goes anywhere but the person's own address, and an unsubscribe link can't follow it there
+	message: 'A to address is for account mail to exactly one recipient',
 	path: ['to'],
-});
+}).refine((request) => (request.text === undefined) !== (request.html === undefined), {
+	message: 'A message is either text or html',
+	path: ['text'],
+}).refine((request) => (request.kind !== 'tourn' && request.as !== 'tourn') || request.tourn !== undefined, {
+	message: 'Tournament mail names its tourn',
+	path: ['tourn'],
+}).refine((request) => request.as !== 'person' || request.sender !== undefined, {
+	message: 'Mail sent as a person names its sender',
+	path: ['sender'],
+}).transform((request) => ({
+	...request,
+	// What a tournament's staff typed never goes out under Tabroom's name unless the caller says so
+	as: request.as ?? (request.kind === 'tourn' ? 'tourn' as const : 'tabroom' as const),
+}));
+/** What a caller passes: everything with a default is optional */
+export type NotifyRequest = z.input<typeof NotificationRequestSchema>;
 export type NotificationRequest = z.infer<typeof NotificationRequestSchema>;
 
-export type notifyResponse = {
-	error   : boolean
-	message : string
-	email   : number
-	inbox   : number
-	web     : number
-	errors? : unknown[]
+export type NotifyResult = {
+	/** Message rows written, one per recipient */
+	messages: number;
 	/** Jobs queued per channel */
-	jobs?   : { push: number; email: number }
-}
+	jobs: { push: number; email: number };
+};
 
-export type EmailPriority = 'low' | 'normal' | 'high';
+export type EmailPriority = NotificationRequest['priority'];
 
 /**
  * BullMQ runs jobs added without a priority first, then the lowest number. So high goes in with
@@ -117,32 +132,37 @@ export type PreparedNotification = {
  * something to run after every delivery settles adds the deliveries under its own flow
  * parent; notify() queues them as is
  */
-export async function prepNotify(inputData: inputData): Promise<PreparedNotification> {
-	inputData.ids = inputData.ids.filter((value, index, array) => array.indexOf(value) === index);
-	const request = validateNotificationRequest(inputData);
+export async function prepNotify(input: NotifyRequest): Promise<PreparedNotification> {
+	const request = validateNotificationRequest(input);
+	if (request.ids.length === 0) return { messages: [], deliveries: [] };
 
+	// The body is stored once as html that is safe to show: text is escaped, and only what
+	// EMAIL_HTML allows of staff-typed markup is kept. Html of any other kind is our own
+	// templates'. The inbox, the email, and the push all read this, so none of them guesses
+	const content = request.html === undefined
+		? textToHtml(request.text ?? '').value
+		: request.kind === 'tourn' ? sanitizeHTML(request.html, EMAIL_HTML) : request.html;
 	// A message linked to a blast's email row shows that row's content, so it only carries
 	// a body of its own when there is a footer to add; otherwise the content lives here
-	const content = request.html || request.text;
 	const body = request.emailId && !request.append
 		? null
-		: request.append ? `${content}\n${request.append}` : content;
+		: content + (request.append ? textToHtml(request.append).value : '');
 
 	// No email job for anyone email can't reach; the job checks again at send time for changes since
 	const reachable = request.channels.email
-		? await emailRecipients(request.ids, { ignoreNoEmail: request.ignoreNoEmail === true, hasAddress: Boolean(request.to) })
+		? await emailRecipients(request.ids, { account: request.kind === 'account', hasAddress: Boolean(request.to) })
 		: new Set<number>();
 
 	// No push job for anyone without a login that can receive push, which is most people.
 	// Without VAPID keys nobody can, so every push is skipped here and no job runs to say so
 	const vapid = getVapid();
-	if (request.channels.webpush && !vapid && !warnedPushUnconfigured) {
+	if (request.channels.push && !vapid && !warnedPushUnconfigured) {
 		warnedPushUnconfigured = true;
 		logger.warn('Push deliveries are being skipped, web push is not configured', {
 			'event.name': 'notification.push.unconfigured',
 		});
 	}
-	const pushable = request.channels.webpush && vapid
+	const pushable = request.channels.push && vapid
 		? await sessionRepo.getPushRecipients(db, request.ids, vapid.fingerprint, { sessions: request.push?.sessions })
 		: new Set<number>();
 	const queuedAt = new Date();
@@ -155,7 +175,7 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			body,
 			url           : request.url,
 			sender        : request.sender,
-			sender_string : request.replyTo || request.from,
+			sender_string : request.replyTo,
 			tourn         : request.tourn,
 			// The inbox shows a message once visible_at has passed and never shows one without it,
 			// so the row is still the record of the delivery when the inbox channel is off
@@ -167,7 +187,7 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 					? { email_status: 'queued' as const }
 					: { email_status: 'skipped' as const, emailed_at: queuedAt }
 				: {}),
-			...(request.channels.webpush
+			...(request.channels.push
 				? pushable.has(person)
 					? { push_status: 'queued' as const }
 					: { push_status: 'skipped' as const, pushed_at: queuedAt }
@@ -182,12 +202,12 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 	if (request.channels.email) {
 		messageRepo.countSkipped('email', messages.filter((message) => !reachable.has(message.person)).length);
 	}
-	if (request.channels.webpush) {
+	if (request.channels.push) {
 		messageRepo.countSkipped('push', messages.filter((message) => !pushable.has(message.person)).length);
 	}
 
 	const deliveries: FlowNode[] = [];
-	if (request.channels.webpush) {
+	if (request.channels.push) {
 		for (const message of messages) {
 			if (!pushable.has(message.person)) continue;
 			deliveries.push(pushQueue.job('push', { message: message.id, ...(request.push ? { push: request.push } : {}) }, {
@@ -202,7 +222,8 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 			if (!reachable.has(message.person)) continue;
 			deliveries.push(emailQueue.job('email', {
 				message: message.id,
-				...(request.ignoreNoEmail ? { ignoreNoEmail: true } : {}),
+				...(request.kind === 'tabroom' ? {} : { kind: request.kind }),
+				...(request.as === 'tabroom' ? {} : { as: request.as }),
 				...(request.to ? { to: request.to } : {}),
 			}, {
 				jobId: `message-${message.id}`,
@@ -217,40 +238,25 @@ export async function prepNotify(inputData: inputData): Promise<PreparedNotifica
 
 /**
  * The ids among these people who have an address and have not opted out. Account mail
- * (ignoreNoEmail) reaches the opted out; a request with its own to address (hasAddress)
- * needs none from the person
+ * reaches the opted out; a request with its own to address (hasAddress) needs none from the person
  */
-async function emailRecipients(ids: number[], opts: { ignoreNoEmail: boolean; hasAddress: boolean }): Promise<Set<number>> {
+async function emailRecipients(ids: number[], opts: { account: boolean; hasAddress: boolean }): Promise<Set<number>> {
 	const people = await db.selectFrom('person')
 		.select(['id', 'email', 'no_email'])
 		.where('id', 'in', ids)
 		.execute();
 
 	return new Set(people
-		.filter((person) => (opts.hasAddress || person.email.trim() !== '') && (opts.ignoreNoEmail || !person.no_email))
+		.filter((person) => (opts.hasAddress || person.email.trim() !== '') && (opts.account || !person.no_email))
 		.map((person) => person.id));
 }
 
 /**
- * Prepares a notification and queues its deliveries. Returns an error response rather
- * than throwing on an invalid request, for the callers that read it that way
+ * Prepares a notification and queues its deliveries. Throws NotificationRequestError on an
+ * invalid request, which is a bug in the caller, and whatever the database or the queue throws
  */
-export async function notify(inputData: inputData): Promise<notifyResponse> {
-	let prepared: PreparedNotification;
-	try {
-		prepared = await prepNotify(inputData);
-	} catch (error) {
-		if (!(error instanceof NotificationRequestError)) throw error;
-		return {
-			error   : true,
-			message : error.message,
-			email   : 0,
-			inbox   : 0,
-			web     : 0,
-			errors  : [error.message],
-		};
-	}
-	const { messages, deliveries } = prepared;
+export async function notify(input: NotifyRequest): Promise<NotifyResult> {
+	const { messages, deliveries } = await prepNotify(input);
 	const jobs = {
 		push  : deliveries.filter((delivery) => delivery.queueName === 'push').length,
 		email : deliveries.filter((delivery) => delivery.queueName === 'email').length,
@@ -278,14 +284,7 @@ export async function notify(inputData: inputData): Promise<notifyResponse> {
 
 	logger.info(`Notification recorded for ${messages.length} people, queued ${jobs.push} push and ${jobs.email} email job(s)`);
 
-	return {
-		error   : false,
-		message : `Notification queued for ${messages.length} people`,
-		email   : jobs.email,
-		inbox   : messages.length,
-		web     : 0,
-		jobs,
-	};
+	return { messages: messages.length, jobs };
 }
 
 export function validateNotificationRequest(inputData: unknown) {

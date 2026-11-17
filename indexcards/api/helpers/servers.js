@@ -566,7 +566,7 @@ export const notifyCloudAdmins = async (whodunnit, log, subject) => {
 	const message = {
 		ids     : adminIds,
 		text    : log,
-		from    : `${sender.first} ${sender.last} <${sender.email}>`,
+		replyTo : `${sender.first} ${sender.last} <${sender.email}>`,
 		subject : `Tabroom Cloud Change: ${subject}`,
 	};
 

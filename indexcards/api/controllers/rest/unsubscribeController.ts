@@ -1,11 +1,10 @@
 import type { Response } from 'express';
-import config from '../../config.js';
 import { db } from '../../data/database.js';
 import logger from '../../helpers/logger.js';
 import { NotFound } from '../../helpers/problem.js';
 import type { ValidatedRequest } from '../../middleware/validation.js';
 import personRepo from '../../repos/personRepo.js';
-import { maskEmail, matchesUnsubscribeToken, verifyUnsubscribeToken } from '../../services/notifications/unsubscribe.js';
+import { maskEmail, matchesUnsubscribeToken, unsubscribePageUrl, verifyUnsubscribeToken } from '../../services/notifications/unsubscribe.js';
 
 /** The person a token is for, or null when it is not ours, expired, for nobody, or issued to an address they no longer have */
 async function personForToken(token: string) {
@@ -34,7 +33,7 @@ async function status(req: ValidatedRequest, res: Response) {
 	const { token } = req.params as { token: string };
 
 	if (req.accepts(['json', 'html']) === 'html') {
-		return res.redirect(302, `${config.schemats_url}/unsubscribe/${encodeURIComponent(token)}`);
+		return res.redirect(302, unsubscribePageUrl(token));
 	}
 
 	const person = await personForToken(token);
