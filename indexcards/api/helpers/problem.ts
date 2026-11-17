@@ -96,6 +96,14 @@ export function ServiceUnavailable(req: Request, res: Response, detail?: string,
 		...extras,
 	});
 }
+export function Gone(req: Request, res: Response, detail?: string, extras = {}){
+	return sendProblem(req, res, {
+		title: 'This is no longer available.',
+		status: 410,
+		detail,
+		...extras,
+	});
+}
 export function RateLimitExceeded(req: Request, res: Response, detail?: string, extras = {}){
 	return sendProblem(req, res, {
 		title: 'Rate limit exceeded',

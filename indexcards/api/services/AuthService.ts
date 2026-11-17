@@ -5,6 +5,8 @@ import config from '../config.js';
 import sessionRepo from '../repos/sessionRepo.js';
 import { ValidationError } from '../helpers/errors/errors.js';
 import { parseUserAgent } from '../helpers/userAgent.js';
+import logger from '../helpers/logger.js';
+import { sendConfirmation } from './profile/emailConfirm.js';
 import { db } from '../data/database.js';
 import type { Person } from '../data/schema.js';
 import type { CookieOptions } from 'express';
@@ -60,6 +62,13 @@ export async function register(userData: RegisterRequest, context: { ip?: string
 
 	if (!Person?.id) {
 		throw new Error('Failed to create user');
+	}
+
+	// A new account starts unconfirmed, as on classic; it is made even if the code can't be queued, since resend is there
+	try {
+		await sendConfirmation(db, { id: Person.id, email: Person.email });
+	} catch (error) {
+		logger.warn(`Confirmation email for new person ${Person.id} failed: ${error instanceof Error ? error.message : String(error)}`);
 	}
 
 	const { userkey } = await sessionRepo.createSession(db,{

@@ -3,13 +3,19 @@ import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
 import logger from '../../../../helpers/logger.js';
 import { db } from '../../../../data/database.js';
+import { sql } from 'kysely';
 import { UserProfileSchema } from '@tabroom/types';
 import type { UserProfile } from '@tabroom/types';
+
+const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+vi.mock('../../../../services/queue/index.js', async (original) => ({ ...await original(), addJobs }));
 
 type PersonOverrides = Parameters<typeof factories.person.create>[0];
 
 // Phone numbers are unique across person, so each test draws its own
 const randomPhone = () => `${2 + Math.floor(Math.random() * 8)}${String(Math.floor(Math.random() * 1e9)).padStart(9, '0')}`;
+
+const WEEK_MINUTES = 7 * 24 * 60;
 
 const stored = (id: number) => db.selectFrom('person').selectAll().where('id', '=', id).executeTakeFirstOrThrow();
 
@@ -333,6 +339,192 @@ describe('Profile Router', () => {
 			const { userkey } = await newPerson();
 
 			expect((await patch(userkey, { first: 'Ann' }).set('Origin', 'https://evil.example.com')).status).toBe(403);
+		});
+	});
+
+	/** A person waiting to confirm, holding this code, as classic and indexcards both store it */
+	const unconfirmed = (code = 'HXK3QY', overrides: PersonOverrides = {}) =>
+		newPerson({ no_email: 1, settings: { email_unconfirmed: 1, email_confirmation_key: code }, ...overrides });
+
+	const confirmation = async (id: number) => {
+		const rows = await db.selectFrom('person_setting').select(['tag', 'value'])
+			.where('person', '=', id)
+			.where('tag', 'in', ['email_unconfirmed', 'email_confirmation_key'])
+			.execute();
+		const settings = Object.fromEntries(rows.map(row => [row.tag, row.value]));
+		return { unconfirmed: settings.email_unconfirmed ?? null, key: settings.email_confirmation_key ?? null, noEmail: (await stored(id)).no_email };
+	};
+
+	/** Moves the stored code's send time back, in the database's own clock */
+	const sentMinutesAgo = (id: number, minutes: number) => db.updateTable('person_setting')
+		.set({ timestamp: sql<Date>`NOW() - INTERVAL ${minutes} MINUTE` })
+		.where('person', '=', id)
+		.where('tag', '=', 'email_confirmation_key')
+		.execute();
+
+	const confirm = (userkey: string, code: string) => request(server).post('/v1/user/profile/email/confirm').asPerson(userkey).send({ code });
+
+	/** The email jobs handed to the queue since the test began */
+	const emailJobs = () => addJobs.mock.calls
+		.flatMap(([jobs]) => jobs as { queueName: string; data: Record<string, unknown>; opts: Record<string, unknown> }[])
+		.filter(job => job.queueName === 'email');
+
+	describe('POST /v1/user/profile/email/confirm', () => {
+		beforeEach(() => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+		});
+
+		it('confirms with the right code in any case and with spaces, and turns email back on', async () => {
+			const { id, userkey } = await unconfirmed('HXK3QY');
+
+			const res = await confirm(userkey, '  hxk3qy ').expect(204);
+
+			expect(res).not.toBeProblemResponse();
+			expect(await confirmation(id)).toEqual({ unconfirmed: null, key: null, noEmail: 0 });
+			expect((await request(server).get('/v1/user/profile').asPerson(userkey)).body).toMatchObject({ emailUnconfirmed: false, noEmail: false });
+		});
+
+		it('accepts a code classic wrote straight into person_setting', async () => {
+			const { id, userkey } = await newPerson({ no_email: 1 });
+			await db.insertInto('person_setting').values([
+				{ person: id, tag: 'email_unconfirmed', value: '1' },
+				{ person: id, tag: 'email_confirmation_key', value: 'G3FYR7' },
+			]).execute();
+
+			await confirm(userkey, 'g3fyr7').expect(204);
+
+			expect(await confirmation(id)).toEqual({ unconfirmed: null, key: null, noEmail: 0 });
+		});
+
+		it('refuses a wrong code under the code field and changes nothing', async () => {
+			const { id, userkey } = await unconfirmed('HXK3QY');
+
+			const res = await confirm(userkey, 'HXK3QZ').expect(400);
+
+			expect(res).toBeProblemResponse(400);
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['code'] })]);
+			expect(await confirmation(id)).toEqual({ unconfirmed: '1', key: 'HXK3QY', noEmail: 1 });
+		});
+
+		it('accepts a code just under 7 days old and refuses one just over as expired', async () => {
+			const { id, userkey } = await unconfirmed('HXK3QY');
+
+			await sentMinutesAgo(id, WEEK_MINUTES - 1);
+			await confirm(userkey, 'HXK3QY').expect(204);
+
+			const late = await unconfirmed('MW4PTB');
+			await sentMinutesAgo(late.id, WEEK_MINUTES + 1);
+			const res = await confirm(late.userkey, 'MW4PTB').expect(410);
+
+			expect(res).toBeProblemResponse(410);
+			expect(await confirmation(late.id)).toMatchObject({ unconfirmed: '1', key: 'MW4PTB' });
+		});
+
+		it('answers an address already confirmed the same way', async () => {
+			const { userkey } = await newPerson();
+
+			const res = await confirm(userkey, 'ANYTHN');
+			expect(res.status).toBe(204);
+		});
+
+		it('does nothing with another person\'s code', async () => {
+			const Owner = await unconfirmed('HXK3QY');
+			const Other = await unconfirmed('MW4PTB');
+
+			await confirm(Other.userkey, 'HXK3QY').expect(400);
+
+			expect(await confirmation(Owner.id)).toMatchObject({ unconfirmed: '1', key: 'HXK3QY' });
+			expect(await confirmation(Other.id)).toMatchObject({ unconfirmed: '1', key: 'MW4PTB' });
+		});
+
+		it('stops after 10 wrong codes, even for the right one', async () => {
+			const { userkey } = await unconfirmed('HXK3QY');
+
+			for (let attempt = 0; attempt < 10; attempt++) {
+				await confirm(userkey, 'WRONG2').expect(400);
+			}
+			const res = await confirm(userkey, 'HXK3QY').expect(429);
+
+			expect(res).toBeProblemResponse(429);
+		});
+
+		it('is allowed while su\'d', async () => {
+			const Admin = await factories.person.create({ site_admin: 1 });
+			personIds.push(Admin.id);
+			const Target = await unconfirmed('HXK3QY');
+			const { userkey } = await factories.session.create({ person: Target.id, su: Admin.id });
+
+			await confirm(userkey, 'HXK3QY').expect(204);
+
+			expect(await confirmation(Target.id)).toMatchObject({ unconfirmed: null });
+		});
+	});
+
+	describe('POST /v1/user/profile/email/resend', () => {
+		const resend = (userkey: string) => request(server).post('/v1/user/profile/email/resend').asPerson(userkey);
+
+		beforeEach(() => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+		});
+
+		it('sends a new code ahead of blasts, and the old code stops working', async () => {
+			const { id, userkey } = await unconfirmed('HXK3QY');
+
+			await resend(userkey).expect(202);
+
+			const { key } = await confirmation(id);
+			// 6 characters from the code alphabet (no 0, 1, I or O), e.g. HXK3QY
+			expect(key).toMatch(/^[2-9A-HJ-NP-Z]{6}$/);
+			expect(key).not.toBe('HXK3QY');
+			const [job] = emailJobs();
+			expect(job.data).toMatchObject({ ignoreNoEmail: true });
+			expect(job.opts).not.toHaveProperty('priority');
+
+			await confirm(userkey, 'HXK3QY').expect(400);
+			await confirm(userkey, key!).expect(204);
+		});
+
+		it('emails the code and a link, even to someone who turned email off', async () => {
+			const { id, userkey } = await unconfirmed('HXK3QY', { no_email: 1 });
+
+			await resend(userkey).expect(202);
+
+			const message = await db.selectFrom('message').select(['subject', 'body', 'email_status'])
+				.where('person', '=', id).orderBy('id', 'desc').executeTakeFirstOrThrow();
+			const { key } = await confirmation(id);
+			expect(message).toMatchObject({ subject: 'Confirm your email address for Tabroom.com', email_status: 'queued' });
+			expect(message.body).toContain(key!);
+			expect(message.body).toContain('/confirm-email/');
+			expect(message.body).toContain('/user/profile/confirm');
+		});
+
+		it('refuses when the address is already confirmed', async () => {
+			const { userkey } = await newPerson();
+
+			const res = await resend(userkey).expect(409);
+
+			expect(res).toBeProblemResponse(409);
+			expect(emailJobs()).toEqual([]);
+		});
+
+		it('allows 3 sends an hour', async () => {
+			const { userkey } = await unconfirmed();
+
+			for (let send = 0; send < 3; send++) {
+				const res = await resend(userkey);
+				expect(res.status).toBe(202);
+			}
+			expect((await resend(userkey)).status).toBe(429);
+		});
+
+		it('is allowed while su\'d', async () => {
+			const Admin = await factories.person.create({ site_admin: 1 });
+			personIds.push(Admin.id);
+			const Target = await unconfirmed();
+			const { userkey } = await factories.session.create({ person: Target.id, su: Admin.id });
+
+			const res = await resend(userkey);
+			expect(res.status).toBe(202);
 		});
 	});
 });

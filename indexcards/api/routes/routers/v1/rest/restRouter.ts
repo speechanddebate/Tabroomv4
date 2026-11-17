@@ -8,6 +8,7 @@ import paradigmsRouter from './paradigmsRouter.js';
 import quizzesRouter from './quizzesRouter.js';
 import studentsRouter from './studentsRouter.js';
 import notifyRouter from './notify/indexRouter.js';
+import emailRouter from './emailRouter.js';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/paradigms', paradigmsRouter);
 router.use('/quizzes', quizzesRouter);
 router.use('/students', studentsRouter);
 router.use('/notify', notifyRouter);
+router.use('/email', emailRouter);
 
 export default router;

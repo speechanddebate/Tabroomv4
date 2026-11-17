@@ -21,6 +21,8 @@ import type {
 	CurrentBallot,
 	DebateBallotContext,
 	DebateBallotReview,
+	EmailConfirmResponse,
+	EmailConfirmStatus,
 	Fine,
 	GetTournResultSets200,
 	HomeFullSchool,
@@ -2157,6 +2159,22 @@ export const getRestNotifyEmailUnsubscribeResponseMock = (
 	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
 ): UnsubscribeResponse => ({
 	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmStatusResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmStatus, object>> = {},
+): EmailConfirmStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	confirmed: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmResponse, object>> = {},
+): EmailConfirmResponse => ({
+	confirmed: true,
 	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	...overrideResponse,
 });

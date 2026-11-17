@@ -42,11 +42,15 @@ import type {
 	ConflictPersonMatch,
 	ConflictResponse,
 	CurrentBallot,
+	EmailConfirmRequest,
+	EmailConfirmResponse,
+	EmailConfirmStatus,
 	ErrorResponseResponse,
 	Fine,
 	ForbiddenResponse,
 	GetResultSetParams,
 	GetTournResultSets200,
+	GoneResponse,
 	HomeResponse,
 	HomepageAd,
 	InboxMessage,
@@ -7347,6 +7351,382 @@ export const createRestNotifyEmailUnsubscribe = <
 		() => ({
 			...getRestNotifyEmailUnsubscribeMutationOptions(options?.()),
 		}),
+		queryClient,
+	);
+};
+
+export type restEmailConfirmStatusResponse200 = {
+	data: EmailConfirmStatus;
+	status: 200;
+};
+
+export type restEmailConfirmStatusResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restEmailConfirmStatusResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restEmailConfirmStatusResponse410 = {
+	data: GoneResponse;
+	status: 410;
+};
+
+export type restEmailConfirmStatusResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restEmailConfirmStatusResponseDefault = {
+	data: ErrorResponseResponse;
+	status: Exclude<HTTPStatusCodes, 200 | 401 | 404 | 410 | 500>;
+};
+
+export type restEmailConfirmStatusResponseSuccess =
+	restEmailConfirmStatusResponse200 & {
+		headers: Headers;
+	};
+export type restEmailConfirmStatusResponseError = (
+	| restEmailConfirmStatusResponse401
+	| restEmailConfirmStatusResponse404
+	| restEmailConfirmStatusResponse410
+	| restEmailConfirmStatusResponse500
+	| restEmailConfirmStatusResponseDefault
+) & {
+	headers: Headers;
+};
+
+export type restEmailConfirmStatusResponse =
+	| restEmailConfirmStatusResponseSuccess
+	| restEmailConfirmStatusResponseError;
+
+export const getRestEmailConfirmStatusUrl = (token: string) => {
+	return `${indexcardsApiBaseUrl()}/rest/email/confirm/${token}`;
+};
+
+/**
+ * Reports which address the link confirms (masked) and whether it already is. Changes nothing. A link a newer code or another address replaced is 404; one over 7 days old is 410.
+ * @summary Who a confirmation link is for
+ */
+export const restEmailConfirmStatus = async (
+	token: string,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restEmailConfirmStatusResponse> => {
+	const res = await (fetchFn ?? fetch)(getRestEmailConfirmStatusUrl(token), {
+		credentials: 'include',
+		...options,
+		method: 'GET',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restEmailConfirmStatusResponse['data'] = body
+		? JSON.parse(body)
+		: {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restEmailConfirmStatusResponse;
+};
+
+export const getRestEmailConfirmStatusQueryKey = (token: string) => {
+	return [`${indexcardsApiBaseUrl()}/rest/email/confirm/${token}`] as const;
+};
+
+export const getRestEmailConfirmStatusQueryOptions = <
+	TData = Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| ErrorResponseResponse,
+>(
+	token: string,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey =
+		queryOptions?.queryKey ?? getRestEmailConfirmStatusQueryKey(token);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof restEmailConfirmStatus>>
+	> = ({ signal }) =>
+		restEmailConfirmStatus(token, { signal, ...fetchOptions }, fetcherFn);
+
+	return {
+		queryKey,
+		queryFn,
+		enabled: token !== null && token !== undefined,
+		...queryOptions,
+	} as CreateQueryOptions<
+		Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+		TError,
+		TData
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type RestEmailConfirmStatusQueryResult = NonNullable<
+	Awaited<ReturnType<typeof restEmailConfirmStatus>>
+>;
+export type RestEmailConfirmStatusQueryError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| GoneResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Who a confirmation link is for
+ */
+
+export function createRestEmailConfirmStatus<
+	TData = Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| ErrorResponseResponse,
+>(
+	token: () => string,
+	options?: () => {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createQuery(
+		() => getRestEmailConfirmStatusQueryOptions(token(), options?.()),
+		queryClient,
+	) as CreateQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Who a confirmation link is for
+ */
+export const prefetchRestEmailConfirmStatusQuery = async <
+	TData = Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	token: string,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof restEmailConfirmStatus>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getRestEmailConfirmStatusQueryOptions(token, options);
+
+	await queryClient.prefetchQuery(queryOptions);
+
+	return queryClient;
+};
+
+export type restEmailConfirmResponse200 = {
+	data: EmailConfirmResponse;
+	status: 200;
+};
+
+export type restEmailConfirmResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type restEmailConfirmResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type restEmailConfirmResponse410 = {
+	data: GoneResponse;
+	status: 410;
+};
+
+export type restEmailConfirmResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type restEmailConfirmResponseDefault = {
+	data: ErrorResponseResponse;
+	status: Exclude<HTTPStatusCodes, 200 | 401 | 404 | 410 | 500>;
+};
+
+export type restEmailConfirmResponseSuccess = restEmailConfirmResponse200 & {
+	headers: Headers;
+};
+export type restEmailConfirmResponseError = (
+	| restEmailConfirmResponse401
+	| restEmailConfirmResponse404
+	| restEmailConfirmResponse410
+	| restEmailConfirmResponse500
+	| restEmailConfirmResponseDefault
+) & {
+	headers: Headers;
+};
+
+export type restEmailConfirmResponse =
+	| restEmailConfirmResponseSuccess
+	| restEmailConfirmResponseError;
+
+export const getRestEmailConfirmUrl = (token: string) => {
+	return `${indexcardsApiBaseUrl()}/rest/email/confirm/${token}`;
+};
+
+/**
+ * Confirms the address the link is for and turns email back on, with no login. Confirming an address already confirmed answers the same. A replaced link is 404; one over 7 days old is 410.
+ * @summary Use a confirmation link
+ */
+export const restEmailConfirm = async (
+	token: string,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<restEmailConfirmResponse> => {
+	const res = await (fetchFn ?? fetch)(getRestEmailConfirmUrl(token), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: restEmailConfirmResponse['data'] = body ? JSON.parse(body) : {};
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as restEmailConfirmResponse;
+};
+
+export const getRestEmailConfirmMutationOptions = <
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof restEmailConfirm>>,
+		TError,
+		{ token: string },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof restEmailConfirm>>,
+	TError,
+	{ token: string },
+	TContext
+> => {
+	const mutationKey = ['restEmailConfirm'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof restEmailConfirm>>,
+		{ token: string }
+	> = (props) => {
+		const { token } = props ?? {};
+
+		return restEmailConfirm(token, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type RestEmailConfirmMutationResult = NonNullable<
+	Awaited<ReturnType<typeof restEmailConfirm>>
+>;
+
+export type RestEmailConfirmMutationError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| GoneResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Use a confirmation link
+ */
+export const createRestEmailConfirm = <
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof restEmailConfirm>>,
+			TError,
+			{ token: string },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof restEmailConfirm>>,
+	TError,
+	{ token: string },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getRestEmailConfirmMutationOptions(options?.()) }),
 		queryClient,
 	);
 };
@@ -14826,6 +15206,358 @@ export const createUserProfileUpdate = <
 > => {
 	return createMutation(
 		() => ({ ...getUserProfileUpdateMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userEmailConfirmResponse204 = {
+	data: void;
+	status: 204;
+};
+
+export type userEmailConfirmResponse400 = {
+	data: BadRequestResponse;
+	status: 400;
+};
+
+export type userEmailConfirmResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userEmailConfirmResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userEmailConfirmResponse410 = {
+	data: GoneResponse;
+	status: 410;
+};
+
+export type userEmailConfirmResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
+export type userEmailConfirmResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userEmailConfirmResponseSuccess = userEmailConfirmResponse204 & {
+	headers: Headers;
+};
+export type userEmailConfirmResponseError = (
+	| userEmailConfirmResponse400
+	| userEmailConfirmResponse401
+	| userEmailConfirmResponse404
+	| userEmailConfirmResponse410
+	| userEmailConfirmResponse429
+	| userEmailConfirmResponse500
+) & {
+	headers: Headers;
+};
+
+export type userEmailConfirmResponse =
+	| userEmailConfirmResponseSuccess
+	| userEmailConfirmResponseError;
+
+export const getUserEmailConfirmUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/profile/email/confirm`;
+};
+
+/**
+ * Checks the code from the confirmation email, in any case. A right code confirms the address and turns email back on; an address already confirmed answers the same. A code over 7 days old is 410. 10 wrong codes in 15 minutes is 429. Allowed while su'd
+ * @summary Confirm email with a code
+ */
+export const userEmailConfirm = async (
+	emailConfirmRequest?: EmailConfirmRequest,
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userEmailConfirmResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserEmailConfirmUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json', ...options?.headers },
+		body: JSON.stringify(emailConfirmRequest),
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userEmailConfirmResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userEmailConfirmResponse;
+};
+
+export const getUserEmailConfirmMutationOptions = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userEmailConfirm>>,
+		TError,
+		{ data?: EmailConfirmRequest },
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userEmailConfirm>>,
+	TError,
+	{ data?: EmailConfirmRequest },
+	TContext
+> => {
+	const mutationKey = ['userEmailConfirm'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userEmailConfirm>>,
+		{ data?: EmailConfirmRequest }
+	> = (props) => {
+		const { data } = props ?? {};
+
+		return userEmailConfirm(data, fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserEmailConfirmMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userEmailConfirm>>
+>;
+export type UserEmailConfirmMutationBody = EmailConfirmRequest | undefined;
+export type UserEmailConfirmMutationError =
+	| BadRequestResponse
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| GoneResponse
+	| TooManyRequestsResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Confirm email with a code
+ */
+export const createUserEmailConfirm = <
+	TError =
+		| BadRequestResponse
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| GoneResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userEmailConfirm>>,
+			TError,
+			{ data?: EmailConfirmRequest },
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userEmailConfirm>>,
+	TError,
+	{ data?: EmailConfirmRequest },
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserEmailConfirmMutationOptions(options?.()) }),
+		queryClient,
+	);
+};
+
+export type userEmailResendResponse202 = {
+	data: void;
+	status: 202;
+};
+
+export type userEmailResendResponse401 = {
+	data: UnauthorizedResponse;
+	status: 401;
+};
+
+export type userEmailResendResponse404 = {
+	data: NotFoundResponse;
+	status: 404;
+};
+
+export type userEmailResendResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
+export type userEmailResendResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
+export type userEmailResendResponse500 = {
+	data: ErrorResponseResponse;
+	status: 500;
+};
+
+export type userEmailResendResponseSuccess = userEmailResendResponse202 & {
+	headers: Headers;
+};
+export type userEmailResendResponseError = (
+	| userEmailResendResponse401
+	| userEmailResendResponse404
+	| userEmailResendResponse409
+	| userEmailResendResponse429
+	| userEmailResendResponse500
+) & {
+	headers: Headers;
+};
+
+export type userEmailResendResponse =
+	| userEmailResendResponseSuccess
+	| userEmailResendResponseError;
+
+export const getUserEmailResendUrl = () => {
+	return `${indexcardsApiBaseUrl()}/user/profile/email/resend`;
+};
+
+/**
+ * Emails a new code and link to the person's current address, even if they have turned email off. The earlier code and link stop working. 3 sends an hour. Allowed while su'd
+ * @summary Send a new confirmation code
+ */
+export const userEmailResend = async (
+	options?: RequestInit,
+	fetchFn?: typeof globalThis.fetch,
+): Promise<userEmailResendResponse> => {
+	const res = await (fetchFn ?? fetch)(getUserEmailResendUrl(), {
+		credentials: 'include',
+		...options,
+		method: 'POST',
+	});
+
+	const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+	const data: userEmailResendResponse['data'] = body
+		? JSON.parse(body)
+		: undefined;
+	return {
+		data,
+		status: res.status,
+		headers: res.headers,
+	} as userEmailResendResponse;
+};
+
+export const getUserEmailResendMutationOptions = <
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(options?: {
+	mutation?: CreateMutationOptions<
+		Awaited<ReturnType<typeof userEmailResend>>,
+		TError,
+		void,
+		TContext
+	>;
+	fetch?: RequestInit;
+	fetcher?: typeof globalThis.fetch;
+}): CreateMutationOptions<
+	Awaited<ReturnType<typeof userEmailResend>>,
+	TError,
+	void,
+	TContext
+> => {
+	const mutationKey = ['userEmailResend'];
+	const {
+		mutation: mutationOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options
+		? options.mutation &&
+			'mutationKey' in options.mutation &&
+			options.mutation.mutationKey
+			? options
+			: { ...options, mutation: { ...options.mutation, mutationKey } }
+		: { mutation: { mutationKey }, fetch: undefined };
+
+	const mutationFn: MutationFunction<
+		Awaited<ReturnType<typeof userEmailResend>>,
+		void
+	> = () => {
+		return userEmailResend(fetchOptions, fetcherFn);
+	};
+
+	return { mutationFn, ...mutationOptions };
+};
+
+export type UserEmailResendMutationResult = NonNullable<
+	Awaited<ReturnType<typeof userEmailResend>>
+>;
+
+export type UserEmailResendMutationError =
+	| UnauthorizedResponse
+	| NotFoundResponse
+	| ConflictResponse
+	| TooManyRequestsResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Send a new confirmation code
+ */
+export const createUserEmailResend = <
+	TError =
+		| UnauthorizedResponse
+		| NotFoundResponse
+		| ConflictResponse
+		| TooManyRequestsResponse
+		| ErrorResponseResponse,
+	TContext = unknown,
+>(
+	options?: () => {
+		mutation?: CreateMutationOptions<
+			Awaited<ReturnType<typeof userEmailResend>>,
+			TError,
+			void,
+			TContext
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateMutationResult<
+	Awaited<ReturnType<typeof userEmailResend>>,
+	TError,
+	void,
+	TContext
+> => {
+	return createMutation(
+		() => ({ ...getUserEmailResendMutationOptions(options?.()) }),
 		queryClient,
 	);
 };

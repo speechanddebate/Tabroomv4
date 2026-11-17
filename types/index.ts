@@ -40,6 +40,7 @@ export * from './src/Topic.js';
 export * from './src/Webpage.js';
 export * from './src/Person.js';
 export * from './src/Profile.js';
+export * from './src/EmailConfirm.js';
 export * from './src/Push.js';
 export * from './src/Unsubscribe.js';
 export * from './src/Quiz.js';

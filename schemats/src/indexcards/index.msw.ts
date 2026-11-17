@@ -24,6 +24,8 @@ import type {
 	CurrentBallot,
 	DebateBallotContext,
 	DebateBallotReview,
+	EmailConfirmResponse,
+	EmailConfirmStatus,
 	Fine,
 	GetTournResultSets200,
 	HomeFullSchool,
@@ -2160,6 +2162,22 @@ export const getRestNotifyEmailUnsubscribeResponseMock = (
 	overrideResponse: Partial<Extract<UnsubscribeResponse, object>> = {},
 ): UnsubscribeResponse => ({
 	unsubscribed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmStatusResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmStatus, object>> = {},
+): EmailConfirmStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	confirmed: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmResponse, object>> = {},
+): EmailConfirmResponse => ({
+	confirmed: true,
 	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
 	...overrideResponse,
 });
@@ -5850,6 +5868,54 @@ export const getRestNotifyEmailUnsubscribeMockHandler = (
 	);
 };
 
+export const getRestEmailConfirmStatusMockHandler = (
+	overrideResponse?:
+		| EmailConfirmStatus
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<EmailConfirmStatus> | EmailConfirmStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/email/confirm/:token',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestEmailConfirmStatusResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestEmailConfirmMockHandler = (
+	overrideResponse?:
+		| EmailConfirmResponse
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<EmailConfirmResponse> | EmailConfirmResponse),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/email/confirm/:token',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestEmailConfirmResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
 export const getAuthLoginMockHandler = (
 	overrideResponse?:
 		| LoginResponse
@@ -6840,6 +6906,48 @@ export const getUserProfileUpdateMockHandler = (
 	);
 };
 
+export const getUserEmailConfirmMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/profile/email/confirm',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
+export const getUserEmailResendMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/profile/email/resend',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 202 });
+		},
+		options,
+	);
+};
+
 export const getAdminJobsMockHandler = (
 	overrideResponse?:
 		| ScheduledJobList
@@ -6919,6 +7027,8 @@ export const getIndexCardsAPIMock = () => [
 	getRestStudentsUnlinkedSearchMockHandler(),
 	getRestNotifyEmailUnsubscribeStatusMockHandler(),
 	getRestNotifyEmailUnsubscribeMockHandler(),
+	getRestEmailConfirmStatusMockHandler(),
+	getRestEmailConfirmMockHandler(),
 	getAuthLoginMockHandler(),
 	getAuthLogoutMockHandler(),
 	getAuthSuMockHandler(),
@@ -6962,6 +7072,8 @@ export const getIndexCardsAPIMock = () => [
 	getUserConflictRemoveMockHandler(),
 	getUserProfileMockHandler(),
 	getUserProfileUpdateMockHandler(),
+	getUserEmailConfirmMockHandler(),
+	getUserEmailResendMockHandler(),
 	getAdminJobsMockHandler(),
 	getAdminJobRunMockHandler(),
 ];
