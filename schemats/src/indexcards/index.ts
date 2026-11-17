@@ -50,6 +50,7 @@ import type {
 	HomeResponse,
 	HomepageAd,
 	InboxMessage,
+	InboxPage,
 	InboxUnreadCount,
 	JudgeConflict,
 	JudgeConflictRequest,
@@ -102,6 +103,7 @@ import type {
 	UserConflictsChaptersParams,
 	UserConflictsPeopleParams,
 	UserHomeParams,
+	UserInboxParams,
 	UserJudgesClaimParams,
 	UserJudgesHistoryParams,
 	UserParadigm,
@@ -9181,7 +9183,7 @@ export const prefetchUserTournsBallotsCurrentQuery = async <
 };
 
 export type userInboxResponse200 = {
-	data: InboxMessage[];
+	data: InboxPage;
 	status: 200;
 };
 
@@ -9209,19 +9211,35 @@ export type userInboxResponse =
 	| userInboxResponseSuccess
 	| userInboxResponseError;
 
-export const getUserInboxUrl = () => {
-	return `${indexcardsApiBaseUrl()}/user/inbox`;
+export const getUserInboxUrl = (params?: UserInboxParams) => {
+	const normalizedParams = new URLSearchParams();
+
+	Object.entries(params || {}).forEach(([key, value]) => {
+		if (value !== undefined) {
+			normalizedParams.append(
+				key,
+				value === null ? 'null' : String(value),
+			);
+		}
+	});
+
+	const stringifiedParams = normalizedParams.toString();
+
+	return stringifiedParams.length > 0
+		? `${indexcardsApiBaseUrl()}/user/inbox?${stringifiedParams}`
+		: `${indexcardsApiBaseUrl()}/user/inbox`;
 };
 
 /**
- * Get the list of messages for the logged-in user
+ * Get one page of messages for the logged-in user, newest first, without bodies
  * @summary Get messages
  */
 export const userInbox = async (
+	params?: UserInboxParams,
 	options?: RequestInit,
 	fetchFn?: typeof globalThis.fetch,
 ): Promise<userInboxResponse> => {
-	const res = await (fetchFn ?? fetch)(getUserInboxUrl(), {
+	const res = await (fetchFn ?? fetch)(getUserInboxUrl(params), {
 		credentials: 'include',
 		...options,
 		method: 'GET',
@@ -9237,31 +9255,176 @@ export const userInbox = async (
 	} as userInboxResponse;
 };
 
-export const getUserInboxQueryKey = () => {
-	return [`${indexcardsApiBaseUrl()}/user/inbox`] as const;
+export const getUserInboxInfiniteQueryKey = (params?: UserInboxParams) => {
+	return [
+		'infinite',
+		`${indexcardsApiBaseUrl()}/user/inbox`,
+		...(params ? [params] : []),
+	] as const;
 };
 
-export const getUserInboxQueryOptions = <
-	TData = Awaited<ReturnType<typeof userInbox>>,
+export const getUserInboxQueryKey = (params?: UserInboxParams) => {
+	return [
+		`${indexcardsApiBaseUrl()}/user/inbox`,
+		...(params ? [params] : []),
+	] as const;
+};
+
+export const getUserInboxInfiniteQueryOptions = <
+	TData = InfiniteData<
+		Awaited<ReturnType<typeof userInbox>>,
+		UserInboxParams['offset']
+	>,
 	TError = UnauthorizedResponse | ErrorResponseResponse,
->(options?: {
-	query?: Partial<
-		CreateQueryOptions<Awaited<ReturnType<typeof userInbox>>, TError, TData>
-	>;
-	fetch?: RequestInit;
-	fetcher?: typeof globalThis.fetch;
-}) => {
+>(
+	params?: UserInboxParams,
+	options?: {
+		query?: Partial<
+			CreateInfiniteQueryOptions<
+				Awaited<ReturnType<typeof userInbox>>,
+				TError,
+				TData,
+				QueryKey,
+				UserInboxParams['offset']
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
 	const {
 		query: queryOptions,
 		fetch: fetchOptions,
 		fetcher: fetcherFn,
 	} = options ?? {};
 
-	const queryKey = queryOptions?.queryKey ?? getUserInboxQueryKey();
+	const queryKey =
+		queryOptions?.queryKey ?? getUserInboxInfiniteQueryKey(params);
+
+	const queryFn: QueryFunction<
+		Awaited<ReturnType<typeof userInbox>>,
+		QueryKey,
+		UserInboxParams['offset']
+	> = ({ signal, pageParam }) =>
+		userInbox(
+			{ ...params, offset: pageParam ?? params?.['offset'] },
+			{ signal, ...fetchOptions },
+			fetcherFn,
+		);
+
+	return { queryKey, queryFn, ...queryOptions } as CreateInfiniteQueryOptions<
+		Awaited<ReturnType<typeof userInbox>>,
+		TError,
+		TData,
+		QueryKey,
+		UserInboxParams['offset']
+	> & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type UserInboxInfiniteQueryResult = NonNullable<
+	Awaited<ReturnType<typeof userInbox>>
+>;
+export type UserInboxInfiniteQueryError =
+	| UnauthorizedResponse
+	| ErrorResponseResponse;
+
+/**
+ * @summary Get messages
+ */
+
+export function createUserInboxInfinite<
+	TData = InfiniteData<
+		Awaited<ReturnType<typeof userInbox>>,
+		UserInboxParams['offset']
+	>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: () => UserInboxParams,
+	options?: () => {
+		query?: Partial<
+			CreateInfiniteQueryOptions<
+				Awaited<ReturnType<typeof userInbox>>,
+				TError,
+				TData,
+				QueryKey,
+				UserInboxParams['offset']
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+	queryClient?: () => QueryClient,
+): CreateInfiniteQueryResult<TData, TError> & {
+	queryKey: DataTag<QueryKey, TData, TError>;
+} {
+	const query = createInfiniteQuery(
+		() => getUserInboxInfiniteQueryOptions(params?.(), options?.()),
+		queryClient,
+	) as CreateInfiniteQueryResult<TData, TError> & {
+		queryKey: DataTag<QueryKey, TData, TError>;
+	};
+
+	return query;
+}
+
+/**
+ * @summary Get messages
+ */
+export const prefetchUserInboxInfiniteQuery = async <
+	TData = Awaited<ReturnType<typeof userInbox>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	queryClient: QueryClient,
+	params?: UserInboxParams,
+	options?: {
+		query?: Partial<
+			CreateInfiniteQueryOptions<
+				Awaited<ReturnType<typeof userInbox>>,
+				TError,
+				TData,
+				QueryKey,
+				UserInboxParams['offset']
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+): Promise<QueryClient> => {
+	const queryOptions = getUserInboxInfiniteQueryOptions(params, options);
+
+	await queryClient.prefetchInfiniteQuery(queryOptions);
+
+	return queryClient;
+};
+
+export const getUserInboxQueryOptions = <
+	TData = Awaited<ReturnType<typeof userInbox>>,
+	TError = UnauthorizedResponse | ErrorResponseResponse,
+>(
+	params?: UserInboxParams,
+	options?: {
+		query?: Partial<
+			CreateQueryOptions<
+				Awaited<ReturnType<typeof userInbox>>,
+				TError,
+				TData
+			>
+		>;
+		fetch?: RequestInit;
+		fetcher?: typeof globalThis.fetch;
+	},
+) => {
+	const {
+		query: queryOptions,
+		fetch: fetchOptions,
+		fetcher: fetcherFn,
+	} = options ?? {};
+
+	const queryKey = queryOptions?.queryKey ?? getUserInboxQueryKey(params);
 
 	const queryFn: QueryFunction<Awaited<ReturnType<typeof userInbox>>> = ({
 		signal,
-	}) => userInbox({ signal, ...fetchOptions }, fetcherFn);
+	}) => userInbox(params, { signal, ...fetchOptions }, fetcherFn);
 
 	return { queryKey, queryFn, ...queryOptions } as CreateQueryOptions<
 		Awaited<ReturnType<typeof userInbox>>,
@@ -9283,6 +9446,7 @@ export function createUserInbox<
 	TData = Awaited<ReturnType<typeof userInbox>>,
 	TError = UnauthorizedResponse | ErrorResponseResponse,
 >(
+	params?: () => UserInboxParams,
 	options?: () => {
 		query?: Partial<
 			CreateQueryOptions<
@@ -9299,7 +9463,7 @@ export function createUserInbox<
 	queryKey: DataTag<QueryKey, TData, TError>;
 } {
 	const query = createQuery(
-		() => getUserInboxQueryOptions(options?.()),
+		() => getUserInboxQueryOptions(params?.(), options?.()),
 		queryClient,
 	) as CreateQueryResult<TData, TError> & {
 		queryKey: DataTag<QueryKey, TData, TError>;
@@ -9316,6 +9480,7 @@ export const prefetchUserInboxQuery = async <
 	TError = UnauthorizedResponse | ErrorResponseResponse,
 >(
 	queryClient: QueryClient,
+	params?: UserInboxParams,
 	options?: {
 		query?: Partial<
 			CreateQueryOptions<
@@ -9328,7 +9493,7 @@ export const prefetchUserInboxQuery = async <
 		fetcher?: typeof globalThis.fetch;
 	},
 ): Promise<QueryClient> => {
-	const queryOptions = getUserInboxQueryOptions(options);
+	const queryOptions = getUserInboxQueryOptions(params, options);
 
 	await queryClient.prefetchQuery(queryOptions);
 

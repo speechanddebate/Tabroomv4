@@ -18,15 +18,14 @@ describe('messageRepo',() => {
 		it('does not return deleted messages when excludeDeleted is true', async () => {
 			const Person = await factories.person.create();
 			const deletedMessage = await factories.message.create({ person: Person.id, deleted_at: faker.date.past() });
-			const messages = await messageRepo.getMessages(db, Person.id, { excludeDeleted: true });
-			expect(messages.every(message => !message.deleted_at)).toBe(true);
+			const messages = await messageRepo.getMessages(db, { person: Person.id, excludeDeleted: true });
 			expect(messages).not.toContainEqual(expect.objectContaining({ id: deletedMessage.id }));
 		});
 		it('does not return invisible messages when excludeInvisible is true', async () => {
 			const Person = await factories.person.create();
 			const invisibleMessage = await factories.message.create({ person: Person.id, visible_at: faker.date.soon() });
 			const visibleMessage = await factories.message.create({ person: Person.id, visible_at: faker.date.recent() });
-			const messages = await messageRepo.getMessages(db, Person.id, { excludeInvisible: true });
+			const messages = await messageRepo.getMessages(db, { person: Person.id, excludeInvisible: true });
 			expect(messages).not.toContainEqual(expect.objectContaining({ id: invisibleMessage.id }));
 			expect(messages).toContainEqual(expect.objectContaining({ id: visibleMessage.id }));
 		});
@@ -34,7 +33,7 @@ describe('messageRepo',() => {
 			const Person = await factories.person.create();
 			const unreadMessage = await factories.message.create({ person: Person.id, read_at: null });
 			const readMessage = await factories.message.create({ person: Person.id, read_at: faker.date.past() });
-			const messages = await messageRepo.getMessages(db, Person.id, { unread: true });
+			const messages = await messageRepo.getMessages(db, { person: Person.id, unread: true });
 			expect(messages).toContainEqual(expect.objectContaining({ id: unreadMessage.id }));
 			expect(messages).not.toContainEqual(expect.objectContaining({ id: readMessage.id }));
 		});
@@ -84,20 +83,60 @@ describe('messageRepo',() => {
 			const Person = await factories.person.create();
 			await factories.message.create({ person: Person.id });
 			await factories.message.create({ person: Person.id });
-			const messages = await messageRepo.getMessages(db, Person.id);
+			const messages = await messageRepo.getMessages(db, { person: Person.id });
 			expect(messages.length).toBe(2);
 		});
-		it('attaches Tourn, Sender, and Email data', async () => {
+		it('attaches Tourn and Sender data but no body', async () => {
 			const Person = await factories.person.create();
 			const Tourn = await factories.tourn.create();
 			const Sender = await factories.person.create();
 			const Email = await factories.email.create();
 			await factories.message.create({ person: Person.id, tourn: Tourn.id, sender: Sender.id, email: Email.id });
-			const message = await messageRepo.getMessages(db, Person.id);
+			const message = await messageRepo.getMessages(db, { person: Person.id });
 			expect(message.length).toBeGreaterThan(0);
 			expect(message[0]?.Tourn?.id).toBe(Tourn.id);
 			expect(message[0]?.Sender?.email).toBe(Sender.email);
-			expect(message[0]?.Email?.content).toBe(Email.content);
+			expect(message[0]).not.toHaveProperty('body');
+			expect(message[0]).not.toHaveProperty('Email');
+		});
+		it('returns the page that limit and offset ask for', async () => {
+			const Person = await factories.person.create();
+			const ids = [];
+			for (const day of [1, 2, 3, 4, 5]) {
+				ids.push((await factories.message.create({ person: Person.id, visible_at: new Date(`2026-10-0${day}T12:00:00Z`) })).id);
+			}
+			const messages = await messageRepo.getMessages(db, { person: Person.id, limit: 2, offset: 2 });
+			expect(messages.map(message => message.id)).toEqual([ids[2], ids[1]]);
+		});
+		it('returns the most recently visible message first', async () => {
+			const Person = await factories.person.create();
+			const middle = await factories.message.create({ person: Person.id, visible_at: new Date('2026-10-02T12:00:00Z') });
+			const newest = await factories.message.create({ person: Person.id, visible_at: new Date('2026-10-03T12:00:00Z') });
+			const oldest = await factories.message.create({ person: Person.id, visible_at: new Date('2026-10-01T12:00:00Z') });
+			const messages = await messageRepo.getMessages(db, { person: Person.id });
+			expect(messages.map(message => message.id)).toEqual([newest.id, middle.id, oldest.id]);
+		});
+		it('returns the later message first when two became visible at the same time', async () => {
+			const Person = await factories.person.create();
+			const visibleAt = new Date('2026-10-01T12:00:00Z');
+			const first = await factories.message.create({ person: Person.id, visible_at: visibleAt });
+			const second = await factories.message.create({ person: Person.id, visible_at: visibleAt });
+			const messages = await messageRepo.getMessages(db, { person: Person.id });
+			expect(messages.map(message => message.id)).toEqual([second.id, first.id]);
+		});
+	});
+	describe('countMessages', () => {
+		it('counts the messages the filters let through', async () => {
+			const Person = await factories.person.create();
+			await factories.message.create({ person: Person.id, read_at: null });
+			await factories.message.create({ person: Person.id, read_at: faker.date.past() });
+			await factories.message.create({ person: Person.id, deleted_at: faker.date.past() });
+			await factories.message.create({ person: Person.id, visible_at: faker.date.soon() });
+			await factories.message.create();
+
+			await expect(messageRepo.countMessages(db, { person: Person.id })).resolves.toBe(4);
+			await expect(messageRepo.countMessages(db, { person: Person.id, excludeDeleted: true, excludeInvisible: true })).resolves.toBe(2);
+			await expect(messageRepo.countMessages(db, { person: Person.id, excludeDeleted: true, excludeInvisible: true, unread: true })).resolves.toBe(1);
 		});
 	});
 	it('starts every delivery series at 0 so the first delivery is counted as an increase', async () => {

@@ -31,6 +31,7 @@ import type {
 	HomeResponse,
 	HomepageAd,
 	InboxMessage,
+	InboxPage,
 	InboxUnreadCount,
 	JudgeConflict,
 	JudgeConflicts,
@@ -3594,18 +3595,16 @@ export const getUserTournsBallotsCurrentResponseMock = (): CurrentBallot[] =>
 		})),
 	}));
 
-export const getUserInboxResponseMock = (): InboxMessage[] =>
-	Array.from(
+export const getUserInboxResponseMock = (
+	overrideResponse: Partial<Extract<InboxPage, object>> = {},
+): InboxPage => ({
+	items: Array.from(
 		{ length: faker.number.int({ min: 1, max: 10 }) },
 		(_, i) => i + 1,
 	).map(() => ({
 		id: faker.number.int({ min: 0, max: 9007199254740991 }),
 		subject: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 255 } }),
-			null,
-		]),
-		body: faker.helpers.arrayElement([
-			faker.string.alpha({ length: { min: 10, max: 65535 } }),
 			null,
 		]),
 		url: faker.helpers.arrayElement([faker.internet.url(), null]),
@@ -3644,16 +3643,10 @@ export const getUserInboxResponseMock = (): InboxMessage[] =>
 			},
 			null,
 		]),
-		Email: faker.helpers.arrayElement([
-			{
-				content: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 20 } }),
-					null,
-				]),
-			},
-			null,
-		]),
-	}));
+	})),
+	total: faker.number.int({ min: 0, max: 9007199254740991 }),
+	...overrideResponse,
+});
 
 export const getUserInboxUnreadResponseMock = (
 	overrideResponse: Partial<Extract<InboxUnreadCount, object>> = {},
@@ -5905,10 +5898,10 @@ export const getUserTournsBallotsCurrentMockHandler = (
 
 export const getUserInboxMockHandler = (
 	overrideResponse?:
-		| InboxMessage[]
+		| InboxPage
 		| ((
 				info: Parameters<Parameters<typeof http.get>[1]>[0],
-		  ) => Promise<InboxMessage[]> | InboxMessage[]),
+		  ) => Promise<InboxPage> | InboxPage),
 	options?: RequestHandlerOptions,
 ) => {
 	return http.get(

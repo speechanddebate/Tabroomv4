@@ -21,21 +21,33 @@ for (const status of ['sent', 'rejected', 'failed', 'skipped'] satisfies Deliver
 }
 
 type queryOpts = {
+	person?: number;
 	unread?: boolean;
 	excludeDeleted?: boolean;
 	excludeInvisible?: boolean;
+	limit?: number;
+	offset?: number;
 };
 
 function buildMessageQuery(db: Database, opts: queryOpts = {}) {
 	let query = db.selectFrom('message');
+	if (opts.person !== undefined) {
+		query = query.where('message.person', '=', opts.person);
+	}
 	if (opts.unread) {
-		query = query.where('read_at', 'is', null);
+		query = query.where('message.read_at', 'is', null);
 	}
 	if (opts.excludeDeleted) {
-		query = query.where('deleted_at', 'is', null);
+		query = query.where('message.deleted_at', 'is', null);
 	}
 	if (opts.excludeInvisible) {
-		query = query.where('visible_at', '<', new Date());
+		query = query.where('message.visible_at', '<', new Date());
+	}
+	if (opts.limit) {
+		query = query.limit(opts.limit);
+	}
+	if (opts.offset) {
+		query = query.offset(opts.offset);
 	}
 	return query;
 }
@@ -89,16 +101,12 @@ async function getMessage(db: Database, messageId: number, personId?: number, op
 	} : undefined;
 }
 
-/**
- *  return the list of messages to be displayed in a persons inbox
- * @param personId 
- */
-async function getMessages(db: Database, personId: number, opts: queryOpts = {} ){
-	let query = buildMessageQuery(db,opts)
+/** A person's inbox list, newest first, without message bodies */
+async function getMessages(db: Database, opts: queryOpts & { person: number }) {
+	const data = await buildMessageQuery(db, opts)
 		.leftJoin('tourn', 'tourn.id', 'message.tourn')
 		.leftJoin('person as sender', 'sender.id', 'message.sender')
-		.leftJoin('email', 'email.id', 'message.email')
-		.selectAll('message')
+		.select(['message.id', 'message.subject', 'message.url', 'message.visible_at', 'message.read_at'])
 		.select(['tourn.id as tourn_id', 'tourn.name as tourn_name', 'tourn.webname as tourn_webname'])
 		.select([
 			'sender.id as sender_id',
@@ -106,17 +114,15 @@ async function getMessages(db: Database, personId: number, opts: queryOpts = {} 
 			'sender.middle as sender_middle',
 			'sender.last as sender_last',
 			'sender.email as sender_email'])
-		.select(['email.id as email_id', 'email.content as email_content'])
-		.where('message.person','=',personId)
+		.orderBy('message.visible_at', 'desc')
+		.orderBy('message.id', 'desc')
+		.execute();
 
-	const data = await query.execute();
 	return data.map((row) => ({
 		id: row.id,
 		subject: row.subject,
-		body: row.body && sanitizeHTML(row.body, INBOX_HTML),
 		url: row.url,
-		deleted_at: row.deleted_at?.toISOString() ?? null,
-		visible_at: row.visible_at?.toISOString(),
+		visible_at: row.visible_at?.toISOString() ?? null,
 		read_at: row.read_at?.toISOString() ?? null,
 		Tourn: row.tourn_id
 			? {
@@ -131,13 +137,14 @@ async function getMessages(db: Database, personId: number, opts: queryOpts = {} 
 				email: row.sender_email,
 			}
 			: null,
-		Email: row.email_id
-			? {
-				content: row.email_content && sanitizeHTML(row.email_content, INBOX_HTML),
-			}
-			: null,
 	}));
+}
 
+async function countMessages(db: Database, opts: Omit<queryOpts, 'limit' | 'offset'> & { person: number }) {
+	const { count } = await buildMessageQuery(db, opts)
+		.select(({ fn }) => fn.countAll<number>().as('count'))
+		.executeTakeFirstOrThrow();
+	return count;
 }
 
 async function createMessage(db: Database, data: Insertable<Message>) {
@@ -231,6 +238,7 @@ function countSkipped(channel: keyof DeliveryStatus, count: number) {
 export default {
 	getMessage,
 	getMessages,
+	countMessages,
 	createMessage,
 	recordDelivery,
 	failQueued,

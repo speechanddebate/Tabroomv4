@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { expect, userEvent, within } from 'storybook/test';
+	import { expect, userEvent, waitFor, within } from 'storybook/test';
 	import type { InboxMessage } from '$indexcards/schemas';
 	import {
 		getUserInboxMarkAllReadMockHandler,
@@ -24,7 +24,7 @@
 				subject: unread ? `Unread notice ${id}` : `Read notice ${id}`,
 				body: `<p>This is message ${id}.</p>`,
 				url: null,
-				visible_at: `2026-04-${String(10 + idx).padStart(2, '0')}T09:00:00.000Z`,
+				visible_at: new Date(Date.parse(nowISO) - (idx + 1) * 3_600_000).toISOString(),
 				read_at: unread ? null : nowISO,
 				Tourn: {
 					id: 100 + id,
@@ -45,7 +45,15 @@
 		let inbox = createInboxMessages(count);
 
 		return [
-			getUserInboxMockHandler(() => inbox),
+			getUserInboxMockHandler(({ request }) => {
+				const { searchParams } = new URL(request.url);
+				const limit = Number(searchParams.get('limit') ?? 50);
+				const offset = Number(searchParams.get('offset') ?? 0);
+				return {
+					items: inbox.slice(offset, offset + limit).map(({ body: _body, Email: _email, ...item }) => item),
+					total: inbox.length,
+				};
+			}),
 			getUserInboxUnreadMockHandler(() => ({
 				count: inbox.filter((msg) => !msg.read_at).length,
 			})),
@@ -128,6 +136,32 @@
 		msw: {
 			handlers: createInboxHandlers(30),
 		},
+	}}
+/>
+
+<Story
+	name="Several Pages"
+	parameters={{
+		msw: {
+			handlers: createInboxHandlers(120),
+		},
+	}}
+	play={async ({ canvasElement, step }) => {
+		const canvas = within(canvasElement);
+
+		await step('show the newest page first', async () => {
+			await expect(await canvas.findByText('1-50 of 120')).toBeInTheDocument();
+			await expect(canvas.getByText('Unread notice 2')).toBeInTheDocument();
+		});
+
+		await step('page to the last messages', async () => {
+			await userEvent.click(canvas.getByRole('button', { name: 'Next page' }));
+			await expect(await canvas.findByText('Read notice 52')).toBeInTheDocument();
+			await waitFor(() => expect(canvas.getByRole('button', { name: 'Next page' })).toBeEnabled());
+			await userEvent.click(canvas.getByRole('button', { name: 'Next page' }));
+			await expect(await canvas.findByText('101-120 of 120')).toBeInTheDocument();
+			await expect(await canvas.findByText('Unread notice 120')).toBeInTheDocument();
+		});
 	}}
 />
 

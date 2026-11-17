@@ -6,28 +6,22 @@ import { getPerson } from '../../middleware/auth/authorization.js';
 import type { Request, Response } from 'express';
 import type { ValidatedRequest } from '../../middleware/validation.js';
 
-export const inboxList = async (req: Request, res: Response) => {
+export const inboxList = async (req: ValidatedRequest, res: Response) => {
 	const person = getPerson(req);
-	const messages = await messageRepo.getMessages(db, person.id,{
-		excludeDeleted: true,
-		excludeInvisible: true
-	});
-	return res.status(200).json(messages);
+	const { limit, offset } = req.query;
+	const opts = { person: person.id, excludeDeleted: true, excludeInvisible: true };
+
+	const [items, total] = await Promise.all([
+		messageRepo.getMessages(db, { ...opts, limit, offset }),
+		messageRepo.countMessages(db, opts),
+	]);
+	return res.status(200).json({ items, total });
 };
 
 export const getUnreadCount = async (req: Request, res: Response) => {
-    const person = getPerson(req);
-
-    const result = await db
-        .selectFrom('message')
-        .where('person', '=', person.id)
-        .where('deleted_at', 'is', null)
-        .where('visible_at', '<', new Date())
-        .where('read_at', 'is', null)
-        .select(({ fn }) => fn.countAll<number>().as('count'))
-        .executeTakeFirstOrThrow();
-
-    return res.status(200).json({ count: result.count });
+	const person = getPerson(req);
+	const count = await messageRepo.countMessages(db, { person: person.id, excludeDeleted: true, excludeInvisible: true, unread: true });
+	return res.status(200).json({ count });
 };
 
 export const readAllMessages = async (req: Request, res: Response) => {

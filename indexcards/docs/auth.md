@@ -150,7 +150,7 @@ Routes under `/v1/user` get `requirePerson` at the mount and use `getPerson(req)
 ```ts
 export async function inboxList(req: Request, res: Response) {
 	const person = getPerson(req);
-	res.json(await messageRepo.getMessages(db, person.id));
+	res.json(await messageRepo.getMessages(db, { person: person.id }));
 }
 ```
 Filter every query by `person.id`; never take another person's id from the request. A route that addresses a resource by id belongs under `/rest` with `requireAccess`.

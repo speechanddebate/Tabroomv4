@@ -9,7 +9,7 @@
 		getUserInboxUnreadQueryKey,
 	} from '$indexcards';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import type { InboxMessage } from '$indexcards/schemas/inboxMessage';
+	import type { InboxListItem } from '$indexcards/schemas/inboxListItem';
 	import { renderSnippet } from '@tanstack/svelte-table';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import Button from '$lib/components/Button.svelte';
@@ -18,10 +18,12 @@
     import MessageReader from './messageReader.svelte';
 	import { handleOrval } from '$lib/helpers/query';
 	import { showDateTime } from '$lib/helpers/dt';
+	import { createPaging } from '$lib/helpers/paging.svelte';
 
 	let selectedMsgId = $state<number>(0);
 	const queryClient = useQueryClient();
-	const inboxQuery = createUserInbox();
+	const paging = createPaging();
+	const inboxQuery = createUserInbox(paging.params, paging.options);
 
 	const messageQuery = createUserInboxGetMessage(() => selectedMsgId,() => ({
 		query: { enabled: selectedMsgId > 0 },
@@ -33,7 +35,7 @@
 
 	let selectedMessage = $derived(handleOrval(messageQuery));
 
-	const columnHelper = createAppColumnHelper<InboxMessage>();
+	const columnHelper = createAppColumnHelper<InboxListItem>();
 
 	const columns = columnHelper.columns([
 		columnHelper.accessor('read_at',{
@@ -52,7 +54,6 @@
 		columnHelper.accessor('subject', {
 			id: 'subject',
 			header: 'Subject',
-			sortFn: 'alphanumeric',
 			cell: (info) => renderSnippet(subjectCell, info.row.original),
 		}),
 		columnHelper.accessor((row) => row.Tourn?.name ?? null, {
@@ -86,6 +87,10 @@
 		await deleteMsgMutation.mutateAsync({ messageId: msgId });
 		selectedMsgId = 0;
 		await refreshInbox();
+		// Deleting the only message on a later page leaves that page empty
+		if (inboxQuery.data?.status === 200 && inboxQuery.data.data.items.length === 0 && paging.pagination.pageIndex > 0) {
+			paging.pagination = { ...paging.pagination, pageIndex: paging.pagination.pageIndex - 1 };
+		}
 	};
 
 	const markMsgUnread = async (msgId: number) => {
@@ -94,7 +99,7 @@
 		await refreshInbox();
 	};
 
-	const getInboxRowClassName = (row: InboxMessage) =>
+	const getInboxRowClassName = (row: InboxListItem) =>
 		row.id === selectedMsgId ? 'inbox-row-selected' : '';
 </script>
 
@@ -106,7 +111,7 @@
 	{/if}
 {/snippet}
 
-{#snippet subjectCell(msg: InboxMessage)}
+{#snippet subjectCell(msg: InboxListItem)}
 	<span class:font-semibold={!msg.read_at}>{msg.subject ?? 'No subject'}</span>
 {/snippet}
 
@@ -154,10 +159,12 @@
 			>
 				<QueryTable
 					{columns}
-					containerClass="bg-surface w-full h-full overflow-hidden"
+					containerClass="bg-surface w-full h-full overflow-hidden flex flex-col"
 					emptyMessage="You have no messages."
+					enableSorting={false}
 					getRowClassName={getInboxRowClassName}
 					onRowClick={async (row) => await selectMsg(row.id)}
+					{paging}
 					query={inboxQuery}
 				/>
 			</div>
@@ -177,14 +184,10 @@
 </div>
 
 <style>
-	:global([data-testid="inbox-list-pane"] .tabroom-table) {
-		height: 100%;
-		max-height: 100%;
-	}
-
+	/* The scroll region takes the pane's height left after the pager */
 	:global([data-testid="inbox-list-pane"] .tabroom-table .table-scroll-region) {
-		height: 100%;
-		max-height: 100%;
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto !important;
 		overflow-x: auto;
 	}

@@ -2,9 +2,10 @@ import { render, screen, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 import InboxPage from './+page.svelte';
-import type { InboxMessage } from '$indexcards/schemas/inboxMessage';
+import type { InboxListItem, InboxMessage, InboxPage as InboxPageData, UserInboxParams } from '$indexcards/schemas';
 
 const queryClientRefetchQueries = vi.fn();
+const inboxParams = vi.fn<(params: () => UserInboxParams) => void>();
 const inboxRefetch = vi.fn();
 const messageRefetch = vi.fn();
 const markReadMutateAsync = vi.fn();
@@ -12,30 +13,29 @@ const markUnreadMutateAsync = vi.fn();
 const deleteMutateAsync = vi.fn();
 const markAllReadMutateAsync = vi.fn();
 
-const inboxMessages: InboxMessage[] = [
+const inboxMessages: InboxListItem[] = [
 	{
 		id: 100,
 		subject: 'Unread message',
-		body: '<p>Unread body</p>',
 		url: null,
 		visible_at: '2026-04-20T12:00:00.000Z',
 		read_at: null,
 		Tourn: { id: 1, name: 'Tournament One', webname: 't1' },
 		Sender: { name: 'Sender One', email: 'sender.one@example.com' },
-		Email: { content: '<p>Unread body</p>' },
 	},
 	{
 		id: 101,
 		subject: 'Read message',
-		body: '<p>Read body</p>',
 		url: null,
 		visible_at: '2026-04-19T12:00:00.000Z',
 		read_at: '2026-04-19T13:00:00.000Z',
 		Tourn: { id: 2, name: 'Tournament Two', webname: 't2' },
 		Sender: { name: 'Sender Two', email: 'sender.two@example.com' },
-		Email: { content: '<p>Read body</p>' },
 	},
 ];
+
+let inboxPage: InboxPageData;
+let openMessage: InboxMessage | null;
 
 vi.mock('@tanstack/svelte-query', async () => {
 	const actual = await vi.importActual<typeof import('@tanstack/svelte-query')>(
@@ -51,17 +51,24 @@ vi.mock('@tanstack/svelte-query', async () => {
 });
 
 vi.mock('$indexcards', () => ({
-	createUserInbox: () => ({
-		data: { status: 200, data: inboxMessages },
-		error: null,
-		isError: false,
-		isSuccess: true,
-		isLoading: false,
-		isFetching: false,
-		refetch: inboxRefetch,
-	}),
+	createUserInbox: (params: () => UserInboxParams) => {
+		inboxParams(params);
+		return {
+			get data() {
+				return { status: 200, data: inboxPage };
+			},
+			error: null,
+			isError: false,
+			isSuccess: true,
+			isLoading: false,
+			isFetching: false,
+			refetch: inboxRefetch,
+		};
+	},
 	createUserInboxGetMessage: () => ({
-		data: null,
+		get data() {
+			return openMessage && { status: 200, data: openMessage };
+		},
 		error: null,
 		isError: false,
 		isLoading: false,
@@ -90,6 +97,9 @@ vi.mock('$indexcards', () => ({
 
 describe('Inbox page UI', () => {
 	beforeEach(() => {
+		inboxPage = { items: inboxMessages, total: inboxMessages.length };
+		openMessage = null;
+		inboxParams.mockClear();
 		inboxRefetch.mockResolvedValue({});
 		messageRefetch.mockResolvedValue({});
 		markReadMutateAsync.mockResolvedValue({ status: 204 });
@@ -97,6 +107,31 @@ describe('Inbox page UI', () => {
 		deleteMutateAsync.mockResolvedValue({ status: 204 });
 		markAllReadMutateAsync.mockResolvedValue({ status: 204 });
 		queryClientRefetchQueries.mockResolvedValue({});
+	});
+
+	it('asks for the first page of 50', () => {
+		render(InboxPage);
+		expect(inboxParams.mock.calls[0]?.[0]()).toEqual({ limit: 50, offset: 0 });
+	});
+
+	it('goes back a page when deleting the only message on the last page', async () => {
+		const last = { ...inboxMessages[0]!, subject: 'Last message' };
+		inboxPage = { items: [last], total: 51 };
+		// The page derives the open message once, so the mock serves it from the start
+		openMessage = { ...last, body: '<p>Last body</p>', Email: null };
+		render(InboxPage);
+		const params = inboxParams.mock.calls[0]![0];
+
+		await userEvent.click(screen.getByRole('button', { name: 'Next page' }));
+		expect(params()).toEqual({ limit: 50, offset: 50 });
+
+		inboxPage = { items: [], total: 50 };
+		await userEvent.click(await screen.findByRole('button', { name: 'Delete message' }));
+
+		await waitFor(() => {
+			expect(deleteMutateAsync).toHaveBeenCalledWith({ messageId: 100 });
+			expect(params()).toEqual({ limit: 50, offset: 0 });
+		});
 	});
 
 	it('renders unread message subject with emphasis class', () => {

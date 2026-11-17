@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as controller from '../../../../controllers/user/inbox.js';
 import { requirePerson } from '../../../../middleware/auth/authorization.js';
-import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
+import { InboxMessageSchema, InboxPageQuerySchema, InboxPageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import z from 'zod';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 
@@ -9,18 +9,21 @@ const router = Router();
 
 router.use(requirePerson);
 
-router.route('/').get(controller.inboxList).openapi = {
+router.route('/').get(ValidateRequest, controller.inboxList).openapi = {
 	path        : '/user/inbox',
 	operationId : 'UserInbox',
 	summary     : 'Get messages',
-	description : 'Get the list of messages for the logged-in user',
+	description : 'Get one page of messages for the logged-in user, newest first, without bodies',
 	tags: ['Orval','user:inbox'],
+	requestParams: {
+		query: InboxPageQuerySchema,
+	},
 	responses: {
 		200: {
-			description: 'Inbox list',
+			description: 'Inbox page',
 			content: {
 				'application/json': {
-					schema:  z.array(InboxMessageSchema),
+					schema: InboxPageSchema,
 				},
 			},
 		},

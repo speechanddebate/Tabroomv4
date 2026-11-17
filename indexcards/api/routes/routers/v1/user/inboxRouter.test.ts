@@ -2,8 +2,7 @@
 import request from 'supertest';
 import server from '../../../../../app.js';
 import factories from '../../../../../tests/factories/index.js';
-import z from 'zod';
-import { InboxMessageSchema, InboxUnreadCountSchema } from '@tabroom/types';
+import { InboxMessageSchema, InboxPageSchema, InboxUnreadCountSchema } from '@tabroom/types';
 import messageRepo from '../../../../repos/messageRepo.js';
 import { db } from '../../../../data/database.js';
 import { faker } from '@faker-js/faker';
@@ -32,8 +31,11 @@ describe('Inbox Router', () => {
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(z.array(InboxMessageSchema));
-			expect(res.body.length).toBe(1);
+			expect(res.body).toMatchSchema(InboxPageSchema);
+			expect(res.body.items.length).toBe(1);
+			expect(res.body.total).toBe(1);
+			expect(res.body.items[0]).not.toHaveProperty('body');
+			expect(res.body.items[0]).not.toHaveProperty('Email');
 		});
 		it('does not return deleted or non visible messages', async () => {
 			const DeletedMessage = await factories.message.create({
@@ -52,11 +54,44 @@ describe('Inbox Router', () => {
 				.expect(200);
 
 			expect(res).not.toBeProblemResponse();
-			expect(res.body).toMatchSchema(z.array(InboxMessageSchema));
-			const messages = z.array(InboxMessageSchema).parse(res.body);
+			const { items, total } = InboxPageSchema.parse(res.body);
 
-			expect(messages.some(message => message.id === DeletedMessage.id)).toBe(false);
-			expect(messages.some(message => message.id === InvisibleMessage.id)).toBe(false);
+			expect(items.some(message => message.id === DeletedMessage.id)).toBe(false);
+			expect(items.some(message => message.id === InvisibleMessage.id)).toBe(false);
+			expect(total).toBe(items.length);
+		});
+		describe('paging', () => {
+			let pagedKey: string;
+			let newestFirst: number[];
+			beforeAll(async () => {
+				const Person = await factories.person.create();
+				({ userkey: pagedKey } = await factories.session.create({ person: Person.id }));
+				const created = await Promise.all(Array.from({ length: 52 }, (_, minute) => factories.message.create({
+					person: Person.id,
+					visible_at: new Date(Date.UTC(2026, 9, 1, 12, minute)),
+				})));
+				newestFirst = created.map(message => message.id).reverse();
+			});
+			const page = (query = '') => request(server)
+				.get(`/v1/user/inbox${query}`)
+				.set('Accept', 'application/json')
+				.asPerson(pagedKey);
+
+			it('returns the newest 50 when no page is asked for', async () => {
+				const res = await page().expect(200);
+				expect(res.body).toMatchSchema(InboxPageSchema);
+				expect(res.body.items.map((message: { id: number }) => message.id)).toEqual(newestFirst.slice(0, 50));
+				expect(res.body.total).toBe(52);
+			});
+			it('returns the page that limit and offset ask for', async () => {
+				const res = await page('?limit=20&offset=40').expect(200);
+				expect(res.body.items.map((message: { id: number }) => message.id)).toEqual(newestFirst.slice(40));
+				expect(res.body.total).toBe(52);
+			});
+			it.each(['limit=0', 'limit=101', 'limit=ten', 'offset=-1'])('rejects %s', async (query) => {
+				const res = await page(`?${query}`);
+				expect(res).toBeProblemResponse(400);
+			});
 		});
 	});
 	describe('GET /user/inbox/unread', () => {
@@ -152,7 +187,7 @@ describe('Inbox Router', () => {
 			expect(res).not.toBeProblemResponse();
 			expect(res.body).toMatchSchema(InboxMessageSchema);
 		});
-		it('cleans a body another system wrote as typed, in the message and in the list', async () => {
+		it('cleans a body another system wrote as typed', async () => {
 			const Email = await factories.email.create({ content: '<p>Schedule</p><iframe src="https://example.com"></iframe>' });
 			const Message = await factories.message.create({
 				person: personId,
@@ -164,11 +199,8 @@ describe('Inbox Router', () => {
 				Email: { content: '<p>Schedule</p>' },
 			};
 
-			const one = await request(server).get(`/v1/user/inbox/${Message.id}`).asPerson(userkey).expect(200);
-			expect(one.body).toMatchObject(clean);
-
-			const list = await request(server).get('/v1/user/inbox').asPerson(userkey).expect(200);
-			expect(list.body.find((message: { id: number }) => message.id === Message.id)).toMatchObject(clean);
+			const res = await request(server).get(`/v1/user/inbox/${Message.id}`).asPerson(userkey).expect(200);
+			expect(res.body).toMatchObject(clean);
 		});
 		it('returns 404 when the message does not exist', async () => {
 			const res = await request(server)
