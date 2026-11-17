@@ -6,7 +6,7 @@ import personRepo from '../../repos/personRepo.js';
 import type { Settings } from '../../repos/utils/index.js';
 import { verifyPassword } from '../AuthService.js';
 import { notify } from '../notifications/notify.js';
-import { maskEmail } from '../notifications/unsubscribe.js';
+import { emailChanged } from '../notifications/templates/account/emailChanged.js';
 import { sqlDatetime } from '../home/homeRules.js';
 import { isCodeExpired, sendConfirmation } from './emailConfirm.js';
 
@@ -134,19 +134,15 @@ export async function updateProfile(
 		await sendConfirmation(db, { id: personId, email: changes.email });
 		// The old address hears about it, so an owner whose email someone else changed finds out.
 		// No link or code: a link reads as phishing, and the old address mustn't confirm the new one
+		const { subject, html } = emailChanged({ newAddress: changes.email });
 		await notify({
 			ids: [personId],
 			to: person.email,
-			subject: 'Your Tabroom.com email address was changed',
-			body: null,
-			url: null,
-			text: [
-				`The email address on your Tabroom.com account was changed to ${maskEmail(changes.email)}. From now on, Tabroom.com email goes to the new address.`,
-				'If you didn\'t make this change, contact help@tabroom.com right away.',
-			].join('\n\n'),
-			ignoreNoEmail: true,
+			subject,
+			html: html.value,
+			kind: 'account',
 			priority: 'high',
-			channels: { inbox: false, webpush: false },
+			channels: { inbox: false, push: false },
 		});
 	}
 

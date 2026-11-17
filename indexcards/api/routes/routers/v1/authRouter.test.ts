@@ -199,7 +199,7 @@ describe('Auth Router', () => {
 			expect(String(person?.settings?.email_confirmation_key)).toMatch(/^[2-9A-HJ-NP-Z]{6}$/);
 
 			const jobs = addJobs.mock.calls.flatMap(([batch]) => batch as { queueName: string; data: Record<string, unknown>; opts: Record<string, unknown> }[]);
-			expect(jobs).toEqual([expect.objectContaining({ queueName: 'email', data: expect.objectContaining({ ignoreNoEmail: true }) })]);
+			expect(jobs).toEqual([expect.objectContaining({ queueName: 'email', data: expect.objectContaining({ kind: 'account' }) })]);
 			expect(jobs[0].opts).not.toHaveProperty('priority');
 		});
 	});

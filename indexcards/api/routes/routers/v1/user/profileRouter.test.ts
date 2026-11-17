@@ -494,7 +494,7 @@ describe('Profile Router', () => {
 			expect(key).toMatch(/^[2-9A-HJ-NP-Z]{6}$/);
 			expect(key).not.toBe('HXK3QY');
 			const [job] = emailJobs();
-			expect(job.data).toMatchObject({ ignoreNoEmail: true });
+			expect(job.data).toMatchObject({ kind: 'account' });
 			expect(job.opts).not.toHaveProperty('priority');
 
 			await confirm(userkey, 'HXK3QY').expect(400);
@@ -573,7 +573,7 @@ describe('Profile Router', () => {
 
 			const jobs = emailJobs();
 			expect(jobs).toHaveLength(2);
-			expect(jobs.every(job => job.data.ignoreNoEmail === true && !('priority' in job.opts))).toBe(true);
+			expect(jobs.every(job => job.data.kind === 'account' &&!('priority' in job.opts))).toBe(true);
 			expect(jobs.filter(job => job.data.to === oldEmail)).toHaveLength(1);
 
 			const notice = await db.selectFrom('message').select(['subject', 'body'])

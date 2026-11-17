@@ -1,10 +1,10 @@
 import crypto from 'node:crypto';
 import config from '../../config.js';
 import type { Database } from '../../data/database.js';
-import logger from '../../helpers/logger.js';
 import personRepo from '../../repos/personRepo.js';
 import { sqlDatetime } from '../home/homeRules.js';
 import { notify } from '../notifications/notify.js';
+import { confirmEmail } from '../notifications/templates/account/confirmEmail.js';
 import { maskEmail } from '../notifications/unsubscribe.js';
 import { signToken, verifyToken } from '../tokens.js';
 
@@ -41,27 +41,6 @@ export function newConfirmationCode(): string {
 	return Array.from({ length: CODE_LENGTH }, () => CODE_ALPHABET[crypto.randomInt(CODE_ALPHABET.length)]).join('');
 }
 
-function confirmationMail(code: string, link: string) {
-	const codePage = new URL('/user/profile/confirm', config.schemats_url);
-	const codePageText = `${codePage.host}${codePage.pathname}`;
-	const text = [
-		'Confirm this address to get email from Tabroom.com, such as tournament announcements and your ballots.',
-		`Confirm my email address: ${link}`,
-		`Or enter this code on Tabroom.com: ${code}`,
-		`Enter it at ${codePageText}, or select Confirm your email on your Tabroom.com home page.`,
-		'The link and code work for 7 days. If you didn\'t create a Tabroom.com account or change your email address, ignore this email.',
-	].join('\n\n');
-	const html = [
-		'<p>Confirm this address to get email from Tabroom.com, such as tournament announcements and your ballots.</p>',
-		`<p><a href="${link}" style="display: inline-block; padding: 10px 20px; background: #1f4e79; color: #ffffff; font-weight: bold; text-decoration: none; border-radius: 4px;">Confirm my email address</a></p>`,
-		'<p>Or enter this code on Tabroom.com:</p>',
-		`<p style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">${code}</p>`,
-		`<p>Enter it at <a href="${codePage.href}">${codePageText}</a>, or select Confirm your email on your Tabroom.com home page.</p>`,
-		'<p>The link and code work for 7 days. If you didn\'t create a Tabroom.com account or change your email address, ignore this email.</p>',
-	].join('\n');
-	return { text, html };
-}
-
 /**
  * Starts (or restarts) confirmation of the person's current address: a new code replaces any
  * earlier one, which also retires its link. Sent even to someone opted out, ahead of any blast
@@ -74,19 +53,15 @@ export async function sendConfirmation(db: Database, person: { id: number; email
 	});
 
 	const token = await signToken('confirm-email', person.id, { email: normalize(person.email), code }, CONFIRMATION_MAX_AGE);
-	const response = await notify({
+	const { subject, html } = confirmEmail({ code, link: `${config.schemats_url}/confirm-email/${token}` });
+	await notify({
 		ids: [person.id],
-		subject: 'Confirm your email address for Tabroom.com',
-		body: null,
-		url: null,
-		...confirmationMail(code, `${config.schemats_url}/confirm-email/${token}`),
-		ignoreNoEmail: true,
+		subject,
+		html: html.value,
+		kind: 'account',
 		priority: 'high',
-		channels: { inbox: false, webpush: false },
+		channels: { inbox: false, push: false },
 	});
-	if (response.error) {
-		logger.warn(`Confirmation email for person ${person.id} was not queued: ${response.message}`);
-	}
 }
 
 async function clearConfirmation(db: Database, personId: number) {
