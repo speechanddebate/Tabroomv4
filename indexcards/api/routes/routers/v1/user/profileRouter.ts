@@ -7,6 +7,18 @@ import { confirmEmail, resendEmailConfirmation, show, update } from '../../../..
 
 const router = Router();
 
+// a borrowed login gets 10 wrong current passwords per 15 minutes; requests without one, and accepted ones (any status but 403), never count
+const PASSWORD_LIMIT = 10;
+const passwordLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	limit: PASSWORD_LIMIT,
+	skip: (req) => !req.body?.currentPassword,
+	skipSuccessfulRequests: true,
+	requestWasSuccessful: (_req, res) => res.statusCode !== 403,
+	keyGenerator: (req) => `current-password:${req.person?.id}`,
+	handler: (req, res) => RateLimitExceeded(req, res, 'Too many wrong passwords. Wait 15 minutes and try again.'),
+});
+
 // a guesser gets 10 tries per 15 minutes; a right code never counts
 const CONFIRM_LIMIT = 10;
 const confirmLimiter = rateLimit({
@@ -46,9 +58,9 @@ router.route('/').get(ValidateRequest, show).openapi = {
 	},
 };
 
-router.route('/').patch(ValidateRequest, update).openapi = {
+router.route('/').patch(ValidateRequest, passwordLimiter, update).openapi = {
 	summary: 'Update profile',
-	description: 'Saves the fields sent and leaves the rest as they are; one invalid field saves nothing. A phone, ZIP or postal code that is sent is checked against the country the profile will have after the save; stored values are not re-checked when only the country changes. A phone number on another account is 409. While a password change is required, every save is 403. Allowed while su\'d',
+	description: `Saves the fields sent and leaves the rest as they are; one invalid field saves nothing. A phone, ZIP or postal code that is sent is checked against the country the profile will have after the save; stored values are not re-checked when only the country changes. A phone number on another account is 409. While a password change is required, every save is 403. A new email needs currentPassword (wrong is 403, ${PASSWORD_LIMIT} wrong in 15 minutes is 429) and is 409 when another account has it; it starts unconfirmed, a code goes to the new address, and a notice to the old one. Allowed while su'd, except an email change (403)`,
 	path: '/user/profile',
 	operationId: 'UserProfileUpdate',
 	tags: ['Orval', 'user:profile'],
@@ -72,6 +84,7 @@ router.route('/').patch(ValidateRequest, update).openapi = {
 		403: { $ref: '#/components/responses/Forbidden' },
 		404: { $ref: '#/components/responses/NotFound' },
 		409: { $ref: '#/components/responses/Conflict' },
+		429: { $ref: '#/components/responses/TooManyRequests' },
 	},
 };
 

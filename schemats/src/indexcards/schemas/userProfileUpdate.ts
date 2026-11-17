@@ -310,4 +310,12 @@ export interface UserProfileUpdate {
 	postal?: string;
 	tz?: string;
 	noEmail?: boolean;
+	/** A new email address. Needs currentPassword; the address stays unconfirmed until the code sent to it is entered */
+	email?: string;
+	/**
+	 * The person's current password, required with email
+	 * @minLength 1
+	 * @maxLength 512
+	 */
+	currentPassword?: string;
 }

@@ -34,6 +34,7 @@
 		postal              : null,
 		noEmail             : false,
 		emailUnconfirmed    : false,
+		emailCodeExpired    : false,
 		forcePasswordChange : false,
 	};
 
@@ -87,6 +88,22 @@
 <Story name="Default" parameters={serve(avery)} />
 
 <Story name="Unconfirmed email" parameters={serve({ ...avery, emailUnconfirmed: true })} />
+
+<Story
+	name="Change email"
+	parameters={serve(avery)}
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const email = await canvas.findByRole('textbox', { name: 'Email' });
+
+		await expect(canvas.queryByLabelText(/Current password/)).not.toBeInTheDocument();
+		await userEvent.clear(email);
+		await userEvent.type(email, 'avery.new@example.org');
+
+		await expect(await canvas.findByLabelText(/Current password/)).toBeInTheDocument();
+		await expect(canvas.getByText('1 unsaved change')).toBeInTheDocument();
+	}}
+/>
 
 <Story name="Stored legacy values" parameters={serve({ ...avery, state: 'DE-M', country: 'DE', zip: null, postal: '10115', tz: 'CET' })} />
 

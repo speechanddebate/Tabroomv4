@@ -25,6 +25,16 @@ export const CONFIRMATION_MAX_AGE = 7 * 24 * 60 * 60;
 
 const CONFIRM_SETTINGS = ['email_unconfirmed', 'email_confirmation_key'];
 
+/**
+ * Whether a person waiting to confirm needs a new code: they have none (classic writes 0 once a
+ * code is used) or theirs is over 7 days old. sentAt is the key setting's timestamp, which moves
+ * with each new code
+ */
+export function isCodeExpired(code: unknown, sentAt: Date | null): boolean {
+	if (!code || String(code) === '0') return true;
+	return !!sentAt && Date.now() - sentAt.getTime() > CONFIRMATION_MAX_AGE * 1000;
+}
+
 const normalize = (email: string) => email.trim().toLowerCase();
 
 export function newConfirmationCode(): string {
@@ -111,9 +121,7 @@ export async function confirmCode(db: Database, personId: number, code: string):
 
 	const stored = String(person.settings.email_confirmation_key ?? '').toUpperCase();
 	if (!stored || code.trim().toUpperCase() !== stored) return 'wrong';
-
-	const sentAt = sqlDatetime(person.settingsTimestamps?.email_confirmation_key?.timestamp);
-	if (sentAt && Date.now() - sentAt.getTime() > CONFIRMATION_MAX_AGE * 1000) return 'expired';
+	if (isCodeExpired(stored, sqlDatetime(person.settingsTimestamps?.email_confirmation_key?.timestamp))) return 'expired';
 
 	await clearConfirmation(db, person.id);
 	return 'confirmed';

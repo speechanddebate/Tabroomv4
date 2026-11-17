@@ -21,6 +21,7 @@ export const UserProfileSchema = PersonSchema.pick({
 	state: z.string().nullable().meta({ description: 'The state or province code as stored' }),
 	noEmail: z.boolean().meta({ description: 'Whether the person asked not to be sent tournament email' }),
 	emailUnconfirmed: z.boolean().meta({ description: 'Whether the email address is waiting on its confirmation code' }),
+	emailCodeExpired: z.boolean().meta({ description: 'Whether an unconfirmed address needs a new code: it has none, or its code is over 7 days old' }),
 	forcePasswordChange: z.boolean().meta({ description: 'Whether the person must change their password before anything else' }),
 }).strict().meta({
 	id: 'UserProfile',
@@ -72,7 +73,15 @@ export const UserProfileUpdateSchema = z.object({
 		.regex(/^[A-Za-z0-9 -]*$/, 'Use letters, numbers, spaces and hyphens only'),
 	tz: z.string().refine(isValidTimeZone, 'Choose a time zone from the list'),
 	noEmail: z.boolean(),
-}).partial().strict().meta({
+	// Stored lowercased, as classic does, so the unique index and logins match it in any case
+	email: z.string().trim().toLowerCase().pipe(z.email('Enter a valid email address'))
+		.meta({ description: 'A new email address. Needs currentPassword; the address stays unconfirmed until the code sent to it is entered' }),
+	currentPassword: z.string().min(1, 'Enter your current password').max(512)
+		.meta({ description: 'The person\'s current password, required with email' }),
+}).partial().strict().refine(update => update.email === undefined || update.currentPassword !== undefined, {
+	message: 'Enter your current password to change your email',
+	path: ['currentPassword'],
+}).meta({
 	id: 'UserProfileUpdate',
 	description: 'Changes to the logged in person\'s profile; fields left out stay as they are',
 }) satisfies ZodOpenApiSchemaObject;

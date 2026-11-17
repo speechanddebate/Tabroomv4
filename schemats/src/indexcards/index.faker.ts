@@ -4976,6 +4976,7 @@ export const getUserProfileResponseMock = (
 	]),
 	noEmail: faker.datatype.boolean(),
 	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
 	forcePasswordChange: faker.datatype.boolean(),
 	...overrideResponse,
 });
@@ -5049,6 +5050,7 @@ export const getUserProfileUpdateResponseMock = (
 	]),
 	noEmail: faker.datatype.boolean(),
 	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
 	forcePasswordChange: faker.datatype.boolean(),
 	...overrideResponse,
 });

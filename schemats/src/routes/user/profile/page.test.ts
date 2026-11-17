@@ -21,6 +21,7 @@ const baseProfile: UserProfile = {
 	postal              : null,
 	noEmail             : false,
 	emailUnconfirmed    : false,
+	emailCodeExpired    : false,
 	forcePasswordChange : false,
 };
 
@@ -33,6 +34,7 @@ const mocks = vi.hoisted(() => ({
 	endMutateAsync: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 	beforeNavigate: vi.fn(),
+	su: false,
 	push: {
 		state: null as PushState | null,
 		busy: false,
@@ -53,6 +55,8 @@ vi.mock('@tanstack/svelte-query', async () => ({
 }));
 
 vi.mock('$lib/helpers/toasts', () => ({ toast: mocks.toast }));
+
+vi.mock('$lib/helpers/SessionContext.svelte', () => ({ isSuSession: () => mocks.su }));
 
 vi.mock('$indexcards', () => ({
 	createUserProfile: () => ({
@@ -85,6 +89,7 @@ const saveButton = () => screen.getByRole('button', { name: 'Save changes' });
 describe('Profile page', () => {
 	beforeEach(() => {
 		mocks.profile = { ...baseProfile };
+		mocks.su = false;
 		mocks.push.state = 'undecided';
 		mocks.push.busy = false;
 		mocks.updateMutateAsync.mockImplementation(async ({ data }) => ({ status: 200, data: { ...mocks.profile, ...data } }));
@@ -251,13 +256,77 @@ describe('Profile page', () => {
 			});
 		});
 
-		it('shows the email with a link to change it on classic', () => {
-			render(ProfilePage);
+		describe('email', () => {
+			const emailField = () => screen.getByRole('textbox', { name: 'Email' });
+			const passwordField = () => screen.queryByLabelText(/Current password/);
 
-			const email = screen.getByTestId('profile-email');
-			expect(email).toHaveTextContent('avery@example.org');
-			expect(within(email).getByRole('link', { name: 'Change your email on the classic site' }))
-				.toHaveAttribute('href', 'https://www.tabroom.com/user/login/profile.mhtml');
+			it('shows the email as a field, with no password field until it changes', () => {
+				render(ProfilePage);
+
+				expect(emailField()).toHaveValue('avery@example.org');
+				expect(passwordField()).not.toBeInTheDocument();
+			});
+
+			it('asks for the current password once the email changes, sends both, then clears it', async () => {
+				mocks.updateMutateAsync.mockResolvedValue({ status: 200, data: { ...baseProfile, email: 'new@example.org', emailUnconfirmed: true, noEmail: true } });
+				const user = userEvent.setup();
+				render(ProfilePage);
+
+				await user.clear(emailField());
+				await user.type(emailField(), 'new@example.org');
+				await user.type(passwordField()!, 'current-pass');
+				await user.click(saveButton());
+
+				expect(mocks.updateMutateAsync).toHaveBeenCalledWith({ data: { email: 'new@example.org', currentPassword: 'current-pass' } });
+				expect(passwordField()).not.toBeInTheDocument();
+				expect(mocks.toast.success).toHaveBeenCalledWith({ message: 'We sent a confirmation code to new@example.org' });
+				expect(screen.getByText('All changes saved')).toBeInTheDocument();
+			});
+
+			it('doesn\'t treat a change of case or spaces as a new email', async () => {
+				const user = userEvent.setup();
+				render(ProfilePage);
+
+				await user.clear(emailField());
+				await user.type(emailField(), ' AVERY@example.org');
+				expect(passwordField()).not.toBeInTheDocument();
+				await user.type(screen.getByLabelText('City'), ' West');
+				await user.click(saveButton());
+
+				expect(mocks.updateMutateAsync).toHaveBeenCalledWith({ data: { city: 'Des Moines West' } });
+				expect(emailField()).toHaveValue('avery@example.org');
+			});
+
+			it('shows a wrong password under the password field and keeps the edit', async () => {
+				mocks.updateMutateAsync.mockResolvedValue({
+					status: 403,
+					data: {
+						title: 'You Do Not Have Access to This Resource',
+						status: 403,
+						detail: 'That password isn\'t right',
+						issues: [{ path: ['currentPassword'], message: 'That password isn\'t right', code: 'custom' }],
+					},
+				});
+				const user = userEvent.setup();
+				render(ProfilePage);
+
+				await user.clear(emailField());
+				await user.type(emailField(), 'new@example.org');
+				await user.type(passwordField()!, 'wrong');
+				await user.click(saveButton());
+
+				expect(passwordField()).toHaveAccessibleDescription(/That password isn't right/);
+				expect(emailField()).toHaveValue('new@example.org');
+				expect(mocks.toast.success).not.toHaveBeenCalled();
+			});
+
+			it('makes the email read-only while su\'d', () => {
+				mocks.su = true;
+				render(ProfilePage);
+
+				expect(emailField()).toHaveAttribute('readonly');
+				expect(emailField()).toHaveAccessibleDescription('Email can\'t be changed while su\'d.');
+			});
 		});
 
 		it('offers the no-email choice once the email is confirmed', () => {
@@ -271,7 +340,9 @@ describe('Profile page', () => {
 			render(ProfilePage);
 
 			expect(screen.queryByRole('checkbox', { name: /Don't send me email/ })).not.toBeInTheDocument();
-			expect(screen.getByTestId('profile-email')).toHaveTextContent('Not confirmed yet');
+			const email = screen.getByTestId('profile-email');
+			expect(email).toHaveTextContent('Not confirmed yet');
+			expect(within(email).getByRole('link', { name: 'Confirm your email' })).toHaveAttribute('href', '/user/profile/confirm');
 		});
 
 		it('links to classic to change the password', () => {

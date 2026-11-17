@@ -17,6 +17,7 @@ const profile: UserProfile = {
 	postal              : null,
 	noEmail             : false,
 	emailUnconfirmed    : false,
+	emailCodeExpired    : false,
 	forcePasswordChange : false,
 };
 
@@ -24,7 +25,7 @@ describe('profileForm', () => {
 	it('turns unset columns into empty strings and leaves out what the form doesn\'t edit', () => {
 		expect(profileForm(profile)).toEqual({
 			first: 'Avery', middle: '', last: 'Okafor', pronoun: '', phone: '', street: '', city: 'Des Moines',
-			state: 'IA', country: 'US', zip: '50309', postal: '', tz: '', noEmail: false,
+			state: 'IA', country: 'US', zip: '50309', postal: '', tz: '', noEmail: false, email: profile.email,
 		});
 	});
 });

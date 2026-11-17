@@ -61,6 +61,23 @@ describe('Profile Router', () => {
 			expect(res.body).toMatchObject({ emailUnconfirmed: true, forcePasswordChange: true });
 		});
 
+		it('says whether an unconfirmed address needs a new code: none, a used one, or one over 7 days old', async () => {
+			const profileOf = async (userkey: string) => (await request(server).get('/v1/user/profile').asPerson(userkey).expect(200)).body as UserProfile;
+
+			const fresh = await newPerson({ settings: { email_unconfirmed: 1, email_confirmation_key: 'HXK3QY' } });
+			const old = await newPerson({ settings: { email_unconfirmed: 1, email_confirmation_key: 'MW4PTB' } });
+			await sentMinutesAgo(old.id, WEEK_MINUTES + 1);
+			const none = await newPerson({ settings: { email_unconfirmed: 1 } });
+			const used = await newPerson({ settings: { email_unconfirmed: 1, email_confirmation_key: '0' } });
+			const confirmed = await newPerson();
+
+			expect(await profileOf(fresh.userkey)).toMatchObject({ emailUnconfirmed: true, emailCodeExpired: false });
+			expect(await profileOf(old.userkey)).toMatchObject({ emailUnconfirmed: true, emailCodeExpired: true });
+			expect(await profileOf(none.userkey)).toMatchObject({ emailUnconfirmed: true, emailCodeExpired: true });
+			expect(await profileOf(used.userkey)).toMatchObject({ emailUnconfirmed: true, emailCodeExpired: true });
+			expect(await profileOf(confirmed.userkey)).toMatchObject({ emailUnconfirmed: false, emailCodeExpired: false });
+		});
+
 		it('shows a stored state that is no longer on the list', async () => {
 			const { userkey } = await newPerson({ state: 'DE-M', country: 'DE' });
 
@@ -525,6 +542,136 @@ describe('Profile Router', () => {
 
 			const res = await resend(userkey);
 			expect(res.status).toBe(202);
+		});
+	});
+
+	describe('changing the email through PATCH /v1/user/profile', () => {
+		const PASSWORD = 'current-pass-123';
+		const newAddress = () => `changed-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.org`;
+		const unchanged = async (id: number, email: string) => {
+			expect((await stored(id)).email).toBe(email);
+			expect(await confirmation(id)).toEqual({ unconfirmed: null, key: null, noEmail: 0 });
+		};
+
+		beforeEach(() => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+		});
+
+		it('saves the address trimmed and lowercased, starts it unconfirmed, and mails the new and old addresses ahead of blasts', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD, no_email: 0 });
+			const oldEmail = (await stored(id)).email;
+			const address = newAddress();
+			const info = vi.spyOn(logger, 'info');
+
+			const res = await patch(userkey, { email: ` ${address.toUpperCase()} `, currentPassword: PASSWORD, first: 'Avery' }).expect(200);
+
+			expect(res.body).toMatchSchema(UserProfileSchema);
+			expect(res.body).toMatchObject({ email: address, first: 'Avery', emailUnconfirmed: true, noEmail: true });
+			expect((await stored(id)).email).toBe(address);
+			// 6 characters from the code alphabet (no 0, 1, I or O), e.g. HXK3QY
+			expect((await confirmation(id)).key).toMatch(/^[2-9A-HJ-NP-Z]{6}$/);
+
+			const jobs = emailJobs();
+			expect(jobs).toHaveLength(2);
+			expect(jobs.every(job => job.data.ignoreNoEmail === true && !('priority' in job.opts))).toBe(true);
+			expect(jobs.filter(job => job.data.to === oldEmail)).toHaveLength(1);
+
+			const notice = await db.selectFrom('message').select(['subject', 'body'])
+				.where('person', '=', id).where('subject', '=', 'Your Tabroom.com email address was changed')
+				.executeTakeFirstOrThrow();
+			expect(notice.body).toContain(`${address[0]}***@example.org`);
+			expect(notice.body).not.toContain('/confirm-email/');
+			expect(info).toHaveBeenCalledWith(expect.stringContaining('Email changed from'), expect.objectContaining({ 'event.name': 'account.email.changed' }));
+		});
+
+		it('needs the current password with a new email', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const email = (await stored(id)).email;
+
+			const res = await patch(userkey, { email: newAddress() }).expect(400);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['currentPassword'] })]);
+			await unchanged(id, email);
+			expect(emailJobs()).toEqual([]);
+		});
+
+		it('refuses a wrong current password under that field', async () => {
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const email = (await stored(id)).email;
+
+			const res = await patch(userkey, { email: newAddress(), currentPassword: 'not-it' }).expect(403);
+
+			expect(res).toBeProblemResponse(403);
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['currentPassword'] })]);
+			await unchanged(id, email);
+			expect(emailJobs()).toEqual([]);
+		});
+
+		it('refuses an account with no password', async () => {
+			const { id, userkey } = await newPerson();
+			await db.updateTable('person').set({ password: '' }).where('id', '=', id).execute();
+			const email = (await stored(id)).email;
+
+			const res = await patch(userkey, { email: newAddress(), currentPassword: 'anything' }).expect(403);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['currentPassword'] })]);
+			await unchanged(id, email);
+		});
+
+		it('refuses an address another account has, in any case, without naming it', async () => {
+			const Other = await newPerson();
+			const taken = (await stored(Other.id)).email;
+			const { id, userkey } = await newPerson({ password: PASSWORD });
+			const email = (await stored(id)).email;
+
+			const res = await patch(userkey, { email: taken.toUpperCase(), currentPassword: PASSWORD }).expect(409);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['email'], message: 'That email is already in use' })]);
+			expect(JSON.stringify(res.body)).not.toContain(taken);
+			await unchanged(id, email);
+		});
+
+		it('refuses an address that isn\'t one', async () => {
+			const { userkey } = await newPerson({ password: PASSWORD });
+
+			const res = await patch(userkey, { email: 'not an address', currentPassword: PASSWORD }).expect(400);
+
+			expect(res.body.issues).toEqual([expect.objectContaining({ path: ['email'] })]);
+		});
+
+		it('treats the same address in another case as no change: no password needed, nothing sent', async () => {
+			const { id, userkey } = await newPerson();
+			const email = (await stored(id)).email;
+
+			await patch(userkey, { email: email.toUpperCase(), currentPassword: 'ignored', first: 'Avery' }).expect(200);
+
+			await unchanged(id, email);
+			expect(emailJobs()).toEqual([]);
+		});
+
+		it('refuses an email change while su\'d, but still saves other fields', async () => {
+			const Admin = await factories.person.create({ site_admin: 1 });
+			personIds.push(Admin.id);
+			const Target = await newPerson({ password: PASSWORD });
+			const email = (await stored(Target.id)).email;
+			const { userkey } = await factories.session.create({ person: Target.id, su: Admin.id });
+
+			const res = await patch(userkey, { email: newAddress(), currentPassword: PASSWORD }).expect(403);
+
+			expect(res).toBeProblemResponse(403);
+			await unchanged(Target.id, email);
+			await patch(userkey, { first: 'Avery' }).expect(200);
+		});
+
+		it('stops after 10 wrong passwords, even for the right one, while saves without a password go on', async () => {
+			const { userkey } = await newPerson({ password: PASSWORD });
+
+			for (let attempt = 0; attempt < 10; attempt++) {
+				await patch(userkey, { email: newAddress(), currentPassword: 'wrong' }).expect(403);
+			}
+
+			expect(await patch(userkey, { email: newAddress(), currentPassword: PASSWORD }).expect(429)).toBeProblemResponse(429);
+			await patch(userkey, { first: 'Avery' }).expect(200);
 		});
 	});
 });

@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { beforeNavigate } from '$app/navigation';
-	import { CLASSIC_URL } from '$app/env/public';
 	import type { Problem, UserProfile, UserProfileUpdate } from '@tabroom/types';
 	import { STATE_GROUPS } from '@tabroom/types/constants';
+	import { TriangleAlert } from '@lucide/svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { createUserProfileUpdate, getUserProfileQueryKey } from '$indexcards';
 	import { Checkbox, FormProblem, SaveBar, Select, TextInput } from '$lib/components/forms';
 	import { createDraft } from '$lib/helpers/draft.svelte';
 	import { fieldErrors } from '$lib/helpers/forms';
 	import { handleMutation } from '$lib/helpers/query';
+	import { isSuSession } from '$lib/helpers/SessionContext.svelte';
+	import { toast } from '$lib/helpers/toasts';
 	import { countryOptions, profileForm, showsZip, timeZoneOptions } from './profile';
 
 	type Props = {
@@ -30,6 +32,11 @@
 	let problem: Problem | null = $state(null);
 	let saving = $state(false);
 	const errors = $derived(fieldErrors(problem));
+	// The API refuses an email change while su'd
+	const su = isSuSession();
+	let currentPassword = $state('');
+	// The API stores addresses trimmed and lowercased, so an edit of only case or spaces isn't a new address
+	const emailChanging = $derived(draft.values.email.trim().toLowerCase() !== draft.saved.email.trim().toLowerCase());
 
 	// a legend sits outside its fieldset's flex flow, so the gap below it is its own margin
 	const legend = 'mb-3 font-display text-xl text-primary-deep normal-case tracking-normal';
@@ -51,24 +58,32 @@
 		// An edit to the code field the country no longer shows can't be seen or fixed, so it isn't sent
 		const hidden = showsZip(draft.values.country) ? 'postal' : 'zip';
 		draft.values[hidden] = draft.saved[hidden];
+		// Without a password the API would refuse it, and it would change nothing anyway
+		if (!emailChanging) draft.values.email = draft.saved.email;
 		if (saving || !draft.changes) {
 			return;
 		}
 		const sent = draft.changed;
 		problem = null;
 		saving = true;
-		const saved = await handleMutation(update.mutateAsync({ data: sent as UserProfileUpdate }), {
+		const data = { ...sent, ...(sent.email ? { currentPassword } : {}) } as UserProfileUpdate;
+		const saved = await handleMutation(update.mutateAsync({ data }), {
 			Problem: (result) => { problem = result; },
 		});
 		if (saved) {
 			draft.commit(sent, profileForm(saved));
 			queryClient.setQueryData(getUserProfileQueryKey(), (old: { data: UserProfile } | undefined) => old && { ...old, data: saved });
+			if (sent.email) {
+				currentPassword = '';
+				toast.success({ message: `We sent a confirmation code to ${saved.email}` });
+			}
 		}
 		saving = false;
 	};
 
 	const discard = () => {
 		draft.discard();
+		currentPassword = '';
 		problem = null;
 	};
 </script>
@@ -97,15 +112,36 @@
 						/>
 						<TextInput autocomplete="tel" error={errors.phone} label="Phone" type="tel" bind:value={draft.values.phone} />
 					</div>
-					<div class="flex flex-col gap-0.5 text-sm" data-testid="profile-email">
-						<span class="font-semibold text-text">Email</span>
-						<span class="text-text">{profile.email}</span>
-						{#if profile.emailUnconfirmed}
-							<span class="text-xs text-muted">Not confirmed yet</span>
+					<!-- Bottom-aligned so the email lines up with the password field's input under its description -->
+					<div class="grid items-end gap-3 @sm:grid-cols-2" data-testid="profile-email">
+						<div class="flex flex-col gap-1">
+							<TextInput
+								autocomplete="email"
+								description={su ? 'Email can\'t be changed while su\'d.' : undefined}
+								error={errors.email}
+								label="Email"
+								readonly={su}
+								type="email"
+								bind:value={draft.values.email}
+							/>
+							{#if profile.emailUnconfirmed && !emailChanging}
+								<p class="flex items-center gap-1 text-xs text-muted">
+									<TriangleAlert class="size-3.5 shrink-0 text-warning" aria-hidden="true" />
+									<span>Not confirmed yet. <a class="font-semibold text-primary-strong underline" href="/user/profile/confirm">Confirm your email</a></span>
+								</p>
+							{/if}
+						</div>
+						{#if emailChanging}
+							<TextInput
+								autocomplete="current-password"
+								description="Needed to change your email. We'll send a code to the new address."
+								error={errors.currentPassword}
+								label="Current password"
+								required
+								type="password"
+								bind:value={currentPassword}
+							/>
 						{/if}
-						<a class="text-xs font-semibold text-primary-strong underline" href={`${CLASSIC_URL}/user/login/profile.mhtml`}>
-							Change your email on the classic site
-						</a>
 					</div>
 					{#if !profile.emailUnconfirmed}
 						<Checkbox

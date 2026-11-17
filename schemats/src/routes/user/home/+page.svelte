@@ -52,7 +52,7 @@
 			tone    : 'problem' as const,
 			title   : 'Confirm your email address',
 			body    : 'Until you do, you can’t create a school or request a tournament.',
-			actions : [{ label: 'Resend link', href: classic.confirmEmail(), primary: true }],
+			actions : [{ label: 'Confirm your email', href: '/user/profile/confirm', primary: true }],
 		}] : []),
 		...(alerts.tzMissing ? [{
 			id      : 'tz',

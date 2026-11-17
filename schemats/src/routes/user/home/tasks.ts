@@ -61,7 +61,6 @@ export const classic = {
 	tabRoom        : (tourn: number) => `${CLASSIC_URL}/user/tourn/select.mhtml?tourn_id=${tourn}`,
 	paradigmReview : () => `${CLASSIC_URL}/user/judge/paradigm_approve.mhtml`,
 	paradigm       : () => `${CLASSIC_URL}/user/judge/paradigm.mhtml`,
-	confirmEmail   : () => `${CLASSIC_URL}/user/login/confirm.mhtml`,
 };
 
 /**

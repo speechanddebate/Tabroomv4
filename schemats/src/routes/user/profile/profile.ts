@@ -2,7 +2,8 @@ import type { UserProfile, UserProfileUpdate } from '@tabroom/types';
 import { COUNTRY_CODES } from '@tabroom/types/constants';
 import type { SelectGroup, SelectOption } from '$lib/components/forms';
 
-export type ProfileForm = Required<Omit<UserProfileUpdate, 'country'>> & { country: string };
+// The current password is asked for only with an email change and never kept, so it isn't part of the form's values
+export type ProfileForm = Required<Omit<UserProfileUpdate, 'country' | 'currentPassword'>> & { country: string };
 
 /** The form's values: every field a string, so an unset column and an emptied field compare equal */
 export function profileForm(profile: UserProfile): ProfileForm {
@@ -20,6 +21,7 @@ export function profileForm(profile: UserProfile): ProfileForm {
 		postal  : profile.postal ?? '',
 		tz      : profile.tz ?? '',
 		noEmail : profile.noEmail,
+		email   : profile.email,
 	};
 }
 

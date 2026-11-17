@@ -15057,6 +15057,11 @@ export type userProfileUpdateResponse409 = {
 	status: 409;
 };
 
+export type userProfileUpdateResponse429 = {
+	data: TooManyRequestsResponse;
+	status: 429;
+};
+
 export type userProfileUpdateResponse500 = {
 	data: ErrorResponseResponse;
 	status: 500;
@@ -15071,6 +15076,7 @@ export type userProfileUpdateResponseError = (
 	| userProfileUpdateResponse403
 	| userProfileUpdateResponse404
 	| userProfileUpdateResponse409
+	| userProfileUpdateResponse429
 	| userProfileUpdateResponse500
 ) & {
 	headers: Headers;
@@ -15085,7 +15091,7 @@ export const getUserProfileUpdateUrl = () => {
 };
 
 /**
- * Saves the fields sent and leaves the rest as they are; one invalid field saves nothing. A phone, ZIP or postal code that is sent is checked against the country the profile will have after the save; stored values are not re-checked when only the country changes. A phone number on another account is 409. While a password change is required, every save is 403. Allowed while su'd
+ * Saves the fields sent and leaves the rest as they are; one invalid field saves nothing. A phone, ZIP or postal code that is sent is checked against the country the profile will have after the save; stored values are not re-checked when only the country changes. A phone number on another account is 409. While a password change is required, every save is 403. A new email needs currentPassword (wrong is 403, 10 wrong in 15 minutes is 429) and is 409 when another account has it; it starts unconfirmed, a code goes to the new address, and a notice to the old one. Allowed while su'd, except an email change (403)
  * @summary Update profile
  */
 export const userProfileUpdate = async (
@@ -15120,6 +15126,7 @@ export const getUserProfileUpdateMutationOptions = <
 		| ForbiddenResponse
 		| NotFoundResponse
 		| ConflictResponse
+		| TooManyRequestsResponse
 		| ErrorResponseResponse,
 	TContext = unknown,
 >(options?: {
@@ -15172,6 +15179,7 @@ export type UserProfileUpdateMutationError =
 	| ForbiddenResponse
 	| NotFoundResponse
 	| ConflictResponse
+	| TooManyRequestsResponse
 	| ErrorResponseResponse;
 
 /**
@@ -15184,6 +15192,7 @@ export const createUserProfileUpdate = <
 		| ForbiddenResponse
 		| NotFoundResponse
 		| ConflictResponse
+		| TooManyRequestsResponse
 		| ErrorResponseResponse,
 	TContext = unknown,
 >(

@@ -44,6 +44,8 @@ export interface UserProfile {
 	noEmail: boolean;
 	/** Whether the email address is waiting on its confirmation code */
 	emailUnconfirmed: boolean;
+	/** Whether an unconfirmed address needs a new code: it has none, or its code is over 7 days old */
+	emailCodeExpired: boolean;
 	/** Whether the person must change their password before anything else */
 	forcePasswordChange: boolean;
 }
