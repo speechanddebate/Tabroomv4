@@ -51,7 +51,7 @@ app.use(helmet({
 // Enable CORS Access, hopefully in a way that means I don't
 // have to fight with it ever again.
 const corsOptions = {
-	methods              : ['GET', 'POST', 'DELETE', 'PUT'],
+	methods              : ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
 	optionsSuccessStatus : 204,
 	credentials          : true,
 	origin               : config.cors.origins,

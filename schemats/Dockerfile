@@ -4,6 +4,7 @@ FROM node:24.13.1-bookworm AS base
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY types/package.json ./types/package.json
 COPY schemats/package.json ./schemats/package.json
 
 FROM base AS dev
@@ -13,6 +14,8 @@ RUN npm ci --include=dev --ignore-scripts --workspace=schemats
 # install playwright browsers
 RUN npm exec --workspace=schemats -- playwright install --with-deps
 
+COPY types ./types
+RUN npm run build --workspace=types
 COPY schemats ./schemats
 
 WORKDIR /app/schemats
@@ -25,6 +28,8 @@ FROM base AS build
 
 RUN npm ci --ignore-scripts
 
+COPY types ./types
+RUN npm run build --workspace=types
 COPY schemats ./schemats
 
 # short commit hash, passed by CI. Baked into the bundle as kit.version.name

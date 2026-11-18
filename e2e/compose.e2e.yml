@@ -34,7 +34,11 @@ configs:
         },
         "classic": {
           "url": "http://classic-e2e:8080"
-        }
+        },
+        "redis": {
+          "url": "redis://redis-e2e:6379"
+        },
+        "schemats_url": "https://e2e.tabroom.test"
       }
 
 volumes:
@@ -56,6 +60,16 @@ services:
           - api.e2e.tabroom.test
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  # notify() queues email jobs here; account mail (confirmation codes) can't be sent without it.
+  # Mail stays in log mode, so nothing leaves the stack
+  redis-e2e:
+    image: redis:8.2-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
       interval: 2s
       timeout: 3s
       retries: 15
@@ -91,6 +105,8 @@ services:
         target: /config/config.json
     depends_on:
       tabroomdb-e2e:
+        condition: service_healthy
+      redis-e2e:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:8001/v1/status').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]

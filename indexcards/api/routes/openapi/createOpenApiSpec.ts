@@ -1,4 +1,4 @@
-import * as schemas from '@tabroom/types';
+import * as types from '@tabroom/types';
 import { createDocument } from 'zod-openapi';
 import * as responses from './responses/index.js';
 import { tags as declaredTags } from './tags.js';
@@ -55,7 +55,8 @@ export function createOpenApiSpec(apiRouter: RouterLike): OpenAPIObject {
 		tags,
 		paths,
 		components: {
-			schemas,
+			// @tabroom/types also exports plain values (country and state lists) that aren't schemas
+			schemas: Object.fromEntries(Object.entries(types).filter(([name]) => name.endsWith('Schema'))),
 			responses,
 			securitySchemes: security.schemes,
 		},

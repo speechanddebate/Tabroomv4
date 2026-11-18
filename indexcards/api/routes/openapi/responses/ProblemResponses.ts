@@ -143,6 +143,26 @@ export const BadRequest = {
 		},
 	},
 } satisfies ProblemResponse;
+export const Gone = {
+	description: 'Gone - what the request names existed but has expired.',
+	content: {
+		'application/problem+json': {
+			schema: ProblemSchema,
+			examples:{
+				gone: {
+					summary: '410 Gone',
+					value: {
+						type: 'about:blank',
+						title: 'This is no longer available.',
+						status: 410,
+						detail: 'Your code has expired. Send a new one.',
+						instance: '/api/v1/example',
+					},
+				},
+			},
+		},
+	},
+} satisfies ProblemResponse;
 export const TooManyRequests = {
 	description: 'TooManyRequests - the rate limit for this request was reached.',
 	content: {

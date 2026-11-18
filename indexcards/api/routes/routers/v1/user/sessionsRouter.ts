@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import z from 'zod';
 import { SessionSchema, UserSessionSchema } from '@tabroom/types';
-import { getSession, getSessions } from '../../../../controllers/user/sessions.js';
+import { endSession, getSession, getSessions } from '../../../../controllers/user/sessions.js';
 import { requirePerson } from '../../../../middleware/auth/authorization.js';
 import { ValidateRequest } from '../../../../middleware/validation.js';
 
@@ -44,6 +44,24 @@ router.route('/sessions').get(requirePerson, ValidateRequest, getSessions).opena
 				},
 			},
 		},
+	},
+};
+
+router.route('/sessions/:sessionId').delete(requirePerson, ValidateRequest, endSession).openapi = {
+	path: '/user/sessions/{sessionId}',
+	operationId: 'UserSessionEnd',
+	summary: 'End a session',
+	description: 'Logs out one of the user\'s other logins, which also stops push to it. The current session is 400 (log out instead); another person\'s session is 404. Allowed while su\'d',
+	tags: ['Orval', 'user:session'],
+	requestParams: {
+		path: z.object({
+			sessionId: z.coerce.number().int().positive().meta({ description: 'ID of the session to end' }),
+		}),
+	},
+	responses: {
+		204: { description: 'Ended' },
+		400: { $ref: '#/components/responses/BadRequest' },
+		404: { $ref: '#/components/responses/NotFound' },
 	},
 };
 

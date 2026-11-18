@@ -164,10 +164,29 @@ export const updateSession = async (db: Database, id: number, updates: Updateabl
 		.execute();
 };
 
-export const deleteSession = async (db: Database, id: number) => {
-	await db.deleteFrom('session')
-		.where('id', '=', id)
-		.execute();
+/**
+ * Deletes a session; returns whether one was deleted. With ownedBy, only that person's own
+ * (not su'd) sessions, the same ones getSessions lists
+ */
+export const deleteSession = async (db: Database, id: number, opts: { ownedBy?: number } = {}) => {
+	let query = db.deleteFrom('session').where('id', '=', id);
+	if (opts.ownedBy) {
+		query = query.where('person', '=', opts.ownedBy).where('su', 'is', null);
+	}
+	const result = await query.executeTakeFirst();
+	return result.numDeletedRows > 0;
+};
+
+/**
+ * Deletes a person's own sessions, except one to keep. Sessions an admin su'd into stay: they were
+ * never opened with the person's password. Returns how many were deleted
+ */
+export const deleteSessions = async (db: Database, personId: number, opts: { except?: number } = {}) => {
+	let query = db.deleteFrom('session').where('session.person', '=', personId).where('session.su', 'is', null);
+	if (opts.except) {
+		query = query.where('session.id', '!=', opts.except);
+	}
+	return Number((await query.executeTakeFirst()).numDeletedRows);
 };
 
 /** The push subscription columns of a session, or undefined if the session doesn't exist */
@@ -372,6 +391,7 @@ export default {
 	findByUserKey,
 	getSession,
 	deleteSession,
+	deleteSessions,
 	updateSession,
 	createSession,
 	getPushStatus,

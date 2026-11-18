@@ -28,10 +28,15 @@ export interface UserSession {
 	 */
 	host: string | null;
 	/**
-	 * The browser user agent data recorded for the login
+	 * The browser the login was made from, such as Chrome, or null if unknown
 	 * @nullable
 	 */
-	agent: string | null;
+	browser: string | null;
+	/**
+	 * The operating system the login was made from, with its version when known, such as Windows 10, or null if unknown
+	 * @nullable
+	 */
+	os: string | null;
 	/**
 	 * The IP address the login was made from
 	 * @nullable

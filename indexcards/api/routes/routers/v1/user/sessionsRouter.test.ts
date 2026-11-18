@@ -200,6 +200,21 @@ describe('Sessions Router', () => {
 			}
 		});
 
+		it('reads the browser and OS from classic\'s JSON and from a raw User-Agent', async () => {
+			const owner = await newPerson();
+			const current = await newSession(owner);
+			const classic = await newSession(owner);
+			const raw = await newSession(owner);
+			await db.updateTable('session').set({ agent_data: '{"browser":"Chrome","os":"Windows 10","brand":""}' }).where('id', '=', classic.id).execute();
+			await db.updateTable('session').set({ agent_data: 'Mozilla/5.0 (X11; Linux x86_64; rv:160.0) Gecko/20100101 Firefox/160.0' }).where('id', '=', raw.id).execute();
+			await db.updateTable('session').set({ agent_data: null }).where('id', '=', current.id).execute();
+
+			const sessions = await list(current.userkey);
+			expect(sessions.find(row => row.id === classic.id)).toMatchObject({ browser: 'Chrome', os: 'Windows 10' });
+			expect(sessions.find(row => row.id === raw.id)).toMatchObject({ browser: 'Firefox', os: 'Linux' });
+			expect(sessions.find(row => row.id === current.id)).toMatchObject({ browser: null, os: null });
+		});
+
 		it('reports disabled logins and serializes dates as ISO strings', async () => {
 			const owner = await newPerson();
 			const current = await newSession(owner);
@@ -210,6 +225,96 @@ describe('Sessions Router', () => {
 			// the request itself stamps last_access
 			expect(row!.last_access).not.toBeNull();
 			expect(new Date(row!.last_access!).toISOString()).toBe(row!.last_access);
+		});
+	});
+
+	describe('DELETE /user/sessions/:sessionId', () => {
+		const end = (userkey: string, sessionId: number | string) =>
+			request(server).delete(`/v1/user/sessions/${sessionId}`).asPerson(userkey);
+
+		const exists = async (sessionId: number) =>
+			Boolean(await db.selectFrom('session').select('id').where('id', '=', sessionId).executeTakeFirst());
+
+		it('returns 401 without a cookie', async () => {
+			const res = await request(server).delete('/v1/user/sessions/1').expect(401);
+			expect(res).toBeProblemResponse(401);
+		});
+
+		it('ends another of the person\'s sessions, and its cookie stops authenticating', async () => {
+			const owner = await newPerson();
+			const current = await newSession(owner);
+			const other = await newSession(owner);
+
+			await end(current.userkey, other.id).expect(204);
+
+			expect(await exists(other.id)).toBe(false);
+			expect((await list(current.userkey)).map(row => row.id)).toEqual([current.id]);
+			const res = await request(server).get('/v1/user/session').asPerson(other.userkey).expect(401);
+			expect(res).toBeProblemResponse(401);
+		});
+
+		it('ends push with the session', async () => {
+			const owner = await newPerson();
+			const current = await newSession(owner);
+			const other = await newSession(owner);
+			await subscribe(other.id, getVapid()!.fingerprint);
+
+			await end(current.userkey, other.id).expect(204);
+
+			const pushable = await db.selectFrom('session').select('id')
+				.where('person', '=', owner)
+				.where('push_endpoint', 'is not', null)
+				.execute();
+			expect(pushable).toEqual([]);
+		});
+
+		it('rejects the current session with 400 and keeps it', async () => {
+			const owner = await newPerson();
+			const current = await newSession(owner);
+
+			const res = await end(current.userkey, current.id).expect(400);
+			expect(res).toBeProblemResponse(400);
+			expect(await exists(current.id)).toBe(true);
+		});
+
+		it('returns 404 for someone else\'s session and keeps it', async () => {
+			const current = await newSession(await newPerson());
+			const stranger = await newSession(await newPerson());
+
+			const res = await end(current.userkey, stranger.id).expect(404);
+			expect(res).toBeProblemResponse(404);
+			expect(await exists(stranger.id)).toBe(true);
+		});
+
+		it('returns 404 for an admin\'s su session on the person, which the list leaves out', async () => {
+			const owner = await newPerson();
+			const current = await newSession(owner);
+			const su = await newSession(owner, adminId);
+
+			const res = await end(current.userkey, su.id).expect(404);
+			expect(res).toBeProblemResponse(404);
+			expect(await exists(su.id)).toBe(true);
+		});
+
+		it('returns 404 for a session that doesn\'t exist', async () => {
+			const current = await newSession(await newPerson());
+			const res = await end(current.userkey, 2147483647).expect(404);
+			expect(res).toBeProblemResponse(404);
+		});
+
+		it('returns 400 for an id that isn\'t a positive integer', async () => {
+			const current = await newSession(await newPerson());
+			const res = await end(current.userkey, 'abc').expect(400);
+			expect(res).toBeProblemResponse(400);
+		});
+
+		it('is allowed while su\'d and ends the target person\'s own session', async () => {
+			const owner = await newPerson();
+			const own = await newSession(owner);
+			const su = await newSession(owner, adminId);
+
+			await end(su.userkey, own.id).expect(204);
+			expect(await exists(own.id)).toBe(false);
 		});
 	});
 });

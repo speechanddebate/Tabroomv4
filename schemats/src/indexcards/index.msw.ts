@@ -24,6 +24,8 @@ import type {
 	CurrentBallot,
 	DebateBallotContext,
 	DebateBallotReview,
+	EmailConfirmResponse,
+	EmailConfirmStatus,
 	Fine,
 	GetTournResultSets200,
 	HomeFullSchool,
@@ -64,6 +66,7 @@ import type {
 	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
+	UserProfile,
 	UserSession,
 } from './schemas';
 
@@ -2148,6 +2151,22 @@ export const getRestNotifyEmailUnsubscribeResponseMock = (
 	...overrideResponse,
 });
 
+export const getRestEmailConfirmStatusResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmStatus, object>> = {},
+): EmailConfirmStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	confirmed: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmResponse, object>> = {},
+): EmailConfirmResponse => ({
+	confirmed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -3798,7 +3817,11 @@ export const getUserSessionsResponseMock = (): UserSession[] =>
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
-		agent: faker.helpers.arrayElement([
+		browser: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		os: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
@@ -4391,7 +4414,7 @@ export const getUserStudentsLinkRequestsResponseMock = (): StudentSchema[] =>
 				last: faker.string.alpha({ length: { min: 10, max: 20 } }),
 				state: faker.helpers.arrayElement([
 					faker.helpers.arrayElement([
-						faker.helpers.fromRegExp('^[A-Z]{2}$'),
+						faker.helpers.fromRegExp('^[A-Z]{2,4}$'),
 						null,
 					]),
 					undefined,
@@ -4416,6 +4439,61 @@ export const getUserStudentsLinkRequestsResponseMock = (): StudentSchema[] =>
 				tz: faker.helpers.arrayElement([
 					faker.helpers.arrayElement([
 						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				phone: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.number.int({
+							min: -9007199254740991,
+							max: 9007199254740991,
+						}),
+						null,
+					]),
+					undefined,
+				]),
+				pronoun: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				street: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				city: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				zip: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				postal: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				no_email: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.number.int({
+							min: -9007199254740991,
+							max: 9007199254740991,
+						}),
 						null,
 					]),
 					undefined,
@@ -4816,6 +4894,154 @@ export const getUserConflictsChaptersResponseMock =
 				null,
 			]),
 		}));
+
+export const getUserProfileResponseMock = (
+	overrideResponse: Partial<Extract<UserProfile, object>> = {},
+): UserProfile => ({
+	email: faker.internet.email(),
+	first: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	middle: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	last: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	pronoun: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	tz: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	street: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	city: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	country: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	zip: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	postal: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	phone: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	state: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	noEmail: faker.datatype.boolean(),
+	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
+	forcePasswordChange: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getUserProfileUpdateResponseMock = (
+	overrideResponse: Partial<Extract<UserProfile, object>> = {},
+): UserProfile => ({
+	email: faker.internet.email(),
+	first: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	middle: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	last: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	pronoun: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	tz: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	street: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	city: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	country: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	zip: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	postal: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	phone: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	state: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	noEmail: faker.datatype.boolean(),
+	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
+	forcePasswordChange: faker.datatype.boolean(),
+	...overrideResponse,
+});
 
 export const getAdminJobsResponseMock = (
 	overrideResponse: Partial<Extract<ScheduledJobList, object>> = {},
@@ -5629,6 +5855,54 @@ export const getRestNotifyEmailUnsubscribeMockHandler = (
 	);
 };
 
+export const getRestEmailConfirmStatusMockHandler = (
+	overrideResponse?:
+		| EmailConfirmStatus
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<EmailConfirmStatus> | EmailConfirmStatus),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/rest/email/confirm/:token',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestEmailConfirmStatusResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getRestEmailConfirmMockHandler = (
+	overrideResponse?:
+		| EmailConfirmResponse
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<EmailConfirmResponse> | EmailConfirmResponse),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/rest/email/confirm/:token',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getRestEmailConfirmResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
 export const getAuthLoginMockHandler = (
 	overrideResponse?:
 		| LoginResponse
@@ -6196,6 +6470,27 @@ export const getUserSessionsMockHandler = (
 	);
 };
 
+export const getUserSessionEndMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.delete>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.delete(
+		'*/user/sessions/:sessionId',
+		async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
 export const getUserJudgesLinkRequestsMockHandler = (
 	overrideResponse?:
 		| UnlinkedJudgeSchema[]
@@ -6550,6 +6845,117 @@ export const getUserConflictRemoveMockHandler = (
 	);
 };
 
+export const getUserProfileMockHandler = (
+	overrideResponse?:
+		| UserProfile
+		| ((
+				info: Parameters<Parameters<typeof http.get>[1]>[0],
+		  ) => Promise<UserProfile> | UserProfile),
+	options?: RequestHandlerOptions,
+) => {
+	return http.get(
+		'*/user/profile',
+		async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserProfileResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserProfileUpdateMockHandler = (
+	overrideResponse?:
+		| UserProfile
+		| ((
+				info: Parameters<Parameters<typeof http.patch>[1]>[0],
+		  ) => Promise<UserProfile> | UserProfile),
+	options?: RequestHandlerOptions,
+) => {
+	return http.patch(
+		'*/user/profile',
+		async (info: Parameters<Parameters<typeof http.patch>[1]>[0]) => {
+			return HttpResponse.json(
+				overrideResponse !== undefined
+					? typeof overrideResponse === 'function'
+						? await overrideResponse(info)
+						: overrideResponse
+					: getUserProfileUpdateResponseMock(),
+				{ status: 200 },
+			);
+		},
+		options,
+	);
+};
+
+export const getUserPasswordChangeMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/profile/password',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
+export const getUserEmailConfirmMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/profile/email/confirm',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 204 });
+		},
+		options,
+	);
+};
+
+export const getUserEmailResendMockHandler = (
+	overrideResponse?:
+		| void
+		| ((
+				info: Parameters<Parameters<typeof http.post>[1]>[0],
+		  ) => Promise<void> | void),
+	options?: RequestHandlerOptions,
+) => {
+	return http.post(
+		'*/user/profile/email/resend',
+		async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+			if (typeof overrideResponse === 'function') {
+				await overrideResponse(info);
+			}
+
+			return new HttpResponse(null, { status: 202 });
+		},
+		options,
+	);
+};
+
 export const getAdminJobsMockHandler = (
 	overrideResponse?:
 		| ScheduledJobList
@@ -6629,6 +7035,8 @@ export const getIndexCardsAPIMock = () => [
 	getRestStudentsUnlinkedSearchMockHandler(),
 	getRestNotifyEmailUnsubscribeStatusMockHandler(),
 	getRestNotifyEmailUnsubscribeMockHandler(),
+	getRestEmailConfirmStatusMockHandler(),
+	getRestEmailConfirmMockHandler(),
 	getAuthLoginMockHandler(),
 	getAuthLogoutMockHandler(),
 	getAuthSuMockHandler(),
@@ -6654,6 +7062,7 @@ export const getIndexCardsAPIMock = () => [
 	getUserNotifyPushUnsubscribeSessionMockHandler(),
 	getUserSessionMockHandler(),
 	getUserSessionsMockHandler(),
+	getUserSessionEndMockHandler(),
 	getUserJudgesLinkRequestsMockHandler(),
 	getUserJudgesClaimMockHandler(),
 	getUserJudgesHistoryMockHandler(),
@@ -6669,6 +7078,11 @@ export const getIndexCardsAPIMock = () => [
 	getUserConflictsPeopleMockHandler(),
 	getUserConflictsChaptersMockHandler(),
 	getUserConflictRemoveMockHandler(),
+	getUserProfileMockHandler(),
+	getUserProfileUpdateMockHandler(),
+	getUserPasswordChangeMockHandler(),
+	getUserEmailConfirmMockHandler(),
+	getUserEmailResendMockHandler(),
 	getAdminJobsMockHandler(),
 	getAdminJobRunMockHandler(),
 ];

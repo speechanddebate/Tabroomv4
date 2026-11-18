@@ -40,6 +40,7 @@
 		"@scalar/express-api-reference": "^0.10.1",
 		"@speechanddebate/nsda-js-utils": "^1.0.15",
 		"@tabroom/types": "1.0.0",
+		"bowser": "^2.14.1",
 		"bullmq": "^6.5.1",
 		"bullmq-otel": "^2.0.1",
 		"cookie-parser": "^1.4.4",

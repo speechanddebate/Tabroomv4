@@ -7,13 +7,6 @@ import z from 'zod';
 
 const router = Router();
 
-router.route('/profile').get(getProfile).openapi = {
-	path: '/user/profile',
-	summary: 'Load the profile data of the logged in user',
-	tags: ['legacy', 'User Profile'],
-	responses: { 200: { description: 'User profile' }, default: { $ref: '#/components/responses/ErrorResponse' } },
-};
-
 router.route('/profile/:personId').get(ValidateRequest, getProfile).openapi = {
 	path: '/user/profile/{personId}',
 	summary: 'Load the profile data of another user',

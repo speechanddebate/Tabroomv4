@@ -7,6 +7,9 @@ import { db } from '../../../data/database.js';
 import config from '../../../config.js';
 import type { Response } from 'supertest';
 
+const { addJobs } = vi.hoisted(() => ({ addJobs: vi.fn() }));
+vi.mock('../../../services/queue/index.js', async (original) => ({ ...await original(), addJobs }));
+
 /** The session key from the response's Set-Cookie header; login and register don't return it in the body */
 function sessionKey(res: Response) {
 	const cookies = ([] as string[]).concat(res.headers['set-cookie'] ?? []);
@@ -42,6 +45,20 @@ describe('Auth Router', () => {
 			const session = await sessionRepo.findByUserKey(db, sessionKey(res));
 			expect(session).not.toBeNull();
 			expect(session!.person).toBe(Person.id);
+		});
+		it('stores the browser in classic\'s agent_data shape', async () => {
+			const password = 'securepassword';
+			const Person = await factories.person.create({ password });
+
+			const res = await request(server)
+				.post('/v1/auth/login')
+				.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36')
+				.send({ username: Person.email, password })
+				.expect(200);
+
+			const { id } = (await sessionRepo.findByUserKey(db, sessionKey(res)))!;
+			const row = await db.selectFrom('session').select('agent_data').where('id', '=', id).executeTakeFirstOrThrow();
+			expect(JSON.parse(row.agent_data!)).toMatchObject({ browser: 'Chrome', browser_version: '131.0.0.0', os: 'Windows 10' });
 		});
 		it('Fails to log in with incorrect password', async () => {
 			const Person = await factories.person.create({
@@ -164,6 +181,26 @@ describe('Auth Router', () => {
 			const person = await personRepo.getPerson(db, res.body.personId);
 			expect(person).toBeDefined();
 			expect((await sessionRepo.findByUserKey(db, sessionKey(res)))?.person).toBe(res.body.personId);
+		});
+
+		it('starts the new account unconfirmed and emails it a code ahead of blasts', async () => {
+			addJobs.mockReset().mockResolvedValue(undefined);
+			const personData = factories.person.createPersonData({ password: 'securepassword' });
+
+			const res = await request(server)
+				.post('/v1/auth/register')
+				.send({ email: personData.email, password: personData.password, first: personData.first, last: personData.last })
+				.expect(200);
+
+			const person = await personRepo.getPerson(db, res.body.personId, { settings: ['email_unconfirmed', 'email_confirmation_key'] });
+			expect(person?.no_email).toBe(1);
+			expect(person?.settings).toMatchObject({ email_unconfirmed: expect.anything() });
+			// 6 characters from the code alphabet (no 0, 1, I or O), e.g. HXK3QY
+			expect(String(person?.settings?.email_confirmation_key)).toMatch(/^[2-9A-HJ-NP-Z]{6}$/);
+
+			const jobs = addJobs.mock.calls.flatMap(([batch]) => batch as { queueName: string; data: Record<string, unknown>; opts: Record<string, unknown> }[]);
+			expect(jobs).toEqual([expect.objectContaining({ queueName: 'email', data: expect.objectContaining({ kind: 'account' }) })]);
+			expect(jobs[0].opts).not.toHaveProperty('priority');
 		});
 	});
 	describe('/su', () => {

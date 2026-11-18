@@ -145,9 +145,9 @@
 <section class="mt-6">
 	<h3 class="{heading} mb-1">Add a person</h3>
 	<form class="grid items-end gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]" onsubmit={searchPeople}>
-		<TextInput autocomplete="off" label="Last name" name="last" bind:value={last} />
-		<TextInput autocomplete="off" label="First name" name="first" bind:value={first} />
-		<TextInput autocomplete="off" label="Email" name="email" type="email" bind:value={email} />
+		<TextInput name="last" autocomplete="off" label="Last name" bind:value={last} />
+		<TextInput name="first" autocomplete="off" label="First name" bind:value={first} />
+		<TextInput name="email" autocomplete="off" label="Email" type="email" bind:value={email} />
 		<Button color="primary" type="submit">{peopleQuery.isFetching ? 'Searching…' : 'Search'}</Button>
 	</form>
 	{#if peopleTerms !== null}
@@ -168,7 +168,7 @@
 <section class="mt-6">
 	<h3 class="{heading} mb-1">Add a school</h3>
 	<form class="grid items-end gap-3 sm:grid-cols-[1fr_auto]" onsubmit={searchChapters}>
-		<TextInput autocomplete="off" label="School name" name="chapter" bind:value={chapterName} />
+		<TextInput name="chapter" autocomplete="off" label="School name" bind:value={chapterName} />
 		<Button color="primary" type="submit">{chaptersQuery.isFetching ? 'Searching…' : 'Search'}</Button>
 	</form>
 	{#if chapterTerm !== null}

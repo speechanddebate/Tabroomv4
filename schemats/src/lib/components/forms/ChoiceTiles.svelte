@@ -55,10 +55,10 @@
 				]}
 			>
 				<input
+					name={id}
 					class="sr-only"
 					aria-describedby={option.description ? `${id}-${option.value}-description` : undefined}
 					aria-labelledby="{id}-{option.value}-label"
-					name={id}
 					{required}
 					type="radio"
 					value={option.value}

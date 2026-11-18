@@ -61,10 +61,10 @@
 {#snippet searchBox()}
 	<form class="flex items-end gap-2" data-sveltekit-replacestate data-sveltekit-reset="false" method="GET" role="search">
 		<TextInput
+			name="search"
 			class="flex-1"
 			autocomplete="off"
 			label="Search paradigms"
-			name="search"
 			placeholder="Winston Smith"
 			type="search"
 			value={searchTerm}

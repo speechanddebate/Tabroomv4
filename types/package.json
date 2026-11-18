@@ -8,6 +8,10 @@
 	  ".": {
 		"types": "./dist/index.d.ts",
 		"import": "./dist/index.js"
+	  },
+	  "./constants": {
+		"types": "./dist/src/constants.d.ts",
+		"import": "./dist/src/constants.js"
 	  }
 	},
 	"scripts": {

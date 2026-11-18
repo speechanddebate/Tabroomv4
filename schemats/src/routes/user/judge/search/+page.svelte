@@ -157,8 +157,8 @@
 		</p>
 
 		<form class="mt-3 grid items-end gap-3 pb-3 sm:grid-cols-[1fr_1fr_auto]" onsubmit={handleSearchSubmit}>
-			<TextInput autocomplete="off" label="First name" name="first" bind:value={firstInput} />
-			<TextInput autocomplete="off" label="Last name" name="last" bind:value={lastInput} />
+			<TextInput name="first" autocomplete="off" label="First name" bind:value={firstInput} />
+			<TextInput name="last" autocomplete="off" label="Last name" bind:value={lastInput} />
 			<Button color="primary" type="submit">
 				{unlinkedSearchQuery.isFetching ? 'Searching...' : 'Search'}
 			</Button>

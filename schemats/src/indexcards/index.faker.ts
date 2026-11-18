@@ -21,6 +21,8 @@ import type {
 	CurrentBallot,
 	DebateBallotContext,
 	DebateBallotReview,
+	EmailConfirmResponse,
+	EmailConfirmStatus,
 	Fine,
 	GetTournResultSets200,
 	HomeFullSchool,
@@ -61,6 +63,7 @@ import type {
 	UnsubscribeStatus,
 	UserChapter,
 	UserParadigmOutput,
+	UserProfile,
 	UserSession,
 } from './schemas';
 
@@ -2145,6 +2148,22 @@ export const getRestNotifyEmailUnsubscribeResponseMock = (
 	...overrideResponse,
 });
 
+export const getRestEmailConfirmStatusResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmStatus, object>> = {},
+): EmailConfirmStatus => ({
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	confirmed: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getRestEmailConfirmResponseMock = (
+	overrideResponse: Partial<Extract<EmailConfirmResponse, object>> = {},
+): EmailConfirmResponse => ({
+	confirmed: true,
+	email: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	...overrideResponse,
+});
+
 export const getAuthLoginResponseMock = (
 	overrideResponse: Partial<Extract<LoginResponse, object>> = {},
 ): LoginResponse => ({
@@ -3795,7 +3814,11 @@ export const getUserSessionsResponseMock = (): UserSession[] =>
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
-		agent: faker.helpers.arrayElement([
+		browser: faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		os: faker.helpers.arrayElement([
 			faker.string.alpha({ length: { min: 10, max: 20 } }),
 			null,
 		]),
@@ -4388,7 +4411,7 @@ export const getUserStudentsLinkRequestsResponseMock = (): StudentSchema[] =>
 				last: faker.string.alpha({ length: { min: 10, max: 20 } }),
 				state: faker.helpers.arrayElement([
 					faker.helpers.arrayElement([
-						faker.helpers.fromRegExp('^[A-Z]{2}$'),
+						faker.helpers.fromRegExp('^[A-Z]{2,4}$'),
 						null,
 					]),
 					undefined,
@@ -4413,6 +4436,61 @@ export const getUserStudentsLinkRequestsResponseMock = (): StudentSchema[] =>
 				tz: faker.helpers.arrayElement([
 					faker.helpers.arrayElement([
 						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				phone: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.number.int({
+							min: -9007199254740991,
+							max: 9007199254740991,
+						}),
+						null,
+					]),
+					undefined,
+				]),
+				pronoun: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				street: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				city: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				zip: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				postal: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.string.alpha({ length: { min: 10, max: 20 } }),
+						null,
+					]),
+					undefined,
+				]),
+				no_email: faker.helpers.arrayElement([
+					faker.helpers.arrayElement([
+						faker.number.int({
+							min: -9007199254740991,
+							max: 9007199254740991,
+						}),
 						null,
 					]),
 					undefined,
@@ -4813,6 +4891,154 @@ export const getUserConflictsChaptersResponseMock =
 				null,
 			]),
 		}));
+
+export const getUserProfileResponseMock = (
+	overrideResponse: Partial<Extract<UserProfile, object>> = {},
+): UserProfile => ({
+	email: faker.internet.email(),
+	first: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	middle: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	last: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	pronoun: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	tz: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	street: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	city: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	country: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	zip: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	postal: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	phone: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	state: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	noEmail: faker.datatype.boolean(),
+	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
+	forcePasswordChange: faker.datatype.boolean(),
+	...overrideResponse,
+});
+
+export const getUserProfileUpdateResponseMock = (
+	overrideResponse: Partial<Extract<UserProfile, object>> = {},
+): UserProfile => ({
+	email: faker.internet.email(),
+	first: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	middle: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	last: faker.string.alpha({ length: { min: 10, max: 20 } }),
+	pronoun: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	tz: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	street: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	city: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	country: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	zip: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	postal: faker.helpers.arrayElement([
+		faker.helpers.arrayElement([
+			faker.string.alpha({ length: { min: 10, max: 20 } }),
+			null,
+		]),
+		undefined,
+	]),
+	phone: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	state: faker.helpers.arrayElement([
+		faker.string.alpha({ length: { min: 10, max: 20 } }),
+		null,
+	]),
+	noEmail: faker.datatype.boolean(),
+	emailUnconfirmed: faker.datatype.boolean(),
+	emailCodeExpired: faker.datatype.boolean(),
+	forcePasswordChange: faker.datatype.boolean(),
+	...overrideResponse,
+});
 
 export const getAdminJobsResponseMock = (
 	overrideResponse: Partial<Extract<ScheduledJobList, object>> = {},

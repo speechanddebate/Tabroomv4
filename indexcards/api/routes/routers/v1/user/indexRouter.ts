@@ -9,6 +9,7 @@ import studentsRouter from './studentsRouter.js';
 import chaptersRouter from './chaptersRouter.js';
 import conflictsRouter from './conflictsRouter.js';
 import sectionsRouter from './sectionsRouter.js';
+import profileRouter from './profileRouter.js';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/students', studentsRouter);
 router.use('/chapters', chaptersRouter);
 router.use('/conflicts', conflictsRouter);
 router.use('/sections', sectionsRouter);
+router.use('/profile', profileRouter);
 
 export default router;

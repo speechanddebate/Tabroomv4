@@ -100,6 +100,12 @@ expect.extend({
 					body.status === 409 &&
 					body.detail.length > 0;
 				break;
+			case 410:
+				matchesExpectedCode =
+					body.title === 'This is no longer available.' &&
+					body.status === 410 &&
+					body.detail.length > 0;
+				break;
 			case 422:
 				matchesExpectedCode =
 					body.title === 'The request could not be processed.' &&
