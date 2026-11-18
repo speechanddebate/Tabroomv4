@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { faker } from '@faker-js/faker';
-	import Header from '$lib/layouts/Header.svelte';
+	import Header from '#lib/layouts/Header.svelte';
 	import { expect, fn, userEvent, within } from 'storybook/test';
 
 	const { Story } = defineMeta({

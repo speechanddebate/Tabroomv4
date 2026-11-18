@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Toast as FlowbiteToast } from 'flowbite-svelte';
-	import type { ToastSeverity } from '$lib/helpers/toasts';
+	import type { ToastSeverity } from '#lib/helpers/toasts.ts';
 
 	let {
 		message,

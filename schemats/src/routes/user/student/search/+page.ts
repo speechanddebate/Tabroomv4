@@ -2,7 +2,7 @@ import type { PageLoad } from './$types';
 import {
 	prefetchRestStudentsUnlinkedSearchQuery,
 	prefetchUserStudentsLinkRequestsQuery,
-} from '$indexcards';
+} from '#indexcards';
 
 //load the inital search results and the user's existing link requests
 export const load: PageLoad = async ({ parent, fetch }) => {

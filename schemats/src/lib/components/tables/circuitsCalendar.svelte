@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	import type { Event } from '@tabroom/types';
-    import showDateRange from '$lib/helpers/dt';
-	import type { GridOptions, SchematColumn } from '$lib/layouts/grid/svgrid.js';
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+    import showDateRange from '#lib/helpers/dt.ts';
+	import type { GridOptions, SchematColumn } from '#lib/layouts/grid/svgrid.js';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
     import type { IRow } from '@svar-ui/svelte-grid';
 
 	let { tournsData }: { tournsData: Tourn[] | null } = $props();

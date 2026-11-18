@@ -3,10 +3,10 @@
 	import { resolve } from '$app/paths';
 	import { getContext, untrack } from 'svelte';
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { EventResultSets, PersonTournPresence } from '@tabroom/types';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 
 	let {selectedResultSetId = 0, selectedEventId = 0} = $props();
 

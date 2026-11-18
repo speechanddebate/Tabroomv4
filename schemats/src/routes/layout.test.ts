@@ -26,7 +26,7 @@ type AppShellProps = {
 const {
 	appShellProps,
 	env,
-	mockInvalidateAll,
+	mockRefreshAll,
 	mockLogoutMutateAsync,
 	mockSuEndMutateAsync,
 	mockIsPushSupported,
@@ -34,7 +34,7 @@ const {
 } = vi.hoisted(() => ({
 	appShellProps: { current: null as null | AppShellProps },
 	env: { browser: true },
-	mockInvalidateAll: vi.fn(),
+	mockRefreshAll: vi.fn(),
 	mockLogoutMutateAsync: vi.fn(),
 	mockSuEndMutateAsync: vi.fn(),
 	mockIsPushSupported: vi.fn(),
@@ -46,23 +46,23 @@ vi.mock('$app/env', () => ({
 		return env.browser;
 	},
 }));
-vi.mock('$app/navigation', () => ({ invalidateAll: mockInvalidateAll }));
+vi.mock('$app/navigation', () => ({ refreshAll: mockRefreshAll }));
 vi.mock('@tanstack/svelte-query-devtools', () => ({ SvelteQueryDevtools: () => {} }));
-vi.mock('$lib/components/ToastProvider.svelte', () => ({ default: () => {} }));
+vi.mock('#lib/components/ToastProvider.svelte', () => ({ default: () => {} }));
 // Capture the session handlers the layout hands to the shell instead of rendering the header
-vi.mock('$lib/layouts/AppShell.svelte', () => ({
+vi.mock('#lib/layouts/AppShell.svelte', () => ({
 	default: (_anchor: unknown, props: AppShellProps) => {
 		appShellProps.current = props;
 	},
 }));
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createAuthLogout: () => ({ mutateAsync: mockLogoutMutateAsync }),
 	createAuthSuEnd: () => ({ mutateAsync: mockSuEndMutateAsync }),
 	createUserInboxUnread: () => ({ data: undefined, error: null, isError: false, isSuccess: false }),
 	getUserNotifyPushQueryKey: () => ['userNotifyPush'],
 	getUserSessionsQueryKey: () => ['userSessions'],
 }));
-vi.mock('$lib/helpers/webpush', () => ({
+vi.mock('#lib/helpers/webpush.ts', () => ({
 	isPushSupported: mockIsPushSupported,
 	syncPush: mockSyncPush,
 }));
@@ -176,7 +176,7 @@ describe('root layout load', () => {
 		env.browser = true;
 	});
 
-	// invalidateAll reruns this load on login, logout and su end; a new client there splits
+	// refreshAll reruns this load on login, logout and su end; a new client there splits
 	// QueryClientProvider (keeps the first) from PersistQueryClientProvider (follows data)
 	it('reuses one query client in the browser across reruns', async () => {
 		expect(await runLoad()).toBe(await runLoad());

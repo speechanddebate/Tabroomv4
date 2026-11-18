@@ -11,7 +11,7 @@ const makeQueryClient = () => new QueryClient({
 	},
 });
 
-// invalidateAll reruns this load on login, logout and su end. The browser keeps one
+// refreshAll reruns this load on login, logout and su end. The browser keeps one
 // client across reruns so the context provider and the persister share it; the
 // server makes one per request so users never share a cache.
 let browserQueryClient: QueryClient | undefined;

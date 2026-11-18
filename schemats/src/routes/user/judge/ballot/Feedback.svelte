@@ -15,13 +15,13 @@
 <script lang='ts'>
 	import { onDestroy } from 'svelte';
 	import { Save } from '@lucide/svelte';
-	import { createRestJudgesBallotFeedback } from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import Editor from '$lib/components/Editor.svelte';
-	import { Tabs, TabItem } from '$lib/components/Tabs';
-	import { showDateTime } from '$lib/helpers/dt';
-	import { handleMutation } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
+	import { createRestJudgesBallotFeedback } from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import Editor from '#lib/components/Editor.svelte';
+	import { Tabs, TabItem } from '#lib/components/Tabs/index.ts';
+	import { showDateTime } from '#lib/helpers/dt.ts';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 
 	type Props = {
 		context: Context;

@@ -7,13 +7,13 @@
 	import type { ScheduledJob } from '@tabroom/types';
 	import { RefreshCw } from '@lucide/svelte';
 	import { renderSnippet } from '@tanstack/svelte-table';
-	import Button from '$lib/components/Button.svelte';
-	import Table from '$lib/components/utils/Table.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
-	import { toast } from '$lib/helpers/toasts';
-	import { createAdminJobRun, createAdminJobs } from '$indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import Table from '#lib/components/utils/Table.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
+	import { createAdminJobRun, createAdminJobs } from '#indexcards';
 	import { durationText, jobStatus, lastRunText, runBlockedReason, runTime, scheduleText, type JobTone } from './jobs';
 
 	const tz = $derived(getPerson()?.tz ?? 'UTC');

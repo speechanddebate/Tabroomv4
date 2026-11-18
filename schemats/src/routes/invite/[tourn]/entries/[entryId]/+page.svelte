@@ -2,13 +2,13 @@
 
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky.
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import { getContext } from 'svelte';
 
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import EntrySidebar from './sidebar.svelte';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
     import { page } from '$app/state';
 
 	import Speech from './Speech.svelte';

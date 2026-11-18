@@ -2,15 +2,15 @@
 
 	let {results, tourn}  = $props();
 
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
-	import CellLink from '$lib/layouts/CellLink.svelte';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
+	import CellLink from '#lib/layouts/CellLink.svelte';
 
 	import Judges from './Judges.svelte';
 	import Scores from './Scores.svelte';
 	import Votes from './Votes.svelte';
 
-	import type { SchematColumn, GridOptions } from '$lib/layouts/grid/svgrid.js';
-    import { ucfirst } from '$lib/helpers/text';
+	import type { SchematColumn, GridOptions } from '#lib/layouts/grid/svgrid.js';
+    import { ucfirst } from '#lib/helpers/text.ts';
 
 	const columns:Array<SchematColumn> = $derived.by( () => {
 

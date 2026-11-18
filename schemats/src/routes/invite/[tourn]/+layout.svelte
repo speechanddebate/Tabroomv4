@@ -3,15 +3,15 @@
 	// Tournament Invitation layout shell: the title and tabs sit above the
 	// page and its sidebar.
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { TournInvite } from '@tabroom/types';
 	import { setContext } from 'svelte';
 
-	import Loading from '$lib/layouts/Loading.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
 	import InviteHeader from './InviteHeader.svelte';
 
 	import type { Snippet } from 'svelte';
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky. It cost me dearly to discover this wisdom.

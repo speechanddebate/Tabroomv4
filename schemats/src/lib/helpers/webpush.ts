@@ -12,12 +12,12 @@
  *   unsubscribe, subscribe with the new key, PUT.
  * - Subscribe: request permission, subscribe, PUT `{ subscription, enable: true }`.
  * - Turn off: DELETE, then unsubscribe.
- * - The service worker handles `pushsubscriptionchange` itself (src/service-worker.ts).
+ * - The service worker handles `pushsubscriptionchange` itself (src/service-worker/index.ts).
  */
-import { userNotifyPush, userNotifyPushSubscribe, userNotifyPushUnsubscribe } from '$indexcards';
-import type { PushSubscription as PushSubscriptionBody } from '$indexcards/schemas';
+import { userNotifyPush, userNotifyPushSubscribe, userNotifyPushUnsubscribe } from '#indexcards';
+import type { PushSubscription as PushSubscriptionBody } from '#indexcards/schemas';
 
-/** SvelteKit serves src/service-worker.ts here, in dev and in the build */
+/** SvelteKit serves src/service-worker/index.ts here, in dev and in the build */
 const SERVICE_WORKER_URL = '/service-worker.js';
 
 /** Whether this browser has everything web push needs */
@@ -57,14 +57,11 @@ const sameBytes = (a: ArrayBuffer | ArrayBufferView | null | undefined, b: Uint8
 
 /**
  * Registers the app's service worker (only this helper registers it; SvelteKit's automatic
- * registration is off in svelte.config.js) and waits until it is active. Registering again
+ * registration is off in vite.config.ts) and waits until it is active. Registering again
  * is a no-op when it is already installed.
  */
 export const getPushRegistration = async (): Promise<ServiceWorkerRegistration> => {
-	// In dev SvelteKit serves the worker as an ES module; the build emits a classic script
-	await navigator.serviceWorker.register(SERVICE_WORKER_URL, {
-		type: import.meta.env.DEV ? 'module' : 'classic',
-	});
+	await navigator.serviceWorker.register(SERVICE_WORKER_URL, { type: 'module' });
 	return await navigator.serviceWorker.ready;
 };
 

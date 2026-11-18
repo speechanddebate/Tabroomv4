@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { PublishedRound } from '@tabroom/types';
 	import { getContext } from 'svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import RoundsSidebar from './sidebar.svelte';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 	let roundList = $derived(indexFetch<PublishedRound[]>(`/rest/tourns/${tourn.id}/rounds`));
 

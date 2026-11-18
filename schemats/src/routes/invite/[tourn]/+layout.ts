@@ -1,4 +1,4 @@
-import { indexcardsApiBaseUrl } from '$indexcards/runtime';
+import { indexcardsApiBaseUrl } from '#indexcards/runtime';
 import type { LayoutLoad } from './$types';
 
 export const load : LayoutLoad = async ({ fetch, params }) => {

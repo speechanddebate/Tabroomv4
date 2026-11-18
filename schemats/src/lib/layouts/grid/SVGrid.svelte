@@ -22,7 +22,7 @@
 		HeaderMenu,
 	} from '@svar-ui/svelte-grid';
 
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 	import { Archive, Database, FileSpreadsheet, Printer } from '@lucide/svelte';
 
     import type { IApi, IExportOptions } from '@svar-ui/svelte-grid';

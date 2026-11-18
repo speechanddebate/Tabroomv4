@@ -6,7 +6,7 @@
 import type { Snippet } from 'svelte';
 import type { BallotStudent, DebateBallotContext } from '@tabroom/types';
 import { renderSnippet } from '@tanstack/svelte-table';
-import { createAppColumnHelper } from '$lib/components/utils/table.hook';
+import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
 
 export type ScoringRow = {
 	ballot: number;

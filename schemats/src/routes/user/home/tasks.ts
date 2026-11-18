@@ -4,7 +4,7 @@
  */
 import type { CurrentBallot, HomeJudge, HomeTourn, RoomView } from '@tabroom/types';
 import { CLASSIC_URL } from '$app/env/public';
-import { parseDateTime, showDateTime, showTime } from '$lib/helpers/dt';
+import { parseDateTime, showDateTime, showTime } from '#lib/helpers/dt.ts';
 import { isEnabled } from './features';
 
 export type Phase = 'running' | 'upcoming' | 'past';

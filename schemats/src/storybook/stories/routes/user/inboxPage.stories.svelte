@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, waitFor, within } from 'storybook/test';
-	import type { InboxMessage } from '$indexcards/schemas';
+	import type { InboxMessage } from '#indexcards/schemas';
 	import {
 		getUserInboxMarkAllReadMockHandler,
 		getUserInboxGetMessageMockHandler,
@@ -10,7 +10,7 @@
 		getUserInboxMockHandler,
 		getUserInboxUnreadMockHandler,
 		getUserInboxMarkUnreadMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import InboxPage from '../../../../routes/user/inbox/+page.svelte';
 
 	const nowISO = '2026-04-22T12:00:00.000Z';

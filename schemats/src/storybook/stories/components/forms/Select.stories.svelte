@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
-	import { Select, type SelectGroup } from '$lib/components/forms';
+	import { Select, type SelectGroup } from '#lib/components/forms/index.ts';
 
 	const { Story } = defineMeta({
 		title     : 'Components/Forms/Select',

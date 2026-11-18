@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { TextInput } from '$lib/components/forms';
+	import { TextInput } from '#lib/components/forms/index.ts';
 
 	const { Story } = defineMeta({
 		title     : 'Components/Forms/TextInput',

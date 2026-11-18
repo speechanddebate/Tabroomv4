@@ -2,11 +2,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { Problem } from '@tabroom/types';
-	import { createAuthLogin } from '$indexcards';
-	import { handleMutation } from '$lib/helpers/query';
-	import { fieldErrors } from '$lib/helpers/forms';
-	import Button from '$lib/components/Button.svelte';
-	import { FormProblem, TextInput } from '$lib/components/forms';
+	import { createAuthLogin } from '#indexcards';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import { fieldErrors } from '#lib/helpers/forms.ts';
+	import Button from '#lib/components/Button.svelte';
+	import { FormProblem, TextInput } from '#lib/components/forms/index.ts';
 
 	let username = $state('');
 	let password = $state('');
@@ -18,17 +18,13 @@
 	const redirectParam = $derived(page.url.searchParams.get('redirect'));
 	const reasonParam = $derived(page.url.searchParams.get('reason'));
 
+	// Same-origin paths only: '//evil.com' starts with '/' but is another host
 	const getSafeRedirect = (value: string | null): string => {
 		if (!value) {
 			return '/';
 		}
-
-		try {
-			const decoded = decodeURIComponent(value);
-			return decoded.startsWith('/') ? decoded : '/';
-		} catch {
-			return '/';
-		}
+		const url = new URL(value, page.url.origin);
+		return url.origin === page.url.origin ? `${url.pathname}${url.search}${url.hash}` : '/';
 	};
 
 	const loginMutation = createAuthLogin();
@@ -57,8 +53,9 @@
 			});
 
 			if (success) {
-				// target is already a full in-app path from the redirect param
-				await goto(target, { replaceState: true, invalidateAll: true });
+				// goto rejects a path with no route here, e.g. login from a 404 page
+				await goto(target, { replace: true, refreshAll: true })
+					.catch(() => goto('/', { replace: true, refreshAll: true }));
 				return;
 			}
 		} catch (err) {

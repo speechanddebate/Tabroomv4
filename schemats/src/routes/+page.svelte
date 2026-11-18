@@ -1,27 +1,27 @@
 <script lang="ts">
 
 	// svelte
-	import Loading from '$lib/layouts/Loading.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
 
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
-	import type { SchematColumn } from '$lib/layouts/grid/svgrid.d.ts';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
+	import type { SchematColumn } from '#lib/layouts/grid/svgrid.d.ts';
 
-	import TournLink from '$lib/invite/TournLink.svelte';
-	import Mode from '$lib/invite/Mode.svelte';
-	import DateRange from '$lib/invite/DateRange.svelte';
+	import TournLink from '#lib/invite/TournLink.svelte';
+	import Mode from '#lib/invite/Mode.svelte';
+	import DateRange from '#lib/invite/DateRange.svelte';
 
 	// not svelte
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { NSDACategory, Upcoming } from '@tabroom/types';
-	import { showDateRange } from '$lib/helpers/dt';
-	import { shortZone } from '$lib/helpers/dt';
+	import { showDateRange } from '#lib/helpers/dt.ts';
+	import { shortZone } from '#lib/helpers/dt.ts';
 
-	import type { GridOptions } from '$lib/layouts/grid/svgrid.js';
-    import Registration from '$lib/invite/Registration.svelte';
-	import Ads from '$lib/components/ads.svelte';
+	import type { GridOptions } from '#lib/layouts/grid/svgrid.js';
+    import Registration from '#lib/invite/Registration.svelte';
+	import Ads from '#lib/components/ads.svelte';
     import type { IRow } from '@svar-ui/svelte-grid';
-	import { createRestAds } from '$indexcards';
-	import { handleOrval } from '$lib/helpers/query';
+	import { createRestAds } from '#indexcards';
+	import { handleOrval } from '#lib/helpers/query.ts';
 	import { WEB_URL } from '$app/env/public';
 
 	// fetch that data eventually we'll want the user to be able to change

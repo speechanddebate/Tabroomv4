@@ -3,8 +3,8 @@
 	import { expect, fn, spyOn, userEvent, waitFor, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
 	import type { RoomView } from '@tabroom/types';
-	import { getRestTournsRoomJoinMockHandler, getRestTournsSectionsRoomJoinMockHandler } from '$indexcards/index.msw';
-	import OnlineRoomComponent from '$lib/components/OnlineRoom.svelte';
+	import { getRestTournsRoomJoinMockHandler, getRestTournsSectionsRoomJoinMockHandler } from '#indexcards/index.msw';
+	import OnlineRoomComponent from '#lib/components/OnlineRoom.svelte';
 
 	const sectionRoom = (overrides: Partial<RoomView> = {}): RoomView => ({
 		name: 'PF A',

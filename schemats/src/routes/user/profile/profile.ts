@@ -1,6 +1,6 @@
 import type { UserProfile, UserProfileUpdate } from '@tabroom/types';
 import { COUNTRY_CODES } from '@tabroom/types/constants';
-import type { SelectGroup, SelectOption } from '$lib/components/forms';
+import type { SelectGroup, SelectOption } from '#lib/components/forms/index.ts';
 
 // The current password is asked for only with an email change and never kept, so it isn't part of the form's values
 export type ProfileForm = Required<Omit<UserProfileUpdate, 'country' | 'currentPassword'>> & { country: string };

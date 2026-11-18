@@ -3,8 +3,8 @@ import type { ActiveCircuitResponse } from '@tabroom/types';
 
 type ActiveCircuitsResponse = ActiveCircuitResponse;
 type ActiveCircuitsResponseItem = ActiveCircuitResponse[number];
-import type { GridOptions } from '$lib/layouts/grid/svgrid.js';
-import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+import type { GridOptions } from '#lib/layouts/grid/svgrid.js';
+import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
 import CalendarCell from './cells/circuitsCalendarCell.svelte';
 
 let { circuitsData }: { circuitsData: ActiveCircuitsResponse | null } = $props();

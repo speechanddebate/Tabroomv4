@@ -4,9 +4,9 @@
 	 */
 	import type { Fine, HomeEntry, HomeJudge, HomeRole, HomeSchool, HomeTourn, Strike } from '@tabroom/types';
 	import { Video } from '@lucide/svelte';
-	import Button from '$lib/components/Button.svelte';
-	import { showDateTime, showTime } from '$lib/helpers/dt';
-	import Facts, { type Fact } from '$lib/components/Facts.svelte';
+	import Button from '#lib/components/Button.svelte';
+	import { showDateTime, showTime } from '#lib/helpers/dt.ts';
+	import Facts, { type Fact } from '#lib/components/Facts.svelte';
 	import ItemList from './ItemList.svelte';
 	import { classic, conflictsHref, dueText, feedbackItems, phaseOf, quizItems, quizState, roundLabel, type Tone } from './tasks';
 

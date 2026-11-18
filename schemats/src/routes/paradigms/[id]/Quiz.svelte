@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { QuizOutput } from '$indexcards/schemas';
-	import { showDateTime } from '$lib/helpers/dt';
+	import type { QuizOutput } from '#indexcards/schemas';
+	import { showDateTime } from '#lib/helpers/dt.ts';
 	import { Spinner } from 'flowbite-svelte';
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
 	import { CLASSIC_URL } from '$app/env/public';
 	const person = $derived(getPerson());
 

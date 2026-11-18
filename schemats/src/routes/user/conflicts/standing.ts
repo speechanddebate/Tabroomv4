@@ -1,5 +1,5 @@
 import type { ConflictPersonMatch, StandingConflict } from '@tabroom/types';
-import { personName } from '$lib/helpers/text';
+import { personName } from '#lib/helpers/text.ts';
 
 /** How a standing conflict reads: the school with its state, or the person */
 export function conflictName(conflict: Pick<StandingConflict, 'Person' | 'Chapter'>): string {

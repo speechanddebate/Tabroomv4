@@ -6,14 +6,14 @@
 	 */
 	import type { ConflictChapterMatch, ConflictPersonMatch, StandingConflict, StandingConflictRequest } from '@tabroom/types';
 	import { renderSnippet } from '@tanstack/svelte-table';
-	import Button from '$lib/components/Button.svelte';
-	import { TextInput } from '$lib/components/forms';
-	import Table from '$lib/components/utils/Table.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { personName } from '$lib/helpers/text';
-	import { toast } from '$lib/helpers/toasts';
-	import { createUserConflictAdd, createUserConflictRemove, createUserConflicts, createUserConflictsChapters, createUserConflictsPeople } from '$indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { TextInput } from '#lib/components/forms/index.ts';
+	import Table from '#lib/components/utils/Table.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+	import { personName } from '#lib/helpers/text.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
+	import { createUserConflictAdd, createUserConflictRemove, createUserConflicts, createUserConflictsChapters, createUserConflictsPeople } from '#indexcards';
 	import { affiliatedWith, conflictName } from './standing';
 
 	const listQuery = createUserConflicts();

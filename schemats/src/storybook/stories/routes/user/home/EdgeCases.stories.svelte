@@ -10,7 +10,7 @@
 		getRestTournsRoomJoinMockHandler,
 		getRestTournsSchoolsRoomJoinMockHandler,
 		getRestTournsSectionsRoomJoinMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import TournCard from '../../../../../routes/user/home/TournCard.svelte';
 	import { freezeTime } from '../../../../utils/freezeTime';
 	import * as fx from './fixtures';

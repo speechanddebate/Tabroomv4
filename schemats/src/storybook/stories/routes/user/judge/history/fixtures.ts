@@ -1,4 +1,4 @@
-import type { JudgeHistory, JudgeHistoryPage, JudgeHistoryPanel, JudgeHistoryResult, JudgeTournHistory, JudgeTournRecord, ScoreCell } from '$indexcards/schemas';
+import type { JudgeHistory, JudgeHistoryPage, JudgeHistoryPanel, JudgeHistoryResult, JudgeTournHistory, JudgeTournRecord, ScoreCell } from '#indexcards/schemas';
 
 const divisions = ['Open', 'JV', 'Novice', 'Varsity'];
 

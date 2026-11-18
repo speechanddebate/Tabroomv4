@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The landing screen for someone who has no tourns for their account yet.
 	import { CLASSIC_URL } from '$app/env/public';
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 
 	const paths = [
 		{

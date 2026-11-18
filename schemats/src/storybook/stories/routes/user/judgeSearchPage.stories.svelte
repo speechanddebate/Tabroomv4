@@ -2,8 +2,8 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
-	import type { UnlinkedJudge } from '$indexcards/schemas/unlinkedJudge';
-	import { getRestJudgesUnlinkedSearchMockHandler } from '$indexcards/index.msw';
+	import type { UnlinkedJudge } from '#indexcards/schemas/unlinkedJudge';
+	import { getRestJudgesUnlinkedSearchMockHandler } from '#indexcards/index.msw';
 	import JudgeSearchPage from '../../../../routes/user/judge/search/+page.svelte';
 	import { faker } from '@faker-js/faker';
 

@@ -3,9 +3,9 @@
 	import { expect, userEvent, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
 	import type { Problem } from '@tabroom/types';
-	import { Checkbox, FormProblem, SaveBar, Select, TextInput } from '$lib/components/forms';
-	import { createDraft } from '$lib/helpers/draft.svelte';
-	import { fieldErrors } from '$lib/helpers/forms';
+	import { Checkbox, FormProblem, SaveBar, Select, TextInput } from '#lib/components/forms/index.ts';
+	import { createDraft } from '#lib/helpers/draft.svelte.ts';
+	import { fieldErrors } from '#lib/helpers/forms.ts';
 
 	// Every form component together, wired the way a page does: a Draft for the values, a
 	// SaveBar to submit, and a Problem's issues landing on their fields

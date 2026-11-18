@@ -1,11 +1,10 @@
-import type { Session } from '$indexcards';
+import type { Session } from '#indexcards';
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
 	namespace App {
 		interface Error {
-			message: string;
-			errorId: string;
+			errorId?: string;
 		}
 		interface Locals {
 			requestId: string;

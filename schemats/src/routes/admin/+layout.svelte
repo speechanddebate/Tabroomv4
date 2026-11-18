@@ -1,5 +1,5 @@
 <script lang="ts">
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import Home from '../user/(sidebar)/Home.svelte';
 	import SiteAdmin from '../user/(sidebar)/SiteAdmin.svelte';
 	import UserAccount from '../user/(sidebar)/userAccount.svelte';

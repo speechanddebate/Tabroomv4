@@ -3,22 +3,22 @@
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky.
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { EventField, InviteEvent, TournInvite } from '@tabroom/types';
 	import { getContext } from 'svelte';
 
-	import Loading from '$lib/layouts/Loading.svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
-	import type { GridOptions, SchematColumn } from '$lib/layouts/grid/svgrid';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
+	import type { GridOptions, SchematColumn } from '#lib/layouts/grid/svgrid.js';
 
 	import { resolve } from '$app/paths';
-	import { ucfirst } from '$lib/helpers/text';
+	import { ucfirst } from '#lib/helpers/text.ts';
 
 	import { page } from '$app/state';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
     import type { IRow } from '@svar-ui/svelte-grid';
 	const tourn:Tourn = getContext('webnameTourn');
 	const pageContent = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));

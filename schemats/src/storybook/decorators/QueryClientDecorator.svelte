@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { QueryClientProvider } from '@tanstack/svelte-query';
 	import type { Snippet } from 'svelte';
-	import type { Session } from '$indexcards/schemas';
+	import type { Session } from '#indexcards/schemas';
 	import { QueryClient } from '@tanstack/svelte-query';
-	import { initSessionContext } from '$lib/helpers/SessionContext.svelte';
+	import { initSessionContext } from '#lib/helpers/SessionContext.svelte.ts';
 
 	const queryClient = new QueryClient({
 

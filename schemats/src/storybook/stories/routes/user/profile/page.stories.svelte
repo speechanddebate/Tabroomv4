@@ -10,7 +10,7 @@
 		getUserProfileUpdateMockHandler,
 		getUserSessionEndMockHandler,
 		getUserSessionsMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import ProfilePage from '../../../../../routes/user/profile/+page.svelte';
 
 	const { Story } = defineMeta({

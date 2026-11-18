@@ -1,13 +1,13 @@
 <script lang="ts">
-    import { ucfirst } from '$lib/helpers/text';
+    import { ucfirst } from '#lib/helpers/text.ts';
 	import { onMount } from 'svelte';
 
 	let {tourn, resultSet}  = $props();
 
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
 	import Identity from './Identity.svelte';
 
-	import type { SchematColumn, GridOptions } from '$lib/layouts/grid/svgrid.js';
+	import type { SchematColumn, GridOptions } from '#lib/layouts/grid/svgrid.js';
 	import type { IRow } from '@svar-ui/svelte-grid';
 
 	const columns:Array<SchematColumn> = $derived.by( () => {

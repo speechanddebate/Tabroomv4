@@ -5,7 +5,7 @@
  * can filter, hidden ones included, ordered by `meta.filterOrder`.
  * Render it in Table's `above` snippet: `{#snippet above(table)}<TableSearch {table} />{/snippet}`
  */
-	import { Select, TextInput } from '$lib/components/forms';
+	import { Select, TextInput } from '#lib/components/forms/index.ts';
 	import type { AppTable } from './table.types';
 
 	let {

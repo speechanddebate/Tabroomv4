@@ -1,7 +1,7 @@
 <script lang='ts'>
 	import type { BallotContext, OtherBallotContext } from '@tabroom/types';
 	import { resolve } from '$app/paths';
-	import { showTime } from '$lib/helpers/dt';
+	import { showTime } from '#lib/helpers/dt.ts';
 	import { ExternalLink } from '@lucide/svelte';
 
 	type Props = {

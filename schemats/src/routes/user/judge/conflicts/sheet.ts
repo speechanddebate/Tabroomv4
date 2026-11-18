@@ -3,7 +3,7 @@
  * mark; this only words it.
  */
 import type { ConflictCandidate, JudgeConflict } from '@tabroom/types';
-import { personName } from '$lib/helpers/text';
+import { personName } from '#lib/helpers/text.ts';
 
 /** How a marked conflict reads: the entry code with its event, or the school or region name */
 export function conflictLabel(conflict: Pick<JudgeConflict, 'type' | 'Entry' | 'School' | 'Region'>): string {

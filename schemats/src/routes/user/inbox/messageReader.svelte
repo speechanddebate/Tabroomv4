@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { InboxMessage } from '$indexcards/schemas';
-	import Button from '$lib/components/Button.svelte';
-	import { showDateTime } from '$lib/helpers/dt';
+	import type { InboxMessage } from '#indexcards/schemas';
+	import Button from '#lib/components/Button.svelte';
+	import { showDateTime } from '#lib/helpers/dt.ts';
 	import { Spinner } from 'flowbite-svelte';
 	import { Mail, Trash2 } from '@lucide/svelte';
 

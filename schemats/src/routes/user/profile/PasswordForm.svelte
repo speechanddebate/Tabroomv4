@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { Problem } from '@tabroom/types';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import { createUserPasswordChange, getUserProfileQueryKey, getUserSessionsQueryKey } from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { FormProblem, TextInput } from '$lib/components/forms';
-	import { fieldErrors } from '$lib/helpers/forms';
-	import { handleMutation } from '$lib/helpers/query';
-	import { isSuSession } from '$lib/helpers/SessionContext.svelte';
-	import { toast } from '$lib/helpers/toasts';
+	import { createUserPasswordChange, getUserProfileQueryKey, getUserSessionsQueryKey } from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { FormProblem, TextInput } from '#lib/components/forms/index.ts';
+	import { fieldErrors } from '#lib/helpers/forms.ts';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import { isSuSession } from '#lib/helpers/SessionContext.svelte.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 
 	const change = createUserPasswordChange();
 	const queryClient = useQueryClient();

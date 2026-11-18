@@ -1,6 +1,6 @@
 import type { PageLoad } from './$types';
-import { prefetchUserInboxQuery } from '$indexcards';
-import { DEFAULT_PAGE_SIZE } from '$lib/helpers/paging.svelte';
+import { prefetchUserInboxQuery } from '#indexcards';
+import { DEFAULT_PAGE_SIZE } from '#lib/helpers/paging.svelte.ts';
 
 export const load: PageLoad = async ({ parent, fetch }) => {
 	const { queryClient } = await parent();

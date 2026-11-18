@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { renderSnippet } from '@tanstack/svelte-table';
-	import type { JudgeHistoryResult, ScoreCell } from '$indexcards/schemas';
-	import Table from '$lib/components/utils/Table.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
+	import type { JudgeHistoryResult, ScoreCell } from '#indexcards/schemas';
+	import Table from '#lib/components/utils/Table.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
 
 	let { results }: { results: JudgeHistoryResult[] } = $props();
 

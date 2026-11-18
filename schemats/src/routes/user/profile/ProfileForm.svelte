@@ -4,13 +4,13 @@
 	import { STATE_GROUPS } from '@tabroom/types/constants';
 	import { TriangleAlert } from '@lucide/svelte';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import { createUserProfileUpdate, getUserProfileQueryKey } from '$indexcards';
-	import { Checkbox, FormProblem, SaveBar, Select, TextInput } from '$lib/components/forms';
-	import { createDraft } from '$lib/helpers/draft.svelte';
-	import { fieldErrors } from '$lib/helpers/forms';
-	import { handleMutation } from '$lib/helpers/query';
-	import { isSuSession } from '$lib/helpers/SessionContext.svelte';
-	import { toast } from '$lib/helpers/toasts';
+	import { createUserProfileUpdate, getUserProfileQueryKey } from '#indexcards';
+	import { Checkbox, FormProblem, SaveBar, Select, TextInput } from '#lib/components/forms/index.ts';
+	import { createDraft } from '#lib/helpers/draft.svelte.ts';
+	import { fieldErrors } from '#lib/helpers/forms.ts';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import { isSuSession } from '#lib/helpers/SessionContext.svelte.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 	import { countryOptions, profileForm, showsZip, timeZoneOptions } from './profile';
 
 	type Props = {

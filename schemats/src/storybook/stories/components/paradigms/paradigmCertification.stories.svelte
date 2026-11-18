@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { faker } from '@faker-js/faker';
-	import type { QuizOutput } from '$indexcards/schemas';
+	import type { QuizOutput } from '#indexcards/schemas';
 	import ParadigmCertification from '../../../../routes/paradigms/[id]/Quiz.svelte';
 
 	const { Story } = defineMeta({

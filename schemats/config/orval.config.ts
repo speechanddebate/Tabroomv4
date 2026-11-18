@@ -14,7 +14,7 @@ export default defineConfig({
 			client: 'svelte-query',
 			baseUrl: {
 				runtime: 'indexcardsApiBaseUrl()',
-				imports: [{ name: 'indexcardsApiBaseUrl', importPath: '$indexcards/runtime' }],
+				imports: [{ name: 'indexcardsApiBaseUrl', importPath: '#indexcards/runtime' }],
 			},
 			mock: true,
 			mode: 'split',

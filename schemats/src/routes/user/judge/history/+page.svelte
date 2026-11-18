@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import { renderSnippet } from '@tanstack/svelte-table';
-	import { createUserJudgesHistory } from '$indexcards';
-	import type { JudgeHistory } from '$indexcards/schemas/judgeHistory';
-	import QueryTable from '$lib/components/utils/QueryTable.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { parseDateTime, showDateRange } from '$lib/helpers/dt';
-	import { createPaging } from '$lib/helpers/paging.svelte';
+	import { createUserJudgesHistory } from '#indexcards';
+	import type { JudgeHistory } from '#indexcards/schemas/judgeHistory';
+	import QueryTable from '#lib/components/utils/QueryTable.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { parseDateTime, showDateRange } from '#lib/helpers/dt.ts';
+	import { createPaging } from '#lib/helpers/paging.svelte.ts';
 	import { PAGE_SIZE } from './pageSize';
 
 	const paging = createPaging(PAGE_SIZE);

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Skeleton } from 'flowbite-svelte';
-	import { Tabs, TabItem } from '$lib/components/Tabs';
-	import { showDateTime } from '$lib/helpers/dt';
+	import { Tabs, TabItem } from '#lib/components/Tabs/index.ts';
+	import { showDateTime } from '#lib/helpers/dt.ts';
 	import Quiz from './Quiz.svelte';
-	import type { ParadigmDetailsSchema } from '$indexcards/schemas';
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
-    import type { JudgeRecord } from '$indexcards/schemas';
+	import type { ParadigmDetailsSchema } from '#indexcards/schemas';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
+    import type { JudgeRecord } from '#indexcards/schemas';
 	import JudgeRecordTable from './judgeRecord.svelte';
 
 	type Props = {

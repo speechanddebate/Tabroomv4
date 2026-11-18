@@ -1,19 +1,19 @@
 <script lang='ts'>
 
 	import { getContext } from 'svelte';
-    import { ordinate } from '$lib/helpers/text';
-    import CellLink from '$lib/layouts/CellLink.svelte';
-    import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+    import { ordinate } from '#lib/helpers/text.ts';
+    import CellLink from '#lib/layouts/CellLink.svelte';
+    import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
 	import Panel from './Panel.svelte';
 	import Entry from './Entry.svelte';
 	import Score from './Score.svelte';
 	import Individual from './Individual.svelte';
 
-	import RoomMap from '$lib/layouts/rooms/RoomMap.svelte';
+	import RoomMap from '#lib/layouts/rooms/RoomMap.svelte';
 
-	import type { SchematColumn } from '$lib/layouts/grid/svgrid.d.ts';
-	import type { GridOptions } from '$lib/layouts/grid/svgrid';
-	import type { Tourn } from '$indexcards/schemas';
+	import type { SchematColumn } from '#lib/layouts/grid/svgrid.d.ts';
+	import type { GridOptions } from '#lib/layouts/grid/svgrid.js';
+	import type { Tourn } from '#indexcards/schemas';
     import type { IColumn, IRow } from '@svar-ui/svelte-grid';
 
 	let { entry } = $props();

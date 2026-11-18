@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import Footer from '$lib/layouts/Footer.svelte';
+	import Footer from '#lib/layouts/Footer.svelte';
 
 	const { Story } = defineMeta({
 		title: 'Layouts/Footer',

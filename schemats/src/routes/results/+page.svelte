@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { createRestTourns } from '$indexcards';
-	import SchoolYearSelector from '$lib/components/forms/schoolYearSelector.svelte';
-	import TournResults from '$lib/components/tables/tournResults.svelte';
-	import { handleOrval } from '$lib/helpers/query';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import { createRestTourns } from '#indexcards';
+	import SchoolYearSelector from '#lib/components/forms/schoolYearSelector.svelte';
+	import TournResults from '#lib/components/tables/tournResults.svelte';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 
 	const now = new SvelteDate();

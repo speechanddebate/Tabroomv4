@@ -1,9 +1,9 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import Button from '$lib/components/Button.svelte';
-	import { Checkbox, SaveBar, Select, Switch, TextInput } from '$lib/components/forms';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
-	import { createDraft } from '$lib/helpers/draft.svelte';
+	import Button from '#lib/components/Button.svelte';
+	import { Checkbox, SaveBar, Select, Switch, TextInput } from '#lib/components/forms/index.ts';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
+	import { createDraft } from '#lib/helpers/draft.svelte.ts';
 	import SidebarLink from '../../../../routes/user/(sidebar)/SidebarLink.svelte';
 
 	// Two classic screens rebuilt from the form components as full examples of the form rules:

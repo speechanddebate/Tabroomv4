@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { prefetchUserNotifyPushQuery, prefetchUserProfileQuery, prefetchUserSessionsQuery } from '$indexcards';
+import { prefetchUserNotifyPushQuery, prefetchUserProfileQuery, prefetchUserSessionsQuery } from '#indexcards';
 
 export const ssr = false;
 

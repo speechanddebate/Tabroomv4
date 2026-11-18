@@ -1,7 +1,7 @@
 import { POST } from './+server';
-import * as loggingModule from '$lib/helpers/logging/logging.server';
+import * as loggingModule from '#lib/helpers/logging/logging.server.ts';
 
-vi.mock('$lib/helpers/logging/logging.server', () => ({
+vi.mock('#lib/helpers/logging/logging.server.ts', () => ({
 	default: {
 		error: vi.fn(),
 		warn: vi.fn(),
@@ -68,17 +68,13 @@ describe('POST /log', () => {
 		expect(response.status).toBe(400);
 	});
 
-	it('should handle invalid JSON', async () => {
-		const logger = loggingModule.default;
+	it('leaves invalid JSON to handleError', async () => {
 		const request = new Request('http://localhost/log', {
 			method: 'POST',
 			body: 'invalid json {',
 		});
 
-		const response = await postWithRequest(request);
-
-		expect(response.status).toBe(500);
-		expect(logger.error).toHaveBeenCalledWith('Failed to process client log', expect.any(Object));
+		await expect(postWithRequest(request)).rejects.toThrow(SyntaxError);
 	});
 
 	it('should support different log levels', async () => {

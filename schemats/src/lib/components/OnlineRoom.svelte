@@ -16,9 +16,9 @@
 		createRestTournsRoomJoin,
 		createRestTournsSchoolsRoomJoin,
 		createRestTournsSectionsRoomJoin,
-	} from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { handleMutation } from '$lib/helpers/query';
+	} from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { handleMutation } from '#lib/helpers/query.ts';
 
 	// The join button for a room that can be joined online. Only render it when room.joinable
 	type Props = {

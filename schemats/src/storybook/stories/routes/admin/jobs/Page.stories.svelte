@@ -3,7 +3,7 @@
 	import { HttpResponse, http } from 'msw';
 	import { expect, userEvent, waitFor, within } from 'storybook/test';
 	import type { ScheduledJob } from '@tabroom/types';
-	import { getAdminJobRunMockHandler, getAdminJobsMockHandler } from '$indexcards/index.msw';
+	import { getAdminJobRunMockHandler, getAdminJobsMockHandler } from '#indexcards/index.msw';
 	import JobsPage from '../../../../../routes/admin/jobs/+page.svelte';
 	import { freezeTime } from '../../../../utils/freezeTime';
 	import * as fx from './fixtures';

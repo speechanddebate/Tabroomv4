@@ -3,7 +3,7 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { http, HttpResponse } from 'msw';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { getRestEmailConfirmMockHandler, getRestEmailConfirmStatusMockHandler } from '$indexcards/index.msw';
+	import { getRestEmailConfirmMockHandler, getRestEmailConfirmStatusMockHandler } from '#indexcards/index.msw';
 	import ConfirmEmailPage from '../../../../routes/confirm-email/[token]/+page.svelte';
 
 	const token = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiJ9.storybook-token';

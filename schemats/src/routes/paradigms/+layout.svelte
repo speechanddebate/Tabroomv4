@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { createRestParadigmsInfinite } from '$indexcards';
+	import { createRestParadigmsInfinite } from '#indexcards';
 	import { page } from '$app/state';
 	import { setContext } from 'svelte';
-	import Button from '$lib/components/Button.svelte';
-	import { TextInput } from '$lib/components/forms';
+	import Button from '#lib/components/Button.svelte';
+	import { TextInput } from '#lib/components/forms/index.ts';
 
-	import { handleOrval } from '$lib/helpers/query';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import ParadigmResultsList from './paradigmResultsList.svelte';
 	import type { ParadigmsSearchContext } from './searchContext';
 	import type { Snippet } from 'svelte';

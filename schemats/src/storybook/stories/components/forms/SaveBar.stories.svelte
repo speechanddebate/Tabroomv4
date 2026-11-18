@@ -1,6 +1,6 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { SaveBar } from '$lib/components/forms';
+	import { SaveBar } from '#lib/components/forms/index.ts';
 
 	// Sticks to the bottom of the screen at the end of a form; Save changes is the form's submit
 	const { Story } = defineMeta({

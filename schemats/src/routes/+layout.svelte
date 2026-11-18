@@ -1,8 +1,8 @@
 <script lang="ts">
 
 	import '../app.css';
-	import AppShell from '$lib/layouts/AppShell.svelte';
-	import ToastProvider from '$lib/components/ToastProvider.svelte';
+	import AppShell from '#lib/layouts/AppShell.svelte';
+	import ToastProvider from '#lib/components/ToastProvider.svelte';
 
 	import { browser } from '$app/env';
 	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
@@ -10,17 +10,17 @@
 	import { PersistQueryClientProvider } from '@tanstack/svelte-query-persist-client';
 	import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
-	import { initSessionContext } from '$lib/helpers/SessionContext.svelte';
+	import { initSessionContext } from '#lib/helpers/SessionContext.svelte.ts';
 	import {
 		createAuthLogout,
 		createAuthSuEnd,
 		createUserInboxUnread,
 		getUserNotifyPushQueryKey,
 		getUserSessionsQueryKey,
-	} from '$indexcards';
-	import { invalidateAll } from '$app/navigation';
-	import { handleOrval } from '$lib/helpers/query';
-	import { isPushSupported, syncPush } from '$lib/helpers/webpush';
+	} from '#indexcards';
+	import { refreshAll } from '$app/navigation';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import { isPushSupported, syncPush } from '#lib/helpers/webpush.ts';
 
 	import type { LayoutProps } from './$types';
 
@@ -46,7 +46,7 @@
 			// reload even when the request fails, e.g. the session already expired,
 			// so requireLogin in the server loads redirects off protected pages
 			await clearCache();
-			await invalidateAll();
+			await refreshAll();
 		}
 	};
 
@@ -54,7 +54,7 @@
 	const suEnd = async () => {
 		await suEndMutation.mutateAsync();
 		await clearCache();
-		await invalidateAll(); // Force reload +layout.server.ts
+		await refreshAll(); // Force reload +layout.server.ts
 	};
 
 	const notificationCountQuery = createUserInboxUnread(() => ({

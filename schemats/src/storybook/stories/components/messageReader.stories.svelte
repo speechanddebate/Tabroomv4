@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { fn } from 'storybook/test';
-	import type { InboxMessage } from '$indexcards/schemas';
+	import type { InboxMessage } from '#indexcards/schemas';
 	import MessageReader from '../../../routes/user/inbox/messageReader.svelte';
 
 	const sampleMessage: InboxMessage = {

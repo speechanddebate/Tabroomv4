@@ -2,17 +2,17 @@
 
 	// This pattern leads to reactive data display in Svelte 5 & TanStack,
 	// which is otherwise tricky.
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { TournInvite } from '@tabroom/types';
 	import { getContext } from 'svelte';
 
-	import {eventType} from '$lib/helpers/text';
+	import {eventType} from '#lib/helpers/text.ts';
 
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
-	import Loading from '$lib/layouts/Loading.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
 	import { resolve } from '$app/paths';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 	const pageContent = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { createUserJudgesHistoryTourn } from '$indexcards';
-	import { handleOrval } from '$lib/helpers/query';
+	import { createUserJudgesHistoryTourn } from '#indexcards';
+	import { handleOrval } from '#lib/helpers/query.ts';
 	import JudgeTournHistory from './JudgeTournHistory.svelte';
 
 	const tournId = $derived(Number(page.params.tournId));
@@ -31,9 +31,13 @@
 
 <a
 	class="mb-4 inline-block text-sm font-semibold text-primary-strong hover:text-primary-deep"
-	href={resolve('/user/judge/history')}
->&larr; Judging History</a>
+	href={resolve('user/judge/history')}
+>← Judging History</a>
 
 {#key tournId}
-	<JudgeTournHistory data={history} isLoading={historyQuery.isLoading} {notFound} />
+	<JudgeTournHistory
+		data={history}
+		isLoading={historyQuery.isLoading}
+		notFound={notFound}
+	/>
 {/key}

@@ -2,7 +2,7 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 	import type { BallotFeedback } from '@tabroom/types';
-	import { getRestJudgesBallotFeedbackMockHandler } from '$indexcards/index.msw';
+	import { getRestJudgesBallotFeedbackMockHandler } from '#indexcards/index.msw';
 	import Feedback from '../../../../../../routes/user/judge/ballot/Feedback.svelte';
 	import { congressContext, debateContext, feedbackFor, mockTrialContext } from './fixtures';
 

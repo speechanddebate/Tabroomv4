@@ -9,13 +9,13 @@
 		createUserProfile,
 		getUserHomeQueryKey,
 		getUserProfileQueryKey,
-	} from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { FormProblem, TextInput } from '$lib/components/forms';
-	import { fieldErrors } from '$lib/helpers/forms';
-	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	} from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { FormProblem, TextInput } from '#lib/components/forms/index.ts';
+	import { fieldErrors } from '#lib/helpers/forms.ts';
+	import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import ProfileSidebar from '../ProfileSidebar.svelte';
 
 	// Confirming also happens from the email link and on classic, so never show a stored copy

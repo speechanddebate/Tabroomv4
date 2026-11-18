@@ -1,8 +1,8 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import Toast from '$lib/components/Toast.svelte';
+	import Toast from '#lib/components/Toast.svelte';
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
-	import type { OrvalEnvelope } from '$lib/helpers/query';
+	import type { OrvalEnvelope } from '#lib/helpers/query.ts';
 
 	const { Story } = defineMeta({
 	});
@@ -10,8 +10,8 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { subscribeToToasts, toast, type ToastNotification } from '$lib/helpers/toasts';
-	import { handleOrval } from '$lib/helpers/query';
+	import { subscribeToToasts, toast, type ToastNotification } from '#lib/helpers/toasts.ts';
+	import { handleOrval } from '#lib/helpers/query.ts';
 
 	let allToastTypes = $state<ToastNotification[]>([]);
 	let apiErrorToasts = $state<ToastNotification[]>([]);

@@ -2,13 +2,13 @@
 
 	let {myTourn, schematic, tourn}  = $props();
 
-	import { intersection } from '$lib/helpers/text';
-	import RoomMap from '$lib/layouts/rooms/RoomMap.svelte';
+	import { intersection } from '#lib/helpers/text.ts';
+	import RoomMap from '#lib/layouts/rooms/RoomMap.svelte';
 
-	import CellLink from '$lib/layouts/CellLink.svelte';
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+	import CellLink from '#lib/layouts/CellLink.svelte';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
 	import Judges from './Judges.svelte';
-	import type { SchematColumn, GridOptions } from '$lib/layouts/grid/svgrid.js';
+	import type { SchematColumn, GridOptions } from '#lib/layouts/grid/svgrid.js';
 
 	interface OwnerClass {
 		[index: string]: string;

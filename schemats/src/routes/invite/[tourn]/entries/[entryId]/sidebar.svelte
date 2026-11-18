@@ -4,10 +4,10 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 
-	import indexFetch from '$lib/indexfetch';
+	import indexFetch from '#lib/indexfetch.ts';
 	import type { EventField } from '@tabroom/types';
-    import Select from '$lib/layouts/Select.svelte';
-	import type { Tourn } from '$indexcards/schemas';
+    import Select from '#lib/layouts/Select.svelte';
+	import type { Tourn } from '#indexcards/schemas';
 
 	type FieldEntry = EventField['Entries'][number];
 

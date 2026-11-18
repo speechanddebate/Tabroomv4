@@ -7,7 +7,7 @@
 		getRestJudgesBallotConfirmMockHandler,
 		getRestJudgesBallotContextMockHandler,
 		getRestJudgesBallotSaveMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import BallotPage from '../../../../../../routes/user/judge/ballot/+page.svelte';
 	import { debateContext, savedDebateBallot, submitDebateBallot } from './fixtures';
 

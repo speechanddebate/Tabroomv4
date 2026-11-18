@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { Switch, TextInput } from '$lib/components/forms';
+	import { Switch, TextInput } from '#lib/components/forms/index.ts';
 
 	// Saves the moment it changes; a yes/no inside a form that waits for Save is a Checkbox
 	const { Story } = defineMeta({

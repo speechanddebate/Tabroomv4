@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 import MessageReader from './messageReader.svelte';
-import type { InboxMessage } from '$indexcards/schemas/inboxMessage';
+import type { InboxMessage } from '#indexcards/schemas/inboxMessage';
 
 const sampleMessage: InboxMessage = {
 	id: 42,

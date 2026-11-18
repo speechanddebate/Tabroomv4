@@ -1,6 +1,6 @@
 import { render } from '@testing-library/svelte';
 import Ads from './ads.svelte';
-import type { HomepageAd } from '$indexcards/schemas';
+import type { HomepageAd } from '#indexcards/schemas';
 
 describe('Ads component', () => {
 	const sampleAds: HomepageAd[] = [

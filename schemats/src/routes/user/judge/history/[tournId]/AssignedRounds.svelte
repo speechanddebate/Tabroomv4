@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { renderSnippet } from '@tanstack/svelte-table';
 	import { resolve } from '$app/paths';
-	import type { JudgeHistoryPanel, JudgeTournHistoryTourn } from '$indexcards/schemas';
-	import Table from '$lib/components/utils/Table.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { showTime } from '$lib/helpers/dt';
+	import type { JudgeHistoryPanel, JudgeTournHistoryTourn } from '#indexcards/schemas';
+	import Table from '#lib/components/utils/Table.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { showTime } from '#lib/helpers/dt.ts';
 
 	let { panels, tourn }: { panels: JudgeHistoryPanel[]; tourn: JudgeTournHistoryTourn } = $props();
 

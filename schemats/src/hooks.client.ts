@@ -1,19 +1,19 @@
 // src/hooks.client.ts
-import type { ClientInit, HandleClientError } from '@sveltejs/kit';
-import { clientLogger } from '$lib/helpers/logging/logging';
+import type { ClientInit, HandleClientError } from '@sveltejs/kit/hooks';
+import { clientLogger } from '#lib/helpers/logging/logging.ts';
 
-export const handleError: HandleClientError = ({ error, event, status, message }): App.Error => {
+export const handleError: HandleClientError = ({ kind, error, event }) => {
 	// log the error to our server log endpoint RCT
-	clientLogger.error(message, {
-		error,
-		status,
-		path: event?.url.pathname ?? null,
-		source: 'handleError',
-	});
-	return {
-		message,
-		errorId: 'client-error',
-	};
+	if (kind !== 'app') {
+		clientLogger.error('Unhandled client error', {
+			error,
+			kind,
+			status: kind === 'framework' ? error.status : 500,
+			path: event?.url.pathname ?? null,
+			source: 'handleError',
+		});
+	}
+	return { errorId: 'client-error' };
 };
 
 export const init: ClientInit = async () => {

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 
 import type { ComponentProps } from 'svelte';
 import UnsubscribePage from './+page.svelte';
-import type { UnsubscribeStatus } from '$indexcards/schemas';
+import type { UnsubscribeStatus } from '#indexcards/schemas';
 
 // The page reads only the token from its load data; the layout's session, query client, params, and form are not needed to render it
 type PageProps = ComponentProps<typeof UnsubscribePage>;
@@ -22,7 +22,7 @@ vi.mock('@tanstack/svelte-query', async () => {
 	};
 });
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createRestNotifyEmailUnsubscribeStatus: () => ({
 		data: mocks.statusResponse,
 		error: null,

@@ -1,4 +1,4 @@
-import { showDateTime, showDateRange, showRelative, getWeek } from '$lib/helpers/dt';
+import { showDateTime, showDateRange, showRelative, getWeek } from '#lib/helpers/dt.ts';
 
 describe('showDateRange', () => {
 	const short = (startISO: string, endISO: string, tz?: string) =>

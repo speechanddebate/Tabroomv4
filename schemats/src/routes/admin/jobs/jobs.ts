@@ -1,5 +1,5 @@
 import type { ScheduledJob } from '@tabroom/types';
-import { showDateTime, showRelative } from '$lib/helpers/dt';
+import { showDateTime, showRelative } from '#lib/helpers/dt.ts';
 
 export type JobTone = 'success' | 'warning' | 'danger' | 'info' | 'muted';
 

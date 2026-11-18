@@ -7,8 +7,8 @@
 	// and the helper, so when Temporal is ready for prime time I can just rip
 	// it through this.
 
-	import { showDate, showDateTime, showTime } from '$lib/helpers/dt';
-	import type { DtProps } from '$lib/types/dt';
+	import { showDate, showDateTime, showTime } from '#lib/helpers/dt.ts';
+	import type { DtProps } from '#lib/types/dt.ts';
 
 	let showDtProps:DtProps = $props();
 

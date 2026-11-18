@@ -5,7 +5,7 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
-import { indexcardsApiBaseUrl } from '$indexcards/runtime';
+import { indexcardsApiBaseUrl } from '#indexcards/runtime';
 
 import {
 	createInfiniteQuery,

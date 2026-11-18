@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { createUserProfile } from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { Switch } from '$lib/components/forms';
-	import { createPushState } from '$lib/helpers/pushState.svelte';
-	import { handleOrval } from '$lib/helpers/query';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import { createUserProfile } from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { Switch } from '#lib/components/forms/index.ts';
+	import { createPushState } from '#lib/helpers/pushState.svelte.ts';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import PasswordForm from './PasswordForm.svelte';
 	import ProfileForm from './ProfileForm.svelte';
 	import ProfileSidebar from './ProfileSidebar.svelte';

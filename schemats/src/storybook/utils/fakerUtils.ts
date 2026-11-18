@@ -1,5 +1,5 @@
-import type { QuizBadgeOutput } from '$indexcards/schemas';
-import type { JudgeRecord } from '$indexcards/schemas/judgeRecord';
+import type { QuizBadgeOutput } from '#indexcards/schemas';
+import type { JudgeRecord } from '#indexcards/schemas/judgeRecord';
 import { faker } from '@faker-js/faker';
 
 export function fakeParadigmCertBadge(): QuizBadgeOutput  {

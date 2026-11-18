@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { getUserJudgesHistoryMockHandler } from '$indexcards/index.msw';
+	import { getUserJudgesHistoryMockHandler } from '#indexcards/index.msw';
 	import HistoryPage from '../../../../../../routes/user/judge/history/+page.svelte';
 	import { createHistory, pageOf } from './fixtures';
 

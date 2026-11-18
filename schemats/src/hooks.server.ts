@@ -1,15 +1,9 @@
-import {
-	INDEXCARDS_HOST,
-	INDEXCARDS_BASE_PATH,
-} from '$app/env/public';
-import {
-	AUTH_COOKIE,
-	SITE_ENV,
-} from '$app/env/private';
-import type { Handle, HandleFetch, HandleServerError } from '@sveltejs/kit';
-import logger from '$lib/helpers/logging/logging.server';
-import { recordRequestDuration } from '$lib/helpers/telemetry/metrics.server';
-import { userSession } from '$indexcards';
+import type { Handle, HandleFetch, HandleServerError } from '@sveltejs/kit/hooks';
+import { INDEXCARDS_HOST, INDEXCARDS_BASE_PATH } from '$app/env/public';
+import { AUTH_COOKIE, SITE_ENV } from '$app/env/private';
+import logger from '#lib/helpers/logging/logging.server.ts';
+import { recordRequestDuration } from '#lib/helpers/telemetry/metrics.server.ts';
+import { userSession } from '#indexcards';
 
 // Times the whole request, session bootstrap included, labelled with the SvelteKit route
 export const handle: Handle = async ({ event, resolve }) => {
@@ -36,11 +30,11 @@ const handleRequest: Handle = async ({ event, resolve }) => {
 	if (sessionId) {
 		try {
 			const res = await userSession({
-				credentials: 'include',
-				headers: {
-					cookie: `${AUTH_COOKIE}=${sessionId}`,
+					credentials: 'include',
+					headers: { cookie: `${AUTH_COOKIE}=${sessionId}` }
 				},
-			}, event.fetch);
+				event.fetch
+			);
 
 			if (res.status === 200) {
 				event.locals.Session = res.data;
@@ -69,13 +63,10 @@ const handleRequest: Handle = async ({ event, resolve }) => {
 				error,
 			});
 		}
+	} else {
+		logger.debug('No session found', { requestId: event.locals.requestId, path: event.url.pathname });
 	}
-	else {
-		logger.debug('No session found', {
-			requestId: event.locals.requestId,
-			path: event.url.pathname,
-		});
-	}
+
 	return resolve(event, {
 		transformPageChunk: ({ html }) => html.replace('%tabroom.env%', SITE_ENV),
 	});
@@ -91,14 +82,16 @@ export const handleFetch: HandleFetch = async ({ event, request, fetch }) => {
 	return fetch(request);
 };
 
-export const handleError: HandleServerError = ({ error, event, status, message }): App.Error => {
+export const handleError: HandleServerError = ({ kind, error, event }) => {
 	const errorId = event.locals.requestId;
 
+	// error(...) calls are intentional, so only unexpected throws and framework errors are logged.
 	//don't log 404s, since those are expected to happen and don't indicate a problem with the server. RCT
-	if (status !== 404) {
+	if (kind === 'unknown' || (kind === 'framework' && error.status !== 404)) {
 		logger.error('Unhandled request error', {
 			errorId,
-			status,
+			kind,
+			status: kind === 'framework' ? error.status : 500,
 			method: event.request.method,
 			path: event.url.pathname,
 			search: event.url.search,
@@ -106,8 +99,5 @@ export const handleError: HandleServerError = ({ error, event, status, message }
 		});
 	}
 
-	return {
-		message,
-		errorId,
-	};
+	return { errorId };
 };

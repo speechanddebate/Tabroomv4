@@ -1,7 +1,7 @@
 <script lang='ts'>
 	import type { DebateBallotContext } from '@tabroom/types';
-	import Button from '$lib/components/Button.svelte';
-	import Table from '$lib/components/utils/Table.svelte';
+	import Button from '#lib/components/Button.svelte';
+	import Table from '#lib/components/utils/Table.svelte';
 	import WinnerSelect from '../WinnerSelect.svelte';
 	import { DebateDraft, type DebateScores } from './draft.svelte';
 	import PointsInput from './PointsInput.svelte';

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { EventResultSets } from '@tabroom/types';
 	import { getContext } from 'svelte';
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import ResultsSidebar from './sidebar.svelte';
 	const tourn:Tourn = getContext('webnameTourn');
 	const resultSets = $derived(indexFetch<Record<number, EventResultSets>>(`/rest/tourns/${tourn.id}/results`));

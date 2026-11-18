@@ -2,8 +2,8 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
-	import type { UnlinkedStudentSearchSchema } from '$indexcards/schemas/index';
-	import { getRestStudentsUnlinkedSearchMockHandler } from '$indexcards/index.msw';
+	import type { UnlinkedStudentSearchSchema } from '#indexcards/schemas/index';
+	import { getRestStudentsUnlinkedSearchMockHandler } from '#indexcards/index.msw';
 	import StudentSearchPage from '../../../../routes/user/student/search/+page.svelte';
 	import { faker } from '@faker-js/faker';
 

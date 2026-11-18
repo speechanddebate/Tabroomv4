@@ -17,9 +17,9 @@ const {
 	mockClientLoggerDebug: vi.fn(),
 }));
 
-vi.mock('$lib/helpers/logging/logging', async () => {
-	const actual = await vi.importActual<typeof import('$lib/helpers/logging/logging')>(
-		'$lib/helpers/logging/logging',
+vi.mock('#lib/helpers/logging/logging.ts', async () => {
+	const actual = await vi.importActual<typeof import('#lib/helpers/logging/logging.ts')>(
+		'#lib/helpers/logging/logging.ts',
 	);
 
 	return {
@@ -38,37 +38,37 @@ import * as hooksClient from './hooks.client';
 const { init } = hooksClient;
 
 describe('handleClientError', () => {
+	const handleError = (hooksClient as Record<string, unknown>).handleError as (input: {
+		kind: string;
+		error: unknown;
+		event: { url: URL } | null;
+	}) => unknown;
+	const event = { url: new URL('https://schemats.test/paradigms') };
+
+	beforeEach(() => {
+		mockClientLoggerError.mockReset();
+	});
+
 	it('posts SvelteKit client hook errors caught by handleError to the server log endpoint', async () => {
-		const handleError = (hooksClient as Record<string, unknown>).handleError as
-			| ((input: {
-					error: unknown;
-					event: { url: URL } | null;
-					status: number;
-					message: string;
-				}) => unknown)
-			| undefined;
-
-		expect(typeof handleError).toBe('function');
-		if (!handleError) {
-			return;
-		}
-
-		await handleError({
-			error: new Error('svelte blew up'),
-			event: { url: new URL('https://schemats.test/paradigms') },
-			status: 500,
-			message: 'Internal Error',
-		});
+		const result = await handleError({ kind: 'unknown', error: new Error('svelte blew up'), event });
 
 		expect(mockClientLoggerError).toHaveBeenCalledWith(
-			'Internal Error',
+			'Unhandled client error',
 			expect.objectContaining({
 				error: expect.any(Error),
+				kind: 'unknown',
 				status: 500,
 				path: '/paradigms',
 				source: 'handleError',
 			}),
 		);
+		expect(result).toEqual({ errorId: 'client-error' });
+	});
+
+	it('does not log errors thrown with error()', async () => {
+		await handleError({ kind: 'app', error: { status: 404, message: 'Not Found' }, event });
+
+		expect(mockClientLoggerError).not.toHaveBeenCalled();
 	});
 });
 

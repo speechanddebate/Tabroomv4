@@ -7,18 +7,18 @@
 		createUserInboxMarkDeleted,
 		createUserInboxMarkAllRead,
 		getUserInboxUnreadQueryKey,
-	} from '$indexcards';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import type { InboxListItem } from '$indexcards/schemas/inboxListItem';
+	} from '#indexcards';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import type { InboxListItem } from '#indexcards/schemas/inboxListItem';
 	import { renderSnippet } from '@tanstack/svelte-table';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 	import { RefreshCw, Mail, MailOpen } from '@lucide/svelte';
-	import QueryTable from '$lib/components/utils/QueryTable.svelte';
+	import QueryTable from '#lib/components/utils/QueryTable.svelte';
     import MessageReader from './messageReader.svelte';
-	import { handleOrval } from '$lib/helpers/query';
-	import { showDateTime } from '$lib/helpers/dt';
-	import { createPaging } from '$lib/helpers/paging.svelte';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import { showDateTime } from '#lib/helpers/dt.ts';
+	import { createPaging } from '#lib/helpers/paging.svelte.ts';
 
 	let selectedMsgId = $state<number>(0);
 	const queryClient = useQueryClient();

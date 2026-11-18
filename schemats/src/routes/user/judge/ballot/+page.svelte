@@ -1,9 +1,9 @@
 <script lang='ts'>
 	import type { BallotContext } from '@tabroom/types';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { createRestJudgesBallotContext } from '$indexcards';
-	import { handleOrval } from '$lib/helpers/query';
-	import Loading from '$lib/layouts/Loading.svelte';
+	import { createRestJudgesBallotContext } from '#indexcards';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import Loading from '#lib/layouts/Loading.svelte';
 	import BallotLayout from './BallotLayout.svelte';
 	import type { PageProps } from './$types';
 

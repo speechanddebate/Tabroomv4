@@ -8,12 +8,12 @@ The production image runs `npm ci --omit=dev` and then `node build/index.js`. ad
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| @sveltejs/kit, @sveltejs/adapter-node | dev ^2.67.0, ^5.5.4 | App framework and Node server build | Move together: adapter-node 6 requires kit 3. Kit 3 needs vite ^8.0.12, vite-plugin-svelte ^7, TypeScript ^6, and Node >= 22.17, all already met. `@storybook/sveltekit` declares no kit peer. |
+| @sveltejs/kit, @sveltejs/adapter-node | dev ^3.0.0, ^6.0.0 | App framework and Node server build | Move together: adapter-node 6 requires kit 3. Kit 3 needs vite ^8.0.12, vite-plugin-svelte ^7, svelte ^5.57.1, TypeScript ^6, and Node >= 22.17. `@storybook/sveltekit` declares no kit peer. |
 | @sveltejs/vite-plugin-svelte | dev ^7.3.0 | Svelte in Vite | None. |
 | vite | dev ^8.2.2 | Bundler | None. |
-| svelte | dev ^5.46.4 | Components | None. |
+| svelte | dev ^5.57.2 | Components | Kit 3 needs at least 5.57.1. |
 | typescript | dev ~6.0.3 | Types | Held at 6: `svelte-check` accepts `^5 \|\| ^6`. `indexcards/` is on 7. |
-| svelte-check | dev ^4.3.6 | `npm run typecheck` | Gates TypeScript 7. |
+| svelte-check | dev ^4.7.5 | `npm run typecheck` | Gates TypeScript 7. |
 | @tsconfig/svelte | dev ^5.0.4 | Base tsconfig | None. |
 | @types/node | dev 24.13.1 | Node types | Pinned to the Node in the Dockerfiles (`node:24.13.1`). |
 
@@ -52,7 +52,7 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| @tiptap/core, @tiptap/starter-kit, @tiptap/extension-text-align, @tiptap/extensions | ^3.33.0 | `src/lib/components/Editor.svelte` (ballot feedback): core, base extensions, text alignment, and `Placeholder` | Same version for all four. 3.30.5 is the floor for the `mergeAttributes` and Markdown ReDoS advisories. Install them together by name (`npm install -w schemats @tiptap/core@^x ...`): a plain `npm update` leaves `@tiptap/extensions` and its own `core` and `pm` copies behind. |
+| @tiptap/core, @tiptap/starter-kit, @tiptap/extension-text-align, @tiptap/extensions, @tiptap/pm | ^3.33.0 | `src/lib/components/Editor.svelte` (ballot feedback): core, base extensions, text alignment, `Placeholder`, and the ProseMirror peer they all import | Same version for all five. `@tiptap/pm` is listed directly because a `--legacy-peer-deps` install (which `sv migrate` runs) otherwise drops the copy `@tiptap/extensions` resolves, and the build fails on `@tiptap/pm/state`. 3.30.5 is the floor for the `mergeAttributes` and Markdown ReDoS advisories. Install them together by name (`npm install -w schemats @tiptap/core@^x ...`): a plain `npm update` leaves `@tiptap/extensions` and its own `core` and `pm` copies behind. |
 
 ## Dates
 

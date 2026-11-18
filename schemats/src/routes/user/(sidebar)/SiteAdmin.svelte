@@ -4,7 +4,7 @@
 	 * classic's People, Chapters, IP, and Bans links move here as their pages are ported.
 	 * It draws nothing for anyone else, so a layout can include it without checking.
 	 */
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
 	import SidebarLink from './SidebarLink.svelte';
 
 	const person = $derived(getPerson());

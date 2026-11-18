@@ -2,12 +2,12 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { faker } from '@faker-js/faker';
 	import { fn } from 'storybook/test';
-	import AppShell from '$lib/layouts/AppShell.svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import AppShell from '#lib/layouts/AppShell.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import Chapters from '../../../routes/user/(sidebar)/Chapters.svelte';
 	import Judging from '../../../routes/user/(sidebar)/Judging.svelte';
 	import UserAccount from '../../../routes/user/(sidebar)/userAccount.svelte';
-	import { getUserChaptersResponseMock } from '$indexcards/index.msw';
+	import { getUserChaptersResponseMock } from '#indexcards/index.msw';
 
 	/*
 	 * The whole app frame (header, gradient, footer) around the two kinds of

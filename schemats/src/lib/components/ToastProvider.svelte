@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { ToastContainer } from 'flowbite-svelte';
-	import Toast from '$lib/components/Toast.svelte';
-	import type { ToastNotification } from '$lib/helpers/toasts';
-	import { subscribeToToasts } from '$lib/helpers/toasts';
+	import Toast from '#lib/components/Toast.svelte';
+	import type { ToastNotification } from '#lib/helpers/toasts.ts';
+	import { subscribeToToasts } from '#lib/helpers/toasts.ts';
 
 	type ToastItem = ToastNotification & {
 		id: number;

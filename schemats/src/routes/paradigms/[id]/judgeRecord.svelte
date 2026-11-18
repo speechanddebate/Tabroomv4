@@ -1,8 +1,8 @@
 <script lang="ts">
-    import type { JudgeRecord } from '$indexcards/schemas';
-    import { showDate } from '$lib/helpers/dt';
-	import type { GridOptions, SchematColumn } from '$lib/layouts/grid/svgrid.js';
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+    import type { JudgeRecord } from '#indexcards/schemas';
+    import { showDate } from '#lib/helpers/dt.ts';
+	import type { GridOptions, SchematColumn } from '#lib/layouts/grid/svgrid.js';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
     import JudgeRecordTournCell from './judgeRecordTournCell.svelte';
 	import type { IRow } from '@svar-ui/svelte-grid';
 

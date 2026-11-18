@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { createRestCircuit, createRestTourns } from '$indexcards';
-	import { handleOrval } from '$lib/helpers/query';
+	import { createRestCircuit, createRestTourns } from '#indexcards';
+	import { handleOrval } from '#lib/helpers/query.ts';
 	import { page } from '$app/state';
-	import YearSelector from '$lib/components/YearSelector.svelte';
-    import CircuitsCalendar from '$lib/components/tables/circuitsCalendar.svelte';
+	import YearSelector from '#lib/components/YearSelector.svelte';
+    import CircuitsCalendar from '#lib/components/tables/circuitsCalendar.svelte';
     import { goto } from '$app/navigation';
 
 	const seasonParam = page.url.searchParams.get('season');

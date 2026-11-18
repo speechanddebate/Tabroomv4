@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Tourn } from '$indexcards/schemas';
-	import showDateRange from '$lib/helpers/dt';
-	import type { GridOptions, SchematColumn } from '$lib/layouts/grid/svgrid.js';
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
+	import type { Tourn } from '#indexcards/schemas';
+	import showDateRange from '#lib/helpers/dt.ts';
+	import type { GridOptions, SchematColumn } from '#lib/layouts/grid/svgrid.js';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
     import type { IRow } from '@svar-ui/svelte-grid';
 	import CalendarCell from './cells/circuitsCalendarCell.svelte';
 

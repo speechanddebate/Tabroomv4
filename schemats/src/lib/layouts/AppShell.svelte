@@ -1,7 +1,7 @@
 <script lang="ts">
-	import Header from '$lib/layouts/Header.svelte';
-	import Footer from '$lib/layouts/Footer.svelte';
-	import FeedbackBanner from '$lib/layouts/FeedbackBanner.svelte';
+	import Header from '#lib/layouts/Header.svelte';
+	import Footer from '#lib/layouts/Footer.svelte';
+	import FeedbackBanner from '#lib/layouts/FeedbackBanner.svelte';
 	import type { Snippet } from 'svelte';
 
 	type Props = {

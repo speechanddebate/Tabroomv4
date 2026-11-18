@@ -1,6 +1,6 @@
 <script lang="ts">
 import { CLASSIC_URL } from '$app/env/public';
-import type { UserChapter } from '$indexcards/schemas';
+import type { UserChapter } from '#indexcards/schemas';
 import SidebarLink from './SidebarLink.svelte';
 
 let { chapters }: { chapters: UserChapter[] | null } = $props();

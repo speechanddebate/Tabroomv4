@@ -5,7 +5,7 @@ import LoginPage from './+page.svelte';
 
 // Declare all mocks at the top using vi.hoisted
 const { mockGoto, mockMutateAsync, mockSearchParams } = vi.hoisted(() => ({
-	mockGoto: vi.fn(),
+	mockGoto: vi.fn().mockResolvedValue(undefined),
 	mockMutateAsync: vi.fn(),
 	mockSearchParams: new URLSearchParams(),
 }));
@@ -15,11 +15,11 @@ vi.mock('$app/paths', () => ({ resolve: (_path: string) => _path }));
 vi.mock('$app/state', () => ({
 	page: {
 		get url() {
-			return { searchParams: mockSearchParams };
+			return { origin: 'https://schemats.test', searchParams: mockSearchParams };
 		},
 	},
 }));
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createAuthLogin: () => ({ mutateAsync: mockMutateAsync }),
 }));
 
@@ -73,6 +73,38 @@ describe('Login page redirect', () => {
 			// Should still redirect to /protected, not /
 			expect(mockGoto).toHaveBeenCalledWith('/protected', expect.any(Object));
 		});
+	});
+
+	it('redirects to / when the redirect param points at another host', async () => {
+		mockMutateAsync.mockResolvedValueOnce({ status: 200, data: { ok: true } });
+		mockSearchParams.set('redirect', '//evil.com/steal');
+		render(LoginPage);
+
+		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'password123');
+		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+		await waitFor(() => {
+			expect(mockGoto).toHaveBeenCalledWith('/', expect.any(Object));
+		});
+		expect(mockGoto).not.toHaveBeenCalledWith(expect.stringContaining('evil'), expect.anything());
+	});
+
+	it('falls back to / when the redirect target has no route', async () => {
+		mockMutateAsync.mockResolvedValueOnce({ status: 200, data: { ok: true } });
+		mockGoto.mockRejectedValueOnce(new Error('Not found'));
+		mockSearchParams.set('redirect', '/no-such-page');
+		render(LoginPage);
+
+		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'password123');
+		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
+
+		await waitFor(() => {
+			expect(mockGoto).toHaveBeenLastCalledWith('/', expect.any(Object));
+		});
+		expect(mockGoto).toHaveBeenCalledWith('/no-such-page', expect.any(Object));
+		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 
 	it('shows an error and does not redirect on failed login', async () => {

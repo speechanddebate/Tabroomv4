@@ -14,7 +14,7 @@ const { mockUserSession } = vi.hoisted(() => ({
 	mockUserSession: vi.fn(),
 }));
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	userSession: mockUserSession,
 }));
 
@@ -27,13 +27,13 @@ const { logger } = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock('$lib/helpers/logging/logging.server', () => ({ default: logger }));
+vi.mock('#lib/helpers/logging/logging.server.ts', () => ({ default: logger }));
 
 const { mockRecordRequestDuration } = vi.hoisted(() => ({
 	mockRecordRequestDuration: vi.fn(),
 }));
 
-vi.mock('$lib/helpers/telemetry/metrics.server', () => ({ recordRequestDuration: mockRecordRequestDuration }));
+vi.mock('#lib/helpers/telemetry/metrics.server.ts', () => ({ recordRequestDuration: mockRecordRequestDuration }));
 
 import { handle, handleError, handleFetch } from './hooks.server';
 
@@ -273,25 +273,26 @@ describe('HandleFetch Hook', () => {
 });
 
 describe('HandleError Hook', () => {
-	it('logs unhandled errors with request metadata and returns error message and id', () => {
-		const error = new Error('Something went wrong');
-		const event = createRequestEvent({
-			locals: { requestId: 'error-123', Session: null },
-			request: new Request('https://schemats.test/profile', { method: 'POST' }),
-			url: new URL('https://schemats.test/profile?edit=true'),
-		});
+	const event = createRequestEvent({
+		locals: { requestId: 'error-123', Session: null },
+		request: new Request('https://schemats.test/profile', { method: 'POST' }),
+		url: new URL('https://schemats.test/profile?edit=true'),
+	});
 
-		const result = handleError({
-			error,
-			event,
-			status: 500,
-			message: 'Internal Server Error',
-		});
+	beforeEach(() => {
+		logger.error.mockClear();
+	});
+
+	it('logs unexpected errors with request metadata and returns the error id', () => {
+		const error = new Error('Something went wrong');
+
+		const result = handleError({ kind: 'unknown', error, event });
 
 		expect(logger.error).toHaveBeenCalledWith(
 			'Unhandled request error',
 			expect.objectContaining({
 				errorId: 'error-123',
+				kind: 'unknown',
 				status: 500,
 				method: 'POST',
 				path: '/profile',
@@ -299,9 +300,42 @@ describe('HandleError Hook', () => {
 				error,
 			})
 		);
-		expect(result).toEqual({
-			message: 'Internal Server Error',
-			errorId: 'error-123',
+		expect(result).toEqual({ errorId: 'error-123' });
+	});
+
+	it('logs framework errors other than 404', () => {
+		const result = handleError({
+			kind: 'framework',
+			error: { status: 405, message: 'Method Not Allowed' },
+			event,
 		});
+
+		expect(logger.error).toHaveBeenCalledWith(
+			'Unhandled request error',
+			expect.objectContaining({ kind: 'framework', status: 405 })
+		);
+		expect(result).toEqual({ errorId: 'error-123' });
+	});
+
+	it('does not log framework 404s', () => {
+		const result = handleError({
+			kind: 'framework',
+			error: { status: 404, message: 'Not Found' },
+			event,
+		});
+
+		expect(logger.error).not.toHaveBeenCalled();
+		expect(result).toEqual({ errorId: 'error-123' });
+	});
+
+	it('does not log errors thrown with error()', () => {
+		const result = handleError({
+			kind: 'app',
+			error: { status: 404, message: 'Not Found' },
+			event,
+		});
+
+		expect(logger.error).not.toHaveBeenCalled();
+		expect(result).toEqual({ errorId: 'error-123' });
 	});
 });

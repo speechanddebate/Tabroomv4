@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { prefetchRestNotifyEmailUnsubscribeStatusQuery } from '$indexcards';
+import { prefetchRestNotifyEmailUnsubscribeStatusQuery } from '#indexcards';
 
 export const load: PageLoad = async ({ params, parent, fetch }) => {
 	const { queryClient } = await parent();

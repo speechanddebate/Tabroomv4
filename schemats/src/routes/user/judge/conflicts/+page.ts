@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { prefetchRestJudgesConflictsQuery } from '$indexcards';
+import { prefetchRestJudgesConflictsQuery } from '#indexcards';
 
 export const load: PageLoad = async ({ parent, fetch, data }) => {
 	const { queryClient } = await parent();

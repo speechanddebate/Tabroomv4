@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { paradigmMainText } from '$lib/content/paradigms';
+	import { paradigmMainText } from '#lib/content/paradigms.ts';
 	import ParadigmResultsList from './paradigmResultsList.svelte';
 	import type { ParadigmsSearchContext } from './searchContext';
 

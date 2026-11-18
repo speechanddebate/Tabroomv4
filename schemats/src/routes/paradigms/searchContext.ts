@@ -1,4 +1,4 @@
-import type { ParadigmSearchResult, ProblemSchema } from '$indexcards/schemas';
+import type { ParadigmSearchResult, ProblemSchema } from '#indexcards/schemas';
 import type { CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 
 export type ParadigmsSearchContext = {

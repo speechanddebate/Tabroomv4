@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { ParadigmSearchResult, ProblemSchema } from '$indexcards/schemas';
+	import type { ParadigmSearchResult, ProblemSchema } from '#indexcards/schemas';
 	import type { CreateInfiniteQueryResult } from '@tanstack/svelte-query';
 
 	import ParadigmListItem from './[id]/paradigmListItem.svelte';
-	import InfiniteScroll from '$lib/components/utils/infiniteScroll.svelte';
+	import InfiniteScroll from '#lib/components/utils/infiniteScroll.svelte';
 
 	type Props = {
 		results: ParadigmSearchResult[];

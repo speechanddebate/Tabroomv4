@@ -2,7 +2,7 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
 	import type { Problem } from '@tabroom/types';
-	import { FormProblem } from '$lib/components/forms';
+	import { FormProblem } from '#lib/components/forms/index.ts';
 
 	const { Story } = defineMeta({
 		title     : 'Components/Forms/FormProblem',

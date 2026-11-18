@@ -1,5 +1,5 @@
 import { createContext } from 'svelte';
-import type { Session } from '$indexcards/schemas';
+import type { Session } from '#indexcards/schemas';
 import type { Session as SessionSchema } from '@tabroom/types';
 
 // a session carries only a subset of Person

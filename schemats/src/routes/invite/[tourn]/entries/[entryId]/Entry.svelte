@@ -3,7 +3,7 @@
 	let { row } = $props();
 
 	import { getContext } from 'svelte';
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	let tourn:Tourn = getContext('webnameTourn');
 
 	let linkUrl = $derived(resolve('/invite/[tourn]/entries/[entryId]', {

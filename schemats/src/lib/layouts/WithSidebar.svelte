@@ -1,6 +1,6 @@
 <script lang='ts'>
 	import type { Snippet } from 'svelte';
-	import Sidebar, { type SidebarControls } from '$lib/layouts/Sidebar.svelte';
+	import Sidebar, { type SidebarControls } from '#lib/layouts/Sidebar.svelte';
 
 	type Props = {
 		children: Snippet;

@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { shortZone } from '$lib/helpers/dt';
-	import ShowDate from '$lib/layouts/ShowDate.svelte';
-	import { ucfirst } from '$lib/helpers/text';
+    import { shortZone } from '#lib/helpers/dt.ts';
+	import ShowDate from '#lib/layouts/ShowDate.svelte';
+	import { ucfirst } from '#lib/helpers/text.ts';
 
 	interface RoundTime {
 		start     : string,

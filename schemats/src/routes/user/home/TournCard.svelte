@@ -7,11 +7,11 @@
 	 */
 	import { ExternalLink, FileText } from '@lucide/svelte';
 	import type { HomeRole, HomeTourn } from '@tabroom/types';
-	import Button from '$lib/components/Button.svelte';
-	import OnlineRoom, { type OnlineRoomTarget } from '$lib/components/OnlineRoom.svelte';
-	import { Tabs, TabItem } from '$lib/components/Tabs';
-	import { shortZone, showDateRange } from '$lib/helpers/dt';
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
+	import Button from '#lib/components/Button.svelte';
+	import OnlineRoom, { type OnlineRoomTarget } from '#lib/components/OnlineRoom.svelte';
+	import { Tabs, TabItem } from '#lib/components/Tabs/index.ts';
+	import { shortZone, showDateRange } from '#lib/helpers/dt.ts';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
 	import RoleSection from './RoleSection.svelte';
 	import TaskRow from './TaskRow.svelte';
 	import { homeTasks } from './tasks';

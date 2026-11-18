@@ -42,9 +42,9 @@ vi.mock('@tanstack/svelte-query', async () => ({
 	useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
 }));
 
-vi.mock('$lib/helpers/toasts', () => ({ toast: mocks.toast }));
+vi.mock('#lib/helpers/toasts.ts', () => ({ toast: mocks.toast }));
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createUserProfile: () => ({
 		data: { status: 200, data: mocks.profile },
 		error: null,

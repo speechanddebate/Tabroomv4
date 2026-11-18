@@ -5,18 +5,18 @@
 	// data has loaded, so the fetch here is served from the query cache.
 
 	import { resolve } from '$app/paths';
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { TournInvite } from '@tabroom/types';
 	import { getContext } from 'svelte';
 
-	import MainTitle from '$lib/layouts/MainTitle.svelte';
-	import { Tabs, TabItem } from '$lib/components/Tabs';
+	import MainTitle from '#lib/layouts/MainTitle.svelte';
+	import { Tabs, TabItem } from '#lib/components/Tabs/index.ts';
 
-	import { isAuthenticated } from '$lib/helpers/SessionContext.svelte';
-	import { ucfirst } from '$lib/helpers/text';
-	import { showDateRange, shortZone } from '$lib/helpers/dt';
+	import { isAuthenticated } from '#lib/helpers/SessionContext.svelte.ts';
+	import { ucfirst } from '#lib/helpers/text.ts';
+	import { showDateRange, shortZone } from '#lib/helpers/dt.ts';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 
 	const tourn:Tourn = getContext('webnameTourn');
 	const pageContent = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));

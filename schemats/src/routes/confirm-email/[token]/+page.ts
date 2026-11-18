@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { prefetchRestEmailConfirmStatusQuery } from '$indexcards';
+import { prefetchRestEmailConfirmStatusQuery } from '#indexcards';
 
 export const load: PageLoad = async ({ params, parent, fetch }) => {
 	const { queryClient } = await parent();

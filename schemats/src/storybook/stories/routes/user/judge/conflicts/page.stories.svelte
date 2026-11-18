@@ -2,7 +2,7 @@
 	import type { ComponentProps } from 'svelte';
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { getRestJudgesConflictAddMockHandler, getRestJudgesConflictRemoveMockHandler, getRestJudgesConflictsMockHandler } from '$indexcards/index.msw';
+	import { getRestJudgesConflictAddMockHandler, getRestJudgesConflictRemoveMockHandler, getRestJudgesConflictsMockHandler } from '#indexcards/index.msw';
 	import ConflictsPage from '../../../../../../routes/user/judge/conflicts/+page.svelte';
 	import { empty, entryConflict, judgeId, mockTrial, readOnly, sheet } from './fixtures';
 

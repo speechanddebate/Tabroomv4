@@ -1,7 +1,7 @@
 
 import { createQuery } from '@tanstack/svelte-query';
 import type { CreateQueryResult } from '@tanstack/svelte-query';
-import type { Problem } from '$indexcards/schemas/problem';
+import type { Problem } from '#indexcards/schemas/problem';
 import {
 	INDEXCARDS_HOST,
 	INDEXCARDS_BASE_PATH,

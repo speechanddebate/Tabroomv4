@@ -2,15 +2,15 @@
 
 	// eslint-disable-file max-len
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { MySchool, NonTournChapter, TournInvite } from '@tabroom/types';
 	import { getContext } from 'svelte';
-	import ShowDate from '$lib/layouts/ShowDate.svelte';
+	import ShowDate from '#lib/layouts/ShowDate.svelte';
 	import {
 		CLASSIC_URL,
 	} from '$app/env/public';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 
 	const tourn:Tourn = getContext('webnameTourn');
 	const pageData = $derived(indexFetch<TournInvite>(`/rest/tourns/${tourn.id}/invite`));

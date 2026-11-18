@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
     import SidebarLink from './SidebarLink.svelte';
 	import { CLASSIC_URL } from '$app/env/public';
 	import { isEnabled } from '../home/features';

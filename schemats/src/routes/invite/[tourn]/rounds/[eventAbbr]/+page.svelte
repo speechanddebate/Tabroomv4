@@ -6,15 +6,15 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { ScheduleRound } from '@tabroom/types';
 	import { getContext } from 'svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import RoundsSidebar from '../sidebar.svelte';
 
-    import ShowDate from '$lib/layouts/ShowDate.svelte';
+    import ShowDate from '#lib/layouts/ShowDate.svelte';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 
 	let schedule = indexFetch<ScheduleRound[]>(`/rest/tourns/${tourn.id}/schedule`);

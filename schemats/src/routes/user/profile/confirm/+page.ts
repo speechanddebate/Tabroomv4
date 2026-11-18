@@ -1,5 +1,5 @@
 import type { PageLoad } from './$types';
-import { prefetchUserProfileQuery } from '$indexcards';
+import { prefetchUserProfileQuery } from '#indexcards';
 
 // Like the profile page: a server-rendered input picks up the browser's restored value at hydration
 export const ssr = false;

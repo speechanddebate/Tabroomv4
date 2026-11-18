@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Carousel } from 'flowbite-svelte';
-	import type { HomepageAd } from '$indexcards/schemas';
+	import type { HomepageAd } from '#indexcards/schemas';
 	import type { HTMLImgAttributes } from 'svelte/elements';
 	import { fly } from 'svelte/transition';
 

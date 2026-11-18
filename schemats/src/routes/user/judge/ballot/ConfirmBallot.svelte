@@ -3,10 +3,10 @@
 	import type { BallotReview } from '@tabroom/types';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { createRestJudgesBallotConfirm, getRestJudgesBallotContextQueryKey } from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { handleMutation } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
+	import { createRestJudgesBallotConfirm, getRestJudgesBallotContextQueryKey } from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 	import { studentName } from './scoring/scoringGrid';
 
 	type Props = {

@@ -7,7 +7,7 @@
 	 */
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import type { CurrentBallot } from '@tabroom/types';
-	import { getRestTournsSectionsRoomJoinMockHandler } from '$indexcards/index.msw';
+	import { getRestTournsSectionsRoomJoinMockHandler } from '#indexcards/index.msw';
 	import TaskRow from '../../../../../../routes/user/home/TaskRow.svelte';
 	import { homeTasks, type Task } from '../../../../../../routes/user/home/tasks';
 	import { freezeTime } from '../../../../../utils/freezeTime';

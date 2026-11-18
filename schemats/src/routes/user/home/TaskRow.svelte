@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Clock, ClockAlert, Info, OctagonAlert } from '@lucide/svelte';
-	import Button from '$lib/components/Button.svelte';
-	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
+	import Button from '#lib/components/Button.svelte';
+	import OnlineRoom from '#lib/components/OnlineRoom.svelte';
 	import ItemList from './ItemList.svelte';
 	import type { Task } from './tasks';
 

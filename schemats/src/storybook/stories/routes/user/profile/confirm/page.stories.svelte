@@ -7,7 +7,7 @@
 		getUserEmailConfirmMockHandler,
 		getUserEmailResendMockHandler,
 		getUserProfileMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import ConfirmPage from '../../../../../../routes/user/profile/confirm/+page.svelte';
 
 	const { Story } = defineMeta({

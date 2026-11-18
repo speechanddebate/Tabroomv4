@@ -2,10 +2,10 @@
 	import type { Attachment } from 'svelte/attachments';
 	import type { BallotContext, BallotError, BallotReview, BallotValidationProblem, OtherBallotContext } from '@tabroom/types';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { createRestJudgesBallotSave } from '$indexcards';
-	import { handleMutation } from '$lib/helpers/query';
-	import OnlineRoom from '$lib/components/OnlineRoom.svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import { createRestJudgesBallotSave } from '#indexcards';
+	import { handleMutation } from '#lib/helpers/query.ts';
+	import OnlineRoom from '#lib/components/OnlineRoom.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import BallotSidebar from './BallotSidebar.svelte';
 	import ConfirmBallot from './ConfirmBallot.svelte';
 	import Feedback, { type FeedbackDraft } from './Feedback.svelte';

@@ -1,8 +1,8 @@
 <script lang="ts">
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { Webpage } from '@tabroom/types';
-	import Loading from '$lib/layouts/Loading.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
 	import { page } from '$app/state';
 
 	// Page paramters need to be wrapped in derived blocks still.

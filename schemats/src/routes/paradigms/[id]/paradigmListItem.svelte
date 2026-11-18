@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ParadigmSearchResult } from '$indexcards/schemas';
+	import type { ParadigmSearchResult } from '#indexcards/schemas';
 
 	let {
 		item,

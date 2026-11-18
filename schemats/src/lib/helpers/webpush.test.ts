@@ -10,7 +10,7 @@ import {
 import type { PushClient } from './webpush';
 
 // The real client imports the API base URL from $app/env/public; syncPush gets fakes instead
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	userNotifyPush: vi.fn(),
 	userNotifyPushSubscribe: vi.fn(),
 	userNotifyPushUnsubscribe: vi.fn(),
@@ -122,7 +122,7 @@ describe('webpush helper', () => {
 	describe('getPushRegistration', () => {
 		it('registers /service-worker.js and waits for it to be ready', async () => {
 			await expect(getPushRegistration()).resolves.toBe(registration);
-			expect(serviceWorker.register).toHaveBeenCalledWith('/service-worker.js', expect.objectContaining({ type: expect.any(String) }));
+			expect(serviceWorker.register).toHaveBeenCalledWith('/service-worker.js', { type: 'module' });
 		});
 	});
 

@@ -7,14 +7,14 @@
 	import type { ConflictCandidate, JudgeConflict, JudgeConflictRequest, JudgeConflicts } from '@tabroom/types';
 	import { useQueryClient } from '@tanstack/svelte-query';
 	import { renderSnippet } from '@tanstack/svelte-table';
-	import Button from '$lib/components/Button.svelte';
-	import Table from '$lib/components/utils/Table.svelte';
-	import TableSearch from '$lib/components/utils/TableSearch.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { showDateTime } from '$lib/helpers/dt';
-	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
-	import { createRestJudgesConflictAdd, createRestJudgesConflictRemove, createRestJudgesConflicts, getUserHomeQueryKey } from '$indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import Table from '#lib/components/utils/Table.svelte';
+	import TableSearch from '#lib/components/utils/TableSearch.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { showDateTime } from '#lib/helpers/dt.ts';
+	import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
+	import { createRestJudgesConflictAdd, createRestJudgesConflictRemove, createRestJudgesConflicts, getUserHomeQueryKey } from '#indexcards';
 	import type { PageData } from './$types';
 	import { conflictLabel, matchesFilter, searchText, stateText, studentList } from './sheet';
 

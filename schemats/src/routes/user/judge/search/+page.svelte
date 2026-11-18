@@ -3,20 +3,20 @@
 		createRestJudgesUnlinkedSearch,
 		createUserJudgesLinkRequests,
 		createUserJudgesClaim,
-	} from '$indexcards';
+	} from '#indexcards';
 	import type {
 		UnlinkedJudgeSchema,
 		RestJudgesUnlinkedSearchParams,
-	} from '$indexcards/schemas';
-	import Button from '$lib/components/Button.svelte';
-	import { TextInput } from '$lib/components/forms';
+	} from '#indexcards/schemas';
+	import Button from '#lib/components/Button.svelte';
+	import { TextInput } from '#lib/components/forms/index.ts';
 	import { renderSnippet } from '@tanstack/svelte-table';
 
-	import QueryTable from '$lib/components/utils/QueryTable.svelte';
-	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
-	import { getPerson } from '$lib/helpers/SessionContext.svelte';
-	import { handleOrval } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
+	import QueryTable from '#lib/components/utils/QueryTable.svelte';
+	import { createAppColumnHelper } from '#lib/components/utils/table.hook.ts';
+	import { getPerson } from '#lib/helpers/SessionContext.svelte.ts';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 
 	let firstInput = $state('');
 	let lastInput = $state('');

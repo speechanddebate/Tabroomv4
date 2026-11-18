@@ -6,16 +6,16 @@
 
 	let { parent = 'schematic' } = $props();
 
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { PersonTournPresence, PublishedRound } from '@tabroom/types';
-	import { ucfirst } from '$lib/helpers/text';
+	import { ucfirst } from '#lib/helpers/text.ts';
 
 	const eventGroupKeys = ['your', 'school', 'other'] as const;
 	type EventGroupKey = typeof eventGroupKeys[number];
 	// oxlint-disable-next-line @typescript-eslint/no-explicit-any
 	type EventBuckets = Record<EventGroupKey, Record<string, any>>;
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 
 	const roundList   = $derived(indexFetch<PublishedRound[]>(`/rest/tourns/${tourn.id}/rounds`));

@@ -4,7 +4,7 @@
  * Render it in Table's `below` snippet: `{#snippet below(table)}<TablePager {table} />{/snippet}`
  */
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 	import type { AppTable } from './table.types';
 
 	let { table, disabled = false }: {

@@ -6,14 +6,14 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { fn, within } from 'storybook/test';
 	import type { HomeResponse } from '@tabroom/types';
-	import { getUserHomeMockHandler } from '$indexcards/index.msw';
-	import AppShell from '$lib/layouts/AppShell.svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import { getUserHomeMockHandler } from '#indexcards/index.msw';
+	import AppShell from '#lib/layouts/AppShell.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import Chapters from '../../../../../routes/user/(sidebar)/Chapters.svelte';
 	import Judging from '../../../../../routes/user/(sidebar)/Judging.svelte';
 	import UserAccount from '../../../../../routes/user/(sidebar)/userAccount.svelte';
 	import HomePage from '../../../../../routes/user/home/+page.svelte';
-	import type { UserChapter } from '$indexcards/schemas';
+	import type { UserChapter } from '#indexcards/schemas';
 	import { freezeTime } from '../../../../utils/freezeTime';
 	import * as fx from './fixtures';
 

@@ -1,4 +1,4 @@
-import { personName } from '$lib/helpers/text';
+import { personName } from '#lib/helpers/text.ts';
 
 describe('personName', () => {
 	it('joins first and last, trims a missing part, and is empty when both are missing', () => {

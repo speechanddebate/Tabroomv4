@@ -18,7 +18,7 @@ vi.mock('@tanstack/svelte-query', async () => ({
 	useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
 }));
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createRestEmailConfirmStatus: () => ({
 		data: mocks.statusResponse,
 		error: null,

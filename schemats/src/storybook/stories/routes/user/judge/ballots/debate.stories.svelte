@@ -3,7 +3,7 @@
 	import { expect, userEvent, within } from 'storybook/test';
 	import { HttpResponse, http } from 'msw';
 	import type { BallotValidationProblem } from '@tabroom/types';
-	import { getRestJudgesBallotSaveMockHandler } from '$indexcards/index.msw';
+	import { getRestJudgesBallotSaveMockHandler } from '#indexcards/index.msw';
 	import BallotLayout from '../../../../../../routes/user/judge/ballot/BallotLayout.svelte';
 	import { debateContext, savedDebateBallot, submitDebateBallot } from './fixtures';
 

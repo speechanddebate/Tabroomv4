@@ -7,9 +7,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { Bell, X } from '@lucide/svelte';
-	import Button from '$lib/components/Button.svelte';
-	import { createPushState } from '$lib/helpers/pushState.svelte';
-	import { toast } from '$lib/helpers/toasts';
+	import Button from '#lib/components/Button.svelte';
+	import { createPushState } from '#lib/helpers/pushState.svelte.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 
 	// Asks people who haven't decided to turn on push. The browser's own permission dialog opens
 	// only from the button, since browsers ignore or mute requests made without a click

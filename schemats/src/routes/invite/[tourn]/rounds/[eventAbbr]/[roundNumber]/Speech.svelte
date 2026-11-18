@@ -2,7 +2,7 @@
 
 	let {myTourn, tourn, schematic}  = $props();
 	import { Gavel } from '@lucide/svelte';
-	import { intersection } from '$lib/helpers/text';
+	import { intersection } from '#lib/helpers/text.ts';
 	import { resolve } from '$app/paths';
 
 	// SORT THAT ARRAY

@@ -7,7 +7,7 @@
 		getUserConflictsChaptersMockHandler,
 		getUserConflictsMockHandler,
 		getUserConflictsPeopleMockHandler,
-	} from '$indexcards/index.msw';
+	} from '#indexcards/index.msw';
 	import ConflictsPage from '../../../../../routes/user/conflicts/+page.svelte';
 	import { chapters, conflicts, people, quinn } from './fixtures';
 

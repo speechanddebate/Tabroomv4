@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import Editor from '$lib/components/Editor.svelte';
+	import Editor from '#lib/components/Editor.svelte';
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
 

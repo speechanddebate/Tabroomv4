@@ -14,11 +14,11 @@ import {
 	createUserNotifyPushUnsubscribe,
 	getUserNotifyPushQueryKey,
 	getUserSessionsQueryKey,
-} from '$indexcards';
-import { handleMutation, handleOrval } from '$lib/helpers/query';
-import { isSuSession } from '$lib/helpers/SessionContext.svelte';
-import { toast } from '$lib/helpers/toasts';
-import { isPushSupported, subscribeBrowser, unsubscribeBrowser } from '$lib/helpers/webpush';
+} from '#indexcards';
+import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+import { isSuSession } from '#lib/helpers/SessionContext.svelte.ts';
+import { toast } from '#lib/helpers/toasts.ts';
+import { isPushSupported, subscribeBrowser, unsubscribeBrowser } from '#lib/helpers/webpush.ts';
 
 export type Permission = NotificationPermission | 'unsupported';
 

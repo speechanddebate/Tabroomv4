@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 import PushPrompt, { SNOOZE_KEY, SNOOZE_MS } from './PushPrompt.svelte';
-import type { PushState } from '$lib/helpers/pushState.svelte';
+import type { PushState } from '#lib/helpers/pushState.svelte.ts';
 
 const mocks = vi.hoisted(() => ({
 	push: {
@@ -15,11 +15,11 @@ const mocks = vi.hoisted(() => ({
 	toastSuccess: vi.fn(),
 }));
 
-vi.mock('$lib/helpers/pushState.svelte', () => ({
+vi.mock('#lib/helpers/pushState.svelte.ts', () => ({
 	createPushState: () => mocks.push,
 }));
 
-vi.mock('$lib/helpers/toasts', () => ({
+vi.mock('#lib/helpers/toasts.ts', () => ({
 	toast: { success: mocks.toastSuccess },
 }));
 

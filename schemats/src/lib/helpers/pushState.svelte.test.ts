@@ -1,6 +1,6 @@
 import { flushSync } from 'svelte';
 import { createPushState } from './pushState.svelte';
-import type { PushStatus } from '$indexcards/schemas';
+import type { PushStatus } from '#indexcards/schemas';
 
 const mocks = vi.hoisted(() => ({
 	pushResponse: { status: 200, data: {} as unknown } as { status: number; data: unknown },
@@ -29,7 +29,7 @@ vi.mock('@tanstack/svelte-query', async () => {
 	};
 });
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createUserNotifyPush: () => ({
 		get data() { return mocks.pushResponse; },
 		error: null,
@@ -46,15 +46,15 @@ vi.mock('$indexcards', () => ({
 	getUserSessionsQueryKey: () => ['userSessions'],
 }));
 
-vi.mock('$lib/helpers/SessionContext.svelte', () => ({
+vi.mock('#lib/helpers/SessionContext.svelte.ts', () => ({
 	isSuSession: () => mocks.su,
 }));
 
-vi.mock('$lib/helpers/toasts', () => ({
+vi.mock('#lib/helpers/toasts.ts', () => ({
 	toast: { error: mocks.toastError, warning: mocks.toastWarning, success: mocks.toastSuccess },
 }));
 
-vi.mock('$lib/helpers/webpush', () => mocks.webpush);
+vi.mock('#lib/helpers/webpush.ts', () => mocks.webpush);
 
 const endpoint = 'https://fcm.googleapis.com/fcm/send/abc123';
 

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { createRestParadigm, createRestParadigmsRecord } from '$indexcards';
+	import { createRestParadigm, createRestParadigmsRecord } from '#indexcards';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import ParadigmDetails from './paradigmDetails.svelte';
-	import { handleOrval } from '$lib/helpers/query';
+	import { handleOrval } from '#lib/helpers/query.ts';
 
 	const personId = $derived(Number(page.params.id));
 

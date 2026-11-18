@@ -1,5 +1,5 @@
 <script
-	generics="TResponse extends import('$lib/helpers/query').OrvalEnvelope"
+	generics="TResponse extends import('#lib/helpers/query.ts').OrvalEnvelope"
 	lang="ts"
 >
 	/**
@@ -12,8 +12,8 @@
 	*/
 	import type { RowData } from '@tanstack/svelte-table';
 	import Table from './Table.svelte';
-	import { handleOrval, isPaginatedData, type ExtractedRow, type OrvalEnvelope, type PaginatedData } from '$lib/helpers/query';
-	import type { Paging } from '$lib/helpers/paging.svelte';
+	import { handleOrval, isPaginatedData, type ExtractedRow, type OrvalEnvelope, type PaginatedData } from '#lib/helpers/query.ts';
+	import type { Paging } from '#lib/helpers/paging.svelte.ts';
 	import type { TableProps } from './table.types';
     import type { CreateInfiniteQueryResult, CreateQueryResult } from '@tanstack/svelte-query';
     import type { Problem } from '@tabroom/types';

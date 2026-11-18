@@ -2,17 +2,17 @@
 
 	import { page } from '$app/state';
 	import { getContext } from 'svelte';
-	import { indexFetch } from '$lib/indexfetch';
+	import { indexFetch } from '#lib/indexfetch.ts';
 	import type { PersonTournPresence, RoundResults } from '@tabroom/types';
 
 	import Ranked from './Ranked.svelte';
 	import Winloss from './Winloss.svelte';
 
-	import Loading from '$lib/layouts/Loading.svelte';
-	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
+	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import RoundsSidebar from '../../../sidebar.svelte';
 
-	import type { Tourn } from '$indexcards/schemas';
+	import type { Tourn } from '#indexcards/schemas';
 	const tourn:Tourn = getContext('webnameTourn');
 
 	let myTourn = $derived.by( () => {

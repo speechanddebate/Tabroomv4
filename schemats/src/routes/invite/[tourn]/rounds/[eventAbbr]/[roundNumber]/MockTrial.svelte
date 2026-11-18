@@ -2,9 +2,9 @@
 
 	let {myTourn, schematic}  = $props();
 
-	import { intersection } from '$lib/helpers/text';
-	import SVGrid from '$lib/layouts/grid/SVGrid.svelte';
-	import type { SchematColumn, GridOptions } from '$lib/layouts/grid/svgrid.js';
+	import { intersection } from '#lib/helpers/text.ts';
+	import SVGrid from '#lib/layouts/grid/SVGrid.svelte';
+	import type { SchematColumn, GridOptions } from '#lib/layouts/grid/svgrid.js';
 
 	// SORT THOSE SECTIONS!
 	let sections = $derived.by( () => {

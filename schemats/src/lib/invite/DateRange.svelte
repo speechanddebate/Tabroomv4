@@ -4,8 +4,8 @@
 	// Svelte component that you send to SVAR, which is Teh Dumb, but so it
 	// goes.
 
-	import ShowDateRange from '$lib/layouts/ShowDateRange.svelte';
-	import type { DtProps } from '$lib/types/dt.ts';
+	import ShowDateRange from '#lib/layouts/ShowDateRange.svelte';
+	import type { DtProps } from '#lib/types/dt.ts';
 
 	let {row} = $props();
 

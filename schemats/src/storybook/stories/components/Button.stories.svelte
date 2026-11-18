@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { Check, Download, Printer, Trash2 } from '@lucide/svelte';
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 
 	const { Story } = defineMeta({
 		title     : 'Components/Button',

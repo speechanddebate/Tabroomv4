@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { UserSession } from '@tabroom/types';
 	import { useQueryClient } from '@tanstack/svelte-query';
-	import { createUserSessionEnd, createUserSessions, getUserSessionsQueryKey } from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { showDateTime } from '$lib/helpers/dt';
-	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { toast } from '$lib/helpers/toasts';
+	import { createUserSessionEnd, createUserSessions, getUserSessionsQueryKey } from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { showDateTime } from '#lib/helpers/dt.ts';
+	import { handleMutation, handleOrval } from '#lib/helpers/query.ts';
+	import { toast } from '#lib/helpers/toasts.ts';
 
 	type Props = {
 		/** The person's time zone, for last active */

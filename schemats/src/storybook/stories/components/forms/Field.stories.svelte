@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, within } from 'storybook/test';
-	import { Field, controlBox, controlHeights } from '$lib/components/forms';
+	import { Field, controlBox, controlHeights } from '#lib/components/forms/index.ts';
 
 	// The label, description and error wrapper every form control renders inside
 	const { Story } = defineMeta({

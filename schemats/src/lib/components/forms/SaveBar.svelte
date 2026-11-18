@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '$lib/components/Button.svelte';
+	import Button from '#lib/components/Button.svelte';
 
 	// Goes inside the form: Save changes is its submit button, so Enter in a field saves too
 	type Props = {

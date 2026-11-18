@@ -1,9 +1,9 @@
 <script lang='ts'>
-	import ShowDateRange from '$lib/layouts/ShowDateRange.svelte';
-	import { shortZone } from '$lib/helpers/dt';
+	import ShowDateRange from '#lib/layouts/ShowDateRange.svelte';
+	import { shortZone } from '#lib/helpers/dt.ts';
 
-	import { ucfirst } from '$lib/helpers/text';
-    import SideLink from '$lib/layouts/SideLink.svelte';
+	import { ucfirst } from '#lib/helpers/text.ts';
+    import SideLink from '#lib/layouts/SideLink.svelte';
 
 	import type { TournInvite } from '@tabroom/types';
 	let {tourn}:{tourn: TournInvite} = $props();

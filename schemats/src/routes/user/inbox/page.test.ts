@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
 import InboxPage from './+page.svelte';
-import type { InboxListItem, InboxMessage, InboxPage as InboxPageData, UserInboxParams } from '$indexcards/schemas';
+import type { InboxListItem, InboxMessage, InboxPage as InboxPageData, UserInboxParams } from '#indexcards/schemas';
 
 const queryClientRefetchQueries = vi.fn();
 const inboxParams = vi.fn<(params: () => UserInboxParams) => void>();
@@ -50,7 +50,7 @@ vi.mock('@tanstack/svelte-query', async () => {
 	};
 });
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createUserInbox: (params: () => UserInboxParams) => {
 		inboxParams(params);
 		return {

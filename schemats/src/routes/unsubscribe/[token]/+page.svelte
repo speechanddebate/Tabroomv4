@@ -4,9 +4,9 @@
 		createRestNotifyEmailUnsubscribe,
 		createRestNotifyEmailUnsubscribeStatus,
 		getRestNotifyEmailUnsubscribeStatusQueryKey,
-	} from '$indexcards';
-	import Button from '$lib/components/Button.svelte';
-	import { handleMutation } from '$lib/helpers/query';
+	} from '#indexcards';
+	import Button from '#lib/components/Button.svelte';
+	import { handleMutation } from '#lib/helpers/query.ts';
 	import type { PageProps } from './$types';
 
 	const { data }: PageProps = $props();

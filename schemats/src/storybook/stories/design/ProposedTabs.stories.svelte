@@ -2,8 +2,8 @@
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { ChevronDown, CircleAlert, ClockAlert, OctagonAlert } from '@lucide/svelte';
 	import type { Snippet } from 'svelte';
-	import { Select } from '$lib/components/forms';
-	import { Tabs, TabItem } from '$lib/components/Tabs';
+	import { Select } from '#lib/components/forms/index.ts';
+	import { Tabs, TabItem } from '#lib/components/Tabs/index.ts';
 
 	const { Story } = defineMeta({
 		title: 'Design System/Proposed Tabs',

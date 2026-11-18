@@ -1,8 +1,8 @@
 import type {
 	HTTPStatusCode2xx,
-} from '$indexcards';
+} from '#indexcards';
 import type { Problem } from '@tabroom/types';
-import { toast } from '$lib/helpers/toasts';
+import { toast } from '#lib/helpers/toasts.ts';
 
 import type {
 	CreateInfiniteQueryResult,

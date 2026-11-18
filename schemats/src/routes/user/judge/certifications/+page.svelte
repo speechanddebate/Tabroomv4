@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { createRestQuizzes } from '$indexcards';
-	import { handleOrval } from '$lib/helpers/query';
+	import { createRestQuizzes } from '#indexcards';
+	import { handleOrval } from '#lib/helpers/query.ts';
     import Quiz from '../../../paradigms/[id]/Quiz.svelte';
 
 	const quizzesQuery = createRestQuizzes();

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { UserProfile, UserSession } from '@tabroom/types';
 
 import ProfilePage from './+page.svelte';
-import type { PushState } from '$lib/helpers/pushState.svelte';
+import type { PushState } from '#lib/helpers/pushState.svelte.ts';
 
 const baseProfile: UserProfile = {
 	email               : 'avery@example.org',
@@ -55,11 +55,11 @@ vi.mock('@tanstack/svelte-query', async () => ({
 	useQueryClient: () => ({ setQueryData: mocks.setQueryData, invalidateQueries: mocks.invalidateQueries }),
 }));
 
-vi.mock('$lib/helpers/toasts', () => ({ toast: mocks.toast }));
+vi.mock('#lib/helpers/toasts.ts', () => ({ toast: mocks.toast }));
 
-vi.mock('$lib/helpers/SessionContext.svelte', () => ({ isSuSession: () => mocks.su }));
+vi.mock('#lib/helpers/SessionContext.svelte.ts', () => ({ isSuSession: () => mocks.su }));
 
-vi.mock('$indexcards', () => ({
+vi.mock('#indexcards', () => ({
 	createUserProfile: () => ({
 		data: { status: 200, data: mocks.profile },
 		error: null,
@@ -81,7 +81,7 @@ vi.mock('$indexcards', () => ({
 	getUserSessionsQueryKey: () => ['/v1/user/sessions'],
 }));
 
-vi.mock('$lib/helpers/pushState.svelte', () => ({
+vi.mock('#lib/helpers/pushState.svelte.ts', () => ({
 	createPushState: () => mocks.push,
 }));
 

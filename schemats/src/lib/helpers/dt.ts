@@ -2,7 +2,7 @@
 // makes me miss DateTime in Perl.
 import { DateTime, type DateTimeFormatOptions } from 'luxon';
 
-import type { DtProps, DtRangeProps, FormattedRanges } from '$lib/types/dt.ts';
+import type { DtProps, DtRangeProps, FormattedRanges } from '#lib/types/dt.ts';
 
 // For mode, 'time' is time only (9:00 AM to 2:30 PM)
 // 'date' is date only (Feb 1st-4th, Dec 31-Jan 2nd)

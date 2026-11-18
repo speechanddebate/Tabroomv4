@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import { expect, userEvent, within } from 'storybook/test';
-	import { ChoiceTiles } from '$lib/components/forms';
+	import { ChoiceTiles } from '#lib/components/forms/index.ts';
 
 	// One choice from two to four as big tap targets; longer lists use Select
 	const { Story } = defineMeta({

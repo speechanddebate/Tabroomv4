@@ -4,8 +4,8 @@
 	// never have the Date() module show up anywhere but here and the helpers,
 	// so when Temporal is ready for prime time I can just rip it through this.
 
-	import { showDateRange } from '$lib/helpers/dt';
-	import type {FormattedRanges} from '$lib/types/dt';
+	import { showDateRange } from '#lib/helpers/dt.ts';
+	import type {FormattedRanges} from '#lib/types/dt.ts';
 
 	let input = $props();
 

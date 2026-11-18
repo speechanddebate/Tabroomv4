@@ -2,7 +2,7 @@
 
 	import { DateTime } from 'luxon';
 	import { type DateTime as DTInput } from 'luxon';
-    import { showDateTime, showDate, showTime } from '$lib/helpers/dt';
+    import { showDateTime, showDate, showTime } from '#lib/helpers/dt.ts';
 
 	interface HopperType {
 		regStart?       : DTInput,

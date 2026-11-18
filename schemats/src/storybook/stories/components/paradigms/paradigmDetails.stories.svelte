@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { faker } from '@faker-js/faker';
-	import type { ParadigmDetailsSchema } from '$indexcards/schemas';
-	import { getRestParadigmResponseMock } from '$indexcards/index.msw';
+	import type { ParadigmDetailsSchema } from '#indexcards/schemas';
+	import { getRestParadigmResponseMock } from '#indexcards/index.msw';
 	import { fakeParadigmCertBadge } from '../../../utils/fakerUtils';
 	import { defineMeta } from '@storybook/addon-svelte-csf';
 	import ParadigmDetails from '../../../../routes/paradigms/[id]/paradigmDetails.svelte';

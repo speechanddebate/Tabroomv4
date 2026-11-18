@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { JudgeTournHistoryTourn, JudgeTournRecord } from '$indexcards/schemas';
+	import type { JudgeTournHistoryTourn, JudgeTournRecord } from '#indexcards/schemas';
 	import AssignedRounds from './AssignedRounds.svelte';
 	import EnteredResults from './EnteredResults.svelte';
 

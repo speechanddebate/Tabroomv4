@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Spinner } from 'flowbite-svelte';
-	import type { JudgeTournHistory } from '$indexcards/schemas';
-	import { parseDateTime } from '$lib/helpers/dt';
+	import type { JudgeTournHistory } from '#indexcards/schemas';
+	import { parseDateTime } from '#lib/helpers/dt.ts';
 	import JudgeTournRecord from './JudgeTournRecord.svelte';
 
 	let {

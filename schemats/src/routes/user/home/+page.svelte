@@ -6,11 +6,11 @@
 	 */
 	import type { HomeResponse } from '@tabroom/types';
 	import { CLASSIC_URL } from '$app/env/public';
-	import { createUserHome } from '$indexcards';
-	import { showDate } from '$lib/helpers/dt';
-	import { handleOrval } from '$lib/helpers/query';
-	import Button from '$lib/components/Button.svelte';
-	import Loading from '$lib/layouts/Loading.svelte';
+	import { createUserHome } from '#indexcards';
+	import { showDate } from '#lib/helpers/dt.ts';
+	import { handleOrval } from '#lib/helpers/query.ts';
+	import Button from '#lib/components/Button.svelte';
+	import Loading from '#lib/layouts/Loading.svelte';
 	import EmptyHome from './EmptyHome.svelte';
 	import PushPrompt from './PushPrompt.svelte';
 	import TournCard from './TournCard.svelte';
