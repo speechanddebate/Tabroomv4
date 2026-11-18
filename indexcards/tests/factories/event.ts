@@ -34,7 +34,7 @@ const EVENT_LEVELS = Object.values(EventLevel);
 export function createEventData(overrides = {}) {
 	return {
 		name: faker.lorem.words(3),
-		abbr: faker.lorem.word(),
+		abbr: faker.string.alpha(8),
 		type: faker.helpers.arrayElement(EVENT_TYPES),
 		level: faker.helpers.arrayElement(EVENT_LEVELS),
 		...overrides,
