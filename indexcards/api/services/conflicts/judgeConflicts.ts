@@ -3,67 +3,73 @@ import type { Database } from '../../data/database.js';
 import type { SessionPerson } from '../../middleware/auth/types.js';
 import { getCategory } from '../../repos/categoryRepo.js';
 import changeLogRepo from '../../repos/changeLogRepo.js';
+import conflictRepo from '../../repos/conflictRepo.js';
 import entryRepo from '../../repos/entryRepo.js';
 import judgeRepo from '../../repos/judgeRepo.js';
-import permissionRepo from '../../repos/permissionRepo.js';
 import regionRepo from '../../repos/regionRepo.js';
 import schoolRepo from '../../repos/schoolRepo.js';
 import strikeRepo from '../../repos/strikeRepo.js';
 import tournRepo from '../../repos/tournRepo.js';
 import { withTransaction } from '../../repos/utils/index.js';
 import { isOn } from '../ballots/ballotRules.js';
-import { candidateState, isRemovable } from './conflictRules.js';
+import { candidateState, isRemovable, standingSource, type TournSides } from './conflictRules.js';
+import { loadSides } from './updateConflictStrikes.js';
 
 type SheetStrike = Awaited<ReturnType<typeof strikeRepo.getJudgeConflicts>>[number];
 
+const noSides: TournSides = { judges: [], entries: [], conflictedJudges: [], conflictedEntries: [], conflictedSchools: [], strikes: [] };
+
 /**
  * The judge, their category and tournament with the settings the sheet reads, the conflicts they
- * may see, and which of the people who entered them (the caller included) are the tournament's
- * staff, whose names the sheet withholds
+ * may see, and the sides of the standing conflicts the judge's person declared (own) and that
+ * were declared against them (other). A judge with no linked person has none.
  */
-async function loadSheet(db: Database, judgeId: number, personId: number) {
+async function loadSheet(db: Database, judgeId: number) {
 	const judge = await judgeRepo.getJudge(db, judgeId);
 	if (!judge?.category) return null;
 	const category = await getCategory(db, judge.category, { settings: ['conflicts'] });
 	if (!category?.tourn) return null;
-	const [tourn, strikes] = await Promise.all([
-		tournRepo.getTourn(db, category.tourn, { settings: ['mock_trial_registration'] }),
-		strikeRepo.getJudgeConflicts(db, { judges: [judgeId], tourn: category.tourn }),
+	const tournId = category.tourn;
+	const [tourn, strikes, standing] = await Promise.all([
+		tournRepo.getTourn(db, tournId, { settings: ['mock_trial_registration'] }),
+		strikeRepo.getJudgeConflicts(db, { judges: [judgeId], tourn: tournId }),
+		judge.person ? conflictRepo.getConflicts(db, { involving: judge.person }) : [],
 	]);
 	if (!tourn) return null;
-	const enterers = strikes.map((strike) => strike.entered_by).filter((id): id is number => id !== null);
-	const permissions = await permissionRepo.getPermissions(db, { tourn: category.tourn, persons: [...new Set([...enterers, personId])] });
+	const sidesOf = async (conflicts: typeof standing) => judge.person && conflicts.length > 0 ? await loadSides(db, judge.person, tournId, conflicts) : noSides;
+	const [own, other] = await Promise.all([
+		sidesOf(standing.filter((conflict) => conflict.person === judge.person)),
+		sidesOf(standing.filter((conflict) => conflict.conflicted === judge.person)),
+	]);
 	return {
 		judge,
 		category,
-		tournId: category.tourn,
+		tournId,
 		tourn,
 		strikes,
-		staff: new Set(permissions.map((permission) => permission.person).filter((id): id is number => id !== null)),
+		own,
+		other,
 		editable: isOn(category.settings?.conflicts),
 		mockTrial: isOn(tourn.settings?.mock_trial_registration),
 	};
 }
 
-// the judge's own rows read as theirs even when they also tab the tournament
-const enteredBy = (strike: SheetStrike, judgePerson: number | null, staff: Set<number>): JudgeConflict['EnteredBy'] => {
-	if (strike.entered_by === null) return null;
-	if (strike.entered_by !== judgePerson && staff.has(strike.entered_by)) return { role: 'tab', first: null, last: null };
-	return { role: 'registrant', first: strike.enteredFirst, last: strike.enteredLast };
+const conflictRow = (strike: SheetStrike, personId: number, own: TournSides, other: TournSides): JudgeConflict => {
+	const standing = standingSource(strike, own, other);
+	return {
+		id: strike.id,
+		type: strike.type as JudgeConflict['type'],
+		entry: strike.entry,
+		Entry: strike.entry === null ? null : { id: strike.entry, code: strike.entryCode, name: strike.entryName, Event: { abbr: strike.eventAbbr } },
+		school: strike.school,
+		School: strike.school === null ? null : { id: strike.school, name: strike.schoolName },
+		region: strike.region,
+		Region: strike.region === null ? null : { id: strike.region, name: strike.regionName },
+		created_at: strike.created_at?.toISOString() ?? null,
+		standing,
+		removable: standing === null && isRemovable(strike, personId),
+	};
 };
-
-const conflictRow = (strike: SheetStrike, personId: number, judgePerson: number | null, staff: Set<number>): JudgeConflict => ({
-	id: strike.id,
-	type: strike.type as JudgeConflict['type'],
-	entry: strike.entry,
-	Entry: strike.entry === null ? null : { id: strike.entry, code: strike.entryCode, name: strike.entryName, Event: { abbr: strike.eventAbbr } },
-	school: strike.school,
-	School: strike.school === null ? null : { id: strike.school, name: strike.schoolName },
-	region: strike.region,
-	Region: strike.region === null ? null : { id: strike.region, name: strike.regionName },
-	EnteredBy: enteredBy(strike, judgePerson, staff),
-	removable: isRemovable(strike, personId),
-});
 
 /** How the change log names a conflict's target */
 const targetLabel = (strike: Pick<SheetStrike, 'type' | 'entryCode' | 'schoolName' | 'regionName'>): string => {
@@ -79,9 +85,9 @@ const targetLabel = (strike: Pick<SheetStrike, 'type' | 'entryCode' | 'schoolNam
  * may see and what they may still mark. Null when the judge or their tournament doesn't exist.
  */
 export async function loadJudgeConflicts(db: Database, judgeId: number, personId: number): Promise<JudgeConflicts | null> {
-	const sheet = await loadSheet(db, judgeId, personId);
+	const sheet = await loadSheet(db, judgeId);
 	if (!sheet) return null;
-	const { judge, category, tournId, tourn, strikes, staff, editable, mockTrial } = sheet;
+	const { judge, category, tournId, tourn, strikes, own, other, editable, mockTrial } = sheet;
 
 	// mock trial judges conflict by region, so the entry list is never built for them
 	const [school, entries, regions] = await Promise.all([
@@ -102,7 +108,7 @@ export async function loadJudgeConflicts(db: Database, judgeId: number, personId
 		},
 		Tourn: { id: tourn.id, name: tourn.name, tz: tourn.tz ?? 'UTC', mockTrial },
 		editable,
-		Strikes: strikes.map((strike) => conflictRow(strike, personId, judge.person, staff)),
+		Strikes: strikes.map((strike) => conflictRow(strike, personId, own, other)),
 		Candidates: {
 			Entries: entries.map((entry) => ({
 				id: entry.id,
@@ -137,9 +143,9 @@ export type AddOutcome =
  * doesn't exist; notFound when the target isn't a candidate here.
  */
 export async function addJudgeConflict(db: Database, judgeId: number, person: SessionPerson, request: JudgeConflictRequest): Promise<AddOutcome | null> {
-	const sheet = await loadSheet(db, judgeId, person.id);
+	const sheet = await loadSheet(db, judgeId);
 	if (!sheet) return null;
-	const { judge, category, tournId, strikes, staff, editable, mockTrial } = sheet;
+	const { judge, category, tournId, strikes, own, other, editable, mockTrial } = sheet;
 	if (!editable) return { result: 'refused', reason: 'closed' };
 
 	let target: Pick<SheetStrike, 'type' | 'entryCode' | 'schoolName' | 'regionName'> & { entry?: number; school?: number; region?: number };
@@ -193,20 +199,22 @@ export async function addJudgeConflict(db: Database, judgeId: number, person: Se
 	});
 
 	const [row] = await strikeRepo.getJudgeConflicts(db, { ids: [created.id], judges: [judgeId] });
-	return { result: 'added', conflict: conflictRow(row, person.id, judge.person, staff) };
+	return { result: 'added', conflict: conflictRow(row, person.id, own, other) };
 }
 
 /**
  * Removes a conflict from the judge's sheet under classic's judge_conflict_rm.mhtml rule: the
- * row must be one the person entered or one declared from the judge's side. Null when the judge
- * or the row (on this judge's sheet) doesn't exist.
+ * row must be one the person entered or one declared from the judge's side. A row a standing
+ * conflict implies is refused for everyone, since classic would derive it again. Null when the
+ * judge or the row (on this judge's sheet) doesn't exist.
  */
-export async function removeJudgeConflict(db: Database, judgeId: number, strikeId: number, person: SessionPerson): Promise<'removed' | 'forbidden' | null> {
-	const sheet = await loadSheet(db, judgeId, person.id);
+export async function removeJudgeConflict(db: Database, judgeId: number, strikeId: number, person: SessionPerson): Promise<'removed' | 'forbidden' | 'standing' | null> {
+	const sheet = await loadSheet(db, judgeId);
 	if (!sheet) return null;
 	const strike = sheet.strikes.find((row) => row.id === strikeId);
 	if (!strike) return null;
 	if (!isRemovable(strike, person.id)) return 'forbidden';
+	if (standingSource(strike, sheet.own, sheet.other)) return 'standing';
 
 	await withTransaction(db, async (trx) => {
 		await strikeRepo.deleteStrike(trx, strike.id);

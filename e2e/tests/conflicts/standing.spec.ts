@@ -45,13 +45,14 @@ test.describe('standing conflicts', () => {
 		await expect(list(page).getByRole('row', { name: /Quinn Quill/ })).toBeVisible();
 		await expect(found).toContainText('Already a conflict');
 
-		// the tournament sheet now carries the derived row, which the judge may remove
+		// the tournament sheet now carries the derived row, removable only through the standing list
 		await page.goto(`/user/judge/conflicts?judge=${world.judge}`);
 		const derived = marked(page).getByRole('row', { name: /Riverdale QQ \(LD\)/ });
 		await expect(derived).toBeVisible();
-		await expect(derived.getByRole('button', { name: 'Remove' })).toBeVisible();
+		await expect(derived.getByRole('button', { name: 'Remove' })).toHaveCount(0);
+		await derived.getByRole('link', { name: 'Remove it from your standing conflicts' }).click();
+		await expect(page).toHaveURL(/\/user\/conflicts$/);
 
-		await page.goto('/user/conflicts');
 		await list(page).getByRole('row', { name: /Quinn Quill/ }).getByRole('button', { name: 'Remove' }).click();
 		await expect(list(page).getByRole('row', { name: /Quinn Quill/ })).toHaveCount(0);
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ConflictCandidate } from '@tabroom/types';
-import { conflictLabel, matchesFilter, removeHint, stateText, studentList } from './sheet';
+import { conflictLabel, matchesFilter, stateText, studentList } from './sheet';
 
 const westlake = { id: 1811, name: 'Westlake' };
 const candidate = (overrides: Partial<ConflictCandidate> = {}): ConflictCandidate => ({
@@ -14,14 +14,6 @@ describe('conflictLabel', () => {
 		expect(conflictLabel({ type: 'entry', Entry: { id: 1, code: null, name: 'Westlake BB', Event: { abbr: null } }, School: null, Region: null })).toBe('Westlake BB');
 		expect(conflictLabel({ type: 'school', Entry: null, School: westlake, Region: null })).toBe('Westlake');
 		expect(conflictLabel({ type: 'region', Entry: null, School: null, Region: { id: 3, name: 'North' } })).toBe('North');
-	});
-});
-
-describe('removeHint', () => {
-	it('names whoever can remove it', () => {
-		expect(removeHint({ EnteredBy: { role: 'tab', first: null, last: null } })).toBe('Contact tab staff to remove this conflict');
-		expect(removeHint({ EnteredBy: { role: 'registrant', first: 'Carl', last: 'Coach' } })).toBe('Contact your coach to remove this conflict');
-		expect(removeHint({ EnteredBy: null })).toBe('Contact tab staff to remove this conflict');
 	});
 });
 

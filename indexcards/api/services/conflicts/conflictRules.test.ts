@@ -1,4 +1,4 @@
-import { candidateState, derivedStrikes, isRemovable, strikesToRemove, type TournSides } from './conflictRules.js';
+import { candidateState, derivedStrikes, isRemovable, standingSource, strikesToRemove, type TournSides } from './conflictRules.js';
 
 const JO = 7;
 
@@ -50,6 +50,28 @@ describe('strikesToRemove', () => {
 	it('leaves a row another conflict involving her still implies, such as Q\'s standing conflict with her', () => {
 		const rows = [strike(1, 1, { school: 30 }), strike(2, 1, { entry: 20 }), strike(3, 2, { entry: 10 })];
 		expect(strikesToRemove(sides(rows), { ...none, judges: [1], entries: [10], conflictedJudges: [2], conflictedEntries: [20] }, JO)).toEqual([1]);
+	});
+});
+
+describe('standingSource', () => {
+	const none: TournSides = { judges: [], entries: [], conflictedJudges: [], conflictedEntries: [], conflictedSchools: [], strikes: [] };
+	// person R declared a standing conflict against Jo, and R's student is on entry 40
+	const declaredAgainstJo: TournSides = { ...none, judges: [1], entries: [10], conflictedEntries: [40] };
+
+	it('says own for a row Jo\'s own conflicts imply on her judge, by person and by chapter', () => {
+		expect(standingSource(strike(1, 1, { entry: 20 }), sides(), none)).toBe('own');
+		expect(standingSource(strike(2, 1, { school: 30 }), sides(), none)).toBe('own');
+	});
+	it('says other for a row only a conflict someone declared against Jo implies', () => {
+		expect(standingSource(strike(1, 1, { entry: 40 }), none, declaredAgainstJo)).toBe('other');
+	});
+	it('says own when both sides imply the row', () => {
+		expect(standingSource(strike(1, 1, { entry: 40 }), { ...sides(), conflictedEntries: [20, 40] }, declaredAgainstJo)).toBe('own');
+	});
+	it('says null for a target no conflict implies, and for a row on another judge', () => {
+		expect(standingSource(strike(1, 1, { entry: 99 }), sides(), declaredAgainstJo)).toBeNull();
+		// Q's judge struck off Jo's entry is implied, but sits on Q's sheet, not Jo's
+		expect(standingSource(strike(2, 2, { entry: 10 }), sides(), none)).toBeNull();
 	});
 });
 

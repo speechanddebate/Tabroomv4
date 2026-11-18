@@ -11,6 +11,7 @@ const REFUSALS: Record<ConflictRefusal, string> = {
 	duplicate: 'That conflict is already marked',
 	school: 'That entry is already covered by a conflict with its school',
 	ownSchool: "A judge is never placed on their own school's entries, so it can't be marked",
+	standing: 'A standing conflict implies this conflict; it is removed with that standing conflict',
 };
 
 export async function getJudgeConflicts(req: ValidatedRequest, res: Response) {
@@ -36,5 +37,6 @@ export async function removeConflict(req: ValidatedRequest, res: Response) {
 	const outcome = await removeJudgeConflict(db, judgeId, strikeId, getPerson(req));
 	if (outcome === null) return NotFound(req, res, `Conflict ${strikeId} not found on judge ${judgeId}'s sheet`);
 	if (outcome === 'forbidden') return Forbidden(req, res, 'Only the person who entered a conflict, or the judge for one declared on their behalf, may remove it');
+	if (outcome === 'standing') return Conflict(req, res, REFUSALS.standing, { reason: 'standing' });
 	res.status(204).end();
 }

@@ -1428,21 +1428,12 @@ export const getRestJudgesConflictsResponseMock = (
 			},
 			null,
 		]),
-		EnteredBy: faker.helpers.arrayElement([
-			{
-				role: faker.helpers.arrayElement([
-					'tab',
-					'registrant',
-				] as const),
-				first: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 20 } }),
-					null,
-				]),
-				last: faker.helpers.arrayElement([
-					faker.string.alpha({ length: { min: 10, max: 20 } }),
-					null,
-				]),
-			},
+		created_at: faker.helpers.arrayElement([
+			faker.date.past().toISOString().slice(0, 19) + 'Z',
+			null,
+		]),
+		standing: faker.helpers.arrayElement([
+			faker.helpers.arrayElement(['own', 'other'] as const),
 			null,
 		]),
 		removable: faker.datatype.boolean(),
@@ -1586,18 +1577,12 @@ export const getRestJudgesConflictAddResponseMock = (
 		},
 		null,
 	]),
-	EnteredBy: faker.helpers.arrayElement([
-		{
-			role: faker.helpers.arrayElement(['tab', 'registrant'] as const),
-			first: faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 20 } }),
-				null,
-			]),
-			last: faker.helpers.arrayElement([
-				faker.string.alpha({ length: { min: 10, max: 20 } }),
-				null,
-			]),
-		},
+	created_at: faker.helpers.arrayElement([
+		faker.date.past().toISOString().slice(0, 19) + 'Z',
+		null,
+	]),
+	standing: faker.helpers.arrayElement([
+		faker.helpers.arrayElement(['own', 'other'] as const),
 		null,
 	]),
 	removable: faker.datatype.boolean(),

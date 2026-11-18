@@ -5,10 +5,10 @@
  * Tabroom.com data & operational API
  * OpenAPI spec version: 1.2.0
  */
-import type { JudgeConflictEnteredBy } from './judgeConflictEnteredBy';
 import type { JudgeConflictEntry } from './judgeConflictEntry';
 import type { JudgeConflictRegion } from './judgeConflictRegion';
 import type { JudgeConflictSchool } from './judgeConflictSchool';
+import type { JudgeConflictStanding } from './judgeConflictStanding';
 import type { JudgeConflictType } from './judgeConflictType';
 
 export interface JudgeConflict {
@@ -25,8 +25,10 @@ export interface JudgeConflict {
 	School: JudgeConflictSchool;
 	region: number | null;
 	Region: JudgeConflictRegion;
-	/** Who recorded it, named only for a registrant; null when classic wrote the row without a person */
-	EnteredBy: JudgeConflictEnteredBy;
-	/** Whether the caller may remove it: rows they entered, and rows declared from the judge's side */
+	/** When the conflict was entered, in UTC; null on a few old rows */
+	created_at: string | null;
+	/** The standing conflict it comes from, if any: own when the judge's, other when someone declared it against the judge */
+	standing: JudgeConflictStanding;
+	/** Whether the caller may remove it here: rows they entered or that were declared from the judge's side, unless a standing conflict implies it */
 	removable: boolean;
 }

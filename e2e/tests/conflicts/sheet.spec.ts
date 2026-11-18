@@ -54,7 +54,7 @@ test.describe('a judge\'s conflict sheet', () => {
 
 		// the coach's row is listed but is not the judge's to remove
 		const riverdale = marked(page).getByRole('row', { name: /Riverdale/ });
-		await expect(riverdale).toContainText('Contact your coach to remove this conflict');
+		await expect(riverdale).toContainText('Contact your coach or the tournament to remove this conflict');
 
 		await entries(page).getByRole('row', { name: /Westlake DD/ }).getByRole('button', { name: 'Conflict', exact: true }).click();
 

@@ -24,18 +24,30 @@ const candidate = (id: number, code: string, School: { id: number, name: string 
 
 export const entryConflict: JudgeConflict = {
 	id: 9001, type: 'entry', entry: 51003, Entry: { id: 51003, code: 'Westlake BB', name: 'Westlake BB', Event: { abbr: 'LD' } },
-	school: null, School: null, region: null, Region: null, EnteredBy: { role: 'registrant', first: 'Jane', last: 'Doe' }, removable: true,
+	school: null, School: null, region: null, Region: null, created_at: '2026-10-28T19:42:00.000Z', standing: null, removable: true,
 };
 
 const coachConflict: JudgeConflict = {
 	id: 9002, type: 'school', entry: null, Entry: null, school: riverdale.id, School: riverdale,
-	region: null, Region: null, EnteredBy: { role: 'registrant', first: 'Carl', last: 'Coach' }, removable: false,
+	region: null, Region: null, created_at: '2026-10-14T16:05:00.000Z', standing: null, removable: false,
 };
 
-/* Tab marked Plano East for Jane; she may remove it but isn't told who did it */
+/* Tab marked Plano East for Jane, on a row old enough to have no date; she may remove it */
 const tabConflict: JudgeConflict = {
 	id: 9004, type: 'school', entry: null, Entry: null, school: plano.id, School: plano,
-	region: null, Region: null, EnteredBy: { role: 'tab', first: null, last: null }, removable: true,
+	region: null, Region: null, created_at: null, standing: null, removable: true,
+};
+
+/* Jane's standing conflict with Mia Nash; it comes off on her standing conflicts page */
+const ownStanding: JudgeConflict = {
+	id: 9005, type: 'entry', entry: 51009, Entry: { id: 51009, code: 'Westlake MN', name: 'Westlake MN', Event: { abbr: 'LD' } },
+	school: null, School: null, region: null, Region: null, created_at: '2026-09-02T14:10:00.000Z', standing: 'own', removable: false,
+};
+
+/* Quinn Ross declared a standing conflict against Jane */
+const otherStanding: JudgeConflict = {
+	id: 9006, type: 'entry', entry: 51010, Entry: { id: 51010, code: 'Westlake QR', name: 'Westlake QR', Event: { abbr: 'LD' } },
+	school: null, School: null, region: null, Region: null, created_at: '2026-09-20T21:30:00.000Z', standing: 'other', removable: false,
 };
 
 const base = (): Omit<JudgeConflicts, 'Strikes' | 'Candidates'> => ({
@@ -44,10 +56,13 @@ const base = (): Omit<JudgeConflicts, 'Strikes' | 'Candidates'> => ({
 	editable: true,
 });
 
-/* Jane has marked Westlake BB herself; her coach marked all of Riverdale; tab marked Plano East; Lincoln is her own school */
+/*
+ * Jane has marked Westlake BB herself; her coach marked all of Riverdale; tab marked Plano East;
+ * standing conflicts cover Westlake MN (hers) and Westlake QR (declared against her); Lincoln is her own school
+ */
 export const sheet = (): JudgeConflicts => ({
 	...base(),
-	Strikes: [entryConflict, coachConflict, tabConflict],
+	Strikes: [entryConflict, coachConflict, tabConflict, ownStanding, otherStanding],
 	Candidates: {
 		Entries: [
 			candidate(51001, 'Lincoln AA', lincoln, 'ownSchool', [['Ana', 'Adams']]),
@@ -58,6 +73,8 @@ export const sheet = (): JudgeConflicts => ({
 			candidate(51003, 'Westlake BB', westlake, 'entry', [['Ben', 'Brown']]),
 			candidate(51004, 'Westlake DD', westlake, 'open', [['Dana', 'Day']]),
 			candidate(51008, 'Westlake KL', westlake, 'open', []),
+			candidate(51009, 'Westlake MN', westlake, 'entry', [['Mia', 'Nash']]),
+			candidate(51010, 'Westlake QR', westlake, 'entry', [['Quinn', 'Ross']]),
 		],
 		Regions: [],
 	},
@@ -73,7 +90,7 @@ export const mockTrial = (): JudgeConflicts => ({
 	Tourn: { ...base().Tourn, name: 'Texas Mock Trial Regionals', mockTrial: true },
 	Strikes: [{
 		id: 9003, type: 'region', entry: null, Entry: null, school: null, School: null,
-		region: 31, Region: { id: 31, name: 'North Texas' }, EnteredBy: { role: 'registrant', first: 'Jane', last: 'Doe' }, removable: true,
+		region: 31, Region: { id: 31, name: 'North Texas' }, created_at: '2026-10-28T19:42:00.000Z', standing: null, removable: true,
 	}],
 	Candidates: { Entries: [], Regions: [{ id: 32, name: 'Central Texas' }, { id: 33, name: 'South Texas' }] },
 });

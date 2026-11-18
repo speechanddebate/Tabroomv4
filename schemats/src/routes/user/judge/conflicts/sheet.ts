@@ -27,16 +27,6 @@ export function stateText(entry: Pick<ConflictCandidate, 'state' | 'School'>): s
 	}
 }
 
-/**
- * Whom to ask about a conflict the judge can't remove: a non-removable registrant row is a
- * coach's; a row with no recorded enterer is classic's doing and only tab can sort it out
- */
-export function removeHint(conflict: Pick<JudgeConflict, 'EnteredBy'>): string {
-	return conflict.EnteredBy?.role === 'registrant'
-		? 'Contact your coach to remove this conflict'
-		: 'Contact tab staff to remove this conflict';
-}
-
 const studentNames = (entry: Pick<ConflictCandidate, 'Students'>): string[] =>
 	entry.Students.map(personName).filter(Boolean);
 
