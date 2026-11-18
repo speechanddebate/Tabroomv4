@@ -15,7 +15,7 @@ const submitLogin = async (page: Page) => {
 	await page.waitForLoadState('networkidle');
 
 	const emailInput = page.getByLabel('Email');
-	const passwordInput = page.getByLabel('Password');
+	const passwordInput = page.getByLabel(/^Password/);
 	const submitButton = page.getByRole('button', { name: 'Sign in' });
 
 	await emailInput.fill(credentials.username);

@@ -15,6 +15,34 @@
 		<TextInput autocomplete="email" label="Email" type="email" value="avery@example.com" />
 		<TextInput autocomplete="tel" label="Phone" type="tel" value="5155551234" />
 		<TextInput autocomplete="current-password" label="Password" type="password" value="correct horse" />
+		<TextInput copyable label="Copyable" value="K7Q2M9" />
+	</div>
+</Story>
+
+<!-- A password field carries its own reveal toggle, which shows only that field -->
+<Story
+	name="Password"
+	asChild
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await userEvent.click(canvas.getAllByRole('button', { name: 'Show password' })[0]);
+		await expect(canvas.getByLabelText('Current password')).toHaveAttribute('type', 'text');
+		await expect(canvas.getByLabelText('New password')).toHaveAttribute('type', 'password');
+	}}
+>
+	<div class="flex max-w-sm flex-col gap-4">
+		<TextInput autocomplete="current-password" label="Current password" type="password" value="correct horse" />
+		<TextInput autocomplete="new-password" error="Use at least 8 characters" label="New password" type="password" value="short" />
+		<TextInput autocomplete="new-password" label="Password (sm, for dense rows)" size="sm" type="password" value="battery staple" />
+		<TextInput disabled label="Disabled" type="password" value="battery staple" />
+	</div>
+</Story>
+
+<!-- The button copies the value and the icon confirms -->
+<Story name="Copyable" asChild>
+	<div class="flex max-w-sm flex-col gap-4">
+		<TextInput copyable label="Calendar link" value="https://www.tabroom.com/index/tourn/ical.mhtml?tourn_id=12345" />
+		<TextInput copyable description="Share it with your team" label="Team code" size="sm" value="K7Q2M9" />
 	</div>
 </Story>
 

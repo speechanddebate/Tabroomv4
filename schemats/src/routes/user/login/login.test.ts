@@ -34,7 +34,7 @@ describe('Login page redirect', () => {
 		render(LoginPage);
 
 		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
-		await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'password123');
 		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
 		await waitFor(() => {
@@ -48,7 +48,7 @@ describe('Login page redirect', () => {
 		render(LoginPage);
 
 		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
-		await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'password123');
 		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
 		await waitFor(() => {
@@ -66,7 +66,7 @@ describe('Login page redirect', () => {
 		render(LoginPage);
 
 		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
-		await userEvent.type(screen.getByLabelText(/password/i), 'password123');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'password123');
 		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
 		await waitFor(() => {
@@ -88,7 +88,7 @@ describe('Login page redirect', () => {
 		render(LoginPage);
 
 		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
-		await userEvent.type(screen.getByLabelText(/password/i), 'wrongpassword');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'wrongpassword');
 		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
 		await waitFor(() => {
@@ -111,13 +111,13 @@ describe('Login page redirect', () => {
 		render(LoginPage);
 
 		await userEvent.type(screen.getByLabelText(/email/i), 'user@example.com');
-		await userEvent.type(screen.getByLabelText(/password/i), 'x');
+		await userEvent.type(screen.getByLabelText(/^password/i), 'x');
 		await userEvent.click(screen.getByRole('button', { name: /sign in/i }));
 
 		await waitFor(() => {
-			expect(screen.getByLabelText(/password/i)).toHaveAccessibleDescription('Enter your password');
+			expect(screen.getByLabelText(/^password/i)).toHaveAccessibleDescription('Enter your password');
 		});
-		expect(screen.getByLabelText(/password/i)).toBeInvalid();
+		expect(screen.getByLabelText(/^password/i)).toBeInvalid();
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
 	});
 });
