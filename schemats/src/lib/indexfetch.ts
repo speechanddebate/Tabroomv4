@@ -62,7 +62,7 @@ const parseProblem = async (response: Response): Promise<Problem> => {
 };
 
 //TODO: this any should eventually be unknown but we don't have all the types defined yet RCT
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export const indexFetch = <T = any>
 	(url:string, options:queryOptions = {}): CreateQueryResult<T, Problem> => {
 

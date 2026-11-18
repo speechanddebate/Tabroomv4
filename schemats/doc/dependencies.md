@@ -12,7 +12,7 @@ The production image runs `npm ci --omit=dev` and then `node build/index.js`. ad
 | @sveltejs/vite-plugin-svelte | dev ^7.3.0 | Svelte in Vite | None. |
 | vite | dev ^8.2.2 | Bundler | None. |
 | svelte | dev ^5.46.4 | Components | None. |
-| typescript | dev ~6.0.3 | Types | Held at 6: `typescript-eslint` accepts `<6.1.0` and `svelte-check` accepts `^5 \|\| ^6`. `indexcards/` is on 7. |
+| typescript | dev ~6.0.3 | Types | Held at 6: `svelte-check` accepts `^5 \|\| ^6`. `indexcards/` is on 7. |
 | svelte-check | dev ^4.3.6 | `npm run typecheck` | Gates TypeScript 7. |
 | @tsconfig/svelte | dev ^5.0.4 | Base tsconfig | None. |
 | @types/node | dev 24.13.1 | Node types | Pinned to the Node in the Dockerfiles (`node:24.13.1`). |
@@ -89,14 +89,10 @@ There are two table libraries. `SVGrid.svelte` (13 consumers) wraps SVAR, and `s
 
 ## Lint and format
 
-ESLint lints only `.svelte` files. Everything else goes through oxlint from the repo root.
+Linting is oxlint from the repo root, which also lints the `<script>` blocks of `.svelte` files. Templates are checked by `svelte-check`.
 
 | Package | Range | Purpose | Upgrade notes |
 |---|---|---|---|
-| eslint | dev ^9.39.4 | `npm run lint:svelte` | v10 is accepted by `eslint-plugin-svelte` and `typescript-eslint`. |
-| eslint-plugin-svelte, svelte-eslint-parser | dev ^3.12.1, ^1.6.0 | Svelte rules and their parser | None. |
-| typescript-eslint | dev ^8.70.0 | TS in `.svelte` files | Gates TypeScript 7. |
-| globals | dev ^17.0.0 | Browser and Node globals | None. |
 | prettier | dev ^3.8.1 | Formatting (also used by `indexcards/`) | None. |
 
 ## Agent tooling
