@@ -59,6 +59,68 @@ describe('TextInput', () => {
 		expect(screen.getByRole('textbox', { name: 'Rank for Maya Lindqvist' })).toHaveClass('h-7');
 		expect(screen.getByText('Rank for Maya Lindqvist')).toHaveClass('sr-only');
 	});
+
+	it('reveals and hides a password with a toggle that never submits', async () => {
+		render(TextInput, { props: { label: 'Password', type: 'password', autocomplete: 'current-password', value: 'correct horse' } });
+		const input = screen.getByLabelText('Password');
+		const toggle = screen.getByRole('button', { name: 'Show password' });
+
+		expect(input).toHaveAttribute('type', 'password');
+		expect(input).not.toHaveAttribute('aria-describedby');
+		expect(toggle).toHaveAttribute('type', 'button');
+		expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+		await userEvent.click(toggle);
+		expect(input).toHaveAttribute('type', 'text');
+		expect(input).toHaveAttribute('autocomplete', 'current-password');
+		expect(toggle).toHaveAttribute('aria-pressed', 'true');
+
+		await userEvent.click(toggle);
+		expect(input).toHaveAttribute('type', 'password');
+	});
+
+	it('reveals only its own password field', async () => {
+		render(TextInput, { props: { label: 'New password', type: 'password' } });
+		render(TextInput, { props: { label: 'Repeat new password', type: 'password' } });
+
+		await userEvent.click(screen.getAllByRole('button', { name: 'Show password' })[0]);
+
+		expect(screen.getByLabelText('New password')).toHaveAttribute('type', 'text');
+		expect(screen.getByLabelText('Repeat new password')).toHaveAttribute('type', 'password');
+	});
+
+	it('disables the reveal toggle with a disabled password field', () => {
+		render(TextInput, { props: { label: 'Password', type: 'password', disabled: true } });
+
+		expect(screen.getByRole('button', { name: 'Show password' })).toBeDisabled();
+	});
+
+	it('copies the value and announces it', async () => {
+		const user = userEvent.setup();
+		render(TextInput, { props: { label: 'Calendar link', copyable: true, value: 'https://www.tabroom.com/cal/123' } });
+
+		expect(screen.getByRole('status')).toHaveTextContent('');
+		await user.click(screen.getByRole('button', { name: 'Copy Calendar link' }));
+
+		expect(await navigator.clipboard.readText()).toBe('https://www.tabroom.com/cal/123');
+		expect(screen.getByRole('status')).toHaveTextContent('Copied');
+	});
+
+	it('says so when the clipboard refuses', async () => {
+		const user = userEvent.setup();
+		vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('NotAllowedError'));
+		render(TextInput, { props: { label: 'Calendar link', copyable: true, value: 'https://www.tabroom.com/cal/123' } });
+
+		await user.click(screen.getByRole('button', { name: 'Copy Calendar link' }));
+
+		expect(screen.getByRole('status')).toHaveTextContent('Couldn\'t copy');
+	});
+
+	it('has no copy button unless copyable', () => {
+		render(TextInput, { props: { label: 'Calendar link', value: 'https://www.tabroom.com/cal/123' } });
+
+		expect(screen.queryByRole('button')).not.toBeInTheDocument();
+	});
 });
 
 describe('Switch', () => {
