@@ -7,15 +7,18 @@
 		changes   : number,
 		saving?   : boolean,
 		ondiscard : () => void,
+		// The last row of the card it saves, instead of a bar of its own under it
+		attached? : boolean,
 		class?    : string,
 	};
 
-	let { changes, saving = false, ondiscard, class: classOverride }: Props = $props();
+	let { changes, saving = false, ondiscard, attached = false, class: classOverride }: Props = $props();
 </script>
 
 <div
 	class={[
-		'sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 rounded-md border-2 px-4 py-2 shadow-lg',
+		'sticky bottom-0 z-10 flex flex-wrap items-center justify-between gap-2 px-4 py-2',
+		attached ? 'rounded-b-md border-t-2' : 'rounded-md border-2 shadow-lg',
 		changes ? 'border-accent bg-accent-soft' : 'border-border bg-surface',
 		classOverride,
 	]}

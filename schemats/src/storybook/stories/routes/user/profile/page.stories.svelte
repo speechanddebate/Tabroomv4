@@ -1,10 +1,11 @@
 <script lang="ts" module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { http, HttpResponse } from 'msw';
+	import { http, HttpResponse, type HttpHandler } from 'msw';
 	import { expect, userEvent, waitFor, within } from 'storybook/test';
 	import type { UserProfile, UserSession } from '@tabroom/types';
 	import {
 		getUserNotifyPushMockHandler,
+		getUserPasswordChangeMockHandler,
 		getUserProfileMockHandler,
 		getUserProfileUpdateMockHandler,
 		getUserSessionEndMockHandler,
@@ -65,23 +66,50 @@
 		login({ id: 3512, ip: '2001:db8:85a3::8a2e:370:7334', last_access: '2026-09-02T17:30:00.000Z' }),
 	];
 
-	const serve = (profile: UserProfile, ...overrides: ReturnType<typeof http.patch>[]) => {
-		// ending a login takes it off the list, as the API does
+	const wrongPassword = {
+		type     : 'about:blank',
+		title    : 'You Do Not Have Access to This Resource',
+		status   : 403,
+		detail   : 'That password isn\'t right',
+		issues   : [{ path: ['currentPassword'], message: 'That password isn\'t right', code: 'custom' }],
+	};
+
+	const serve = (profile: UserProfile, ...overrides: HttpHandler[]) => {
+		// ending a login takes it off the list, and a password change ends every other login and any required change, as the API does
 		let sessions = [...logins];
+		let stored = profile;
 		return {
 			msw: {
 				handlers: [
 					...overrides,
-					getUserProfileMockHandler(profile),
+					getUserProfileMockHandler(() => stored),
 					getUserProfileUpdateMockHandler(profile),
 					getUserNotifyPushMockHandler({ publicKey: 'BStoryKey', endpoint: null, disabled: false }),
 					getUserSessionsMockHandler(() => sessions),
 					getUserSessionEndMockHandler(({ params }) => {
 						sessions = sessions.filter(session => session.id !== Number(params.sessionId));
 					}),
+					getUserPasswordChangeMockHandler(() => {
+						sessions = sessions.filter(session => session.current);
+						stored = { ...stored, forcePasswordChange: false };
+					}),
 				],
 			},
 		};
+	};
+
+	const changePassword = async (canvas: ReturnType<typeof within>) => {
+		const form = within(await canvas.findByTestId('password-form'));
+		await userEvent.type(form.getByLabelText(/^Current password/), 'old-password');
+		await userEvent.type(form.getByLabelText(/^New password/), 'a new password');
+		await userEvent.type(form.getByLabelText(/^Repeat new password/), 'a new password');
+		await userEvent.click(form.getByRole('button', { name: 'Change password' }));
+		return form;
+	};
+
+	const suSession = {
+		Person : { id: 4410, first: 'Avery', last: 'Okafor', email: 'avery.okafor@example.org', tz: 'America/Chicago' },
+		Su     : { id: 1, first: 'Morgan', last: 'Reyes', email: 'mreyes@speechanddebate.example', tz: 'America/Chicago', site_admin: 1 },
 	};
 </script>
 
@@ -95,12 +123,14 @@
 	play={async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
 		const email = await canvas.findByRole('textbox', { name: 'Email' });
+		// The password card has its own Current password field
+		const emailGroup = within(canvas.getByTestId('profile-email'));
 
-		await expect(canvas.queryByLabelText(/Current password/)).not.toBeInTheDocument();
+		await expect(emailGroup.queryByLabelText(/Current password/)).not.toBeInTheDocument();
 		await userEvent.clear(email);
 		await userEvent.type(email, 'avery.new@example.org');
 
-		await expect(await canvas.findByLabelText(/Current password/)).toBeInTheDocument();
+		await expect(await emailGroup.findByLabelText(/Current password/)).toBeInTheDocument();
 		await expect(canvas.getByText('1 unsaved change')).toBeInTheDocument();
 	}}
 />
@@ -138,4 +168,46 @@
 	}}
 />
 
+<Story
+	name="Change password"
+	parameters={serve(avery)}
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		const form = await changePassword(canvas);
+
+		await waitFor(() => expect(canvas.queryByText('Chrome on Windows 10')).not.toBeInTheDocument());
+		await expect(canvas.getByText('This browser')).toBeInTheDocument();
+		await expect(form.getByLabelText(/^Current password/)).toHaveValue('');
+	}}
+/>
+
+<Story
+	name="Wrong current password"
+	parameters={serve(avery, http.post('*/user/profile/password', () => HttpResponse.json(wrongPassword, { status: 403 })))}
+	play={async ({ canvasElement }) => {
+		const form = await changePassword(within(canvasElement));
+
+		await expect(await form.findByText('That password isn\'t right')).toBeInTheDocument();
+		await expect(form.getByLabelText(/^Current password/)).toHaveAttribute('aria-invalid', 'true');
+	}}
+/>
+
+<Story name="Under su" parameters={{ ...serve(avery), session: suSession }} />
+
 <Story name="Password change required" parameters={serve({ ...avery, forcePasswordChange: true })} />
+
+<Story
+	name="Password change required, then changed"
+	parameters={serve({ ...avery, forcePasswordChange: true })}
+	play={async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		// Stories have no +page.ts prefetch, so the full page shows until the profile loads
+		const forced = within(await canvas.findByTestId('forced-password-change'));
+		await expect(canvas.queryByRole('textbox', { name: /First name/ })).not.toBeInTheDocument();
+
+		await changePassword(forced);
+
+		await expect(await canvas.findByRole('textbox', { name: /First name/ })).toHaveValue('Avery');
+		await expect(canvas.queryByTestId('forced-password-change')).not.toBeInTheDocument();
+	}}
+/>

@@ -91,8 +91,8 @@
 <form class={['flex flex-col gap-3', classOverride]} onsubmit={save}>
 	<FormProblem {problem} />
 
-	<div class="raised @container p-4">
-		<div class="grid items-start gap-x-8 gap-y-6 @3xl:grid-cols-2">
+	<div class="raised @container">
+		<div class="grid items-start gap-x-8 gap-y-6 p-4 @3xl:grid-cols-2">
 			<!-- Each group is its own container so its field rows break on its own width -->
 			<div class="@container min-w-0">
 				<fieldset class="flex min-w-0 flex-col gap-3">
@@ -145,7 +145,7 @@
 					</div>
 					{#if !profile.emailUnconfirmed}
 						<Checkbox
-							description="You'll miss tournament announcements. Password and email notices still come."
+							description="You will not receive ANY tournament notices, pairings, or announcements. You will still receive notices about your Tabroom account."
 							label="Don't send me email"
 							bind:checked={draft.values.noEmail}
 						/>
@@ -173,7 +173,7 @@
 				</fieldset>
 			</div>
 		</div>
-	</div>
 
-	<SaveBar changes={draft.changes} ondiscard={discard} {saving} />
+		<SaveBar attached changes={draft.changes} ondiscard={discard} {saving} />
+	</div>
 </form>

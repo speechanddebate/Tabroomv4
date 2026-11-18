@@ -23,7 +23,8 @@ test.describe('email confirmation', () => {
 		await page.goto('/user/profile');
 
 		await page.getByRole('textbox', { name: 'Email' }).fill(address);
-		await page.getByLabel(/Current password/).fill(person.password);
+		// The password card has its own Current password field
+		await page.getByTestId('profile-email').getByLabel(/Current password/).fill(person.password);
 		await page.getByRole('button', { name: 'Save changes' }).click();
 		await expect(page.getByText('Not confirmed yet.')).toBeVisible();
 

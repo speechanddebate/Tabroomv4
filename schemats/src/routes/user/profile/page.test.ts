@@ -32,6 +32,7 @@ const mocks = vi.hoisted(() => ({
 	invalidateQueries: vi.fn(),
 	sessions: [] as UserSession[],
 	endMutateAsync: vi.fn(),
+	passwordMutateAsync: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 	beforeNavigate: vi.fn(),
 	su: false,
@@ -76,6 +77,7 @@ vi.mock('$indexcards', () => ({
 		isLoading: false,
 	}),
 	createUserSessionEnd: () => ({ mutateAsync: mocks.endMutateAsync }),
+	createUserPasswordChange: () => ({ mutateAsync: mocks.passwordMutateAsync }),
 	getUserSessionsQueryKey: () => ['/v1/user/sessions'],
 }));
 
@@ -95,6 +97,7 @@ describe('Profile page', () => {
 		mocks.updateMutateAsync.mockImplementation(async ({ data }) => ({ status: 200, data: { ...mocks.profile, ...data } }));
 		mocks.sessions = [];
 		mocks.endMutateAsync.mockResolvedValue({ status: 204, data: undefined });
+		mocks.passwordMutateAsync.mockResolvedValue({ status: 204, data: undefined });
 	});
 
 	afterEach(() => {
@@ -258,7 +261,8 @@ describe('Profile page', () => {
 
 		describe('email', () => {
 			const emailField = () => screen.getByRole('textbox', { name: 'Email' });
-			const passwordField = () => screen.queryByLabelText(/Current password/);
+			// The password card has its own Current password field
+			const passwordField = () => within(screen.getByTestId('profile-email')).queryByLabelText(/Current password/);
 
 			it('shows the email as a field, with no password field until it changes', () => {
 				render(ProfilePage);
@@ -345,20 +349,84 @@ describe('Profile page', () => {
 			expect(within(email).getByRole('link', { name: 'Confirm your email' })).toHaveAttribute('href', '/user/profile/confirm');
 		});
 
-		it('links to classic to change the password', () => {
+	});
+
+	describe('password', () => {
+		const form = () => within(screen.getByTestId('password-form'));
+
+		const fillPasswords = async (user: ReturnType<typeof userEvent.setup>) => {
+			await user.type(form().getByLabelText(/^Current password/), 'old-password');
+			await user.type(form().getByLabelText(/^New password/), 'new-password');
+			await user.type(form().getByLabelText(/^Repeat new password/), 'new-password');
+			await user.click(form().getByRole('button', { name: 'Change password' }));
+		};
+
+		it('sends the three fields, clears them, and refreshes the sessions and profile', async () => {
+			const user = userEvent.setup();
 			render(ProfilePage);
 
-			expect(screen.getByRole('link', { name: 'Change your password' }))
-				.toHaveAttribute('href', 'https://www.tabroom.com/user/login/profile.mhtml');
+			await fillPasswords(user);
+
+			expect(mocks.passwordMutateAsync).toHaveBeenCalledWith({
+				data: { currentPassword: 'old-password', newPassword: 'new-password', repeatPassword: 'new-password' },
+			});
+			expect(form().getByLabelText(/^Current password/)).toHaveValue('');
+			expect(form().getByLabelText(/^New password/)).toHaveValue('');
+			expect(form().getByLabelText(/^Repeat new password/)).toHaveValue('');
+			expect(mocks.toast.success).toHaveBeenCalledWith({ message: 'Your password is changed, and you\'re logged out everywhere else' });
+			expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['/v1/user/sessions'] });
+			expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['/v1/user/profile'] });
 		});
 
-		it('shows only the password notice while a password change is required', () => {
+		it('shows a field\'s problem under that field and keeps the entries', async () => {
+			mocks.passwordMutateAsync.mockResolvedValue({
+				status: 403,
+				data: {
+					title: 'You Do Not Have Access to This Resource',
+					status: 403,
+					detail: 'That password isn\'t right',
+					issues: [{ path: ['currentPassword'], message: 'That password isn\'t right', code: 'custom' }],
+				},
+			});
+			const user = userEvent.setup();
+			render(ProfilePage);
+
+			await fillPasswords(user);
+
+			expect(form().getByLabelText(/^Current password/)).toHaveAccessibleDescription(/That password isn't right/);
+			expect(form().getByLabelText(/^New password/)).toHaveValue('new-password');
+			expect(mocks.toast.success).not.toHaveBeenCalled();
+			expect(mocks.invalidateQueries).not.toHaveBeenCalled();
+		});
+
+		it('shows a problem with no field above the form', async () => {
+			mocks.passwordMutateAsync.mockResolvedValue({
+				status: 429,
+				data: { title: 'Too Many Requests', status: 429, detail: 'Too many wrong passwords. Try again later.' },
+			});
+			const user = userEvent.setup();
+			render(ProfilePage);
+
+			await fillPasswords(user);
+
+			expect(form().getByText('Too many wrong passwords. Try again later.')).toBeInTheDocument();
+		});
+
+		it('shows a notice instead of the form while su\'d', () => {
+			mocks.su = true;
+			render(ProfilePage);
+
+			expect(screen.queryByTestId('password-form')).not.toBeInTheDocument();
+			expect(screen.getByTestId('password-su')).toHaveTextContent('Passwords can\'t be changed while su\'d.');
+		});
+
+		it('shows only the password form while a password change is required', () => {
 			mocks.profile = { ...baseProfile, forcePasswordChange: true };
 			render(ProfilePage);
 
-			expect(screen.getByTestId('forced-password-change')).toBeInTheDocument();
-			expect(screen.getByRole('link', { name: 'Change your password on the classic site' }))
-				.toHaveAttribute('href', 'https://www.tabroom.com/user/login/profile.mhtml');
+			const forced = within(screen.getByTestId('forced-password-change'));
+			expect(forced.getByRole('heading', { name: 'Choose a new password' })).toBeInTheDocument();
+			expect(forced.getByTestId('password-form')).toBeInTheDocument();
 			expect(screen.queryByLabelText(/First name/)).not.toBeInTheDocument();
 			expect(screen.queryByRole('switch')).not.toBeInTheDocument();
 			expect(screen.queryByTestId('sessions')).not.toBeInTheDocument();

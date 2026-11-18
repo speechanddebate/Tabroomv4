@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { CLASSIC_URL } from '$app/env/public';
 	import { createUserProfile } from '$indexcards';
 	import Button from '$lib/components/Button.svelte';
 	import { Switch } from '$lib/components/forms';
 	import { createPushState } from '$lib/helpers/pushState.svelte';
 	import { handleOrval } from '$lib/helpers/query';
 	import WithSidebar from '$lib/layouts/WithSidebar.svelte';
+	import PasswordForm from './PasswordForm.svelte';
 	import ProfileForm from './ProfileForm.svelte';
 	import ProfileSidebar from './ProfileSidebar.svelte';
 	import SessionList from './SessionList.svelte';
@@ -24,10 +24,8 @@
 	// Only these states can change; the rest say why under the switch
 	const canToggle = $derived(push.state === 'on' || push.state === 'off' || push.state === 'undecided');
 
-	const classicProfile = `${CLASSIC_URL}/user/login/profile.mhtml`;
 	const card = 'raised @container flex flex-col gap-3 p-4';
 	const cardTitle = 'font-display text-xl text-primary-deep normal-case tracking-normal';
-	const link = 'font-semibold text-primary-strong underline';
 </script>
 
 <WithSidebar canvas>
@@ -36,12 +34,10 @@
 
 		{#if profile?.forcePasswordChange}
 			<!-- Classic's rule: nothing else on the page until the password is changed -->
-			<section class={card} aria-labelledby="profile-forced" data-testid="forced-password-change">
-				<h3 id="profile-forced" class={cardTitle}>Change your password</h3>
-				<p class="text-sm text-text">
-					Your password was reset, so you need to choose a new one before you can edit your profile.
-					<a class={link} href={classicProfile}>Change your password on the classic site</a>
-				</p>
+			<section class={['max-w-md', card]} aria-labelledby="profile-forced" data-testid="forced-password-change">
+				<h3 id="profile-forced" class={cardTitle}>Choose a new password</h3>
+				<p class="text-sm text-text">Your password was reset, so choose a new one before you edit your profile.</p>
+				<PasswordForm />
 			</section>
 		{:else}
 			{#if profile}
@@ -51,9 +47,7 @@
 			<div class="grid items-start gap-3 @3xl:grid-cols-2">
 				<section class={card} aria-labelledby="profile-password">
 					<h3 id="profile-password" class={cardTitle}>Password</h3>
-					<p class="text-sm text-text">
-						<a class={link} href={classicProfile}>Change your password</a> on the classic site.
-					</p>
+					<PasswordForm />
 				</section>
 
 				<section class={card} aria-labelledby="profile-devices">
