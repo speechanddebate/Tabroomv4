@@ -70,7 +70,13 @@
 	};
 </script>
 
-<Story name="Enter code" parameters={serve(avery)} />
+<Story
+	name="Enter code"
+	parameters={serve(avery)}
+	play={async ({ canvasElement }) => {
+		await expect(await within(canvasElement).findByRole('heading', { name: 'Didn\'t get the email?' })).toBeInTheDocument();
+	}}
+/>
 
 <Story
 	name="Code expired before arrival"
