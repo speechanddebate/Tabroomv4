@@ -36,14 +36,17 @@ const config: StorybookConfig = {
 		return mergeConfig(og, {
 			plugins: [
 				// SvelteKit's `$app` alias wins over any `$app/env/public` alias we add, and
-				// the virtual module it resolves to reads `globalThis.__sveltekit_dev.env`,
+				// the generated module it resolves to reads `globalThis.__sveltekit_dev.env`,
 				// which only the SvelteKit runtime sets up. Swap in the mock first.
+				// Kit 3 loads it from a file like `.svelte-kit/generated/dev/env/public/client.js`,
+				// so replace the file's contents rather than the import id.
 				{
 					name: 'storybook-mock-sveltekit-env-public',
 					enforce: 'pre',
-					resolveId(id: string) {
-						if (id === '__sveltekit/env/public/client') {
-							return fileURLToPath(new URL('../src/storybook/mocks/env-public.ts', import.meta.url));
+					load(id: string) {
+						if (id.endsWith('/generated/dev/env/public/client.js')) {
+							const mock = fileURLToPath(new URL('../src/storybook/mocks/env-public.ts', import.meta.url));
+							return `export * from ${JSON.stringify(mock)};`;
 						}
 					},
 				},
