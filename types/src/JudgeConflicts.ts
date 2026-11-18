@@ -27,12 +27,9 @@ export const JudgeConflictSchema = z.object({
 	School: SchoolRef.nullable(),
 	region: RegionSchema.shape.id.nullable(),
 	Region: RegionRef.nullable(),
-	EnteredBy: z.object({
-		role: z.enum(['tab', 'registrant']).meta({ description: 'tab: tournament staff, whose name is withheld; registrant: the judge, a coach, or a standing conflict' }),
-		first: z.string().nullable(),
-		last: z.string().nullable(),
-	}).strict().nullable().meta({ description: 'Who recorded it, named only for a registrant; null when classic wrote the row without a person' }),
-	removable: z.boolean().meta({ description: 'Whether the caller may remove it: rows they entered, and rows declared from the judge\'s side' }),
+	created_at: z.iso.datetime().nullable().meta({ description: 'When the conflict was entered, in UTC; null on a few old rows' }),
+	standing: z.enum(['own', 'other']).nullable().meta({ description: "The standing conflict it comes from, if any: own when the judge's, other when someone declared it against the judge" }),
+	removable: z.boolean().meta({ description: "Whether the caller may remove it here: rows they entered or that were declared from the judge's side, unless a standing conflict implies it" }),
 }).strict().meta({
 	id: 'JudgeConflict',
 }) satisfies ZodOpenApiSchemaObject;
@@ -49,10 +46,10 @@ export const JudgeConflictRequestSchema = z.object({
 
 export type JudgeConflictRequest = z.infer<typeof JudgeConflictRequestSchema>;
 
-/** Why a conflict was not added: the category is closed to judge conflicts, or the target is already covered */
-export const ConflictRefusalSchema = z.enum(['closed', 'duplicate', 'school', 'ownSchool']).meta({
+/** Why a conflict was not added or removed: the category is closed, the target is already covered, or a standing conflict implies it */
+export const ConflictRefusalSchema = z.enum(['closed', 'duplicate', 'school', 'ownSchool', 'standing']).meta({
 	id: 'ConflictRefusal',
-	description: 'closed: the category does not take conflicts from judges; duplicate: already marked; school: covered by a conflict with its school; ownSchool: the judge\'s own school',
+	description: 'closed: the category does not take conflicts from judges; duplicate: already marked; school: covered by a conflict with its school; ownSchool: the judge\'s own school; standing: a standing conflict implies it, so it is removed with that conflict',
 }) satisfies ZodOpenApiSchemaObject;
 
 export type ConflictRefusal = z.infer<typeof ConflictRefusalSchema>;

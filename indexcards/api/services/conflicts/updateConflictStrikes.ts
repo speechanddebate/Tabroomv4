@@ -11,9 +11,9 @@ import schoolRepo from '../../repos/schoolRepo.js';
 import strikeRepo from '../../repos/strikeRepo.js';
 import { derivedStrikes, strikesToRemove, type TournSides } from './conflictRules.js';
 
-type ConflictRow = { person: number | null; conflicted: number | null; chapter: number | null };
+type ConflictRow ={ person: number | null; conflicted: number | null; chapter: number | null };
 
-async function loadSides(db: Database, personId: number, tournId: number, conflicts: ConflictRow[]): Promise<TournSides> {
+export async function loadSides(db: Database, personId: number, tournId: number, conflicts: ConflictRow[]): Promise<TournSides> {
 	const otherPeople = conflicts
 		.map((conflict) => conflict.person === personId ? conflict.conflicted : conflict.person)
 		.filter((id): id is number => id !== null);

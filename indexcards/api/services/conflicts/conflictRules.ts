@@ -31,7 +31,7 @@ export type TournSides = {
 
 export type DerivedStrike = { judge: number; type: 'school' | 'entry'; school: number | null; entry: number | null };
 
-// shared by derivedStrikes and strikesToRemove, which must agree on what one target is
+// shared by derivedStrikes, strikesToRemove, and standingSource, which must agree on what one target is
 const targetKey = (row: { judge: number | null; school: number | null; entry: number | null }) => `${row.judge}:${row.school ?? ''}:${row.entry ?? ''}`;
 
 /**
@@ -81,6 +81,20 @@ export function strikesToRemove(sides: TournSides, remaining: TournSides, person
 			(judges.has(strike.judge!) && ((strike.school !== null && conflictedSchools.has(strike.school)) || (strike.entry !== null && conflictedEntries.has(strike.entry))))
 			|| (conflictedJudges.has(strike.judge!) && strike.entry !== null && entries.has(strike.entry)))
 		.map((strike) => strike.id);
+}
+
+/**
+ * Which standing conflicts imply a row on the person's own judge sheet: `own` holds the sides of
+ * the conflicts they declared, `other` the sides of those declared against them. Own wins when
+ * both do. Classic re-derives these rows, so they come off only with the standing conflict.
+ */
+export function standingSource(strike: { judge: number | null; school: number | null; entry: number | null }, own: TournSides, other: TournSides): 'own' | 'other' | null {
+	// derivedStrikes also strikes the other side's judges, whose sheet the row belongs to
+	const implies = (sides: TournSides) => strike.judge !== null && sides.judges.includes(strike.judge)
+		&& derivedStrikes({ ...sides, strikes: [] }).some((row) => targetKey(row) === targetKey(strike));
+	if (implies(own)) return 'own';
+	if (implies(other)) return 'other';
+	return null;
 }
 
 export type CandidateState = 'open' | 'entry' | 'school' | 'ownSchool';

@@ -109,7 +109,7 @@ if(!config.features.HIDE_DEV_ENDPOINTS) {
 	router.route('/:judgeId/conflicts/:strikeId')
 	.delete(requireAccess('judge', 'conflicts'), ValidateRequest, removeConflict).openapi = {
 		summary: 'Remove a conflict',
-		description: 'Removes a conflict the caller entered, or one declared from the judge\'s side (a derived or judge-entered row). A coach\'s or tab\'s row is 403',
+		description: 'Removes a conflict the caller entered, or one declared from the judge\'s side (a derived or judge-entered row). A coach\'s or tab\'s row is 403; a row a standing conflict implies is 409 with a reason of standing, for every caller',
 		path: '/rest/judges/{judgeId}/conflicts/{strikeId}',
 		operationId: 'RestJudgesConflictRemove',
 		tags: ['Orval', 'Judges'],
@@ -120,6 +120,7 @@ if(!config.features.HIDE_DEV_ENDPOINTS) {
 		},
 		responses: {
 			204: { description: 'Removed' },
+			409: { $ref: '#/components/responses/Conflict' },
 			...conflictErrors,
 		},
 	};

@@ -69,7 +69,6 @@ async function getJudgeConflicts(db: Database, opts: queryOpts & { judges: numbe
 		.leftJoin('event', 'event.id', 'entry.event')
 		.leftJoin('school', 'school.id', 'strike.school')
 		.leftJoin('region', 'region.id', 'strike.region')
-		.leftJoin('person', 'person.id', 'strike.entered_by')
 		.select([
 			'strike.id',
 			'strike.type',
@@ -84,8 +83,7 @@ async function getJudgeConflicts(db: Database, opts: queryOpts & { judges: numbe
 			'school.name as schoolName',
 			'strike.region',
 			'region.name as regionName',
-			'person.first as enteredFirst',
-			'person.last as enteredLast',
+			'strike.created_at',
 		])
 		.execute();
 }

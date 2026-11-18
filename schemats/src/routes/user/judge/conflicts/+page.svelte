@@ -11,12 +11,12 @@
 	import Table from '$lib/components/utils/Table.svelte';
 	import TableSearch from '$lib/components/utils/TableSearch.svelte';
 	import { createAppColumnHelper } from '$lib/components/utils/table.hook';
+	import { showDateTime } from '$lib/helpers/dt';
 	import { handleMutation, handleOrval } from '$lib/helpers/query';
-	import { personName } from '$lib/helpers/text';
 	import { toast } from '$lib/helpers/toasts';
 	import { createRestJudgesConflictAdd, createRestJudgesConflictRemove, createRestJudgesConflicts, getUserHomeQueryKey } from '$indexcards';
 	import type { PageData } from './$types';
-	import { conflictLabel, matchesFilter, removeHint, searchText, stateText, studentList } from './sheet';
+	import { conflictLabel, matchesFilter, searchText, stateText, studentList } from './sheet';
 
 	const { data }: { data: PageData } = $props();
 
@@ -53,17 +53,16 @@
 		busy = false;
 	}
 
-	const enteredBy = (conflict: JudgeConflict) => {
-		if (!conflict.EnteredBy) return '';
-		return conflict.EnteredBy.role === 'tab' ? 'Tab staff' : personName(conflict.EnteredBy);
-	};
+	// showDateTime falls back to now on a null date, and a few old rows have none
+	const enteredOn = (conflict: JudgeConflict) =>
+		conflict.created_at ? showDateTime({ dtISO: conflict.created_at, tz: sheet?.Tourn.tz, format: 'short', joinWord: 'at' }) : '';
 
 	type Region = JudgeConflicts['Candidates']['Regions'][number];
 
 	const conflictColumns = createAppColumnHelper<JudgeConflict>();
 	const markedColumns = conflictColumns.columns([
 		conflictColumns.display({ id: 'conflict', header: 'Conflict', cell: ({ row }) => conflictLabel(row.original) }),
-		conflictColumns.display({ id: 'enteredBy', header: 'Entered by', cell: ({ row }) => enteredBy(row.original) }),
+		conflictColumns.display({ id: 'enteredOn', header: 'Entered on', cell: ({ row }) => enteredOn(row.original), size: 150 }),
 		conflictColumns.display({ id: 'remove', header: '', cell: ({ row }) => renderSnippet(removeCell, row.original), size: 120 }),
 	]);
 
@@ -94,8 +93,10 @@
 {#snippet removeCell(conflict: JudgeConflict)}
 	{#if conflict.removable}
 		<Button color="danger" disabled={busy} onclick={() => unmark(conflict)} size="sm" variant="outline">Remove</Button>
+	{:else if conflict.standing === 'own'}
+		<a class="text-xs text-primary-strong underline" href="/user/conflicts">Remove it from your standing conflicts</a>
 	{:else}
-		<span class="text-xs text-muted">{removeHint(conflict)}</span>
+		<span class="text-xs text-muted">Contact your coach or the tournament to remove this conflict</span>
 	{/if}
 {/snippet}
 

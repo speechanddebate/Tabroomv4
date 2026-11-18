@@ -2972,6 +2972,11 @@ export type restJudgesConflictRemoveResponse404 = {
 	status: 404;
 };
 
+export type restJudgesConflictRemoveResponse409 = {
+	data: ConflictResponse;
+	status: 409;
+};
+
 export type restJudgesConflictRemoveResponse500 = {
 	data: ErrorResponseResponse;
 	status: 500;
@@ -2986,6 +2991,7 @@ export type restJudgesConflictRemoveResponseError = (
 	| restJudgesConflictRemoveResponse401
 	| restJudgesConflictRemoveResponse403
 	| restJudgesConflictRemoveResponse404
+	| restJudgesConflictRemoveResponse409
 	| restJudgesConflictRemoveResponse500
 ) & {
 	headers: Headers;
@@ -3003,7 +3009,7 @@ export const getRestJudgesConflictRemoveUrl = (
 };
 
 /**
- * Removes a conflict the caller entered, or one declared from the judge's side (a derived or judge-entered row). A coach's or tab's row is 403
+ * Removes a conflict the caller entered, or one declared from the judge's side (a derived or judge-entered row). A coach's or tab's row is 403; a row a standing conflict implies is 409 with a reason of standing, for every caller
  * @summary Remove a conflict
  */
 export const restJudgesConflictRemove = async (
@@ -3039,6 +3045,7 @@ export const getRestJudgesConflictRemoveMutationOptions = <
 		| UnauthorizedResponse
 		| ForbiddenResponse
 		| NotFoundResponse
+		| ConflictResponse
 		| ErrorResponseResponse,
 	TContext = unknown,
 >(options?: {
@@ -3095,6 +3102,7 @@ export type RestJudgesConflictRemoveMutationError =
 	| UnauthorizedResponse
 	| ForbiddenResponse
 	| NotFoundResponse
+	| ConflictResponse
 	| ErrorResponseResponse;
 
 /**
@@ -3106,6 +3114,7 @@ export const createRestJudgesConflictRemove = <
 		| UnauthorizedResponse
 		| ForbiddenResponse
 		| NotFoundResponse
+		| ConflictResponse
 		| ErrorResponseResponse,
 	TContext = unknown,
 >(

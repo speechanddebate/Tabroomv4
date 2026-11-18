@@ -173,11 +173,11 @@ describe('GET /rest/judges/:judgeId/conflicts', () => {
 			{
 				id: mine.id, type: 'entry', entry: s.marked.id, Entry: { id: s.marked.id, code: 'Westlake BB', name: 'Westlake BB', Event: { abbr: 'LD' } },
 				school: null, School: null, region: null, Region: null,
-				EnteredBy: { role: 'registrant', first: s.Person.first, last: s.Person.last }, removable: true,
+				created_at: mine.created_at!.toISOString(), standing: null, removable: true,
 			},
 			{
 				id: coaches.id, type: 'school', entry: null, Entry: null, school: s.riverdale.id, School: { id: s.riverdale.id, name: 'Riverdale' },
-				region: null, Region: null, EnteredBy: { role: 'registrant', first: 'Carl', last: 'Coach' }, removable: false,
+				region: null, Region: null, created_at: coaches.created_at!.toISOString(), standing: null, removable: false,
 			},
 		]));
 		const states = Object.fromEntries(res.body.Candidates.Entries.map((entry: { code: string, state: string }) => [entry.code, entry.state]));
@@ -267,7 +267,7 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 		expect(res.body).toMatchSchema(JudgeConflictSchema);
 		expect(res.body).toMatchObject({
 			type: 'entry', entry: s.open.id, Entry: { id: s.open.id, code: 'Westlake DD', name: 'Westlake DD', Event: { abbr: 'LD' } },
-			school: null, region: null, EnteredBy: { role: 'registrant', first: s.Person.first, last: s.Person.last }, removable: true,
+			school: null, region: null, created_at: expect.any(String), removable: true,
 		});
 		expect(await db.selectFrom('strike').selectAll().where('id', '=', res.body.id).executeTakeFirst()).toMatchObject({
 			judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.open.id, conflict: 1, registrant: 1, conflictee: 1, entered_by: s.Person.id,
@@ -338,7 +338,7 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 		expect(await post(s.Judge.id, s.userkey, { type: 'entry' })).toBeProblemResponse(400);
 	});
 
-	it("allows the tourn's tabber, who becomes the enterer but is shown only as tab staff, and refuses other people", async () => {
+	it("allows the tourn's tabber, who becomes the enterer, and refuses other people", async () => {
 		const s = await createSheet();
 		const tabber = await factories.person.create({ first: 'Tab', last: 'Staff' });
 		await factories.permission.create({ person: tabber.id, tourn: s.tourn.Tourn.id, tag: 'tabber' });
@@ -349,49 +349,69 @@ describe('POST /rest/judges/:judgeId/conflicts', () => {
 
 		const res = await post(s.Judge.id, tabberKey, { type: 'entry', id: s.open.id });
 		expect(res.status).toBe(201);
-		expect(res.body).toMatchObject({ EnteredBy: { role: 'tab', first: null, last: null }, removable: true });
-		// marked on the judge's behalf, so the judge may remove it too, and never learns which staffer did it
+		expect(res.body).toMatchObject({ removable: true });
+		expect(await db.selectFrom('strike').select('entered_by').where('id', '=', res.body.id).executeTakeFirst()).toEqual({ entered_by: tabber.id });
+		// marked on the judge's behalf, so the judge may remove it too
 		const sheet = await request(server).get(url(s.Judge.id)).asPerson(s.userkey);
-		expect(sheet.body.Strikes).toMatchObject([{ id: res.body.id, EnteredBy: { role: 'tab', first: null, last: null }, removable: true }]);
+		expect(sheet.body.Strikes).toMatchObject([{ id: res.body.id, removable: true }]);
 
 		expect(await request(server).post(url(s.Judge.id)).send({ type: 'entry', id: s.marked.id })).toBeProblemResponse(401);
 		expect(await post(s.Judge.id, strangerKey, { type: 'entry', id: s.marked.id })).toBeProblemResponse(403);
 		expect(await post(s.Judge.id, otherJudgeKey, { type: 'entry', id: s.marked.id })).toBeProblemResponse(403);
+
+		expect((await request(server).delete(`${url(s.Judge.id)}/${res.body.id}`).asPerson(tabberKey)).status).toBe(204);
 	});
 });
 
 describe('DELETE /rest/judges/:judgeId/conflicts/:strikeId', () => {
 	const del = (judge: number, strike: number, userkey: string) => request(server).delete(`${url(judge)}/${strike}`).asPerson(userkey);
 
-	it('removes a conflict the judge entered, or one declared on their behalf, and logs each', async () => {
+	it('removes a conflict the judge entered, or one declared on their behalf that no standing conflict implies, and logs each', async () => {
 		const s = await createSheet();
+		const tabber = await factories.person.create();
+		await factories.permission.create({ person: tabber.id, tourn: s.tourn.Tourn.id, tag: 'tabber' });
 		const mine = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.marked.id, conflictee: 1, entered_by: s.Person.id });
 		const derived = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'school', school: s.riverdale.id, conflictee: 1, entered_by: null });
+		// left behind by a standing conflict since deleted, derived when tab ran classic's person_conflict.mas
+		const orphan = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.open.id, conflictee: 1, entered_by: tabber.id });
 
 		expect((await del(s.Judge.id, mine.id, s.userkey)).status).toBe(204);
 		expect((await del(s.Judge.id, derived.id, s.userkey)).status).toBe(204);
+		expect((await del(s.Judge.id, orphan.id, s.userkey)).status).toBe(204);
 
-		expect(await db.selectFrom('strike').select('id').where('id', 'in', [mine.id, derived.id]).execute()).toEqual([]);
+		expect(await db.selectFrom('strike').select('id').where('id', 'in', [mine.id, derived.id, orphan.id]).execute()).toEqual([]);
 		expect(await conflictLogs(s.Judge.id)).toMatchObject([
 			{ tourn: s.tourn.Tourn.id, category: s.tourn.Category.id, person: s.Person.id, description: expect.stringContaining('entry Westlake BB removed') },
 			{ tourn: s.tourn.Tourn.id, category: s.tourn.Category.id, person: s.Person.id, description: expect.stringContaining('school Riverdale removed') },
+			{ tourn: s.tourn.Tourn.id, category: s.tourn.Category.id, person: s.Person.id, description: expect.stringContaining('entry Westlake DD removed') },
 		]);
 	});
 
-	it("refuses a coach's or tab's row, and 404s a row that isn't on this judge's sheet", async () => {
+	it("refuses a coach's, a student's, or tab's row, and 404s a row that isn't on this judge's sheet", async () => {
 		const s = await createSheet();
 		const coach = await factories.person.create();
+		const tabber = await factories.person.create();
+		await factories.permission.create({ person: tabber.id, tourn: s.tourn.Tourn.id, tag: 'tabber' });
+		const student = await factories.person.create();
 		const coaches = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'school', school: s.riverdale.id, conflictee: 0, entered_by: coach.id });
+		// classic's tab strike editor and the entry's conflicts page both leave conflictee at 0
+		const tabs = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.marked.id, conflictee: 0, entered_by: tabber.id });
+		const students = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.covered.id, conflictee: 0, entered_by: student.id });
 		const hidden = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: s.open.id, conflict: 0, registrant: 0 });
 		const { Judge: other } = await factories.person.createJudge({ Judge: { category: s.tourn.Category.id } });
 		const others = await factories.strike.create({ judge: other.id, tourn: s.tourn.Tourn.id, type: 'school', school: s.riverdale.id, conflictee: 1 });
 
+		const sheet = await request(server).get(url(s.Judge.id)).asPerson(s.userkey);
+		expect(sheet.body.Strikes).toEqual(expect.arrayContaining([coaches, tabs, students].map((row) => expect.objectContaining({ id: row.id, standing: null, removable: false }))));
+
 		expect(await del(s.Judge.id, coaches.id, s.userkey)).toBeProblemResponse(403);
+		expect(await del(s.Judge.id, tabs.id, s.userkey)).toBeProblemResponse(403);
+		expect(await del(s.Judge.id, students.id, s.userkey)).toBeProblemResponse(403);
 		expect(await del(s.Judge.id, hidden.id, s.userkey)).toBeProblemResponse(404);
 		expect(await del(s.Judge.id, others.id, s.userkey)).toBeProblemResponse(404);
 		expect(await del(s.Judge.id, 999999999, s.userkey)).toBeProblemResponse(404);
 
-		expect(await db.selectFrom('strike').select('id').where('id', 'in', [coaches.id, hidden.id, others.id]).execute()).toHaveLength(3);
+		expect(await db.selectFrom('strike').select('id').where('id', 'in', [coaches.id, tabs.id, students.id, hidden.id, others.id]).execute()).toHaveLength(5);
 		expect(await conflictLogs(s.Judge.id)).toHaveLength(0);
 	});
 
@@ -408,6 +428,97 @@ describe('DELETE /rest/judges/:judgeId/conflicts/:strikeId', () => {
 		expect(await del(s.Judge.id, mine.id, strangerKey)).toBeProblemResponse(403);
 		expect(await del(s.Judge.id, coaches.id, tabberKey)).toBeProblemResponse(403);
 		expect((await del(s.Judge.id, mine.id, tabberKey)).status).toBe(204);
+	});
+});
+
+describe('conflicts a standing conflict implies', () => {
+	const del = (judge: number, strike: number, userkey: string) => request(server).delete(`${url(judge)}/${strike}`).asPerson(userkey);
+
+	// Jane conflicted Sam, Kim, and the Oakdale chapter; Pat conflicted Jane. Each has a derived row on
+	// her sheet with conflictee 1, entered by whoever's page ran the derivation; Kim's she marked by hand.
+	const createStanding = async () => {
+		const s = await createSheet();
+		const tabber = await factories.person.create();
+		await factories.permission.create({ person: tabber.id, tourn: s.tourn.Tourn.id, tag: 'tabber' });
+		const { userkey: tabberKey } = await factories.session.create({ person: tabber.id });
+		const coach = await factories.person.create();
+		const [sam, kim, pat] = await Promise.all([factories.person.create(), factories.person.create(), factories.person.create()]);
+		const oakdale = await factories.chapter.create({ name: 'Oakdale', state: 'TX' });
+		const oakdaleSchool = await factories.school.create({ tourn: s.tourn.Tourn.id, name: 'Oakdale', chapter: oakdale.id });
+		const entryFor = async (person: number, code: string) => {
+			const student = await factories.student.create({ person });
+			return await factories.entry.create({ event: s.tourn.Event.id, school: s.westlake.id, code, name: code, active: 1, students: [student.id] });
+		};
+		const [samEntry, kimEntry, patEntry] = await Promise.all([entryFor(sam.id, 'Westlake SS'), entryFor(kim.id, 'Westlake KK'), entryFor(pat.id, 'Westlake PP')]);
+		await factories.conflict.create({ person: s.Person.id, conflicted: sam.id });
+		await factories.conflict.create({ person: s.Person.id, conflicted: kim.id });
+		await factories.conflict.create({ person: s.Person.id, chapter: oakdale.id });
+		await factories.conflict.create({ person: pat.id, conflicted: s.Person.id });
+		const row = (target: { type: 'entry' | 'school'; entry?: number; school?: number }, enteredBy: number) =>
+			factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, ...target, conflictee: 1, entered_by: enteredBy });
+		return {
+			...s,
+			tabberKey,
+			samRow: await row({ type: 'entry', entry: samEntry.id }, coach.id),
+			kimRow: await row({ type: 'entry', entry: kimEntry.id }, s.Person.id),
+			oakdaleRow: await row({ type: 'school', school: oakdaleSchool.id }, tabber.id),
+			patRow: await row({ type: 'entry', entry: patEntry.id }, pat.id),
+		};
+	};
+
+	it("marks the judge's own as own and one declared against her as other, neither removable", async () => {
+		const s = await createStanding();
+
+		const res = await request(server).get(url(s.Judge.id)).asPerson(s.userkey);
+
+		expect(res.status).toBe(200);
+		expect(res.body).toMatchSchema(JudgeConflictsSchema);
+		expect(res.body.Strikes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ id: s.samRow.id, standing: 'own', removable: false }),
+			expect.objectContaining({ id: s.kimRow.id, standing: 'own', removable: false }),
+			expect.objectContaining({ id: s.oakdaleRow.id, standing: 'own', removable: false }),
+			expect.objectContaining({ id: s.patRow.id, standing: 'other', removable: false }),
+		]));
+	});
+
+	it('refuses to remove any of them with 409 standing, for the judge and for tab, and writes nothing', async () => {
+		const s = await createStanding();
+		const rows = [s.samRow, s.kimRow, s.oakdaleRow, s.patRow];
+
+		for (const row of rows) {
+			for (const key of [s.userkey, s.tabberKey]) {
+				const res = await del(s.Judge.id, row.id, key);
+				expect(res).toBeProblemResponse(409);
+				expect(res.body.reason).toBe('standing');
+			}
+		}
+
+		expect(await db.selectFrom('strike').select('id').where('id', 'in', rows.map((row) => row.id)).execute()).toHaveLength(4);
+		expect(await conflictLogs(s.Judge.id)).toHaveLength(0);
+	});
+
+	it('leaves a row alone when the standing conflicts around it point elsewhere', async () => {
+		const s = await createSheet();
+		const [uma, lee] = await Promise.all([factories.person.create(), factories.person.create()]);
+		const umaStudent = await factories.student.create({ person: uma.id });
+		const umaEntry = await factories.entry.create({ event: s.tourn.Event.id, school: s.westlake.id, code: 'Westlake UU', name: 'Westlake UU', active: 1, students: [umaStudent.id] });
+		const { Person: otherJudge } = await factories.person.createJudge({ Judge: { category: s.tourn.Category.id } });
+		const elsewhere = await factories.chapter.create({ name: 'Elsewhere', state: 'TX' });
+		// another judge conflicted Uma; Jane conflicted Lee, who isn't entered, and a chapter not at the tourn
+		await factories.conflict.create({ person: otherJudge.id, conflicted: uma.id });
+		await factories.conflict.create({ person: s.Person.id, conflicted: lee.id });
+		await factories.conflict.create({ person: s.Person.id, chapter: elsewhere.id });
+		const umaRow = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'entry', entry: umaEntry.id, conflictee: 1, entered_by: s.Person.id });
+		const riverdaleRow = await factories.strike.create({ judge: s.Judge.id, tourn: s.tourn.Tourn.id, type: 'school', school: s.riverdale.id, conflictee: 1, entered_by: s.Person.id });
+
+		const res = await request(server).get(url(s.Judge.id)).asPerson(s.userkey);
+
+		expect(res.body.Strikes).toEqual(expect.arrayContaining([
+			expect.objectContaining({ id: umaRow.id, standing: null, removable: true }),
+			expect.objectContaining({ id: riverdaleRow.id, standing: null, removable: true }),
+		]));
+		expect((await del(s.Judge.id, umaRow.id, s.userkey)).status).toBe(204);
+		expect((await del(s.Judge.id, riverdaleRow.id, s.userkey)).status).toBe(204);
 	});
 });
 
