@@ -47,15 +47,15 @@ export const variables = defineEnvVars({
 		description: 'The log level for the application default:info',
 	},
 	LOGGING_PATH: {
-		schema: z.string().optional(),
-		description: 'The path for log files. If not set, logging to files is disabled. default: undefined',
+		schema: z.string().default('/log'),
+		description: 'The path for log files. Set it empty to disable logging to files. default: /log',
 	},
 	LOGGING_FILE_MAXSIZE: {
-		schema: z.string().optional().default('2097152').transform(Number),
-		description: 'The maximum size of log files in bytes. default: 2097152',
+		schema: z.string().optional().default('268435456').transform(Number),
+		description: 'The maximum size of log files in bytes. default: 268435456',
 	},
 	LOGGING_FILE_MAXFILES: {
-		schema: z.string().optional().default('5').transform(Number),
-		description: 'The maximum number of log files to keep. default: 5',
+		schema: z.string().optional().default('3').transform(Number),
+		description: 'The maximum number of log files to keep. default: 3',
 	},
 });
