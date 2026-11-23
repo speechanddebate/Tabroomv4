@@ -7,8 +7,8 @@ export const load: PageLoad = async ({ parent, fetch }) => {
 	const { queryClient } = await parent();
 
 	await Promise.all([
-		prefetchUserProfileQuery(queryClient, { fetcher: fetch, query: { meta: { persist: false } } }),
+		prefetchUserProfileQuery(queryClient, { fetcher: fetch }),
 		prefetchUserNotifyPushQuery(queryClient, { fetcher: fetch }),
-		prefetchUserSessionsQuery(queryClient, { fetcher: fetch, query: { meta: { persist: false } } }),
+		prefetchUserSessionsQuery(queryClient, { fetcher: fetch }),
 	]);
 };

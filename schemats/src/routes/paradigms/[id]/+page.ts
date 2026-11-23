@@ -14,6 +14,6 @@ export const load: PageLoad = async ({ params, parent, fetch }) => {
 	await prefetchRestParadigmQuery(
 		queryClient,
 		personId,
-		{ fetcher: fetch }
+		{ fetcher: fetch, query: { meta: { persist: true } } }
 	);
 };

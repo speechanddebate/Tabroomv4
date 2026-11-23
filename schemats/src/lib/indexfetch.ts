@@ -82,6 +82,7 @@ export const indexFetch = <T = any>
 			return response.json() as Promise<T>;
 		},
 		queryKey        : [queryUrl],
+		meta            : { persist: true },
 		refetchInterval : options.refetchInterval || 150000,
 		staleTime       : options.staleTime || 15000,
 	}));

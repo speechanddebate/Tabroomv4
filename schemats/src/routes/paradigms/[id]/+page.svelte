@@ -12,6 +12,7 @@
 		() => ({
 			query: {
 				enabled: Number.isInteger(personId) && personId > 0,
+				meta: { persist: true },
 			},
 		}),
 	);
@@ -29,6 +30,7 @@
 		() => ({
 			query: {
 				enabled: Number.isInteger(personId) && personId > 0,
+				meta: { persist: true },
 			},
 		}),
 	);

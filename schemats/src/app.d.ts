@@ -16,4 +16,10 @@ declare global {
 	}
 }
 
+declare module '@tanstack/svelte-query' {
+	interface Register {
+		queryMeta: { persist?: boolean };
+	}
+}
+
 export {};

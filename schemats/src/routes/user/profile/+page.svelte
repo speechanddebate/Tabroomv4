@@ -11,8 +11,7 @@
 	import ProfileSidebar from './ProfileSidebar.svelte';
 	import SessionList from './SessionList.svelte';
 
-	// Also edited on classic, so a reload fetches it fresh rather than showing a stored copy
-	const profileQuery = createUserProfile(() => ({ query: { meta: { persist: false } } }));
+	const profileQuery = createUserProfile();
 	const profile = $derived(handleOrval(profileQuery));
 
 	const push = createPushState();

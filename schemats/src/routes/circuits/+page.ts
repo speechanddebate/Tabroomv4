@@ -7,6 +7,6 @@ export const load: PageLoad = async ({ parent, fetch }) => {
 	await prefetchRestCircuitsActiveQuery(
 		queryClient,
 		undefined,
-		{ fetcher: fetch }
+		{ fetcher: fetch, query: { meta: { persist: true } } }
 	);
 };

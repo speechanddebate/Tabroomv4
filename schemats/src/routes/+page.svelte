@@ -247,6 +247,7 @@
 	const adsQuery = createRestAds(() => ({
 		query: {
 			staleTime: 86400000, // 24 hours
+			meta: { persist: true },
 		},
 	}));
 	const ads = $derived(handleOrval(adsQuery) ?? []);

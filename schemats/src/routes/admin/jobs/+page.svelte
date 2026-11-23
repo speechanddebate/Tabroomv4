@@ -18,7 +18,7 @@
 
 	const tz = $derived(getPerson()?.tz ?? 'UTC');
 
-	const listQuery = createAdminJobs(() => ({ query: { refetchInterval: 15_000, meta: { persist: false } } }));
+	const listQuery = createAdminJobs(() => ({ query: { refetchInterval: 15_000 } }));
 	// The queues being down is shown on the page, since a toast every refetch would pile up
 	const unavailable = $derived(listQuery.data?.status === 503);
 	const jobs = $derived(handleOrval(listQuery, {

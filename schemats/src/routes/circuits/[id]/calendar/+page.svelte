@@ -37,14 +37,17 @@
 		}
 	});
 
-	const circuitQuery = createRestCircuit(() => (Number(page.params.id)));
+	const circuitQuery = createRestCircuit(
+		() => (Number(page.params.id)),
+		() => ({ query: { meta: { persist: true } } }),
+	);
 	const circuitData = $derived(handleOrval(circuitQuery));
 	const tournQuery = createRestTourns(() => ({
 		circuit: Number(page.params.id),
 		'fields[events]': 'abbr,type',
 		startAfter:  seasonStart.toISOString(),
 		startBefore: seasonEnd.toISOString(),
-	}));
+	}), () => ({ query: { meta: { persist: true } } }));
 	const tournsData = $derived(handleOrval(tournQuery));
 
 </script>

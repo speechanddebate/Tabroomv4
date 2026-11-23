@@ -30,7 +30,7 @@
 		publishedResults: true,
 		startAfter: schoolYearStart.toISOString(),
 		startBefore: schoolYearEnd.toISOString(),
-	}));
+	}), () => ({ query: { meta: { persist: true } } }));
 
 	const tournsData = $derived(handleOrval(tournsQuery));
 

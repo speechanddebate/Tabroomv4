@@ -44,8 +44,7 @@ export const readPermission = (): Permission => {
 
 export function createPushState() {
 	const queryClient = useQueryClient();
-	// Push status changes under the page (another tab, the profile page), so never show a persisted copy
-	const pushQuery = createUserNotifyPush(() => ({ query: { meta: { persist: false } } }));
+	const pushQuery = createUserNotifyPush();
 	const subscribeMutation = createUserNotifyPushSubscribe();
 	const unsubscribeMutation = createUserNotifyPushUnsubscribe();
 	const testMutation = createUserNotifyPushTest();

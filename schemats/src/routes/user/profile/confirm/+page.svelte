@@ -18,8 +18,7 @@
 	import WithSidebar from '#lib/layouts/WithSidebar.svelte';
 	import ProfileSidebar from '../ProfileSidebar.svelte';
 
-	// Confirming also happens from the email link and on classic, so never show a stored copy
-	const profileQuery = createUserProfile(() => ({ query: { meta: { persist: false } } }));
+	const profileQuery = createUserProfile();
 	const profile = $derived(handleOrval(profileQuery));
 	const confirm = createUserEmailConfirm();
 	const resend = createUserEmailResend();

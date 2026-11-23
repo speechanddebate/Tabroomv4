@@ -14,8 +14,7 @@
 
 	let { tz }: Props = $props();
 
-	// Logins come and go on other devices, so a reload fetches the list fresh
-	const sessionsQuery = createUserSessions(() => ({ query: { meta: { persist: false } } }));
+	const sessionsQuery = createUserSessions();
 	const sessions = $derived((handleOrval(sessionsQuery) ?? []).toSorted((a, b) => Number(b.current) - Number(a.current)));
 	const end = createUserSessionEnd();
 	const queryClient = useQueryClient();

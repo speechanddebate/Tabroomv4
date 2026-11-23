@@ -7,5 +7,5 @@ export const ssr = false;
 export const load: PageLoad = async ({ parent, fetch }) => {
 	const { queryClient } = await parent();
 
-	await prefetchUserProfileQuery(queryClient, { fetcher: fetch, query: { meta: { persist: false } } });
+	await prefetchUserProfileQuery(queryClient, { fetcher: fetch });
 };

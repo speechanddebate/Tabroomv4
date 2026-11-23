@@ -134,6 +134,29 @@ describe('root layout push sync', () => {
 	});
 });
 
+describe('root layout persistence', () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+
+	it('persists only queries that opt in with meta.persist', async () => {
+		const queryClient = new QueryClient();
+		renderLayout(null, queryClient);
+		// The persister subscribes to the cache only after its async restore resolves
+		await new Promise((resolve) => setTimeout(resolve, 0));
+
+		queryClient.setQueryDefaults(['/v1/rest/circuits'], { meta: { persist: true } });
+		queryClient.setQueryData(['/v1/rest/circuits'], [{ name: 'Kansas Flint Hills' }]);
+		queryClient.setQueryData(profileKey, { email: 'alice@example.com' });
+
+		// The persister throttles writes to once a second
+		await waitFor(() => {
+			expect(localStorage.getItem(PERSISTED_CACHE_KEY) ?? '').toContain('Kansas Flint Hills');
+		}, { timeout: 3000 });
+		expect(localStorage.getItem(PERSISTED_CACHE_KEY)).not.toContain('alice@example.com');
+	});
+});
+
 describe('root layout session teardown', () => {
 	beforeEach(() => {
 		localStorage.clear();

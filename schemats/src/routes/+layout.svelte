@@ -98,9 +98,9 @@
 	persistOptions = {{
 		persister,
 		dehydrateOptions: {
-			// A query whose data can change on the server under the page opts out with meta.persist,
-			// so a reload loads it fresh instead of showing a stale copy first
-			shouldDehydrateQuery: (query) => defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
+			// Only public, slow-changing reads opt in with meta.persist. A persisted copy of
+			// anything another page can change restores stale on reload, inside staleTime
+			shouldDehydrateQuery: (query) => defaultShouldDehydrateQuery(query) && query.meta?.persist === true,
 		},
 	}}
 >
